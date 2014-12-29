@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1005</width>
+    <height>663</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>I2S</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_3">
+    <item row="0" column="1">
+     <widget class="Viewer" name="viewer_img" native="true"/>
+    </item>
+    <item row="0" column="0">
+     <widget class="Viewer" name="viewer" native="true"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1005</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuOpen">
+    <property name="title">
+     <string>Open</string>
+    </property>
+    <addaction name="action_Load_Model"/>
+    <addaction name="action_Load_photo"/>
+   </widget>
+   <addaction name="menuOpen"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_Snap_Shot"/>
+   <addaction name="action_Fix_Camera"/>
+   <addaction name="action_Reset_Screen"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar_2">
+   <property name="windowTitle">
+    <string>toolBar_2</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+   <addaction name="action_Load_S2I_Transform"/>
+   <addaction name="action_Check_Visible"/>
+   <addaction name="action_Init_Light"/>
+   <addaction name="action_Update_Light"/>
+   <addaction name="action_Compute_Normal"/>
+   <addaction name="action_Update_Geometry"/>
+  </widget>
+  <action name="action_Load_Model">
+   <property name="text">
+    <string>Load Model</string>
+   </property>
+  </action>
+  <action name="action_Snap_Shot">
+   <property name="text">
+    <string>SnapShot</string>
+   </property>
+  </action>
+  <action name="action_Load_photo">
+   <property name="text">
+    <string>Load photo</string>
+   </property>
+  </action>
+  <action name="action_Load_S2I_Transform">
+   <property name="text">
+    <string>Load S2I Transform</string>
+   </property>
+  </action>
+  <action name="action_Fix_Camera">
+   <property name="text">
+    <string>Fix Camera</string>
+   </property>
+  </action>
+  <action name="action_Init_Light">
+   <property name="text">
+    <string>Init Light</string>
+   </property>
+  </action>
+  <action name="action_Check_Visible">
+   <property name="text">
+    <string>Check Visible</string>
+   </property>
+  </action>
+  <action name="action_Reset_Screen">
+   <property name="text">
+    <string>Reset Screen</string>
+   </property>
+  </action>
+  <action name="action_Update_Light">
+   <property name="text">
+    <string>Update Light</string>
+   </property>
+  </action>
+  <action name="action_Compute_Normal">
+   <property name="text">
+    <string>Compute Normal</string>
+   </property>
+  </action>
+  <action name="action_Update_Geometry">
+   <property name="text">
+    <string>Update Geometry</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Viewer</class>
+   <extends>QWidget</extends>
+   <header location="global">Viewer.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
