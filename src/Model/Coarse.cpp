@@ -168,7 +168,7 @@ void Coarse::loadS2ITransform()
 
 void Coarse::updateVertexRho()
 {
-    int num_vertices = model_vertices.size() / 3;
+    size_t num_vertices = model_vertices.size() / 3;
     Eigen::MatrixX3f normal = (Eigen::Map<Eigen::Matrix3Xf>(&model_normals[0], 3, num_vertices)).transpose();
 
     uchar *mask_ptr = (uchar *)mask.data;
@@ -190,7 +190,7 @@ void Coarse::updateVertexRho()
 
     model_rhos.clear();
     model_rhos.resize(3 * num_vertices);
-    for (int i = 0; i < num_vertices; ++i)
+    for (size_t i = 0; i < num_vertices; ++i)
     {
         if (v_vis_stat_in_r_img[i] == false)
         {
