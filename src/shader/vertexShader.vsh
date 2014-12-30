@@ -1,4 +1,4 @@
-#version 130
+#version 400 compatibility
 
 //! [0]
 uniform mat4 gl_ModelViewProjectionMatrix;
