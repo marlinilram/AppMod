@@ -1,7 +1,7 @@
 cmake_minimum_required( VERSION 2.8 )
 project( ImageToShape )
 
-SET( CMAKE_PREFIX_PATH "D:\\Qt\\Qt5.3.2\\5.3\\msvc2013_64_opengl" )
+SET( CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.3.2\\5.3\\msvc2013_64_opengl" )
 
 # Find includes in corresponding build directories
 #set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -51,6 +51,7 @@ SET( MainWin_MOC_HDRS src/ui/mainWin.h
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 QT5_WRAP_UI( MainWin_UIS_H ${MainWin_UIS} )
 QT5_WRAP_CPP( MainWin_MOC_SRCS ${MainWin_MOC_HDRS} )
