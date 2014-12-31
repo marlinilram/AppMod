@@ -1,8 +1,5 @@
 #include "ImagePartAlg.h"
 
-#include <math.h>
-#include <iostream>
-
 ImagePartAlg::ImagePartAlg()
 {
     //function_type = -1;
@@ -37,7 +34,65 @@ ImagePartAlg::~ImagePartAlg()
 //    function_type = functionType;
 //}
 
+double funcSFSLight(const std::vector<double> &L, std::vector<double> &grad, void *data_ptr)
+{
+	// reinterpret data_ptr
+	ImagePartAlg *img_alg_data_ptr = reinterpret_cast<ImagePartAlg *>(data_ptr);
+	size_t n_dim = L.size();
 
+	// here we compute the value of objective function given the current L
+	std::vector<double> L_temp = L;
+	Eigen::Map<Eigen::VectorXd>cur_L(&L_temp[0], n_dim);
+
+	Eigen::VectorXf &brightness = img_alg_data_ptr->brightness_sig_chan;
+	Eigen::MatrixXf &T_coeff = img_alg_data_ptr->T_coef;
+
+	Eigen::VectorXf T_L = T_coeff*cur_L.cast<float>();
+	Eigen::VectorXf bright_minus_TL = brightness - T_L;
+
+	//std::cout<<brightness<<"\n";
+
+	if (grad.size() != 0)
+	{
+		// here we need to set grad to grad vector
+		for (size_t i = 0; i < grad.size(); ++i)
+		{
+			grad[i] = 2*cur_L(i) - 2*(bright_minus_TL.dot(T_coeff.col(i)));
+		}
+	}
+
+	//std::cout<<cur_L.squaredNorm()+bright_minus_TL.squaredNorm()<<"\n";
+
+	return cur_L.squaredNorm()+bright_minus_TL.squaredNorm();
+
+}
+
+double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, void *data_ptr)
+{
+	// reinterpret data_ptr
+	ImagePartAlg *img_alg_data_ptr = reinterpret_cast<ImagePartAlg *>(data_ptr);
+	size_t n_dim = N.size();
+
+	// here we compute the value of objective function given the current L
+	std::vector<double> N_temp = N;
+	Eigen::Map<Eigen::VectorXd>cur_N(&N_temp[0], n_dim);
+	Eigen::MatrixX3f &brightness = img_alg_data_ptr->brightness_mat;
+	Eigen::MatrixX3f &A = img_alg_data_ptr->A_mat;
+	Eigen::MatrixX3f &B = img_alg_data_ptr->B_mat;
+	Eigen::MatrixX3f &C = img_alg_data_ptr->C_mat;
+
+	double func_val = 0;
+
+	for (int i = 0; i < 3; ++i)
+	{
+
+	}
+
+	if (grad.size() != 0)
+	{
+
+	}
+}
 
 void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 {
@@ -47,6 +102,7 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     cv::Mat &mask = model->getMask();
     cv::Mat &rho_img = model->getRhoImg();
     Eigen::MatrixX3f &Light_rec = model->getLightRec();
+	Light_rec.resize(model->getModelLightObj()->getNumSamples(), 3);
     std::vector<Eigen::Vector2i> &I_xy_vec = model->getXYInMask();
 
     // photo should be float range [0, 1]
@@ -73,14 +129,15 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
                 I_xy_vec.push_back(Eigen::Vector2i(j, i));
             }
         }
-        emit(refreshScreen());
+        //emit(refreshScreen());
     }
 
-    Eigen::MatrixXf Light_coeffs(light_coeffs_vec.size(), light_coeffs.size());
+    T_coef.resize(light_coeffs_vec.size(), light_coeffs.size());
     Eigen::MatrixX3f I(I_vec.size(), 3);
+
     for (decltype(light_coeffs_vec.size()) i = 0; i < light_coeffs_vec.size(); ++i)
     {
-        Light_coeffs.row(i) = light_coeffs_vec[i];
+        T_coef.row(i) = light_coeffs_vec[i];
         I.row(i) = I_vec[i];
     }
 
@@ -95,27 +152,48 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     I_temp.col(2) = I_temp.col(2) / rhos[2];
     //I_temp = (model->getModelLightObj()->getNumSamples() / 4 / M_PI)*I_temp;
 
-    Light_coeffs = (4 * M_PI / model->getModelLightObj()->getNumSamples())*Light_coeffs;
-    Eigen::MatrixXf L_temp = Light_coeffs.transpose().eval()*Light_coeffs;
-    L_temp += Eigen::MatrixXf::Identity(light_coeffs_vec.size(), light_coeffs_vec.size());
+    T_coef = (4 * M_PI / model->getModelLightObj()->getNumSamples())*T_coef;
 
-    //std::ofstream f_L_temp(model->getDataPath() + "/L_temp.mat");
-    //if (f_L_temp)
-    //{
-    //    std::cout << light_coeffs_vec.size();
-    //    //f_L_temp << Light_coeffs;
-    //    f_L_temp.close();
-    //}
 
-    Light_rec = L_temp.ldlt().solve(Light_coeffs.transpose().eval()*I_temp);
+	// use nlopt to solve bounded non-linear least squares
 
-    std::ofstream f_light_rec(model->getDataPath() + "/L_rec_init.mat");
-    if (f_light_rec)
-    {
-        f_light_rec << Light_rec;
-        f_light_rec.close();
-    }
+	int n_dim = model->getModelLightObj()->getNumSamples();
+	nlopt::opt opt(nlopt::LD_MMA, n_dim);
 
+	std::vector<double> lb(n_dim, 0);
+	opt.set_lower_bounds(lb);
+
+	opt.set_min_objective(funcSFSLight, this);
+
+	opt.set_stopval(1e-4);
+	opt.set_ftol_rel(1e-4);
+	opt.set_ftol_abs(1e-4);
+	opt.set_xtol_rel(1e-4);
+	opt.set_xtol_abs(1e-4);
+
+
+	for (int k_chan = 0; k_chan < 3; ++k_chan)
+	{
+		//std::cout<<I_temp.col(k_chan)<<"\n";
+		brightness_sig_chan = I_temp.col(k_chan);
+		std::vector<double> x(n_dim, 0.5);
+		double minf;
+		std::cout<<"Min value initialized: "<<minf<<"\n";
+		nlopt::result result = opt.optimize(x, minf);
+		std::cout<<"Min value optimized: "<<minf<<"\n";
+
+		Eigen::Map<Eigen::VectorXd>cur_l_rec(&x[0], n_dim);
+		Light_rec.col(k_chan) = cur_l_rec.cast<float>();
+		std::cout<<"Return values of NLopt: "<<result<<"\n";
+	}
+
+
+
+	// standard non-linear least squares
+    //Eigen::MatrixXf L_temp = Light_coeffs.transpose().eval()*Light_coeffs;
+    //L_temp += Eigen::MatrixXf::Identity(light_coeffs_vec.size(), light_coeffs_vec.size());
+
+    //Light_rec = L_temp.ldlt().solve(Light_coeffs.transpose().eval()*I_temp);
 
     // store new rho image computed by rho = I/(((4*pi/num_samples).*T)*L)
     // notice here we may not have per pixel rho, also need to store I
@@ -129,9 +207,8 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 
     // put rho computed from new light back to rho image
     Eigen::MatrixX3f rho_new;
-    rho_new = (I.array() / ((Light_coeffs*Light_rec)).array()).matrix();
+    rho_new = (I.array() / ((T_coef*Light_rec)).array()).matrix();
 
-    Eigen::MatrixX3f I_rec = (4 * M_PI / model->getModelLightObj()->getNumSamples())*(Light_coeffs*Light_rec);
 
     for (decltype(I_xy_vec.size()) i = 0; i < I_xy_vec.size(); ++i)
     {
@@ -160,6 +237,21 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     model->updateVertexBrightnessAndColor();
 
     // output some variables for debug here
+	std::ofstream f_light_rec(model->getDataPath() + "/L_rec_init.mat");
+	if (f_light_rec)
+	{
+		f_light_rec << Light_rec;
+		f_light_rec.close();
+	}
+
+	//std::ofstream f_L_temp(model->getDataPath() + "/L_temp.mat");
+	//if (f_L_temp)
+	//{
+	//    std::cout << light_coeffs_vec.size();
+	//    //f_L_temp << Light_coeffs;
+	//    f_L_temp.close();
+	//}
+
     //std::ofstream f_rho_new_init(model->getDataPath() + "/rho_new.mat");
     //if (f_rho_new_init)
     //{
@@ -167,6 +259,8 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     //    f_rho_new_init.close();
     //}
 
+	T_coef.resize(0,0);
+	brightness_sig_chan.resize(0);
     std::cout << "Compute init light finished\n";
 }
 
@@ -438,8 +532,12 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     std::vector<Eigen::Triplet<float>> normal_coeffs;
     Eigen::VectorXf right_hand(3 * faces_in_photo.size());
     Eigen::SparseMatrix<float> Normal_coeffs(3 * faces_in_photo.size(), 3 * faces_in_photo.size());
-    float lambda_sfs = 1.0;
-    float lambda_smooth = 100.0;
+	brightness_mat = brightness_in_photo;
+	A_mat.resize(faces_in_photo.size(), 3);
+	B_mat.resize(faces_in_photo.size(), 3);
+	C_mat.resize(faces_in_photo.size(), 3);
+    float lambda_sfs = 10.0;
+    float lambda_smooth = 0.0;
 
     for (decltype(faces_in_photo.size()) i = 0; i < faces_in_photo.size(); ++i)
     {
@@ -456,11 +554,14 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         {
             // (I/rho)*(num_samples/4/pi) = A*nx + B*ny + C*nz
             A(j) = (light_rec.col(j).array()*samples.col(0).array()*visb.array()).sum();
-            if (A(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
+			A_mat(i, j) = A(j);
+            //if (A(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
             B(j) = (light_rec.col(j).array()*samples.col(1).array()*visb.array()).sum();
-            if (C(j) < 0) std::cout << "Normal coefficient is less than zero!t" << "i j: " << i << "\t" << j << "\n";
+			B_mat(i, j) = B(j);
+            //if (C(j) < 0) std::cout << "Normal coefficient is less than zero!t" << "i j: " << i << "\t" << j << "\n";
             C(j) = (light_rec.col(j).array()*samples.col(2).array()*visb.array()).sum();
-            if (C(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
+			C_mat(i,j) = C(j);
+            //if (C(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
         }
 
         // equation for nx
@@ -569,4 +670,54 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 float ImagePartAlg::sigmoid(float coef, float t)
 {
     return 2.0f / (1.0f + exp(coef*t));
+}
+
+
+
+// test NLopt here
+double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+{
+	if (!grad.empty()) {
+		grad[0] = 0.0;
+		grad[1] = 0.5 / sqrt(x[1]);
+	}
+	return sqrt(x[1]);
+}
+
+typedef struct {
+	double a, b;
+} my_constraint_data;
+
+double myconstraint(unsigned n, const double *x, double *grad, void *data)
+{
+	my_constraint_data *d = (my_constraint_data *) data;
+	double a = d->a, b = d->b;
+	if (grad) {
+		grad[0] = 3 * a * (a*x[0] + b) * (a*x[0] + b);
+		grad[1] = -1.0;
+	}
+	return ((a*x[0] + b) * (a*x[0] + b) * (a*x[0] + b) - x[1]);
+}
+
+void ImagePartAlg::testNLopt()
+{
+
+	nlopt::opt opt(nlopt::LD_MMA, 2);
+
+	std::vector<double> lb(2);
+	lb[0] = -HUGE_VAL; lb[1] = 0;
+	opt.set_lower_bounds(lb);
+
+	opt.set_min_objective(myvfunc, NULL);
+
+	my_constraint_data data[2] = { {2,0}, {-1,1} };
+	opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
+	opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
+
+	opt.set_xtol_rel(1e-4);
+
+	std::vector<double> x(2);
+	x[0] = 1.234; x[1] = 5.678;
+	double minf;
+	nlopt::result result = opt.optimize(x, minf);
 }

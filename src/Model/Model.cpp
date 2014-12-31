@@ -1,10 +1,5 @@
 #include "Model.h"
-#include "tiny_obj_loader.h"
-#include "ModelLight.h"
-#include "Ray.h"
-#include "Light.h"
-#include "Eigen\Eigen"
-#include <limits>
+
 
 Model::Model(const int id, const std::string path, const std::string name) 
     : ID(id), data_path(path), file_name(name)
@@ -58,6 +53,23 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     //model_colors[model_faces[169 * 3 + 2] * 3 + 0] = 1.0;
 
     return true;
+}
+
+void Model::exportOBJ()
+{
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+
+	tinyobj::shape_t shape;
+
+	shape.mesh.positions = model_vertices;
+	shape.mesh.indices = model_faces;
+
+	shapes.push_back(shape);
+
+	std::string output_name = "coarse_output";
+	WriteObj(output_name, shapes, materials);
+
 }
 
 // computation part

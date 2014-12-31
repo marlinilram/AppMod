@@ -7,13 +7,22 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <limits>
+
+#include <Eigen\Eigen>
+#include <Eigen\Sparse>
+#include <cv.h>
+#include <highgui.h>
+
 #include "ModelLight.h"
 #include "Bound.h"
 #include "Viewer.h"
-#include "Eigen\Eigen"
-#include "Eigen\Sparse"
-#include "cv.h"
-#include "highgui.h"
+#include "tiny_obj_loader.h"
+#include "obj_writer.h"
+#include "ModelLight.h"
+#include "Ray.h"
+#include "Light.h"
+
 
 class Viewer;
 
@@ -38,6 +47,7 @@ public:
 
     Model(const int id, const std::string path, const std::string name);
     void passData(VectorF &vertices, Facelist &faces, Colorlist &colors);
+	void exportOBJ();
 
     void computeLight();
     void computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, std::vector<bool> &visb);

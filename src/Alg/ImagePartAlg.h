@@ -4,6 +4,10 @@
 #include <cv.h>
 #include <QObject>
 
+#include <math.h>
+#include <iostream>
+
+#include "nlopt.hpp"
 #include "Coarse.h"
 #include "Viewer.h"
 #include "GeometryPartAlg.h"
@@ -17,6 +21,15 @@ public:
     //ImagePartAlg(Coarse *model, Viewer *model_viewer);
     ~ImagePartAlg();
 
+
+public:
+	Eigen::VectorXf brightness_sig_chan;
+	Eigen::MatrixXf T_coef;
+	Eigen::MatrixX3f brightness_mat;
+	Eigen::MatrixX3f A_mat;
+	Eigen::MatrixX3f B_mat;
+	Eigen::MatrixX3f C_mat;
+
     //void setRunFunctionType(int functionType);
 private slots:
     void computeInitLight(Coarse *model, Viewer *viewer);
@@ -24,6 +37,7 @@ private slots:
     void updateLightSingleChannel(cv::Mat &photo, cv::Mat &mask, cv::Mat &r_img, Coarse *model, Viewer *viewer, cv::Mat &rho_img, Eigen::VectorXf &Light_rec);
     void computeNormal(Coarse *model, Viewer *viewer);
     float sigmoid(float coef, float t);
+	void testNLopt();
 
 signals:
     void refreshScreen();

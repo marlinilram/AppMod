@@ -1,7 +1,8 @@
 cmake_minimum_required( VERSION 2.8 )
 project( ImageToShape )
 
-SET( CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.3.2\\5.3\\msvc2013_64_opengl" )
+SET( CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.2.1\\5.2.1\\msvc2012_64_opengl" 
+						"C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64" )
 
 # Find includes in corresponding build directories
 #set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -42,7 +43,8 @@ SET( Project_INCLUDE_DIR src/
 						 src/Camera
 						 src/Alg
 						 src/Deform
-						 src/extern 
+						 src/extern
+						 src/extern/nlopt/api 
 						 src/extern/eigen )
 
 SET( MainWin_UIS src/ui/mainWin.ui )
@@ -66,6 +68,8 @@ INCLUDE_DIRECTORIES( ${Project_INCLUDE_DIR}
 
 SET( QGLViewer_lib_debug ${CMAKE_CURRENT_SOURCE_DIR}/lib/QGLViewerd2.lib )
 SET( QGLViewer_lib_release ${CMAKE_CURRENT_SOURCE_DIR}/lib/QGLViewer2.lib )
+SET( NLopt_lib_debug ${CMAKE_CURRENT_SOURCE_DIR}/lib/nloptd.lib )
+SET( NLopt_lib_release ${CMAKE_CURRENT_SOURCE_DIR}/lib/nlopt.lib )
 
 ADD_EXECUTABLE( ${PROJECT_NAME} 
 				${Project_SRCS}  
@@ -79,6 +83,8 @@ TARGET_LINK_LIBRARIES( ${PROJECT_NAME}
 					   ${OPENGL_LIBRARIES}
 					   ${OpenCV_LIBS}
 					   ${GLEW_LIBRARIES}
+					   debug ${NLopt_lib_debug}
+					   optimized ${NLopt_lib_release}
 					   debug ${QGLViewer_lib_debug} 
 					   optimized ${QGLViewer_lib_release} )
 					   

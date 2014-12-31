@@ -55,6 +55,7 @@
    <addaction name="action_Snap_Shot"/>
    <addaction name="action_Fix_Camera"/>
    <addaction name="action_Reset_Screen"/>
+   <addaction name="action_Export_OBJ"/>
   </widget>
   <widget class="QToolBar" name="toolBar_2">
    <property name="windowTitle">
@@ -126,6 +127,11 @@
   <action name="action_Update_Geometry">
    <property name="text">
     <string>Update Geometry</string>
+   </property>
+  </action>
+  <action name="action_Export_OBJ">
+   <property name="text">
+    <string>Export OBJ</string>
    </property>
   </action>
  </widget>

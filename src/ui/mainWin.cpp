@@ -1,9 +1,5 @@
 #include "mainWin.h"
 
-#include <QFileDialog>
-#include <QDir>
-#include <QGLContext>
-#include <QThread>
 
 MainWin::MainWin()
 {
@@ -37,6 +33,7 @@ MainWin::MainWin()
     connect(action_Update_Light, SIGNAL(triggered()), this, SLOT(updateLight()));
     connect(action_Compute_Normal, SIGNAL(triggered()), this, SLOT(computeNormal()));
     connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
+	connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
 
     this->show();
 
@@ -47,6 +44,7 @@ MainWin::MainWin()
     connect(this, SIGNAL(callComputeInitLight(Coarse *, Viewer *)), img_part_alg, SLOT(computeInitLight(Coarse *, Viewer *)));
     connect(this, SIGNAL(callUpdateLight(Coarse *, Viewer *)), img_part_alg, SLOT(updateLight(Coarse *, Viewer *)));
     connect(this, SIGNAL(callComputeNormal(Coarse *, Viewer *)), img_part_alg, SLOT(computeNormal(Coarse *, Viewer *)));
+	connect(this, SIGNAL(callNLoptTest()), img_part_alg, SLOT(testNLopt()));
     connect(img_part_alg, SIGNAL(refreshScreen()), this, SLOT(refreshScreen()));
 
     img_part_alg->moveToThread(img_part_alg_thread);
@@ -81,6 +79,11 @@ void MainWin::loadModel()
 
     viewer->getModel(coarse_model);
     coarse_model->setRenderer(viewer);
+}
+
+void MainWin::exportOBJ()
+{
+	coarse_model->exportOBJ();
 }
 
 void MainWin::snapShot()
@@ -120,6 +123,8 @@ void MainWin::checkVisibleVertices()
 
 void MainWin::resetScreen()
 {
+	//emit callNLoptTest();
+
     viewer->resetScreen();
     viewer->getModel(coarse_model);
     viewer->setShowModel(true);

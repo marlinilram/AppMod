@@ -7,9 +7,15 @@
 #include "Coarse.h"
 #include "ImagePartAlg.h"
 #include "GeometryPartAlg.h"
+
 #include <QMainWindow>
 #include <QGridLayout>
+#include <QFileDialog>
+#include <QDir>
+#include <QGLContext>
+#include <QThread>
 #include "ui_mainWin.h"
+
 
 class MainWin : public QMainWindow, public Ui::MainWindow
 {
@@ -31,11 +37,13 @@ private slots:
     void computeNormal();
     void updateGeometry();
     void refreshScreen();
+	void exportOBJ();
 
 signals:
     void callComputeInitLight(Coarse *, Viewer *);
     void callUpdateLight(Coarse *, Viewer *);
     void callComputeNormal(Coarse *, Viewer *);
+	void callNLoptTest();
 
 public:
     //Viewer *viewer;
