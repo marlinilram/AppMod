@@ -68,6 +68,7 @@ public:
     inline std::vector<unsigned int> *getFaceList(){ return &model_faces; };
     inline std::vector<float> *getVertexList(){ return &model_vertices; };
     inline std::vector<float> *getNormalList(){ return &model_normals; };
+	inline std::vector<float> *getFaceNormalList(){ return &model_face_normals; };
     inline std::vector<float> *getRhoList(){ return &model_rhos; };
     inline std::vector<std::vector<int>> *getVertexShareFaces(){ return &model_vertices_share_faces; };
     inline std::vector<int> *getVertexShareFaces(int vertex_id){ return &model_vertices_share_faces[vertex_id]; };

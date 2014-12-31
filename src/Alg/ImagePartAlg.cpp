@@ -72,26 +72,79 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
 	// reinterpret data_ptr
 	ImagePartAlg *img_alg_data_ptr = reinterpret_cast<ImagePartAlg *>(data_ptr);
 	size_t n_dim = N.size();
+	size_t n_tuple = N.size()/3;
 
 	// here we compute the value of objective function given the current L
 	std::vector<double> N_temp = N;
-	Eigen::Map<Eigen::VectorXd>cur_N(&N_temp[0], n_dim);
+	Eigen::Map<Eigen::MatrixXd>cur_N(&N_temp[0], 3, n_tuple);
+	cur_N.transposeInPlace();// change cur_N to form n*3
+	// data stored in under rule
+	// each col means a channel
+	// each row means a pixel
 	Eigen::MatrixX3f &brightness = img_alg_data_ptr->brightness_mat;
 	Eigen::MatrixX3f &A = img_alg_data_ptr->A_mat;
 	Eigen::MatrixX3f &B = img_alg_data_ptr->B_mat;
 	Eigen::MatrixX3f &C = img_alg_data_ptr->C_mat;
+	std::vector<std::vector<int>> &F_smooth_adj = img_alg_data_ptr->F_smooth_adj;
 
 	double func_val = 0;
 
-	for (int i = 0; i < 3; ++i)
-	{
+	// sfs energy
+	//for (int i = 0; i < 3; ++i)
+	//{
+	//	Eigen::VectorXf sfs_ch = brightness.col(i) - (A.col(i).array()*cur_N.col(0).array() 
+	//		+ B.col(i).array()*cur_N.col(1).array() 
+	//		+ C.col(i).array()*cur_N.col(2).array()).matrix();
 
-	}
+	//	func_val += sfs_ch.squaredNorm();
+	//}
+
+	//// smooth energy
+	//for (size_t i = 0; i < n_tuple; ++i)
+	//{
+	//	std::vector<int> &cur_f_smooth_adj = F_smooth_adj[i];
+
+	//	for (size_t j = 0; j < cur_f_smooth_adj.size(); ++j)
+	//	{
+	//		func_val += (cur_N.row(i) - cur_N.row(cur_f_smooth_adj[j])).squaredNorm();
+	//	}
+	//}
 
 	if (grad.size() != 0)
 	{
+		//for (size_t i = 0; i < grad.size()/3; ++i)
+		//{
 
+		//	// sfs grad
+		//	Eigen::Vector3f cur_brightness = brightness.row(i);			
+		//	Eigen::Vector3f cur_n = cur_N.row(i).cast<float>();
+		//	Eigen::Matrix3f cur_ABC;
+		//	cur_ABC.col(0) = A.row(i);
+		//	cur_ABC.col(1) = B.row(i);
+		//	cur_ABC.col(2) = C.row(i);
+
+		//	grad[3*i+0] = -2*(brightness - cur_ABC*cur_n).dot(cur_ABC.col(0));
+		//	grad[3*i+1] = -2*(brightness - cur_ABC*cur_n).dot(cur_ABC.col(1));
+		//	grad[3*i+2] = -2*(brightness - cur_ABC*cur_n).dot(cur_ABC.col(2));
+
+		//	// smooth grad
+		//	std::vector<int> &cur_f_smooth_adj = F_smooth_adj[i];
+		//	for (size_t j = 0; j < cur_f_smooth_adj.size(); ++j)
+		//	{
+		//		Eigen::Vector3f cur_n_adj = cur_N.row(cur_f_smooth_adj[j]).cast<float>();
+		//		grad[3*i+0] += 2*(cur_n(0)-cur_n_adj(0));
+		//		grad[3*i+1] += 2*(cur_n(1)-cur_n_adj(1));
+		//		grad[3*i+2] += 2*(cur_n(2)-cur_n_adj(2));
+		//	}
+
+		//	// normalization term
+		//	grad[3*i+0] += 2*(cur_n.squaredNorm()-1)*2*cur_n(0);
+		//	grad[3*i+1] += 2*(cur_n.squaredNorm()-1)*2*cur_n(1);
+		//	grad[3*i+2] += 2*(cur_n.squaredNorm()-1)*2*cur_n(2);
+		//}
 	}
+
+	return func_val;
 }
 
 void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
@@ -453,6 +506,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     cv::Mat &rho_img = model->getRhoImg();
     std::vector<float> *vertex_list = model->getVertexList();
     std::vector<unsigned int> *face_list = model->getFaceList();
+	std::vector<float> *face_normal_list = model->getFaceNormalList();
 
     // we only compute guidance normal defined on face
 
@@ -529,13 +583,14 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     }
 
     // build linear sys
-    std::vector<Eigen::Triplet<float>> normal_coeffs;
-    Eigen::VectorXf right_hand(3 * faces_in_photo.size());
-    Eigen::SparseMatrix<float> Normal_coeffs(3 * faces_in_photo.size(), 3 * faces_in_photo.size());
-	brightness_mat = brightness_in_photo;
+    //std::vector<Eigen::Triplet<float>> normal_coeffs;
+    //Eigen::VectorXf right_hand(3 * faces_in_photo.size());
+    //Eigen::SparseMatrix<float> Normal_coeffs(3 * faces_in_photo.size(), 3 * faces_in_photo.size());
+	brightness_mat = (num_samples/4/M_PI)*brightness_in_photo;
 	A_mat.resize(faces_in_photo.size(), 3);
 	B_mat.resize(faces_in_photo.size(), 3);
 	C_mat.resize(faces_in_photo.size(), 3);
+	F_smooth_adj.resize(faces_in_photo.size());
     float lambda_sfs = 10.0;
     float lambda_smooth = 0.0;
 
@@ -564,28 +619,29 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
             //if (C(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
         }
 
-        // equation for nx
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambda_sfs*A.dot(A)));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 1, lambda_sfs*B.dot(A)));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 2, lambda_sfs*C.dot(A)));
+  //      // equation for nx
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambda_sfs*A.dot(A)));
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 1, lambda_sfs*B.dot(A)));
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 2, lambda_sfs*C.dot(A)));
 
-        // equation for ny
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 0, lambda_sfs*A.dot(B)));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 1, lambda_sfs*B.dot(B)));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 2, lambda_sfs*C.dot(B)));
+  //      // equation for ny
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 0, lambda_sfs*A.dot(B)));
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 1, lambda_sfs*B.dot(B)));
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 2, lambda_sfs*C.dot(B)));
 
-        // equation for nz
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 0, lambda_sfs*A.dot(C)));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 1, lambda_sfs*B.dot(C)));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 2, lambda_sfs*C.dot(C)));
+  //      // equation for nz
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 0, lambda_sfs*A.dot(C)));
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 1, lambda_sfs*B.dot(C)));
+  //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 2, lambda_sfs*C.dot(C)));
 
-        right_hand(3 * i + 0) = (num_samples / 4 / M_PI)*(A.dot(brightness_in_photo.row(i)));
-        right_hand(3 * i + 1) = (num_samples / 4 / M_PI)*(B.dot(brightness_in_photo.row(i)));
-        right_hand(3 * i + 2) = (num_samples / 4 / M_PI)*(C.dot(brightness_in_photo.row(i)));
+		//right_hand(3 * i + 0) = (num_samples / 4 / M_PI)*(A.dot(brightness_in_photo.row(i)));
+		//right_hand(3 * i + 1) = (num_samples / 4 / M_PI)*(B.dot(brightness_in_photo.row(i)));
+		//right_hand(3 * i + 2) = (num_samples / 4 / M_PI)*(C.dot(brightness_in_photo.row(i)));
 
         // smooth term
         std::vector<int> *cur_face_adj = model->getFaceAdj(faces_in_photo[i]);
         int num_adj_faces_in_photo = 0; // the adjacent list may contains faces that are not visible in the photo
+		std::vector<int> cur_f_smooth_adj;
 
 
         for (decltype((*cur_face_adj).size()) j = 0; j < (*cur_face_adj).size(); ++j)
@@ -596,24 +652,63 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
             const int idx = static_cast<int> (pos - faces_in_photo.begin());
             ++num_adj_faces_in_photo;
 
-            // equation for nx
-            normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * idx + 0, -lambda_smooth));
+			cur_f_smooth_adj.push_back(idx);
 
-            // equation for ny
-            normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * idx + 1, -lambda_smooth));
+            //// equation for nx
+            //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * idx + 0, -lambda_smooth));
 
-            // equation for nz
-            normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * idx + 2, -lambda_smooth));
+            //// equation for ny
+            //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * idx + 1, -lambda_smooth));
+
+            //// equation for nz
+            //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * idx + 2, -lambda_smooth));
         }
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambda_smooth*num_adj_faces_in_photo));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 1, lambda_smooth*num_adj_faces_in_photo));
-        normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 2, lambda_smooth*num_adj_faces_in_photo));
+        //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambda_smooth*num_adj_faces_in_photo));
+        //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 1, lambda_smooth*num_adj_faces_in_photo));
+        //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 2, lambda_smooth*num_adj_faces_in_photo));
+
+		F_smooth_adj[i] = cur_f_smooth_adj;
     }
 
-    Normal_coeffs.setFromTriplets(normal_coeffs.begin(), normal_coeffs.end());
+    //Normal_coeffs.setFromTriplets(normal_coeffs.begin(), normal_coeffs.end());
 
-    Eigen::SimplicialCholesky<Eigen::SparseMatrix<float>> chol(Normal_coeffs);
-    Eigen::VectorXf new_face_in_photo_normal = chol.solve(right_hand);
+    //Eigen::SimplicialCholesky<Eigen::SparseMatrix<float>> chol(Normal_coeffs);
+    //Eigen::VectorXf new_face_in_photo_normal = chol.solve(right_hand);
+
+
+	// use nlopt to solve bounded non-linear least squares
+
+	int n_dim = faces_in_photo.size()*3;
+	nlopt::opt opt(nlopt::LN_COBYLA, n_dim);
+
+	opt.set_min_objective(funcSFSNormal, this);
+
+	opt.set_stopval(1e-4);
+	opt.set_ftol_rel(1e-4);
+	opt.set_ftol_abs(1e-4);
+	opt.set_xtol_rel(1e-4);
+	opt.set_xtol_abs(1e-4);
+
+	// declare initial x
+	std::vector<double> x(n_dim);
+
+	// we set the initial x as its original normal
+	for (size_t i = 0; i < faces_in_photo.size(); ++i)
+	{
+		x[3*i+0] = (*face_normal_list)[3*faces_in_photo[i]+0];
+		x[3*i+1] = (*face_normal_list)[3*faces_in_photo[i]+1];
+		x[3*i+2] = (*face_normal_list)[3*faces_in_photo[i]+2];
+	}
+
+	double minf;
+	std::cout<<"Min value initialized: "<<minf<<"\n";
+	nlopt::result result = opt.optimize(x, minf);
+	std::cout<<"Min value optimized: "<<minf<<"\n";
+	std::cout<<"Return values of NLopt: "<<result<<"\n";
+
+	Eigen::Map<Eigen::VectorXd>N_rec(&x[0], n_dim);
+	Eigen::VectorXf new_face_in_photo_normal = N_rec.cast<float>();
+
 
     // output some variables for debug here
     std::ofstream f_rho_in_photo(model->getDataPath() + "/rho_in_photo.mat");
@@ -644,12 +739,12 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         f_new_normal.close();
     }
 
-    std::ofstream f_right_hand(model->getDataPath() + "/right_hand.mat");
-    if (f_right_hand)
-    {
-        f_right_hand << right_hand;
-        f_right_hand.close();
-    }
+    //std::ofstream f_right_hand(model->getDataPath() + "/right_hand.mat");
+    //if (f_right_hand)
+    //{
+    //    f_right_hand << right_hand;
+    //    f_right_hand.close();
+    //}
 
     //std::ofstream f_pixel_counts(model->getDataPath() + "/pixel_counts.mat");
     //if (f_pixel_counts)
@@ -663,6 +758,12 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     model->updateVertexBrightnessAndColor();
     model->drawNormal();
     emit(refreshScreen());
+
+	brightness_mat.resize(0, 3);
+	A_mat.resize(0, 3);
+	B_mat.resize(0, 3);
+	C_mat.resize(0, 3);
+	F_smooth_adj.clear();
 
     std::cout << "Compute new normal finished...\n";
 }

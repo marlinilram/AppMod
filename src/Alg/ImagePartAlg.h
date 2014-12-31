@@ -29,6 +29,7 @@ public:
 	Eigen::MatrixX3f A_mat;
 	Eigen::MatrixX3f B_mat;
 	Eigen::MatrixX3f C_mat;
+	std::vector<std::vector<int>> F_smooth_adj;
 
     //void setRunFunctionType(int functionType);
 private slots:
