@@ -54,6 +54,7 @@ public:
     void computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, Eigen::VectorXf &visb);
     void computeVisbs(int face_id, std::vector<bool> &visb);
     void computeVisbs(int face_id, Eigen::VectorXf &visb);
+	void computeFaceNormal();
 
     void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
     void passRenderImgInfo(cv::Mat &zImg, cv::Mat &primitiveID, cv::Mat &rImg);
@@ -90,7 +91,6 @@ protected:
     void buildFaceListCompact();
     bool shareEdge(int face0, int face1);
     void computeBounds();
-    void computeFaceNormal();
 
 protected:
     int ID;

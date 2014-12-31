@@ -30,6 +30,9 @@ public:
 	Eigen::MatrixX3f B_mat;
 	Eigen::MatrixX3f C_mat;
 	std::vector<std::vector<int>> F_smooth_adj;
+	float lambd_sfs;
+	float lambd_smooth;
+	float lambd_norm;
 
     //void setRunFunctionType(int functionType);
 private slots:

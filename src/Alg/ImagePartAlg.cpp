@@ -76,8 +76,8 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
 
 	// here we compute the value of objective function given the current L
 	std::vector<double> N_temp = N;
-	Eigen::Map<Eigen::MatrixXd>cur_N(&N_temp[0], 3, n_tuple);
-	cur_N.transposeInPlace();// change cur_N to form n*3
+	Eigen::Map<Eigen::MatrixXd>cur_N_tmep(&N_temp[0], 3, n_tuple);
+	Eigen::MatrixX3f cur_N = (cur_N_tmep.transpose()).cast<float>();// change cur_N to form n*3
 	// data stored in under rule
 	// each col means a channel
 	// each row means a pixel
@@ -86,62 +86,73 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
 	Eigen::MatrixX3f &B = img_alg_data_ptr->B_mat;
 	Eigen::MatrixX3f &C = img_alg_data_ptr->C_mat;
 	std::vector<std::vector<int>> &F_smooth_adj = img_alg_data_ptr->F_smooth_adj;
+	float lambd_sfs = img_alg_data_ptr->lambd_sfs;
+	float lambd_smooth = img_alg_data_ptr->lambd_smooth;
+	float lambd_norm = img_alg_data_ptr->lambd_norm;
 
 	double func_val = 0;
 
 	// sfs energy
-	//for (int i = 0; i < 3; ++i)
-	//{
-	//	Eigen::VectorXf sfs_ch = brightness.col(i) - (A.col(i).array()*cur_N.col(0).array() 
-	//		+ B.col(i).array()*cur_N.col(1).array() 
-	//		+ C.col(i).array()*cur_N.col(2).array()).matrix();
+	for (int i = 0; i < 3; ++i)
+	{
+		//Eigen::VectorXf sfs_ch = brightness.col(i) - (A.col(i).array()*cur_N.col(0).array()).matrix();
+		Eigen::VectorXf sfs_ch = brightness.col(i) - (A.col(i).array()*cur_N.col(0).array() 
+			+ B.col(i).array()*cur_N.col(1).array() 
+			+ C.col(i).array()*cur_N.col(2).array()).matrix();
 
-	//	func_val += sfs_ch.squaredNorm();
-	//}
+		func_val += lambd_sfs*sfs_ch.squaredNorm();
+	}
 
-	//// smooth energy
-	//for (size_t i = 0; i < n_tuple; ++i)
-	//{
-	//	std::vector<int> &cur_f_smooth_adj = F_smooth_adj[i];
+	// smooth energy
+	for (size_t i = 0; i < n_tuple; ++i)
+	{
+		std::vector<int> &cur_f_smooth_adj = F_smooth_adj[i];
 
-	//	for (size_t j = 0; j < cur_f_smooth_adj.size(); ++j)
-	//	{
-	//		func_val += (cur_N.row(i) - cur_N.row(cur_f_smooth_adj[j])).squaredNorm();
-	//	}
-	//}
+		for (size_t j = 0; j < cur_f_smooth_adj.size(); ++j)
+		{
+			func_val += lambd_smooth*((cur_N.row(i) - cur_N.row(cur_f_smooth_adj[j])).squaredNorm());
+		}
+	}
+
+	// normalization energy
+	for (size_t i = 0; i < n_tuple; ++i)
+	{
+		float term_val_temp = cur_N.row(i).squaredNorm()-1;
+		func_val += lambd_norm*term_val_temp*term_val_temp;
+	}
 
 	if (grad.size() != 0)
 	{
-		//for (size_t i = 0; i < grad.size()/3; ++i)
-		//{
+		for (size_t i = 0; i < grad.size()/3; ++i)
+		{
 
-		//	// sfs grad
-		//	Eigen::Vector3f cur_brightness = brightness.row(i);			
-		//	Eigen::Vector3f cur_n = cur_N.row(i).cast<float>();
-		//	Eigen::Matrix3f cur_ABC;
-		//	cur_ABC.col(0) = A.row(i);
-		//	cur_ABC.col(1) = B.row(i);
-		//	cur_ABC.col(2) = C.row(i);
+			// sfs grad
+			Eigen::Vector3f cur_brightness = brightness.row(i);			
+			Eigen::Vector3f cur_n = cur_N.row(i);
+			Eigen::Matrix3f cur_ABC;
+			cur_ABC.col(0) = A.row(i);
+			cur_ABC.col(1) = B.row(i);
+			cur_ABC.col(2) = C.row(i);
 
-		//	grad[3*i+0] = -2*(brightness - cur_ABC*cur_n).dot(cur_ABC.col(0));
-		//	grad[3*i+1] = -2*(brightness - cur_ABC*cur_n).dot(cur_ABC.col(1));
-		//	grad[3*i+2] = -2*(brightness - cur_ABC*cur_n).dot(cur_ABC.col(2));
+			grad[3*i+0] = lambd_sfs*(-2*(cur_brightness - cur_ABC*cur_n).dot(cur_ABC.col(0)));
+			grad[3*i+1] = lambd_sfs*(-2*(cur_brightness - cur_ABC*cur_n).dot(cur_ABC.col(1)));
+			grad[3*i+2] = lambd_sfs*(-2*(cur_brightness - cur_ABC*cur_n).dot(cur_ABC.col(2)));
 
-		//	// smooth grad
-		//	std::vector<int> &cur_f_smooth_adj = F_smooth_adj[i];
-		//	for (size_t j = 0; j < cur_f_smooth_adj.size(); ++j)
-		//	{
-		//		Eigen::Vector3f cur_n_adj = cur_N.row(cur_f_smooth_adj[j]).cast<float>();
-		//		grad[3*i+0] += 2*(cur_n(0)-cur_n_adj(0));
-		//		grad[3*i+1] += 2*(cur_n(1)-cur_n_adj(1));
-		//		grad[3*i+2] += 2*(cur_n(2)-cur_n_adj(2));
-		//	}
+			// smooth grad
+			std::vector<int> &cur_f_smooth_adj = F_smooth_adj[i];
+			for (size_t j = 0; j < cur_f_smooth_adj.size(); ++j)
+			{
+				Eigen::Vector3f cur_n_adj = cur_N.row(cur_f_smooth_adj[j]);
+				grad[3*i+0] += lambd_smooth*2*(cur_n(0)-cur_n_adj(0));
+				grad[3*i+1] += lambd_smooth*2*(cur_n(1)-cur_n_adj(1));
+				grad[3*i+2] += lambd_smooth*2*(cur_n(2)-cur_n_adj(2));
+			}
 
-		//	// normalization term
-		//	grad[3*i+0] += 2*(cur_n.squaredNorm()-1)*2*cur_n(0);
-		//	grad[3*i+1] += 2*(cur_n.squaredNorm()-1)*2*cur_n(1);
-		//	grad[3*i+2] += 2*(cur_n.squaredNorm()-1)*2*cur_n(2);
-		//}
+			// normalization grad
+			grad[3*i+0] += lambd_norm*2*(cur_n.squaredNorm()-1)*2*cur_n(0);
+			grad[3*i+1] += lambd_norm*2*(cur_n.squaredNorm()-1)*2*cur_n(1);
+			grad[3*i+2] += lambd_norm*2*(cur_n.squaredNorm()-1)*2*cur_n(2);
+		}
 	}
 
 	return func_val;
@@ -591,8 +602,11 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 	B_mat.resize(faces_in_photo.size(), 3);
 	C_mat.resize(faces_in_photo.size(), 3);
 	F_smooth_adj.resize(faces_in_photo.size());
-    float lambda_sfs = 10.0;
-    float lambda_smooth = 0.0;
+	lambd_sfs = 10.0f;
+	lambd_smooth = 0.0f;
+	lambd_norm = 5.0f;
+	float lambda_sfs = 10.0;
+	float lambda_smooth = 0.0;
 
     for (decltype(faces_in_photo.size()) i = 0; i < faces_in_photo.size(); ++i)
     {
@@ -679,7 +693,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 	// use nlopt to solve bounded non-linear least squares
 
 	int n_dim = faces_in_photo.size()*3;
-	nlopt::opt opt(nlopt::LN_COBYLA, n_dim);
+	nlopt::opt opt(nlopt::LD_MMA, n_dim);
 
 	opt.set_min_objective(funcSFSNormal, this);
 

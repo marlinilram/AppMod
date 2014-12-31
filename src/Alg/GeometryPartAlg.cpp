@@ -328,6 +328,8 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
         (*vertex_list)[i] = P_Opt(i);
     }
 
+	model->computeFaceNormal();
+
     std::ofstream f_P_Opt(model->getDataPath() + "/P_Opt.mat");
     if (f_P_Opt)
     {
