@@ -11,7 +11,7 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
 
     //cv::cvtColor(photo_temp, photo_temp, CV_BGR2RGB);
     photo_temp.convertTo(photo, CV_32FC3);
-    photo = photo / 255;
+    photo = 1e-4 + (photo / 255); // to ensure that I always larger than zero, important!
 
     cv::cvtColor(mask_temp, mask, CV_BGR2GRAY);
     cv::threshold(mask, mask, 100, 255, cv::THRESH_BINARY);
@@ -304,4 +304,58 @@ void Coarse::drawNormal()
         Eigen::Vector3f blue_color(0.0f, 0.0f, 1.0f);
         renderer->addDrawableLine(start_pt.data(), end_pt.data(), blue_color.data(), blue_color.data());
     }
+}
+
+void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp)
+{
+	// use x,y image coordinates and r,g,b color values as feature
+	// assume we hav I_xy_vec
+	cv::Mat pixels(xy_in_mask.size(), 3, CV_32F);
+	cv::Mat labels, centers;
+	rhos_temp.resize(xy_in_mask.size(), 3);
+
+	for (size_t i = 0; i < xy_in_mask.size(); ++i)
+	{
+		Eigen::Vector2i cur_xy = xy_in_mask[i];
+		cv::Vec3f cur_color = photo.at<cv::Vec3f>(cur_xy(1), cur_xy(0));
+		//pixels.at<float>(i, 0) = cur_xy(0);
+		//pixels.at<float>(i, 1) = cur_xy(1);
+		pixels.at<float>(i, 0) = cur_color[0];
+		pixels.at<float>(i, 1) = cur_color[1];
+		pixels.at<float>(i, 2) = cur_color[2];
+	}
+
+	cv::kmeans(pixels, nCluster, labels, cv::TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
+		3, cv::KMEANS_PP_CENTERS, centers);
+
+
+	//std::cout<<"type of labels: "<<labels.type()<<"\n";
+	std::cout<<"type of centers: "<<centers.type()<<"\n";
+	std::cout<<"size of centers: "<<centers.size()<<"\n";
+	std::cout<<centers<<"\n";
+
+	std::vector<cv::Mat> rho_img_split;
+	rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	cv::merge(rho_img_split, rho_img);
+
+	for (size_t i = 0; i < xy_in_mask.size(); ++i)
+	{
+		Eigen::Vector2i cur_xy = xy_in_mask[i];
+		cv::Vec<float, 3> cur_center = centers.row(labels.at<int>(i));
+		rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0)) = cur_center;
+		rhos_temp(i, 0) = cur_center[0];
+		rhos_temp(i, 1) = cur_center[1];
+		rhos_temp(i, 2) = cur_center[2];
+	}
+
+	cv::imshow("rho image from kmeans", rho_img);
+
+	std::ofstream f_rhos_tmep(getDataPath() + "/rhos_temp.mat");
+	if (f_rhos_tmep)
+	{
+		f_rhos_tmep << rhos_temp;
+		f_rhos_tmep.close();
+	}
 }

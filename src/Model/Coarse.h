@@ -27,6 +27,7 @@ public:
     bool getCrspFaceIdFromPhotoToRImg(int x, int y, int &face_id);
     void findFacesInPhoto(std::vector<int> &faces_in_photo);
     void setModelNewNormal(Eigen::VectorXf &new_face_in_photo_normal, std::vector<int> &faces_in_photo);
+	void rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp);
 
     inline std::vector<float> *getModelNewNormal(){ return &model_new_normals; };
     inline cv::Mat &getPhoto(){ return photo; };

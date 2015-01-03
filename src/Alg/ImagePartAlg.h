@@ -30,6 +30,10 @@ public:
 	Eigen::MatrixX3f B_mat;
 	Eigen::MatrixX3f C_mat;
 	std::vector<std::vector<int>> F_smooth_adj;
+	Eigen::VectorXf intensity_sig_chan;
+	Eigen::VectorXf Light_rec_sig_chan;
+	Eigen::MatrixX3f S_mat; // samples
+	Eigen::Vector3f view; 
 	float lambd_sfs;
 	float lambd_smooth;
 	float lambd_norm;
@@ -38,6 +42,7 @@ public:
 private slots:
     void computeInitLight(Coarse *model, Viewer *viewer);
     void updateLight(Coarse *model, Viewer *viewer);
+	void updateRho(Coarse *model, Viewer *viewer);
     void updateLightSingleChannel(cv::Mat &photo, cv::Mat &mask, cv::Mat &r_img, Coarse *model, Viewer *viewer, cv::Mat &rho_img, Eigen::VectorXf &Light_rec);
     void computeNormal(Coarse *model, Viewer *viewer);
     float sigmoid(float coef, float t);

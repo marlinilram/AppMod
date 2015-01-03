@@ -23,7 +23,7 @@ Model::~Model()
 
 bool Model::loadOBJ(const std::string name, const std::string base_path)
 {
-    std::cout << "Loading OBJ file... " << name << std::endl;
+    std::cout << "Loading OBJ file..." << name << std::endl;
 
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -42,10 +42,19 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     model_rhos = model_colors;
     model_brightness = model_colors;
 
+	std::cout<<"Building face adjacent list...\n";
     buildFaceAdj();
+
+	std::cout<<"Building 1-ring neighbors list...\n";
     buildVertexShareFaces();
+
+	std::cout<<"Building vertex adjacent list...\n";
     buildVertexAdj();
+
+	std::cout<<"Computing bounding box...\n";
     computeBounds();
+
+	std::cout<<"Computing face normals...\n";
     computeFaceNormal();
 
     //model_colors[model_faces[169 * 3 + 0] * 3 + 0] = 1.0;

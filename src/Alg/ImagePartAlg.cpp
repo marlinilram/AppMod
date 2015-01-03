@@ -96,11 +96,16 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
 	for (int i = 0; i < 3; ++i)
 	{
 		//Eigen::VectorXf sfs_ch = brightness.col(i) - (A.col(i).array()*cur_N.col(0).array()).matrix();
+		//Eigen::VectorXf sfs_temp = (A.col(i).array()*cur_N.col(0).array() 
+		//	+ B.col(i).array()*cur_N.col(1).array() 
+		//	+ C.col(i).array()*cur_N.col(2).array()).matrix();
+
 		Eigen::VectorXf sfs_ch = brightness.col(i) - (A.col(i).array()*cur_N.col(0).array() 
 			+ B.col(i).array()*cur_N.col(1).array() 
 			+ C.col(i).array()*cur_N.col(2).array()).matrix();
 
 		func_val += lambd_sfs*sfs_ch.squaredNorm();
+		//std::cout<<sfs_temp.squaredNorm()<<"\n";
 	}
 
 	// smooth energy
@@ -155,7 +160,65 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
 		}
 	}
 
+
 	return func_val;
+}
+
+double funcSFSRho(const std::vector<double> &Rho, std::vector<double> &grad, void *data_ptr)
+{
+	ImagePartAlg *img_alg_data_ptr = reinterpret_cast<ImagePartAlg *>(data_ptr);
+
+	// we set Cx, Cy and Cz and n in the first 4 variables
+
+	// compute value of objective function given current rhos
+
+	size_t n_dim = Rho.size();
+	Eigen::VectorXf &intensities = img_alg_data_ptr->intensity_sig_chan;
+	Eigen::VectorXf &Light_rec = img_alg_data_ptr->Light_rec_sig_chan;
+	Eigen::MatrixXf &T_coeff = img_alg_data_ptr->T_coef;
+	Eigen::MatrixX3f &S = img_alg_data_ptr->S_mat;
+	Eigen::Vector3f &view = img_alg_data_ptr->view;
+
+	std::vector<double> rho_temp = Rho;
+	//Eigen::Vector4f rho_s(Rho[0], Rho[1], Rho[2], Rho[3]);
+	Eigen::Map<Eigen::VectorXd>rho_d_temp(&rho_temp[4], n_dim-4);
+	Eigen::VectorXf rho_d = rho_d_temp.cast<float>();
+
+	Eigen::VectorXf rho_d_T_L = ((T_coeff*Light_rec).array()*rho_d.array()).matrix();
+
+	// {Cx*viewx, Cy*viewy, Cz*viewz}
+	Eigen::Vector3f C_view(rho_temp[0]*view(0), rho_temp[1]*view(1), rho_temp[2]*view(2));
+
+	
+	Eigen::VectorXf rho_s = ((S*C_view).array().pow(rho_temp[3])).matrix();
+	Eigen::VectorXf rho_s_T_L = T_coeff*((rho_s.array()*Light_rec.array()).matrix());
+
+	Eigen::VectorXf rho_s_log = ((S*C_view).array().log()).matrix();
+	Eigen::VectorXf rho_s_log_T_L = T_coeff*(rho_s.array()*rho_s_log.array()*Light_rec.array()).matrix();
+
+	Eigen::VectorXf rho_s_exp_n_1 = float(rho_temp[3])*((S*C_view).array().pow(rho_temp[3]-1)).matrix();
+	Eigen::VectorXf rho_s_exp_n_1_T_L_x = T_coeff*(rho_s_exp_n_1.array()*Light_rec.array()*(view(0)*S.col(0)).array()).matrix();
+	Eigen::VectorXf rho_s_exp_n_1_T_L_y = T_coeff*(rho_s_exp_n_1.array()*Light_rec.array()*(view(1)*S.col(1)).array()).matrix();
+	Eigen::VectorXf rho_s_exp_n_1_T_L_z = T_coeff*(rho_s_exp_n_1.array()*Light_rec.array()*(view(2)*S.col(2)).array()).matrix();
+
+
+	if (grad.size() != 0)
+	{
+		// for every rho_d 
+		for (size_t i = 4; i < grad.size(); ++i)
+		{
+			grad[i] = -2*(intensities(i)-rho_d_T_L(i)-rho_s_T_L(i))*(T_coeff.row(i).dot(Light_rec));
+		}
+
+		// for rho_s, 4 parameters in total
+		grad[3] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_log_T_L.array()).sum();
+		
+		grad[0] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_x.array()).sum();
+		grad[1] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_y.array()).sum();
+		grad[2] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_z.array()).sum();
+	}
+
+	return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm();
 }
 
 void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
@@ -196,6 +259,10 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
         //emit(refreshScreen());
     }
 
+	// use the I_xy_vec to compute kmeans
+	Eigen::MatrixX3f rhos_temp;
+	model->rhoFromKMeans(5, rhos_temp);
+
     T_coef.resize(light_coeffs_vec.size(), light_coeffs.size());
     Eigen::MatrixX3f I(I_vec.size(), 3);
 
@@ -211,9 +278,10 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     // also, we consider initial BRDF rho as average of total pixel intensities
     Eigen::MatrixX3f I_temp = I;
     float rhos[3] = { I_temp.col(0).mean(), I_temp.col(1).mean(), I_temp.col(2).mean() };
-    I_temp.col(0) = I_temp.col(0) / rhos[0];
-    I_temp.col(1) = I_temp.col(1) / rhos[1];
-    I_temp.col(2) = I_temp.col(2) / rhos[2];
+	I_temp = (I_temp.array() / rhos_temp.array()).matrix();
+    //I_temp.col(0) = I_temp.col(0) / rhos[0];
+    //I_temp.col(1) = I_temp.col(1) / rhos[1];
+    //I_temp.col(2) = I_temp.col(2) / rhos[2];
     //I_temp = (model->getModelLightObj()->getNumSamples() / 4 / M_PI)*I_temp;
 
     T_coef = (4 * M_PI / model->getModelLightObj()->getNumSamples())*T_coef;
@@ -276,16 +344,16 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 
     for (decltype(I_xy_vec.size()) i = 0; i < I_xy_vec.size(); ++i)
     {
-        if (rho_new(i, 0) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = rho_new(i, 0);
+        if (rhos_temp(i, 0) <= 1.0f)
+            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = rhos_temp(i, 0);
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = 1.0f;
-        if (rho_new(i, 1) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = rho_new(i, 1);
+        if (rhos_temp(i, 1) <= 1.0f)
+            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = rhos_temp(i, 1);
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = 1.0f;
-        if (rho_new(i, 2) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = rho_new(i, 2);
+        if (rhos_temp(i, 2) <= 1.0f)
+            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = rhos_temp(i, 2);
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
     }
@@ -381,6 +449,12 @@ void ImagePartAlg::updateLight(Coarse *model, Viewer *viewer)
     model->updateVertexBrightnessAndColor();
 
     std::cout << "Update light finished\n";
+}
+
+void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
+{
+
+
 }
 
 void ImagePartAlg::updateLightSingleChannel(cv::Mat &photo, cv::Mat &mask, cv::Mat &r_img, Coarse *model, Viewer *viewer, cv::Mat &rho_img, Eigen::VectorXf &Light_rec)
@@ -608,6 +682,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 	float lambda_sfs = 10.0;
 	float lambda_smooth = 0.0;
 
+
     for (decltype(faces_in_photo.size()) i = 0; i < faces_in_photo.size(); ++i)
     {
         //for each face we need to build its 3 equations for nx, ny and nz
@@ -684,6 +759,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 		F_smooth_adj[i] = cur_f_smooth_adj;
     }
 
+
     //Normal_coeffs.setFromTriplets(normal_coeffs.begin(), normal_coeffs.end());
 
     //Eigen::SimplicialCholesky<Eigen::SparseMatrix<float>> chol(Normal_coeffs);
@@ -725,12 +801,6 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 
 
     // output some variables for debug here
-    std::ofstream f_rho_in_photo(model->getDataPath() + "/rho_in_photo.mat");
-    if (f_rho_in_photo)
-    {
-        f_rho_in_photo << rho_in_photo;
-        f_rho_in_photo.close();
-    }
 
     //std::ofstream f_brightness_in_photo(model->getDataPath() + "/brightness_in_photo.mat");
     //if (f_brightness_in_photo)
