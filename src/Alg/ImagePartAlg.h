@@ -30,6 +30,8 @@ public:
 	Eigen::MatrixX3f B_mat;
 	Eigen::MatrixX3f C_mat;
 	std::vector<std::vector<int>> F_smooth_adj;
+
+	Eigen::MatrixX3f I_mat;
 	Eigen::VectorXf intensity_sig_chan;
 	Eigen::VectorXf Light_rec_sig_chan;
 	Eigen::MatrixX3f S_mat; // samples

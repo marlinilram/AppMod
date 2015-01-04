@@ -31,6 +31,7 @@ public:
     void checkVisibleVertices(Model *model);
     void resetScreen();
     inline void setShowModel(bool status) { show_model = status; };
+	inline void getViewDirection(float view[3]) { view[0] = -camera()->viewDirection().x; view[1] = -camera()->viewDirection().y; view[2] = -camera()->viewDirection().z; };
 
 protected:
     virtual void draw();

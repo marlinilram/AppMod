@@ -150,10 +150,11 @@ void Model::computeLight()
         if (int(i*100.0f / (model_vertices.size() / 3)) > perc)
         {
             perc = int(i*100.0f / (model_vertices.size() / 3));
-            std::cout << perc;
+            std::cout << perc << "...";
         }
-        else std::cout << "...";
+        //else std::cout << "...";
     }
+	std::cout<<"\n";
 }
 
 void Model::computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, std::vector<bool> &visb)

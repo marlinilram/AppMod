@@ -221,6 +221,23 @@ double funcSFSRho(const std::vector<double> &Rho, std::vector<double> &grad, voi
 	return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm();
 }
 
+double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, void *data)
+{
+	float *C_coef = reinterpret_cast<float *>(data);
+
+
+	if (grad.size() != 0)
+	{
+		grad = std::vector<double>(grad.size(), 0);
+
+		grad[0] = -C_coef[0];
+		grad[1] = -C_coef[1];
+		grad[2] = -C_coef[2];
+	}
+
+	return (1e-4 - C[0]*C_coef[0] + C[1]*C_coef[1] + C[2]*C_coef[2]);
+}
+
 void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 {
     std::cout << "\nBegin compute init light...\n";
@@ -277,6 +294,7 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     // to make the decomposition more robust, we put the 4*pi/num_smaples to right hand of the eqation.
     // also, we consider initial BRDF rho as average of total pixel intensities
     Eigen::MatrixX3f I_temp = I;
+	I_mat = I;
     float rhos[3] = { I_temp.col(0).mean(), I_temp.col(1).mean(), I_temp.col(2).mean() };
 	I_temp = (I_temp.array() / rhos_temp.array()).matrix();
     //I_temp.col(0) = I_temp.col(0) / rhos[0];
@@ -319,7 +337,7 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 		std::cout<<"Return values of NLopt: "<<result<<"\n";
 	}
 
-
+	std::cout << "Compute init light finished\n";
 
 	// standard non-linear least squares
     //Eigen::MatrixXf L_temp = Light_coeffs.transpose().eval()*Light_coeffs;
@@ -338,35 +356,25 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     cv::merge(rho_img_split, rho_img);
 
     // put rho computed from new light back to rho image
-    Eigen::MatrixX3f rho_new;
-    rho_new = (I.array() / ((T_coef*Light_rec)).array()).matrix();
+    //Eigen::MatrixX3f rho_new;
+    //rho_new = (I.array() / ((T_coef*Light_rec)).array()).matrix();
 
 
-    for (decltype(I_xy_vec.size()) i = 0; i < I_xy_vec.size(); ++i)
-    {
-        if (rhos_temp(i, 0) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = rhos_temp(i, 0);
-        else
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = 1.0f;
-        if (rhos_temp(i, 1) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = rhos_temp(i, 1);
-        else
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = 1.0f;
-        if (rhos_temp(i, 2) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = rhos_temp(i, 2);
-        else
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
-    }
-
-    cv::imshow("rho_img", rho_img);
-
-    cv::Mat brightness;
-    cv::divide(photo, rho_img, brightness);
-    cv::imshow("brightness", brightness);
-
-    // give vertex on model its rho
-    model->updateVertexRho();
-    model->updateVertexBrightnessAndColor();
+    //for (decltype(I_xy_vec.size()) i = 0; i < I_xy_vec.size(); ++i)
+    //{
+    //    if (rhos_temp(i, 0) <= 1.0f)
+    //        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = rhos_temp(i, 0);
+    //    else
+    //        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = 1.0f;
+    //    if (rhos_temp(i, 1) <= 1.0f)
+    //        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = rhos_temp(i, 1);
+    //    else
+    //        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = 1.0f;
+    //    if (rhos_temp(i, 2) <= 1.0f)
+    //        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = rhos_temp(i, 2);
+    //    else
+    //        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
+    //}
 
     // output some variables for debug here
 	std::ofstream f_light_rec(model->getDataPath() + "/L_rec_init.mat");
@@ -391,9 +399,10 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     //    f_rho_new_init.close();
     //}
 
+	updateRho(model, viewer);
+
 	T_coef.resize(0,0);
 	brightness_sig_chan.resize(0);
-    std::cout << "Compute init light finished\n";
 }
 
 void ImagePartAlg::updateLight(Coarse *model, Viewer *viewer)
@@ -453,7 +462,110 @@ void ImagePartAlg::updateLight(Coarse *model, Viewer *viewer)
 
 void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 {
+	std::cout << "\nBegin compute BRDF parameters...\n";
 
+	// set view
+	float view_temp[3];
+	viewer->getViewDirection(view_temp);
+	view = Eigen::Vector3f(view_temp[0], view_temp[1], view_temp[2]);
+
+	// set S matrix
+	SAMPLE *model_samples = model->getModelLightObj()->getSamples();
+	int num_samples = model->getModelLightObj()->getNumSamples();
+	S_mat.resize(num_samples, 3);
+	for (int i = 0; i < num_samples; ++i)
+	{
+		S_mat.row(i) = model_samples[i].direction;
+	}
+
+	// set S*view matrix for inequality constraints
+	std::vector<float> S_view(S_mat.rows()*S_mat.cols());
+	for (size_t i = 0; i < S_view.size()/3; ++i)
+	{
+		S_view[3*i+0] = S_mat(i, 0)*view(0);
+		S_view[3*i+1] = S_mat(i, 1)*view(1);
+		S_view[3*i+2] = S_mat(i, 2)*view(2);
+	}
+
+	// some data
+	Eigen::MatrixX3f Rho_rec(T_coef.rows() + 4, 3);
+	Eigen::MatrixX3f &Light_rec = model->getLightRec();
+
+	// set optimization
+	int n_dim = T_coef.rows() + 4;
+	nlopt::opt opt(nlopt::LD_MMA, n_dim);
+
+	std::vector<double> lb(n_dim, 0);
+	opt.set_lower_bounds(lb);
+
+	opt.set_min_objective(funcSFSRho, this);
+
+	for (int i = 0; i < S_view.size()/3; ++i)
+	{
+		opt.add_inequality_constraint(constraintsRhoC, &S_view[3*i], 1e-8);
+	}
+	
+
+	opt.set_stopval(1e-4);
+	opt.set_ftol_rel(1e-4);
+	opt.set_ftol_abs(1e-4);
+	opt.set_xtol_rel(1e-4);
+	opt.set_xtol_abs(1e-4);
+
+
+	for (int k_chan = 0; k_chan < 3; ++k_chan)
+	{
+		//std::cout<<I_temp.col(k_chan)<<"\n";
+		intensity_sig_chan = I_mat.col(k_chan);
+		Light_rec_sig_chan = Light_rec.col(k_chan);
+
+		std::vector<double> x(n_dim, 1);
+		double minf;
+		std::cout<<"Min value initialized: "<<minf<<"\n";
+		nlopt::result result = opt.optimize(x, minf);
+		std::cout<<"Min value optimized: "<<minf<<"\n";
+
+		Eigen::Map<Eigen::VectorXd>cur_rho_rec(&x[0], n_dim);
+		Rho_rec.col(k_chan) = cur_rho_rec.cast<float>();
+		std::cout<<"Return values of NLopt: "<<result<<"\n";
+	}
+
+	// update rho
+	cv::Mat &rho_img = model->getRhoImg();
+	cv::Mat &photo = model->getPhoto();
+	Eigen::Matrix<float, 4, 3> &rho_specular = model->getRhoSpclr();
+	std::vector<Eigen::Vector2i> &I_xy_vec = model->getXYInMask();
+
+	rho_specular.row(0) = Rho_rec.row(0);
+	rho_specular.row(1) = Rho_rec.row(1);
+	rho_specular.row(2) = Rho_rec.row(2);
+	rho_specular.row(3) = Rho_rec.row(3);
+
+	for (decltype(I_xy_vec.size()) i = 0; i < I_xy_vec.size(); ++i)
+	{
+		if (Rho_rec(i+4, 0) <= 1.0f)
+			rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = Rho_rec(i+4, 0);
+		else
+			rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = 1.0f;
+		if (Rho_rec(i+4, 1) <= 1.0f)
+			rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = Rho_rec(i+4, 1);
+		else
+			rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = 1.0f;
+		if (Rho_rec(i+4, 2) <= 1.0f)
+			rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = Rho_rec(i+4, 2);
+		else
+			rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
+	}
+
+	cv::imshow("rho_img", rho_img);
+
+	cv::Mat brightness;
+	cv::divide(photo, rho_img, brightness);
+	cv::imshow("brightness", brightness);
+
+	// give vertex on model its rho
+	model->updateVertexRho();
+	model->updateVertexBrightnessAndColor();
 
 }
 
@@ -614,6 +726,8 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         //system("pause");
     }
     emit(refreshScreen());
+	system("pause");
+
 
     Eigen::VectorXf pixel_counts = Eigen::VectorXf::Zero(faces_in_photo.size());
     Eigen::MatrixX3f rho_in_photo = Eigen::MatrixX3f::Zero(faces_in_photo.size(), 3);
@@ -659,13 +773,9 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     Eigen::MatrixX3f light_rec = model->getRecoveredLight();
 
     // get sample direction
-    SAMPLE *model_samples = model->getModelLightObj()->getSamples();
     int num_samples = model->getModelLightObj()->getNumSamples();
-    Eigen::MatrixX3f samples(num_samples, 3);
-    for (int i = 0; i < num_samples; ++i)
-    {
-        samples.row(i) = model_samples[i].direction;
-    }
+    Eigen::MatrixX3f &samples = S_mat; 
+
 
     // build linear sys
     //std::vector<Eigen::Triplet<float>> normal_coeffs;
@@ -822,6 +932,13 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         f_new_normal << new_face_in_photo_normal;
         f_new_normal.close();
     }
+
+	f_new_normal.open(model->getDataPath() + "/faces_in_photo.mat");
+	if (f_new_normal)
+	{
+		f_new_normal << Eigen::Map<Eigen::VectorXi>(&faces_in_photo[0], faces_in_photo.size(), 1);
+		f_new_normal.clear();
+	}
 
     //std::ofstream f_right_hand(model->getDataPath() + "/right_hand.mat");
     //if (f_right_hand)
