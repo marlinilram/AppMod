@@ -35,6 +35,8 @@ public:
 	Eigen::VectorXf intensity_sig_chan;
 	Eigen::VectorXf Light_rec_sig_chan;
 	Eigen::MatrixX3f S_mat; // samples
+	Eigen::VectorXf rho_d_sig_chan;
+	Eigen::MatrixX3f rho_d_mat;
 	Eigen::Vector3f view; 
 	float lambd_sfs;
 	float lambd_smooth;

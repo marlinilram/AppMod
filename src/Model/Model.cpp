@@ -475,6 +475,20 @@ void Model::buildVertexShareFaces()
         model_vertices_share_faces[model_faces[3 * i + 1]].push_back(i);
         model_vertices_share_faces[model_faces[3 * i + 2]].push_back(i);
     }
+
+	//std::ofstream f_vert_share_face(getDataPath() + "/vert_share_face.mat");
+	//if (f_vert_share_face)
+	//{
+	//	for (size_t i = 0; i < model_vertices_share_faces.size(); ++i)
+	//	{
+	//		for (size_t j = 0; j < model_vertices_share_faces[i].size(); ++j)
+	//		{
+	//			f_vert_share_face << model_vertices_share_faces[i][j]<<"\t";
+	//		}
+	//		f_vert_share_face <<"\n";
+	//	}
+	//	f_vert_share_face.close();
+	//}
 }
 
 void Model::buildVertexAdj()

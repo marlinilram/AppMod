@@ -352,10 +352,10 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp)
 
 	cv::imshow("rho image from kmeans", rho_img);
 
-	std::ofstream f_rhos_tmep(getDataPath() + "/rhos_temp.mat");
-	if (f_rhos_tmep)
-	{
-		f_rhos_tmep << rhos_temp;
-		f_rhos_tmep.close();
-	}
+	//std::ofstream f_rhos_tmep(getDataPath() + "/rhos_temp.mat");
+	//if (f_rhos_tmep)
+	//{
+	//	f_rhos_tmep << rhos_temp;
+	//	f_rhos_tmep.close();
+	//}
 }
