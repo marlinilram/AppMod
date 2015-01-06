@@ -28,7 +28,11 @@ public:
     void addDrawableTri(float v0[3], float v1[3], float v2[3], float c0[3], float c1[3], float c2[3]);
     void addDrawableLine(float v0[3], float v1[3], float c0[3], float c1[3]);
 
+	void setCheckVisbStatus(bool on);
     void checkVisibleVertices(Model *model);
+	void checkVertexVisbs(int pt_id, Model *model, Eigen::VectorXf &visb);
+	bool checkVertexVisbs(int pt_id, Model *model, Eigen::Vector3f &view_dir);
+	void checkModelVisbs(Model *model, std::vector<std::vector<bool>> &model_visbs);
     void resetScreen();
     inline void setShowModel(bool status) { show_model = status; };
 	inline void getViewDirection(float view[3]) { view[0] = -camera()->viewDirection().x; view[1] = -camera()->viewDirection().y; view[2] = -camera()->viewDirection().z; };
@@ -56,6 +60,7 @@ private:
     QGLBuffer *colors_buffer;
     Bound scene_bounds;
     float scene_radius;
+	qglviewer::Vec scene_center;
 
     QVector<QVector3D> vertices;
     QVector<QVector3D> colors;
@@ -69,6 +74,9 @@ private:
     GLuint offscr_fbo;
 
     std::vector<GLActor> actors;
+
+	GLuint visible_query;
+	GLuint visible_result;
 
 private:
     bool wireframe_, flatShading_;

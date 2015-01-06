@@ -79,6 +79,7 @@ void MainWin::loadModel()
 
     viewer->getModel(coarse_model);
     coarse_model->setRenderer(viewer);
+
 }
 
 void MainWin::exportOBJ()
@@ -132,14 +133,27 @@ void MainWin::resetScreen()
 
 void MainWin::updateLight()
 {
-    if (coarse_model)
-    {
-        emit callUpdateLight(coarse_model, viewer);
+    //if (coarse_model)
+    //{
+    //    emit callUpdateLight(coarse_model, viewer);
 
-        // update coarse_model's rho and color
-        // pass new color to viewer to display
+    //    // update coarse_model's rho and color
+    //    // pass new color to viewer to display
 
-    }
+    //}
+
+	//Eigen::VectorXf v_test(coarse_model->getModelLightObj()->getNumSamples());
+	//viewer->checkVertexVisbs(0, coarse_model, v_test);
+
+	//std::ofstream f_v(coarse_model->getDataPath() + "/first_visb_test.mat");
+	//if (f_v)
+	//{
+	//	f_v << v_test;
+
+	//	f_v.close();
+	//}
+
+	coarse_model->computeLight();
 }
 
 void MainWin::computeNormal()

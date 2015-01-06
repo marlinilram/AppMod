@@ -14,6 +14,9 @@ find_package( Qt5Xml )
 find_package( Qt5OpenGL )
 find_package( Qt5Core )
 
+find_package( VTK REQUIRED )
+include(${VTK_USE_FILE})
+
 FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( GLEW REQUIRED )
 find_package( OpenCV REQUIRED )
@@ -83,6 +86,7 @@ TARGET_LINK_LIBRARIES( ${PROJECT_NAME}
 					   ${OPENGL_LIBRARIES}
 					   ${OpenCV_LIBS}
 					   ${GLEW_LIBRARIES}
+					   ${VTK_LIBRARIES}
 					   debug ${NLopt_lib_debug}
 					   optimized ${NLopt_lib_release}
 					   debug ${QGLViewer_lib_debug} 

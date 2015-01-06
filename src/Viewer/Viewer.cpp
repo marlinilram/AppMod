@@ -20,7 +20,7 @@ Viewer::Viewer(QWidget *widget) : QGLViewer(widget), wireframe_(false), flatShad
     colors_buffer = new QGLBuffer;
     faces_buffer = new QGLBuffer(QGLBuffer::IndexBuffer);
 
-    wireframe_ = true;
+    wireframe_ = false;
     flatShading_ = true;
     showCornerAxis_ = false;
     camera_fixed = false;
@@ -108,7 +108,7 @@ void Viewer::init()
     glDisable(GL_BLEND);
     //glEnable(GL_CULL_FACE);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glShadeModel(GL_FLAT);
 
     qglClearColor(QColor(Qt::white));
@@ -323,7 +323,7 @@ void Viewer::getModel(Model *model)
 
     scene_bounds = model->getBounds();
 
-    qglviewer::Vec scene_center((scene_bounds.minX + scene_bounds.maxX) / 2,
+    scene_center = qglviewer::Vec((scene_bounds.minX + scene_bounds.maxX) / 2,
                                 (scene_bounds.minY + scene_bounds.maxY) / 2,
                                 (scene_bounds.minZ + scene_bounds.maxZ) / 2);
     
@@ -333,6 +333,7 @@ void Viewer::getModel(Model *model)
     float y_span = (scene_bounds.maxY - scene_bounds.minY) / 2;
     float z_span = (scene_bounds.maxZ - scene_bounds.minZ) / 2;
     scene_radius = x_span>y_span ? (x_span > z_span ? x_span : z_span) : (y_span > z_span ? y_span : z_span);
+	scene_radius *= 1.5;
 
     setSceneRadius(scene_radius);
     camera()->fitSphere(scene_center, scene_radius);
@@ -614,9 +615,7 @@ void Viewer::checkVisibleVertices(Model *model)
 {
     makeCurrent();
 
-    GLuint visible_query;
     glGenQueries(1, &visible_query);
-    GLuint visible_result;
     std::vector<bool> vertices_visible_state;
 
     draw();
@@ -662,4 +661,167 @@ void Viewer::resetScreen()
     }
 
     updateGL();
+}
+
+void Viewer::checkVertexVisbs(int pt_id, Model *model, Eigen::VectorXf &visb)
+{
+	makeCurrent();
+	// change camera type to orthographic projection
+	camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
+
+	// turn on off screen rendering
+	setFBO();
+	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+	// for each view direction
+	Eigen::MatrixX3f &S_mat = model->getModelLightObj()->getSampleMatrix();
+	qglviewer::Vec view_dir;
+
+	GLuint visible_query;
+	glGenQueries(1, &visible_query);
+	GLuint visible_result;
+
+	visb = Eigen::VectorXf::Ones(S_mat.rows());
+
+	//int height = QPaintDevice::height();
+	//int width = QPaintDevice::width();
+	//float *image_buffer = new float[3*height*width];
+
+	for (int i = 0; i < S_mat.rows(); ++i)
+	{
+		view_dir.x = -S_mat(i, 0);
+		view_dir.y = -S_mat(i, 1);
+		view_dir.z = -S_mat(i, 2);
+		camera()->setViewDirection(view_dir);
+		camera()->fitSphere(scene_center, scene_radius);
+		
+
+		//gluLookAt(1.5*scene_radius*view_dir.x, 1.5*scene_radius*view_dir.y, 1.5*scene_radius*view_dir.z, 
+		//	scene_center.x, scene_center.y, scene_center.z, 0, 0, 1);	
+
+		preDraw();
+		draw();
+
+		glBeginQuery(GL_ANY_SAMPLES_PASSED, visible_query);
+		glPointSize(1.5f);
+
+		glBegin(GL_POINTS);
+
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glVertex3f(GLfloat(vertices[pt_id][0]), GLfloat(vertices[pt_id][1]), GLfloat(vertices[pt_id][2]));
+		//std::cout<<vertices[pt_id][0]<<"\t"<<vertices[pt_id][1]<<"\t"<<vertices[pt_id][2]<<"\n";
+
+		glEnd();
+
+		glEndQuery(GL_ANY_SAMPLES_PASSED);
+		glGetQueryObjectuiv(visible_query, GL_QUERY_RESULT, &visible_result);
+		if (visible_result == 0)
+			visb(i) = 0.0f;
+		//else
+		//{
+		//	visb(i) = 1.0f;
+		//	//std::cout <<"visible\n";
+		//}
+
+		//glReadBuffer(GL_COLOR_ATTACHMENT0);
+		//glReadPixels(0, 0, width, height, GL_BGR, GL_FLOAT, image_buffer);
+		//cv::Mat r_img(height, width, CV_32FC3, image_buffer);
+		//cv::flip(r_img, r_img, 0);
+		//cv::imwrite(model->getDataPath() + "/imgs/" + std::to_string(i) + "vd.png", r_img*255);
+
+		//std::cout<<"ith view direction: " << i << "\n";
+	}
+
+
+	glDeleteQueries(1, &visible_query);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	restoreStateFromFile();
+
+	doneCurrent();
+	std::cout<<"visib test finished...\n";
+	//
+}
+
+void Viewer::checkModelVisbs(Model *model, std::vector<std::vector<bool>> &model_visbs)
+{
+	makeCurrent();
+	// change camera type to orthographic projection
+	camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
+
+	// turn on off screen rendering
+	setFBO();
+	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+	// for each view direction
+	Eigen::MatrixX3f &S_mat = model->getModelLightObj()->getSampleMatrix();
+	qglviewer::Vec view_dir;
+
+	GLuint visible_query;
+	glGenQueries(1, &visible_query);
+	GLuint visible_result;
+
+
+
+}
+
+bool Viewer::checkVertexVisbs(int pt_id, Model *model, Eigen::Vector3f &view_dir)
+{
+
+	//makeCurrent();
+
+	
+
+	camera()->setViewDirection(qglviewer::Vec(-view_dir(0),-view_dir(1),-view_dir(2)));
+	camera()->fitSphere(scene_center, scene_radius);
+
+
+	//gluLookAt(1.5*scene_radius*view_dir.x, 1.5*scene_radius*view_dir.y, 1.5*scene_radius*view_dir.z, 
+	//	scene_center.x, scene_center.y, scene_center.z, 0, 0, 1);	
+
+	preDraw();
+	draw();
+
+	glBeginQuery(GL_ANY_SAMPLES_PASSED, visible_query);
+	//glPointSize(1.5f);
+
+	glBegin(GL_POINTS);
+
+	//glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(GLfloat(vertices[pt_id][0]), GLfloat(vertices[pt_id][1]), GLfloat(vertices[pt_id][2]));
+	//std::cout<<vertices[pt_id][0]<<"\t"<<vertices[pt_id][1]<<"\t"<<vertices[pt_id][2]<<"\n";
+
+	glEnd();
+
+	glEndQuery(GL_ANY_SAMPLES_PASSED);
+	glGetQueryObjectuiv(visible_query, GL_QUERY_RESULT, &visible_result);
+
+	//doneCurrent();
+	//std::cout << visible_result<<"\n";
+	if (visible_result == 0)
+		return false;
+
+	return true;
+}
+
+void Viewer::setCheckVisbStatus(bool on)
+{
+	if (on == true)
+	{
+		// change camera type to orthographic projection
+		camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
+
+		// turn on off screen rendering
+		setFBO();
+		glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+		glGenQueries(1, &visible_query);
+	}
+	else
+	{
+		glDeleteQueries(1, &visible_query);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		restoreStateFromFile();
+	}
 }

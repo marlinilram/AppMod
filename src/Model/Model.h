@@ -122,6 +122,7 @@ protected:
     // Lighting
     ModelLight *model_light;
     std::vector<std::vector<bool>> model_visbs;
+	Ray *ray_cast;
     bool shadow_on;
 
     // information from renderer

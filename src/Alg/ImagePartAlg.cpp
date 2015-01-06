@@ -319,6 +319,8 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
 	}
 
+	std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() <<"\n";
+
 	return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm();
 }
 
@@ -604,7 +606,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 	//}
 
 	// set optimization
-	int n_dim = T_coef.rows() + 4;
+	int n_dim = T_coef.rows() + 4 + T_coef.cols();
 	nlopt::opt opt(nlopt::LD_MMA, n_dim);
 
 	std::vector<double> lb(n_dim, 0);
@@ -615,15 +617,15 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 
 	opt.set_lower_bounds(lb);
 
-	opt.set_min_objective(funcSFSRho, this);
+	opt.set_min_objective(funcSFSLightBRDF, this);
 
 	// set inequality constraints to ensure Cx*ux*vx+Cy*uy*vy+Cz*uz*vz > 0
-	std::vector<int> Rho_C_constraint_index;
-	for (int i = 0; i < S_mat.rows(); ++i)
-	{
-		if (S_mat.row(i).dot(view) > 0) 
-			Rho_C_constraint_index.push_back(i);
-	}
+	//std::vector<int> Rho_C_constraint_index;
+	//for (int i = 0; i < S_mat.rows(); ++i)
+	//{
+	//	if (S_mat.row(i).dot(view) > 0) 
+	//		Rho_C_constraint_index.push_back(i);
+	//}
 
 	//std::ofstream f_S_view(model->getDataPath() + "/T_coef.mat");
 	//if (f_S_view)
@@ -636,10 +638,10 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 	//	f_S_view.close();
 	//}
 
-	for (size_t i = 0; i < Rho_C_constraint_index.size(); ++i)
-	{
-		//opt.add_inequality_constraint(constraintsRhoC, &S_view[3*Rho_C_constraint_index[i]], 1e-8);
-	}
+	//for (size_t i = 0; i < Rho_C_constraint_index.size(); ++i)
+	//{
+	//	//opt.add_inequality_constraint(constraintsRhoC, &S_view[3*Rho_C_constraint_index[i]], 1e-8);
+	//}
 	
 
 	//opt.set_stopval(1e-4);
@@ -666,8 +668,10 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 		nlopt::result result = opt.optimize(x, minf);
 		std::cout<<"Min value optimized: "<<minf<<"\n";
 
-		Eigen::Map<Eigen::VectorXd>cur_rho_rec(&x[0], n_dim);
+		Eigen::Map<Eigen::VectorXd>cur_rho_rec(&x[0], n_dim-T_coef.cols());
 		Rho_rec.col(k_chan) = cur_rho_rec.cast<float>();
+		Eigen::Map<Eigen::VectorXd>cur_l_rec(&x[n_dim-T_coef.cols()], T_coef.cols());
+		Light_rec.col(k_chan) = cur_l_rec.cast<float>();
 		std::cout<<"Return values of NLopt: "<<result<<"\n";
 	}
 

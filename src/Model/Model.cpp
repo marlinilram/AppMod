@@ -9,16 +9,18 @@ Model::Model(const int id, const std::string path, const std::string name)
         std::cerr << "Init model failed...\n";
     }
 
-    shadow_on = false;
+    shadow_on = true;
 
     model_light = new ModelLight(1600, 40, 3);
-    computeLight();
 
+	ray_cast = new Ray;
+    ray_cast->passModel(model_vertices, model_faces);
 }
 
 Model::~Model()
 {
     delete model_light;
+    delete ray_cast;
 }
 
 bool Model::loadOBJ(const std::string name, const std::string base_path)
@@ -91,6 +93,7 @@ void Model::computeLight()
     int num_channels = model_light->getNumChannels();
     SAMPLE *samples = model_light->getSamples();
     int perc = 0;
+	renderer->setCheckVisbStatus(true);
 
     // for each model vertex
     for (decltype(model_vertices.size()) i = 0; i < model_vertices.size() / 3; ++i)
@@ -113,7 +116,8 @@ void Model::computeLight()
 
                 if (shadow_on)
                 {
-                    if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+                    //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+					if (renderer->checkVertexVisbs(i, this, samples[k].direction))
                     {
                         brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
                         brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
@@ -155,6 +159,18 @@ void Model::computeLight()
         //else std::cout << "...";
     }
 	std::cout<<"\n";
+
+	std::ofstream f_v(getDataPath() + "/first_visb.mat");
+	if (f_v)
+	{
+		for (size_t i = 0; i < model_visbs[0].size(); ++i)
+		{
+			f_v	<< model_visbs[0][i] << "\n";
+		}
+
+		f_v.close();
+	}
+	renderer->setCheckVisbStatus(false);
 }
 
 void Model::computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, std::vector<bool> &visb)
