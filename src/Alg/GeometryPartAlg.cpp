@@ -330,6 +330,8 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
 	model->computeFaceNormal();
 
+    model->updateBSPtree();
+
     std::ofstream f_P_Opt(model->getDataPath() + "/P_Opt.mat");
     if (f_P_Opt)
     {

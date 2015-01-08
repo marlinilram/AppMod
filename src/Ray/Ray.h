@@ -8,13 +8,6 @@
 #include <vtkTriangle.h>
 #include <vtkCellArray.h>
 #include <vtkPolyData.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkVertexGlyphFilter.h>
 #include <vector>
 
 // parametric equation of ray point(t) = P + t * D
@@ -29,7 +22,7 @@ public:
 	Ray(){};
 	~Ray(){};
 
-	bool intersectModel(Eigen::Vector3f &ray_start, Eigen::Vector3f &ray_end);
+	bool intersectModel(Eigen::Vector3d &ray_start, Eigen::Vector3d &ray_end);
 	void passModel(std::vector<float> &vertices, std::vector<unsigned int> &faces);
 
 public:

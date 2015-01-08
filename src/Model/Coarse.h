@@ -27,7 +27,7 @@ public:
     bool getCrspFaceIdFromPhotoToRImg(int x, int y, int &face_id);
     void findFacesInPhoto(std::vector<int> &faces_in_photo);
     void setModelNewNormal(Eigen::VectorXf &new_face_in_photo_normal, std::vector<int> &faces_in_photo);
-	void rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp);
+	void rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vector<int> &cluster_label);
 
     inline std::vector<float> *getModelNewNormal(){ return &model_new_normals; };
     inline cv::Mat &getPhoto(){ return photo; };
@@ -35,7 +35,7 @@ public:
     inline cv::Mat &getRhoImg(){ return rho_img; };
     inline Eigen::MatrixX3f &getLightRec(){ return light_rec; };
     inline std::vector<Eigen::Vector2i> &getXYInMask(){ return xy_in_mask; };
-	inline Eigen::Matrix<float, 4, 3> &getRhoSpclr(){ return rho_specular; };
+
 
     void drawNormal();
 
@@ -47,7 +47,6 @@ protected:
     cv::Mat photo;
     cv::Mat mask;
     cv::Mat rho_img;
-	Eigen::Matrix<float, 4, 3> rho_specular;
     std::vector<Eigen::Vector2i> xy_in_mask;
 };
 

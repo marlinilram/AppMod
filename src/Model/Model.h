@@ -50,17 +50,18 @@ public:
 	void exportOBJ();
 
     void computeLight();
-    void computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, std::vector<bool> &visb);
-    void computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, Eigen::VectorXf &visb);
+    void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::vector<bool> &visb);
+    void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen::VectorXf &visb);
     void computeVisbs(int face_id, std::vector<bool> &visb);
     void computeVisbs(int face_id, Eigen::VectorXf &visb);
 	void computeFaceNormal();
+    inline void updateBSPtree(){ ray_cast.passModel(model_vertices, model_faces); };
 
     void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
     void passRenderImgInfo(cv::Mat &zImg, cv::Mat &primitiveID, cv::Mat &rImg);
     void passVerticesVisbleStatus(std::vector<bool> &visble);
     bool getWorldCoord(Eigen::Vector3f rimg_coord, Eigen::Vector3f &w_coord);
-    void getPtNormalInFace(Eigen::Vector3f pt, int face_id, Eigen::Vector3f &normal);
+    void getPtNormalInFace(Eigen::Vector3f &pt, int face_id, Eigen::Vector3f &normal);
     inline void setRenderer(Viewer *viewer){ renderer = viewer; };
 
     inline ModelLight *getModelLightObj(){ return model_light; };
@@ -75,6 +76,7 @@ public:
     inline std::vector<int> *getVertexShareFaces(int vertex_id){ return &model_vertices_share_faces[vertex_id]; };
     inline std::vector<std::vector<int>> *getVertexAdj(){ return &model_vertex_adj; };
     inline std::vector<Eigen::Vector3i> *getFaceListCompact(){ return &model_faces_compact; };
+    inline Eigen::Matrix<float, 4, 3> &getRhoSpclr(){ return rho_specular; };
 
     inline cv::Mat &getRImg(){ return r_img; };
 
@@ -107,6 +109,7 @@ protected:
     Colorlist model_colors;
     Colorlist model_rhos;
     Colorlist model_brightness;
+    Eigen::Matrix<float, 4, 3> rho_specular;// it stores as BGR
 
     // normals
     Normallist model_normals;
@@ -122,7 +125,7 @@ protected:
     // Lighting
     ModelLight *model_light;
     std::vector<std::vector<bool>> model_visbs;
-	Ray *ray_cast;
+	Ray ray_cast;
     bool shadow_on;
 
     // information from renderer

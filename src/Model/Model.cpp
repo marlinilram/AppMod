@@ -13,14 +13,17 @@ Model::Model(const int id, const std::string path, const std::string name)
 
     model_light = new ModelLight(1600, 40, 3);
 
-	ray_cast = new Ray;
-    ray_cast->passModel(model_vertices, model_faces);
+	//ray_cast = new Ray;
+    //ray_cast->passModel(model_vertices, model_faces);
+    ray_cast.passModel(model_vertices, model_faces);
+
+    computeLight();
 }
 
 Model::~Model()
 {
     delete model_light;
-    delete ray_cast;
+    //delete ray_cast;
 }
 
 bool Model::loadOBJ(const std::string name, const std::string base_path)
@@ -93,14 +96,15 @@ void Model::computeLight()
     int num_channels = model_light->getNumChannels();
     SAMPLE *samples = model_light->getSamples();
     int perc = 0;
-	renderer->setCheckVisbStatus(true);
+    model_visbs.clear();
+	//renderer->setCheckVisbStatus(true);
 
     // for each model vertex
-    for (decltype(model_vertices.size()) i = 0; i < model_vertices.size() / 3; ++i)
+    for (decltype(model_vertices.size()) i = 0; i < model_vertices.size()/3; ++i)
     {
         Eigen::Vector3f cur_v_normal(model_normals[i * 3 + 0], model_normals[i * 3 + 1], model_normals[i * 3 + 2]);
         Eigen::Vector3f cur_v_pos(model_vertices[i * 3 + 0], model_vertices[i * 3 + 1], model_vertices[i * 3 + 2]);
-        Eigen::Vector3f ray_start = cur_v_pos + (float)0.02*cur_v_normal;
+        Eigen::Vector3d ray_start = cur_v_pos.cast<double>() + 0.02*cur_v_normal.cast<double>();
 
         float brightness[3] = { 0, 0, 0 };
         std::vector<bool> cur_v_visb;
@@ -110,6 +114,7 @@ void Model::computeLight()
         {
             // check if light * normal > 0
             float dot = (float)samples[k].direction.dot(cur_v_normal);
+            Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000*samples[k].direction.cast<double>();
 
             if (dot > 0.0)
             {
@@ -117,7 +122,8 @@ void Model::computeLight()
                 if (shadow_on)
                 {
                     //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
-					if (renderer->checkVertexVisbs(i, this, samples[k].direction))
+					//if (renderer->checkVertexVisbs(i, this, samples[k].direction))
+                    if (ray_cast.intersectModel(ray_start, ray_end))
                     {
                         brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
                         brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
@@ -160,30 +166,35 @@ void Model::computeLight()
     }
 	std::cout<<"\n";
 
-	std::ofstream f_v(getDataPath() + "/first_visb.mat");
-	if (f_v)
-	{
-		for (size_t i = 0; i < model_visbs[0].size(); ++i)
-		{
-			f_v	<< model_visbs[0][i] << "\n";
-		}
+	//std::ofstream f_v(getDataPath() + "/visbs.mat");
+	//if (f_v)
+	//{
+ //       for (size_t k = 0; k < model_visbs.size(); ++k)
+ //       {
+	//	for (size_t i = 0; i < model_visbs[k].size(); ++i)
+	//	{
+	//		f_v	<< model_visbs[k][i] << " ";
+	//	}
+ //       f_v << "\n";
+ //       }
 
-		f_v.close();
-	}
-	renderer->setCheckVisbStatus(false);
+	//	f_v.close();
+	//}
+	//renderer->setCheckVisbStatus(false);
 }
 
-void Model::computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, std::vector<bool> &visb)
+void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::vector<bool> &visb)
 {
     // point should be (original point + 0.02*normal at this point)
     int num_samples = model_light->getNumSamples();
     SAMPLE *samples = model_light->getSamples();
-    Eigen::Vector3f ray_start = point + (float)0.02*normal;
+    Eigen::Vector3d ray_start = point.cast<double>() + 0.05*normal.cast<double>();
     visb.clear();
 
     for (int k = 0; k < num_samples; ++k)
     {
         float dot = (float)samples[k].direction.dot(normal);
+        Eigen::Vector3d ray_end = point.cast<double>() + 10000*samples[k].direction.cast<double>();
 
         if (dot > 0.0)
         {
@@ -191,7 +202,8 @@ void Model::computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, std::vec
             // foreach model face
             if (shadow_on)
             {
-                if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+                //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+                if (ray_cast.intersectModel(ray_start, ray_end))
                 {
                     visb.push_back(true);
                 }
@@ -203,17 +215,18 @@ void Model::computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, std::vec
     }
 }
 
-void Model::computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, Eigen::VectorXf &visb)
+void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen::VectorXf &visb)
 {
     // point should be (original point + 0.02*normal at this point)
     int num_samples = model_light->getNumSamples();
     SAMPLE *samples = model_light->getSamples();
-    Eigen::Vector3f ray_start = point + (float)0.02*normal;
+    Eigen::Vector3d ray_start = point.cast<double>() + 0.02*normal.cast<double>();
     visb = Eigen::VectorXf(num_samples);
 
     for (int k = 0; k < num_samples; ++k)
     {
         float dot = (float)samples[k].direction.dot(normal);
+        Eigen::Vector3d ray_end = point.cast<double>() + 10000*samples[k].direction.cast<double>();
 
         if (dot > 0.0)
         {
@@ -221,7 +234,8 @@ void Model::computeVisbs(Eigen::Vector3f point, Eigen::Vector3f normal, Eigen::V
             // foreach model face
             if (shadow_on)
             {
-                if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+                //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+                if (ray_cast.intersectModel(ray_start, ray_end))
                 {
                     visb(k) = 1.0;
                 }
@@ -244,11 +258,12 @@ void Model::computeVisbs(int face_id, std::vector<bool> &visb)
     Eigen::Vector3f v0(model_vertices[3 * v0_id + 0], model_vertices[3 * v0_id + 1], model_vertices[3 * v0_id + 2]);
     Eigen::Vector3f v1(model_vertices[3 * v1_id + 0], model_vertices[3 * v1_id + 1], model_vertices[3 * v1_id + 2]);
     Eigen::Vector3f v2(model_vertices[3 * v2_id + 0], model_vertices[3 * v2_id + 1], model_vertices[3 * v2_id + 2]);
+    Eigen::Vector3f v_center = v0 / 3 + v1 / 3 + v2 / 3;
 
     Eigen::Vector3f normal = (v1 - v0).cross(v2 - v1);
     normal.normalize();
 
-    computeVisbs(v0 / 3 + v1 / 3 + v2 / 3, normal, visb);
+    computeVisbs(v_center, normal, visb);
 }
 
 void Model::computeVisbs(int face_id, Eigen::VectorXf &visb)
@@ -262,11 +277,12 @@ void Model::computeVisbs(int face_id, Eigen::VectorXf &visb)
     Eigen::Vector3f v0(model_vertices[3 * v0_id + 0], model_vertices[3 * v0_id + 1], model_vertices[3 * v0_id + 2]);
     Eigen::Vector3f v1(model_vertices[3 * v1_id + 0], model_vertices[3 * v1_id + 1], model_vertices[3 * v1_id + 2]);
     Eigen::Vector3f v2(model_vertices[3 * v2_id + 0], model_vertices[3 * v2_id + 1], model_vertices[3 * v2_id + 2]);
+    Eigen::Vector3f v_center = v0 / 3 + v1 / 3 + v2 / 3;
 
     Eigen::Vector3f normal = (v1 - v0).cross(v2 - v1);
     normal.normalize();
 
-    computeVisbs(v0 / 3 + v1 / 3 + v2 / 3, normal, visb);
+    computeVisbs(v_center, normal, visb);
 }
 
 // parameter transfer with Viewer
@@ -399,26 +415,26 @@ void Model::computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float 
 
 }
 
-void Model::getPtNormalInFace(Eigen::Vector3f pt, int face_id, Eigen::Vector3f &normal)
+void Model::getPtNormalInFace(Eigen::Vector3f &pt, int face_id, Eigen::Vector3f &normal)
 {
     int v0_id = model_faces[3 * face_id + 0];
     int v1_id = model_faces[3 * face_id + 1];
     int v2_id = model_faces[3 * face_id + 2];
 
-    float v0[3] = { model_vertices[3 * v0_id + 0], 
+    Eigen::Vector3f v0( model_vertices[3 * v0_id + 0], 
                     model_vertices[3 * v0_id + 1], 
-                    model_vertices[3 * v0_id + 2] };
+                    model_vertices[3 * v0_id + 2] );
 
-    float v1[3] = { model_vertices[3 * v1_id + 0], 
+    Eigen::Vector3f v1( model_vertices[3 * v1_id + 0], 
                     model_vertices[3 * v1_id + 1], 
-                    model_vertices[3 * v1_id + 2] };
+                    model_vertices[3 * v1_id + 2] );
 
-    float v2[3] = { model_vertices[3 * v2_id + 0], 
+    Eigen::Vector3f v2( model_vertices[3 * v2_id + 0], 
                     model_vertices[3 * v2_id + 1], 
-                    model_vertices[3 * v2_id + 2] };
+                    model_vertices[3 * v2_id + 2] );
 
     float lamd[3];
-    computeBaryCentreCoord(pt.data(), v0, v1, v2, lamd);
+    computeBaryCentreCoord(pt.data(), v0.data(), v1.data(), v2.data(), lamd);
 
     Eigen::Vector3f n0;
     n0<< model_normals[3 * v0_id + 0],
@@ -435,7 +451,8 @@ void Model::getPtNormalInFace(Eigen::Vector3f pt, int face_id, Eigen::Vector3f &
           model_normals[3 * v2_id + 1],
           model_normals[3 * v2_id + 2];
 
-    normal = lamd[0] * n0 + lamd[1] * n2 + lamd[2] * n2;
+    normal = lamd[0] * n0 + lamd[1] * n1 + lamd[2] * n2;
+    pt = lamd[0] * v0 + lamd[1] * v1 + lamd[2] * v2;
 }
 
 void Model::buildFaceAdj()

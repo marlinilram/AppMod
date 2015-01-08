@@ -80,29 +80,36 @@ void Ray::passModel(std::vector<float> &vertices, std::vector<unsigned int> &fac
     vtkSmartPointer<vtkCellArray> triangles = vtkSmartPointer<vtkCellArray>::New();
     vtkSmartPointer<vtkTriangle> triangle = vtkSmartPointer<vtkTriangle>::New();
 
-    for (size_t i = 0; i < faces.size(); ++i)
+    for (size_t i = 0; i < faces.size()/3; ++i)
     {
-        triangle->GetPointIds()->SetId(i, faces[i]);
+        triangle->GetPointIds()->SetId ( 0, faces[3*i+0] );
+        triangle->GetPointIds()->SetId ( 1, faces[3*i+1] );
+        triangle->GetPointIds()->SetId ( 2, faces[3*i+2] );
+        triangles->InsertNextCell(triangle);
     }
 
-    triangles->InsertNextCell(triangle);
+    //triangles->InsertNextCell(triangle);
 
     poly_mesh = vtkSmartPointer<vtkPolyData>::New();
     std::cout<<"Check mesh right1\n";
     poly_mesh->SetPoints(points);
-    std::cout<<"Check mesh right2\n";
+    //std::cout<<"Check mesh right2\n";
     poly_mesh->SetPolys(triangles);
-    std::cout<<"Check mesh right3\n";
+    //std::cout<<"Check mesh right3\n";
+
+    bsptree = vtkSmartPointer< vtkModifiedBSPTree >::New();
+    bsptree->SetDataSet(poly_mesh);
+    bsptree->BuildLocator();
 
     //vtkSmartPointer< vtkVertexGlyphFilter > vertex_glyph = vtkSmartPointer< vtkVertexGlyphFilter >::New();
-    //vertex_glyph->SetInput(poly_mesh);
+    //vertex_glyph->SetInputData(poly_mesh);
     //vertex_glyph->Update();
 
 
 
     //vtkSmartPointer<vtkPolyDataMapper> mapper =	vtkSmartPointer<vtkPolyDataMapper>::New();
     //std::cout<<"Check mesh right4\n";
-    //mapper->SetInput(vertex_glyph->GetOutput());
+    //mapper->SetInputData(poly_mesh);
     //std::cout<<"Check mesh right5\n";
     //vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     //std::cout<<"Check mesh right6\n";
@@ -122,4 +129,13 @@ void Ray::passModel(std::vector<float> &vertices, std::vector<unsigned int> &fac
     //std::cout<<"Check mesh right13\n";
     //renderWindow->Render();
     //renderWindowInteractor->Start();
+}
+
+bool Ray::intersectModel(Eigen::Vector3d &ray_start, Eigen::Vector3d &ray_end)
+{
+    int id = bsptree->IntersectWithLine(ray_start.data(), ray_end.data(), 0.001, t, intersect_point, pt_coord, sub_id);
+
+    if (id == 0) return true; // no intersection so return true
+    else return false;
+
 }

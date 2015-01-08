@@ -233,6 +233,20 @@ void Coarse::updateVertexBrightnessAndColor()
 {
     int num_samples = model_light->getNumSamples();
     SAMPLE *samples = model_light->getSamples();
+    Eigen::MatrixX3f &S_mat = model_light->getSampleMatrix();
+    float view_temp[3];
+    renderer->getViewDirection(view_temp);
+    Eigen::Vector3f view(view_temp[0], view_temp[1], view_temp[2]);
+    Eigen::Matrix<float, 4, 3> &rho_specular = getRhoSpclr();
+    Eigen::Matrix3f C_view;
+    C_view << rho_specular(0,0)*view(0), rho_specular(0,1)*view(0), rho_specular(0,2)*view(0), 
+        rho_specular(1,0)*view(1), rho_specular(1,1)*view(1), rho_specular(1,2)*view(1), 
+        rho_specular(2,0)*view(2), rho_specular(2,1)*view(2), rho_specular(2,2)*view(2);
+    Eigen::MatrixX3f S_C_view = ((S_mat*C_view).array()<0).select(0, S_mat*C_view);
+    Eigen::MatrixX3f rho_s(S_C_view.rows(), 3);
+    rho_s.col(0) = (S_C_view.col(0).array().pow(rho_specular(3, 0))).matrix();
+    rho_s.col(1) = (S_C_view.col(1).array().pow(rho_specular(3, 1))).matrix();
+    rho_s.col(2) = (S_C_view.col(2).array().pow(rho_specular(3, 2))).matrix();
 
     for (decltype(model_vertices.size()) i = 0; i < model_vertices.size() / 3; ++i)
     {
@@ -241,6 +255,8 @@ void Coarse::updateVertexBrightnessAndColor()
         model_brightness[3 * i + 0] = 0.0f;
         model_brightness[3 * i + 1] = 0.0f;
         model_brightness[3 * i + 2] = 0.0f;
+
+        float brightness_s_temp[3] = {0.0f, 0.0f, 0.0f};
 
         // foreach sample direction
         for (int k = 0; k < num_samples; ++k)
@@ -253,6 +269,10 @@ void Coarse::updateVertexBrightnessAndColor()
                 model_brightness[3 * i + 2] += dot*light_rec(k, 0);
                 model_brightness[3 * i + 1] += dot*light_rec(k, 1);
                 model_brightness[3 * i + 0] += dot*light_rec(k, 2);
+
+                brightness_s_temp[2] += dot*light_rec(k, 0)*rho_s(k, 0);
+                brightness_s_temp[1] += dot*light_rec(k, 1)*rho_s(k, 1);
+                brightness_s_temp[0] += dot*light_rec(k, 2)*rho_s(k, 2);
             }
         }
 
@@ -260,11 +280,13 @@ void Coarse::updateVertexBrightnessAndColor()
         model_brightness[3 * i + 1] *= (float)(4 * M_PI / num_samples);
         model_brightness[3 * i + 0] *= (float)(4 * M_PI / num_samples);
 
+        brightness_s_temp[2] *=(float)(4 * M_PI / num_samples);
+        brightness_s_temp[1] *=(float)(4 * M_PI / num_samples);
+        brightness_s_temp[0] *=(float)(4 * M_PI / num_samples);
 
-
-        model_colors[3 * i + 0] = model_rhos[3 * i + 0] * model_brightness[3 * i + 0];
-        model_colors[3 * i + 1] = model_rhos[3 * i + 1] * model_brightness[3 * i + 1];
-        model_colors[3 * i + 2] = model_rhos[3 * i + 2] * model_brightness[3 * i + 2];
+        model_colors[3 * i + 0] = model_rhos[3 * i + 0] * model_brightness[3 * i + 0] + brightness_s_temp[2];
+        model_colors[3 * i + 1] = model_rhos[3 * i + 1] * model_brightness[3 * i + 1] + brightness_s_temp[1];
+        model_colors[3 * i + 2] = model_rhos[3 * i + 2] * model_brightness[3 * i + 2] + brightness_s_temp[0];
     }
 }
 
@@ -306,23 +328,28 @@ void Coarse::drawNormal()
     }
 }
 
-void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp)
+void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vector<int> &cluster_label)
 {
 	// use x,y image coordinates and r,g,b color values as feature
 	// assume we hav I_xy_vec
-	cv::Mat pixels(xy_in_mask.size(), 3, CV_32F);
+	cv::Mat pixels(xy_in_mask.size(), 2, CV_32F);
 	cv::Mat labels, centers;
 	rhos_temp.resize(xy_in_mask.size(), 3);
+    cv::Mat photo_xyz = photo.clone();
+    cv::cvtColor(photo, photo_xyz, CV_BGR2XYZ);
+    cluster_label.resize(xy_in_mask.size());
 
 	for (size_t i = 0; i < xy_in_mask.size(); ++i)
 	{
 		Eigen::Vector2i cur_xy = xy_in_mask[i];
-		cv::Vec3f cur_color = photo.at<cv::Vec3f>(cur_xy(1), cur_xy(0));
+		cv::Vec3f cur_color = photo_xyz.at<cv::Vec3f>(cur_xy(1), cur_xy(0));
 		//pixels.at<float>(i, 0) = cur_xy(0);
 		//pixels.at<float>(i, 1) = cur_xy(1);
-		pixels.at<float>(i, 0) = cur_color[0];
-		pixels.at<float>(i, 1) = cur_color[1];
-		pixels.at<float>(i, 2) = cur_color[2];
+		//pixels.at<float>(i, 0) = cur_color[0];
+		//pixels.at<float>(i, 1) = cur_color[1];
+		//pixels.at<float>(i, 2) = cur_color[2];
+        pixels.at<float>(i, 0) = cur_color[0] / (cur_color[0] + cur_color[1] + cur_color[2]);
+        pixels.at<float>(i, 1) = cur_color[1] / (cur_color[0] + cur_color[1] + cur_color[2]);
 	}
 
 	cv::kmeans(pixels, nCluster, labels, cv::TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
@@ -334,23 +361,24 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp)
 	std::cout<<"size of centers: "<<centers.size()<<"\n";
 	std::cout<<centers<<"\n";
 
-	std::vector<cv::Mat> rho_img_split;
-	rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
-	rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
-	rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
-	cv::merge(rho_img_split, rho_img);
+	//std::vector<cv::Mat> rho_img_split;
+	//rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	//rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	//rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	//cv::merge(rho_img_split, rho_img);
 
 	for (size_t i = 0; i < xy_in_mask.size(); ++i)
 	{
-		Eigen::Vector2i cur_xy = xy_in_mask[i];
-		cv::Vec<float, 3> cur_center = centers.row(labels.at<int>(i));
-		rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0)) = cur_center;
-		rhos_temp(i, 0) = cur_center[0];
-		rhos_temp(i, 1) = cur_center[1];
-		rhos_temp(i, 2) = cur_center[2];
+		//Eigen::Vector2i cur_xy = xy_in_mask[i];
+		//cv::Vec<float, 3> cur_center = centers.row(labels.at<int>(i));
+		//rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0)) = cur_center;
+		//rhos_temp(i, 0) = cur_center[0];
+		//rhos_temp(i, 1) = cur_center[1];
+		//rhos_temp(i, 2) = cur_center[2];
+        cluster_label[i] = labels.at<int>(i);
 	}
 
-	cv::imshow("rho image from kmeans", rho_img);
+	//cv::imshow("rho image from kmeans", rho_img);
 
 	//std::ofstream f_rhos_tmep(getDataPath() + "/rhos_temp.mat");
 	//if (f_rhos_tmep)

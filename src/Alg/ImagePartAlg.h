@@ -38,6 +38,11 @@ public:
 	Eigen::VectorXf rho_d_sig_chan;
 	Eigen::MatrixX3f rho_d_mat;
 	Eigen::Vector3f view; 
+
+    std::vector<double> last_iter_output;
+
+    std::vector<int> pixel_cluster_label;
+
 	float lambd_sfs;
 	float lambd_smooth;
 	float lambd_norm;
