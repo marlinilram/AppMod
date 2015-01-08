@@ -366,7 +366,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
             Eigen::VectorXf temp = (T_coeff.col(i-4-T_coeff.rows()).array()*rho_d.array()).matrix()
                 + rho_s(i-4-T_coeff.rows())*T_coeff.col(i-4-T_coeff.rows());
 
-            grad[i] = -2*(intensities-rho_d_T_L-rho_s_T_L).dot(temp);
+            grad[i] = -2*(intensities-rho_d_T_L-rho_s_T_L).dot(temp) + 2*Light_rec(i-(4+T_coeff.rows()));
         }
 
     }
@@ -402,6 +402,11 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     Eigen::MatrixX3f &Light_rec = model->getLightRec();
     Light_rec.resize(model->getModelLightObj()->getNumSamples(), 3);
     std::vector<Eigen::Vector2i> &I_xy_vec = model->getXYInMask();
+
+
+    // set lambd
+
+
 
     // photo should be float range [0, 1]
 
@@ -727,9 +732,9 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
         rho_d_sig_chan = rho_d_mat.col(k_chan);
         pixel_cluster_label = cluster_label;
 
-        std::vector<double> x(n_dim, 1);
+        //std::vector<double> x(n_dim, 1);
         // prepare start status of x
-        std::vector<double> x_start(n_dim);
+        std::vector<double> x(n_dim);
         for (int i = 0; i < 4; ++i)
         {
             x[i] = rho_specular(i, k_chan);
@@ -740,7 +745,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
         }
         for (int i = n_dim - Light_rec.rows(); i < n_dim; ++i )
         {
-            x[i] = Light_rec(i-n_dim+Light_rec.rows(), k_chan);
+            x[i] = Light_rec(i-(n_dim-Light_rec.rows()), k_chan);
         }
 
 

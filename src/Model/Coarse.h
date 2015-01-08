@@ -39,6 +39,15 @@ public:
 
     void drawNormal();
 
+    void setOptParameter(const int &numIter, const int &numParas, double *other_paras);
+    inline int getParaNumIter() { return num_iter; };
+    inline double getParaBRDFLightSfS() { return BRDF_Light_sfs; };
+    inline double getParaLightReg() { return Light_Reg; };
+    inline double getParaClutserSmooth() { return cluster_smooth; };
+    inline double getParaNormSfS() { return Norm_sfs; };
+    inline double getParaNormSmooth() { return Norm_smooth; };
+    inline double getParaNormNormalized() { return Norm_normalized; };
+
 protected:
     Mat3F model_to_img_trans;
     Normallist model_new_normals;
@@ -48,6 +57,15 @@ protected:
     cv::Mat mask;
     cv::Mat rho_img;
     std::vector<Eigen::Vector2i> xy_in_mask;
+
+    // opt parameter
+    int num_iter;
+    double BRDF_Light_sfs;
+    double Light_Reg;
+    double cluster_smooth;
+    double Norm_sfs;
+    double Norm_smooth;
+    double Norm_normalized;
 };
 
 #endif

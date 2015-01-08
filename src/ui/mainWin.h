@@ -38,12 +38,15 @@ private slots:
     void updateGeometry();
     void refreshScreen();
 	void exportOBJ();
+    void setOptParatoModel();
+    void runAll();
 
 signals:
     void callComputeInitLight(Coarse *, Viewer *);
     void callUpdateLight(Coarse *, Viewer *);
     void callComputeNormal(Coarse *, Viewer *);
 	void callNLoptTest();
+    void callRunWholeIter(Coarse *, Viewer *);
 
 public:
     //Viewer *viewer;

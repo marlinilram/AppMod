@@ -25,6 +25,7 @@ public:
 public:
 	Eigen::VectorXf brightness_sig_chan;
 	Eigen::MatrixXf T_coef;
+
 	Eigen::MatrixX3f brightness_mat;
 	Eigen::MatrixX3f A_mat;
 	Eigen::MatrixX3f B_mat;
@@ -47,6 +48,15 @@ public:
 	float lambd_smooth;
 	float lambd_norm;
 
+    double lambd_BRDF_Light_sfs;
+    double lambd_Light_Reg;
+    double lambd_cluster_smooth;
+    double lambd_norm_sfs;
+    double lambd_norm_smooth;
+    double lambd_norm_normalized;
+
+    int cur_iter;
+
     //void setRunFunctionType(int functionType);
 private slots:
     void computeInitLight(Coarse *model, Viewer *viewer);
@@ -56,6 +66,8 @@ private slots:
     void computeNormal(Coarse *model, Viewer *viewer);
     float sigmoid(float coef, float t);
 	void testNLopt();
+
+    //void runWholeIter()
 
 signals:
     void refreshScreen();

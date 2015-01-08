@@ -655,12 +655,16 @@ void Viewer::checkVisibleVertices(Model *model)
 
 void Viewer::resetScreen()
 {
+    makeCurrent();
+
     for (auto &i : actors)
     {
         i.clearElement();
     }
 
     updateGL();
+
+    doneCurrent();
 }
 
 void Viewer::checkVertexVisbs(int pt_id, Model *model, Eigen::VectorXf &visb)

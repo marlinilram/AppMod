@@ -18,6 +18,13 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
 
     cv::imshow("photo", photo);
     cv::imshow("mask", mask);
+
+    light_rec = Eigen::MatrixX3f::Ones(getModelLightObj()->getNumSamples(), 3);
+    std::vector<cv::Mat> rho_img_split;
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    cv::merge(rho_img_split, rho_img);
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)
@@ -386,4 +393,16 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vecto
 	//	f_rhos_tmep << rhos_temp;
 	//	f_rhos_tmep.close();
 	//}
+}
+
+void Coarse::setOptParameter(const int &numIter, const int &numParas, double *other_paras)
+{
+    num_iter = numIter;
+
+    BRDF_Light_sfs = other_paras[0];
+    Light_Reg = other_paras[1];
+    cluster_smooth = other_paras[2];
+    Norm_sfs = other_paras[3];
+    Norm_smooth = other_paras[4];
+    Norm_normalized = other_paras[5];
 }

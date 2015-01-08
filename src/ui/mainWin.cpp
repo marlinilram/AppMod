@@ -34,6 +34,8 @@ MainWin::MainWin()
     connect(action_Compute_Normal, SIGNAL(triggered()), this, SLOT(computeNormal()));
     connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
 	connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
+    connect(m_pushButton_set_para, SIGNAL(clicked()), this, SLOT(setOptParatoModel()));
+    connect(m_pushButton_Run, SIGNAL(clicked()), this, SLOT(runAll()));
 
     this->show();
 
@@ -44,6 +46,7 @@ MainWin::MainWin()
     connect(this, SIGNAL(callComputeInitLight(Coarse *, Viewer *)), img_part_alg, SLOT(computeInitLight(Coarse *, Viewer *)));
     connect(this, SIGNAL(callUpdateLight(Coarse *, Viewer *)), img_part_alg, SLOT(updateLight(Coarse *, Viewer *)));
     connect(this, SIGNAL(callComputeNormal(Coarse *, Viewer *)), img_part_alg, SLOT(computeNormal(Coarse *, Viewer *)));
+    connect(this, SIGNAL(callRunWholeIter(Coarse *, Viewer *)), img_part_alg, SLOT(runWholeIter(Coarse *, Viewer *)));
 	connect(this, SIGNAL(callNLoptTest()), img_part_alg, SLOT(testNLopt()));
     connect(img_part_alg, SIGNAL(refreshScreen()), this, SLOT(refreshScreen()));
 
@@ -176,4 +179,27 @@ void MainWin::updateGeometry()
 void MainWin::refreshScreen()
 {
     viewer->updateGL();
+}
+
+void MainWin::setOptParatoModel()
+{
+    int num_iter = m_spinBox_iter_num->value();
+    double other_paras[6];
+
+    other_paras[0] = m_spinBox_BRDF_Light_sfs->value();
+    other_paras[1] = m_spinBox_Light_Reg->value();
+    other_paras[2] = m_spinBox_cluster_smooth->value();
+    other_paras[3] = m_spinBox_norm_sfs->value();
+    other_paras[4] = m_spinBox_norm_smooth->value();
+    other_paras[5] = m_spinBox_norm_normalized->value();
+
+    coarse_model->setOptParameter(num_iter, 6, other_paras);
+}
+
+void MainWin::runAll()
+{
+    if (coarse_model)
+    {
+        emit callRunWholeIter(coarse_model, viewer);
+    }
 }

@@ -13,11 +13,20 @@ Model::Model(const int id, const std::string path, const std::string name)
 
     model_light = new ModelLight(1600, 40, 3);
 
+    std::ofstream f_sample(getDataPath() + "/sample.mat");
+    if (f_sample)
+    {
+        f_sample << model_light->getSampleMatrix();
+        f_sample.close();
+    }
+
 	//ray_cast = new Ray;
     //ray_cast->passModel(model_vertices, model_faces);
     ray_cast.passModel(model_vertices, model_faces);
 
     computeLight();
+
+    rho_specular = Eigen::MatrixXf::Ones(4, 3);
 }
 
 Model::~Model()
@@ -69,7 +78,7 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     return true;
 }
 
-void Model::exportOBJ()
+void Model::exportOBJ(int cur_iter)
 {
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
@@ -81,7 +90,7 @@ void Model::exportOBJ()
 
 	shapes.push_back(shape);
 
-	std::string output_name = "coarse_output";
+	std::string output_name = "coarse_output" + std::to_string(cur_iter) + ".obj";
 	WriteObj(output_name, shapes, materials);
 
 }

@@ -47,7 +47,7 @@ public:
 
     Model(const int id, const std::string path, const std::string name);
     void passData(VectorF &vertices, Facelist &faces, Colorlist &colors);
-	void exportOBJ();
+	void exportOBJ(int cur_iter = 0);
 
     void computeLight();
     void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::vector<bool> &visb);
