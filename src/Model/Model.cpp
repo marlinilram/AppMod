@@ -90,7 +90,12 @@ void Model::exportOBJ(int cur_iter)
 
 	shapes.push_back(shape);
 
-	std::string output_name = "coarse_output" + std::to_string(cur_iter) + ".obj";
+    char time_postfix[50];
+    time_t current_time = time(NULL);
+    strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+    std::string file_time_postfix = time_postfix;
+
+    std::string output_name = "coarse_output" + file_time_postfix + ".obj";
 	WriteObj(output_name, shapes, materials);
 
 }

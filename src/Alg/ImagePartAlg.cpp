@@ -800,8 +800,13 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
     }
 
+    char time_postfix[50];
+    time_t current_time = time(NULL);
+    strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+    std::string file_time_postfix = time_postfix;
+
     cv::imshow("rho_img", rho_img);
-    cv::imwrite(model->getDataPath() + "/rho_img.png", rho_img*255);
+    cv::imwrite(model->getDataPath() + "/rho_img" + file_time_postfix + ".png", rho_img*255);
 
     //cv::Mat brightness;
     //cv::divide(photo, rho_img, brightness);
@@ -811,21 +816,21 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     //brightness = brightness / b_max;
     //cv::imshow("brightness", brightness);
 
-    std::ofstream f_output(model->getDataPath() + "/Rho_rec.mat");
+    std::ofstream f_output(model->getDataPath() + "/Rho_rec" + file_time_postfix + ".mat");
     if (f_output)
     {
         f_output << Rho_rec << "\n";
         f_output.close();
     }
 
-    f_output.open(model->getDataPath() + "/I_mat.mat");
+    f_output.open(model->getDataPath() + "/I_mat" + file_time_postfix + ".mat");
     if (f_output)
     {
         f_output << I_mat << "\n";
         f_output.close();
     }
 
-    f_output.open(model->getDataPath() + "/Light_rec.mat");
+    f_output.open(model->getDataPath() + "/Light_rec" + file_time_postfix + ".mat");
     if (f_output)
     {
         f_output << Light_rec << "\n";
