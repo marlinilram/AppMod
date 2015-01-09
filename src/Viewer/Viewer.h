@@ -23,6 +23,7 @@ public:
     void getModelWithTexture(Model *model, cv::Mat &rho_img);
     void getSnapShot(Model *model);
     void fixCamera();
+    void UpdateGLOutside();
     
     void addActors();
     void addDrawablePoint(float x, float y, float z, float r, float g, float b);
@@ -35,7 +36,7 @@ public:
 	bool checkVertexVisbs(int pt_id, Model *model, Eigen::Vector3f &view_dir);
 	void checkModelVisbs(Model *model, std::vector<std::vector<bool>> &model_visbs);
     void resetScreen();
-    inline void setShowModel(bool status) { show_model = status; updateGL(); };
+    inline void setShowModel(bool status) { show_model = status; };
 	inline void getViewDirection(float view[3]) { view[0] = -camera()->viewDirection().x; view[1] = -camera()->viewDirection().y; view[2] = -camera()->viewDirection().z; };
 
 protected:

@@ -26,7 +26,7 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
     cv::merge(rho_img_split, rho_img);
 
-    rho_img = photo.clone(); // we use rho_img to do cluster now, so it can be updated each iteration
+    //rho_img = photo.clone(); // we use rho_img to do cluster now, so it can be updated each iteration
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)
