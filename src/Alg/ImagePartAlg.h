@@ -44,6 +44,8 @@ public:
 
     std::vector<int> pixel_cluster_label;
 
+    std::vector<std::vector<int>> I_smooth_adj;
+
 	float lambd_sfs;
 	float lambd_smooth;
 	float lambd_norm;
@@ -66,6 +68,7 @@ private slots:
     void computeNormal(Coarse *model, Viewer *viewer);
     float sigmoid(float coef, float t);
 	void testNLopt();
+    void findISmoothAdj(std::vector<std::vector<int>> &I_smooth_adj, std::vector<Eigen::Vector2i> &I_xy_vec);
 
     //void runWholeIter()
 
