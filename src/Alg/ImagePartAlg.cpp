@@ -722,6 +722,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     //opt.set_stopval(1e-4);
     //opt.set_ftol_rel(1e-4);
     opt.set_ftol_abs(1e-3);
+    opt.set_maxtime(180);
     //opt.set_xtol_rel(1e-4);
     //opt.set_xtol_abs(1e-3);
 
