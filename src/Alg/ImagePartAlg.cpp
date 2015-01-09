@@ -346,7 +346,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
         size_t i = 4;
         for (; i < grad.size() - Light_rec.rows(); ++i)
         {
-            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.3*2*(rho_d(i-4)-rho_d_cluster(i-4)) + 1e-4;
+            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.8*2*(rho_d(i-4)-rho_d_cluster(i-4)) + 1e-4;
 
             // gradient of rho_s_pars
             //double rho_d_pars_grad = 0;
@@ -371,12 +371,12 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
     }
 
-    std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()
+    std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm()
         <<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
         <<"\t"<<Light_rec.squaredNorm()
-        <<"\t"<<0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+        <<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
 
-    return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
+    return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm();
 }
 
 double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, void *data)
