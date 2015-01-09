@@ -337,16 +337,16 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
     if (grad.size() != 0)
     {
         // for rho_s, 4 parameters in total
-        grad[3] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_log_T_L.array()).sum();
+        grad[3] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_log_T_L.array()).sum() + 1e-4;
 
-        grad[0] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_x.array()).sum();
-        grad[1] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_y.array()).sum();
-        grad[2] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_z.array()).sum();
+        grad[0] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_x.array()).sum() + 1e-4;
+        grad[1] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_y.array()).sum() + 1e-4;
+        grad[2] = -2*((intensities-rho_d_T_L-rho_s_T_L).array()*rho_s_exp_n_1_T_L_z.array()).sum() + 1e-4;
 
         size_t i = 4;
         for (; i < grad.size() - Light_rec.rows(); ++i)
         {
-            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.3*2*(rho_d(i-4)-rho_d_cluster(i-4));
+            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.3*2*(rho_d(i-4)-rho_d_cluster(i-4)) + 1e-4;
 
             // gradient of rho_s_pars
             //double rho_d_pars_grad = 0;
@@ -366,12 +366,15 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
             Eigen::VectorXf temp = (T_coeff.col(i-4-T_coeff.rows()).array()*rho_d.array()).matrix()
                 + rho_s(i-4-T_coeff.rows())*T_coeff.col(i-4-T_coeff.rows());
 
-            grad[i] = -2*(intensities-rho_d_T_L-rho_s_T_L).dot(temp) + 2*Light_rec(i-(4+T_coeff.rows()));
+            grad[i] = -2*(intensities-rho_d_T_L-rho_s_T_L).dot(temp) + 2*Light_rec(i-(4+T_coeff.rows())) + 1e-4;
         }
 
     }
 
-    std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+    std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()
+        <<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
+        <<"\t"<<Light_rec.squaredNorm()
+        <<"\t"<<0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
 
     return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
 }
@@ -434,7 +437,6 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
         }
         //emit(refreshScreen());
     }
-
 
 
     T_coef.resize(light_coeffs_vec.size(), light_coeffs.size());
@@ -718,10 +720,10 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 
     // stop criteria
     //opt.set_stopval(1e-4);
-    opt.set_ftol_rel(1e-4);
-    opt.set_ftol_abs(1e-4);
-    opt.set_xtol_rel(1e-4);
-    opt.set_xtol_abs(1e-4);
+    //opt.set_ftol_rel(1e-4);
+    opt.set_ftol_abs(1e-3);
+    //opt.set_xtol_rel(1e-4);
+    //opt.set_xtol_abs(1e-3);
 
 
     for (int k_chan = 0; k_chan < 3; ++k_chan)
