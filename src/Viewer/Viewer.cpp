@@ -742,7 +742,7 @@ void Viewer::getSnapShot(Model *model)
         model->passRenderImgInfo(z_img, primitive_ID, r_img);
         model->passCameraPara(modelview, projection, viewport);
 
-        std::string data_path = model->getDataPath();
+        std::string data_path = model->getOutputPath();
         cv::imwrite(data_path + "/matched.png", r_img*255);
 
         delete primitive_buffer;
