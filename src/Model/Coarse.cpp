@@ -23,10 +23,8 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     std::vector<cv::Mat> rho_img_split;
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
     cv::merge(rho_img_split, rho_img);
-
-
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)

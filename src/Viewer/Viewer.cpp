@@ -449,9 +449,10 @@ void Viewer::getModelWithTexture(Model *model, cv::Mat &rho_img)
 
     glBindTexture(GL_TEXTURE_2D, text_ogl);
 
-    bool isok = glIsTexture(text_ogl);
+    if(glIsTexture(text_ogl)) std::cout<<"gen texture ok..\n";
+    else std::cout << "gen texture failed...\n";
 
-    //std::vector<float> data(3*rho_img.rows*rho_img.cols, 0.5);
+    //std::vector<float> data(3*rho_img.rows*rho_img.cols);
     std::vector<float> data;
     for (int i = 0; i < rho_img.rows; ++i)
     {
@@ -462,12 +463,16 @@ void Viewer::getModelWithTexture(Model *model, cv::Mat &rho_img)
             data.push_back(rho_img.at<cv::Vec3f>(rho_img.rows-1-i, j)[0]);
         }
     }
+    //std::cout << "test";
+    //glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, rho_img.cols, rho_img.rows);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, rho_img.cols, rho_img.rows, 0, GL_RGB, GL_FLOAT, &data[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, rho_img.cols, rho_img.rows);
-    ////glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, rho_img.cols, rho_img.rows, 0, GL_RGB, GL_FLOAT, &data[0]);
-    //
-
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, rho_img.cols, rho_img.rows, GL_RGB, GL_FLOAT, &data[0]);
+    //std::cout << "test";
+    //glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, rho_img.cols, rho_img.rows, GL_RGB, GL_FLOAT, &data[0]);
     //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
