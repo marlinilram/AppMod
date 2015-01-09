@@ -1005,7 +1005,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         viewer->addDrawableTri(v0, v1, v2, c, c, c);
         //system("pause");
     }
-    emit(refreshScreen());
+    //emit(refreshScreen());
     //system("pause");
 
 
