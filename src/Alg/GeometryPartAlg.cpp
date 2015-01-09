@@ -69,7 +69,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     std::cout << "Building L matrix...\n";
 
     float lambd_k_strech = 10.0f;
-    float lambd_k_bend = 10.0f;
+    float lambd_k_bend = 15.0f;
     float k = lambd_k_strech;
     int P_Num = (*vertex_list).size() / 3;
 
@@ -126,7 +126,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     std::cout << "Building normal constrains and vertical movement constrains...\n";
 
     float lambd_normal = 50.0f;
-    float lambd_vertical_move = 10.0f;
+    float lambd_vertical_move = 0.0f;
 
     std::vector<Eigen::Triplet<float>> normal_triplets;
     normal_triplets.clear();
