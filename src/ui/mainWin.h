@@ -40,6 +40,7 @@ private slots:
 	void exportOBJ();
     void setOptParatoModel();
     void runAll();
+    void renderTexture();
 
 signals:
     void callComputeInitLight(Coarse *, Viewer *);

@@ -20,6 +20,7 @@ public:
 
 public:
     void getModel(Model *model);
+    void getModelWithTexture(Model *model, cv::Mat &rho_img);
     void getSnapShot(Model *model);
     void fixCamera();
     
@@ -47,6 +48,7 @@ protected:
 
     void setBuffer();
     void setFBO();
+    void setRealisticRenderBuffer();
 
 private:
     void drawCornerAxis();
@@ -58,12 +60,16 @@ private:
     QGLBuffer *vertices_buffer;
     QGLBuffer *faces_buffer;
     QGLBuffer *colors_buffer;
+    QGLBuffer *rhod_irradiance_buffer;
+    QGLBuffer *rhos_specular_buffer;
     Bound scene_bounds;
     float scene_radius;
 	qglviewer::Vec scene_center;
 
     QVector<QVector3D> vertices;
     QVector<QVector3D> colors;
+    QVector<QVector3D> rhod_irradiance;
+    QVector<QVector3D> rhos_specular;
     GLuint *faces;
 
     GLenum num_faces;
@@ -78,12 +84,17 @@ private:
 	GLuint visible_query;
 	GLuint visible_result;
 
+    QGLShaderProgram *shaderProgramTexture;
+    QVector<QVector2D> text_coords;
+    GLuint text_ogl;
+
 private:
     bool wireframe_, flatShading_;
     bool showCornerAxis_;
     bool camera_fixed;
     bool show_model;
     bool show_other_drawable;
+    bool render_with_texture;
 };
 
 #endif

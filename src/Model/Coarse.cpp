@@ -25,6 +25,8 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
     cv::merge(rho_img_split, rho_img);
+
+
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)
@@ -197,6 +199,7 @@ void Coarse::updateVertexRho()
 
     model_rhos.clear();
     model_rhos.resize(3 * num_vertices);
+    model_text_coord.resize(2 * num_vertices);
     for (size_t i = 0; i < num_vertices; ++i)
     {
         if (v_vis_stat_in_r_img[i] == false)
@@ -206,6 +209,10 @@ void Coarse::updateVertexRho()
             model_rhos[3 * i + 2] = mean_rho[0];
             model_rhos[3 * i + 1] = mean_rho[1];
             model_rhos[3 * i + 0] = mean_rho[2];
+
+            // set texture coord in rho image
+            model_text_coord[2*i + 0] = 0.0f;
+            model_text_coord[2*i + 1] = 0.0f;
         }
         else
         {
@@ -215,6 +222,9 @@ void Coarse::updateVertexRho()
             model_rhos[3 * i + 2] = cur_rho[0];
             model_rhos[3 * i + 1] = cur_rho[1];
             model_rhos[3 * i + 0] = cur_rho[2];
+
+            model_text_coord[2*i + 0] = xy_photo[0] / (float)mask.cols;
+            model_text_coord[2*i + 1] = ((float)mask.rows - xy_photo[1]) / (float)mask.rows;
         }
     }
 }
@@ -291,9 +301,12 @@ void Coarse::updateVertexBrightnessAndColor()
         brightness_s_temp[1] *=(float)(4 * M_PI / num_samples);
         brightness_s_temp[0] *=(float)(4 * M_PI / num_samples);
 
-        model_colors[3 * i + 0] = model_rhos[3 * i + 0] * model_brightness[3 * i + 0] + brightness_s_temp[2];
-        model_colors[3 * i + 1] = model_rhos[3 * i + 1] * model_brightness[3 * i + 1] + brightness_s_temp[1];
-        model_colors[3 * i + 2] = model_rhos[3 * i + 2] * model_brightness[3 * i + 2] + brightness_s_temp[0];
+        //model_colors[3 * i + 0] = 
+            model_rhos[3 * i + 0] = brightness_s_temp[2];
+        //model_colors[3 * i + 1] = 
+            model_rhos[3 * i + 1] = brightness_s_temp[1];
+        //model_colors[3 * i + 2] = 
+            model_rhos[3 * i + 2] = brightness_s_temp[0];
     }
 }
 

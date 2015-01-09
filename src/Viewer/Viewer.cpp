@@ -20,12 +20,18 @@ Viewer::Viewer(QWidget *widget) : QGLViewer(widget), wireframe_(false), flatShad
     colors_buffer = new QGLBuffer;
     faces_buffer = new QGLBuffer(QGLBuffer::IndexBuffer);
 
+    shaderProgramTexture = new QGLShaderProgram;
+    rhod_irradiance_buffer = new QGLBuffer;
+    rhos_specular_buffer = new QGLBuffer;
+
     wireframe_ = false;
     flatShading_ = true;
     showCornerAxis_ = false;
     camera_fixed = false;
     show_model = true;
     show_other_drawable = true;
+
+    render_with_texture = false;
 }
 
 Viewer::Viewer()
@@ -39,6 +45,10 @@ Viewer::~Viewer()
     delete vertices_buffer;
     delete faces_buffer;
     delete colors_buffer;
+
+    delete shaderProgramTexture;
+    delete rhod_irradiance_buffer;
+    delete rhos_specular_buffer;
 }
 
 void Viewer::draw()
@@ -47,31 +57,82 @@ void Viewer::draw()
 
     if (show_model)
     {
-        shaderProgram->bind();
+        if (!render_with_texture)
+        {
 
-        shaderProgram->setUniformValue("fMeshSize", GLfloat(num_faces));
+            shaderProgram->bind();
 
-        colors_buffer->bind();
-        shaderProgram->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
-        shaderProgram->enableAttributeArray("color");
-        colors_buffer->release();
+            shaderProgram->setUniformValue("fMeshSize", GLfloat(num_faces));
 
-        vertices_buffer->bind();
-        //shaderProgram->setAttributeArray("vertex", vertices.constData());
-        shaderProgram->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
-        shaderProgram->enableAttributeArray("vertex");
-        vertices_buffer->release();
+            colors_buffer->bind();
+            shaderProgram->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
+            shaderProgram->enableAttributeArray("color");
+            colors_buffer->release();
 
-        //glDrawElements(GL_TRIANGLES, 3 * num_faces, GL_UNSIGNED_INT, faces);
+            vertices_buffer->bind();
+            //shaderProgram->setAttributeArray("vertex", vertices.constData());
+            shaderProgram->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+            shaderProgram->enableAttributeArray("vertex");
+            vertices_buffer->release();
 
-        //glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+            //glDrawElements(GL_TRIANGLES, 3 * num_faces, GL_UNSIGNED_INT, faces);
 
-        faces_buffer->bind();
-        glDrawElements(GL_TRIANGLES, num_faces * 3, GL_UNSIGNED_INT, (void*)0);
-        faces_buffer->release();
+            //glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
-        shaderProgram->disableAttributeArray("vertex");
-        shaderProgram->release();
+            faces_buffer->bind();
+            glDrawElements(GL_TRIANGLES, num_faces * 3, GL_UNSIGNED_INT, (void*)0);
+            faces_buffer->release();
+
+            shaderProgram->disableAttributeArray("vertex");
+            shaderProgram->disableAttributeArray("color");
+            shaderProgram->release();
+        }
+        else
+        {
+            glDisable(GL_LIGHTING);
+            glEnable(GL_TEXTURE_2D);
+
+            shaderProgramTexture->bind();
+
+
+            colors_buffer->bind();
+            shaderProgramTexture->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
+            shaderProgramTexture->enableAttributeArray("color");
+            colors_buffer->release();
+
+            vertices_buffer->bind();
+            shaderProgramTexture->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+            shaderProgramTexture->enableAttributeArray("vertex");
+            vertices_buffer->release();
+
+            rhod_irradiance_buffer->bind();
+            shaderProgramTexture->setAttributeBuffer("rhod_irr", GL_FLOAT, 0, 3, 0);
+            shaderProgramTexture->enableAttributeArray("rhod_irr");
+            rhod_irradiance_buffer->release();
+
+            rhos_specular_buffer->bind();
+            shaderProgramTexture->setAttributeBuffer("rhos_specular", GL_FLOAT, 0, 3, 0);
+            shaderProgramTexture->enableAttributeArray("rhos_specular");
+            rhos_specular_buffer->release();
+
+            shaderProgramTexture->setAttributeArray("textureCoordinate", text_coords.constData());
+            shaderProgramTexture->enableAttributeArray("textureCoordinate");
+
+
+            shaderProgramTexture->setUniformValue("text_ogl", 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, text_ogl);
+            glActiveTexture(0);
+
+            faces_buffer->bind();
+            glDrawElements(GL_TRIANGLES, num_faces * 3, GL_UNSIGNED_INT, (void*)0);
+            faces_buffer->release();
+
+            shaderProgramTexture->disableAttributeArray("textureCoordinate");
+            shaderProgramTexture->disableAttributeArray("vertex");
+            shaderProgramTexture->disableAttributeArray("color");
+            shaderProgramTexture->release();
+        }
     }
 
     // draw actors
@@ -119,12 +180,17 @@ void Viewer::init()
     shaderProgram->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.fsh");
     shaderProgram->link();
 
+    shaderProgramTexture->addShaderFromSourceFile(QGLShader::Vertex, "shader/vertexShader_texture.vsh");
+    shaderProgramTexture->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader_texture.fsh");
+    shaderProgramTexture->link();
+    
     num_vertices = 0;
     vertices.clear();
     num_faces = 0;
     faces = nullptr;
 
     setBuffer();
+    //std::cout<<glGetError()<<"\n";
 
     actors.push_back(GLActor(ML_POINT, 5.0f));
     actors.push_back(GLActor(ML_MESH, 1.0f));
@@ -135,7 +201,7 @@ void Viewer::init()
     setSceneCenter(qglviewer::Vec(0, 0, 0));
     setSceneRadius(50);
     camera()->fitSphere(qglviewer::Vec(0, 0, 0), 5);
-    
+
     setKeyShortcut();
     setWheelandMouse();
 
@@ -143,6 +209,8 @@ void Viewer::init()
     // standard key or mouse bindings (as is done above). Custom bindings descriptions are added using
     // setKeyDescription() and setMouseBindingDescription().
     //help();
+
+
 
     doneCurrent();
 }
@@ -209,25 +277,25 @@ void Viewer::keyPressEvent(QKeyEvent *e)
     else
         if ((e->key() == Qt::Key_F) && (modifiers == Qt::NoButton))
         {
-        flatShading_ = !flatShading_;
-        if (flatShading_)
-            glShadeModel(GL_FLAT);
-        else
-            glShadeModel(GL_SMOOTH);
-        handled = true;
-        updateGL();
+            flatShading_ = !flatShading_;
+            if (flatShading_)
+                glShadeModel(GL_FLAT);
+            else
+                glShadeModel(GL_SMOOTH);
+            handled = true;
+            updateGL();
         }
         else
             if ((e->key() == Qt::Key_1) && (modifiers == Qt::NoButton))
             {
-        showCornerAxis_ = !showCornerAxis_;
-        handled = true;
-        updateGL();
+                showCornerAxis_ = !showCornerAxis_;
+                handled = true;
+                updateGL();
             }
-    // ... and so on with other else/if blocks.
+            // ... and so on with other else/if blocks.
 
-    if (!handled)
-        QGLViewer::keyPressEvent(e);
+            if (!handled)
+                QGLViewer::keyPressEvent(e);
 }
 
 
@@ -250,26 +318,26 @@ void Viewer::mousePressEvent(QMouseEvent* e)
         for (unsigned short i = 0; i < 20; ++i)
             if (camera()->keyFrameInterpolator(i))
             {
-            atLeastOne = true;
-            QString text;
-            if (camera()->keyFrameInterpolator(i)->numberOfKeyFrames() == 1)
-                text = "Position " + QString::number(i);
-            else
-                text = "Path " + QString::number(i);
+                atLeastOne = true;
+                QString text;
+                if (camera()->keyFrameInterpolator(i)->numberOfKeyFrames() == 1)
+                    text = "Position " + QString::number(i);
+                else
+                    text = "Path " + QString::number(i);
 
-            menuMap[menu.addAction(text)] = i;
+                menuMap[menu.addAction(text)] = i;
             }
 
-        if (!atLeastOne)
-        {
-            menu.addAction("No position defined");
-            menu.addAction("Use to Alt+Fx to define one");
-        }
+            if (!atLeastOne)
+            {
+                menu.addAction("No position defined");
+                menu.addAction("Use to Alt+Fx to define one");
+            }
 
-        QAction* action = menu.exec(e->globalPos());
+            QAction* action = menu.exec(e->globalPos());
 
-        if (atLeastOne && action)
-            camera()->playPath(menuMap[action]);
+            if (atLeastOne && action)
+                camera()->playPath(menuMap[action]);
     }
     else
         QGLViewer::mousePressEvent(e);
@@ -293,6 +361,8 @@ QString Viewer::helpString() const
 
 void Viewer::getModel(Model *model)
 {
+    makeCurrent();
+
     std::vector<float> model_vertices;
     std::vector<unsigned int> model_faces;
     std::vector<float> model_colors;
@@ -324,30 +394,105 @@ void Viewer::getModel(Model *model)
     scene_bounds = model->getBounds();
 
     scene_center = qglviewer::Vec((scene_bounds.minX + scene_bounds.maxX) / 2,
-                                (scene_bounds.minY + scene_bounds.maxY) / 2,
-                                (scene_bounds.minZ + scene_bounds.maxZ) / 2);
-    
+        (scene_bounds.minY + scene_bounds.maxY) / 2,
+        (scene_bounds.minZ + scene_bounds.maxZ) / 2);
+
     setSceneCenter(scene_center);
 
     float x_span = (scene_bounds.maxX - scene_bounds.minX) / 2;
     float y_span = (scene_bounds.maxY - scene_bounds.minY) / 2;
     float z_span = (scene_bounds.maxZ - scene_bounds.minZ) / 2;
     scene_radius = x_span>y_span ? (x_span > z_span ? x_span : z_span) : (y_span > z_span ? y_span : z_span);
-	scene_radius *= 1.5;
+    scene_radius *= 1.5;
 
     setSceneRadius(scene_radius);
     camera()->fitSphere(scene_center, scene_radius);
 
-    
+
 
     setStateFileName(QString((model->getDataPath()+"/camera_info.xml").c_str()));
     if (restoreStateFromFile())
         std::cout << "Load camera info successes...\n";
+
+    render_with_texture = false;
+
+    doneCurrent();
+}
+
+void Viewer::getModelWithTexture(Model *model, cv::Mat &rho_img)
+{
+    getModel(model); 
+    makeCurrent();
+
+    std::vector<float> model_rhos = model->getRhoSpecular();
+    std::vector<float> model_rhod_irr = model->getRhodIrr();
+
+    rhos_specular.clear();
+    for (decltype(model_rhos.size()) i = 0; i < model_rhos.size() / 3; ++i)
+    {
+        rhos_specular.push_back(QVector3D(model_rhos[3 * i + 0], model_rhos[3 * i + 1], model_rhos[3 * i + 2]));
+    }
+
+    rhod_irradiance.clear();
+    for (decltype(model_rhod_irr.size()) i = 0; i < model_rhod_irr.size() / 3; ++i)
+    {
+        rhod_irradiance.push_back(QVector3D(model_rhod_irr[3 * i + 0], model_rhod_irr[3 * i + 1], model_rhod_irr[3 * i + 2]));
+    }
+
+    setRealisticRenderBuffer();
+
+
+    std::cout << glGetError()<<"\n";
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glGenTextures(1, &text_ogl);
+    std::cout << glGetError()<<"\n";
+
+    glBindTexture(GL_TEXTURE_2D, text_ogl);
+
+    bool isok = glIsTexture(text_ogl);
+
+    //std::vector<float> data(3*rho_img.rows*rho_img.cols, 0.5);
+    std::vector<float> data;
+    for (int i = 0; i < rho_img.rows; ++i)
+    {
+        for (int j = 0; j < rho_img.cols; ++j)
+        {
+            data.push_back(rho_img.at<cv::Vec3f>(rho_img.rows-1-i, j)[2]);
+            data.push_back(rho_img.at<cv::Vec3f>(rho_img.rows-1-i, j)[1]);
+            data.push_back(rho_img.at<cv::Vec3f>(rho_img.rows-1-i, j)[0]);
+        }
+    }
+
+     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, rho_img.cols, rho_img.rows);
+    ////glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, rho_img.cols, rho_img.rows, 0, GL_RGB, GL_FLOAT, &data[0]);
+    //
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, rho_img.cols, rho_img.rows, GL_RGB, GL_FLOAT, &data[0]);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+
+    //QImage rho_d_texture;
+    //rho_d_texture.load((model->getDataPath()+"/rho_img.png").c_str());
+    //rho_d_texture.save((model->getDataPath()+"/rho_img_qimage.png").c_str());
+    //QPixmap test_texture(100, 100);
+    //test_texture.fill(Qt::black);
+    //text_ogl = bindTexture(test_texture, GL_TEXTURE_2D);
+
+    text_coords.clear();
+    std::vector<float> &model_text_coord = model->getTextCoord();
+    for (size_t i = 0; i < model_text_coord.size() / 2; ++i)
+    {
+        text_coords.push_back(QVector2D(model_text_coord[2 * i + 0], model_text_coord[2 * i + 1]));
+    }
+
+    render_with_texture = true;
+    doneCurrent();
 }
 
 void Viewer::setBuffer()
 {
-    makeCurrent();
+    //makeCurrent();
 
     if (vertices_buffer->isCreated())
         vertices_buffer->destroy();
@@ -376,9 +521,32 @@ void Viewer::setBuffer()
 
     colors_buffer->write(0, colors.constData(), num_vertices * 3 * sizeof(GLfloat));
 
-    colors_buffer->release();
+    colors_buffer->release();//std::cout<<glGetError()<<"\n";
 
-    doneCurrent();
+    //doneCurrent();std::cout<<glGetError()<<"\n";
+}
+
+void Viewer::setRealisticRenderBuffer()
+{
+    if (rhod_irradiance_buffer->isCreated())
+        rhod_irradiance_buffer->destroy();
+    rhod_irradiance_buffer->create();
+    rhod_irradiance_buffer->bind();
+    rhod_irradiance_buffer->allocate(num_vertices * 3 * sizeof(GLfloat));
+
+    rhod_irradiance_buffer->write(0, rhod_irradiance.constData(), num_vertices * 3 * sizeof(GLfloat));
+
+    rhod_irradiance_buffer->release();
+
+    if (rhos_specular_buffer->isCreated())
+        rhos_specular_buffer->destroy();
+    rhos_specular_buffer->create();
+    rhos_specular_buffer->bind();
+    rhos_specular_buffer->allocate(num_vertices * 3 * sizeof(GLfloat));
+
+    rhos_specular_buffer->write(0, rhos_specular.constData(), num_vertices * 3 * sizeof(GLfloat));
+
+    rhos_specular_buffer->release();
 }
 
 void Viewer::setFBO()
@@ -552,31 +720,31 @@ void Viewer::getSnapShot(Model *model)
             fPrimitive = fPrimitive*num_faces;
             int iPrimitive = (int)(fPrimitive < 0 ? (fPrimitive - 0.5) : (fPrimitive + 0.5));
 
-        //if (iPrimitive == 169)
-        //{
-        //    test.at<float>(i, j) = 1;
-        //}
-        //else test.at<float>(i, j) = 0;
+            //if (iPrimitive == 169)
+            //{
+            //    test.at<float>(i, j) = 1;
+            //}
+            //else test.at<float>(i, j) = 0;
             if (iPrimitive < (int)num_faces) primitive_ID.at<int>(i, j) = iPrimitive;
-        //{
+            //{
             //if (iPrimitive == 168 || iPrimitive == 169 || iPrimitive == 170)
             //    a += std::to_string(i) + " " + std::to_string(j) + " " + std::to_string(iPrimitive) + "\n";
-        //}
+            //}
         }
-    //LOG::Instance()->OutputMisc(a.c_str());
-    //cv::imwrite("primitiveImg.png", primitive_ID_img * 255);
+        //LOG::Instance()->OutputMisc(a.c_str());
+        //cv::imwrite("primitiveImg.png", primitive_ID_img * 255);
 
-    model->passRenderImgInfo(z_img, primitive_ID, r_img);
-    model->passCameraPara(modelview, projection, viewport);
+        model->passRenderImgInfo(z_img, primitive_ID, r_img);
+        model->passCameraPara(modelview, projection, viewport);
 
-    std::string data_path = model->getDataPath();
-    cv::imwrite(data_path + "/matched.png", r_img*255);
+        std::string data_path = model->getDataPath();
+        cv::imwrite(data_path + "/matched.png", r_img*255);
 
-    delete primitive_buffer;
-    delete z_buffer;
-    delete image_buffer;
+        delete primitive_buffer;
+        delete z_buffer;
+        delete image_buffer;
 
-    doneCurrent();
+        doneCurrent();
 }
 
 void Viewer::fixCamera()
@@ -669,102 +837,102 @@ void Viewer::resetScreen()
 
 void Viewer::checkVertexVisbs(int pt_id, Model *model, Eigen::VectorXf &visb)
 {
-	makeCurrent();
-	// change camera type to orthographic projection
-	camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
+    makeCurrent();
+    // change camera type to orthographic projection
+    camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
 
-	// turn on off screen rendering
-	setFBO();
-	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+    // turn on off screen rendering
+    setFBO();
+    glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
 
-	// for each view direction
-	Eigen::MatrixX3f &S_mat = model->getModelLightObj()->getSampleMatrix();
-	qglviewer::Vec view_dir;
+    // for each view direction
+    Eigen::MatrixX3f &S_mat = model->getModelLightObj()->getSampleMatrix();
+    qglviewer::Vec view_dir;
 
-	GLuint visible_query;
-	glGenQueries(1, &visible_query);
-	GLuint visible_result;
+    GLuint visible_query;
+    glGenQueries(1, &visible_query);
+    GLuint visible_result;
 
-	visb = Eigen::VectorXf::Ones(S_mat.rows());
+    visb = Eigen::VectorXf::Ones(S_mat.rows());
 
-	//int height = QPaintDevice::height();
-	//int width = QPaintDevice::width();
-	//float *image_buffer = new float[3*height*width];
+    //int height = QPaintDevice::height();
+    //int width = QPaintDevice::width();
+    //float *image_buffer = new float[3*height*width];
 
-	for (int i = 0; i < S_mat.rows(); ++i)
-	{
-		view_dir.x = -S_mat(i, 0);
-		view_dir.y = -S_mat(i, 1);
-		view_dir.z = -S_mat(i, 2);
-		camera()->setViewDirection(view_dir);
-		camera()->fitSphere(scene_center, scene_radius);
-		
-
-		//gluLookAt(1.5*scene_radius*view_dir.x, 1.5*scene_radius*view_dir.y, 1.5*scene_radius*view_dir.z, 
-		//	scene_center.x, scene_center.y, scene_center.z, 0, 0, 1);	
-
-		preDraw();
-		draw();
-
-		glBeginQuery(GL_ANY_SAMPLES_PASSED, visible_query);
-		glPointSize(1.5f);
-
-		glBegin(GL_POINTS);
-
-		glColor3f(1.0f, 0.0f, 0.0f);
-		glVertex3f(GLfloat(vertices[pt_id][0]), GLfloat(vertices[pt_id][1]), GLfloat(vertices[pt_id][2]));
-		//std::cout<<vertices[pt_id][0]<<"\t"<<vertices[pt_id][1]<<"\t"<<vertices[pt_id][2]<<"\n";
-
-		glEnd();
-
-		glEndQuery(GL_ANY_SAMPLES_PASSED);
-		glGetQueryObjectuiv(visible_query, GL_QUERY_RESULT, &visible_result);
-		if (visible_result == 0)
-			visb(i) = 0.0f;
-		//else
-		//{
-		//	visb(i) = 1.0f;
-		//	//std::cout <<"visible\n";
-		//}
-
-		//glReadBuffer(GL_COLOR_ATTACHMENT0);
-		//glReadPixels(0, 0, width, height, GL_BGR, GL_FLOAT, image_buffer);
-		//cv::Mat r_img(height, width, CV_32FC3, image_buffer);
-		//cv::flip(r_img, r_img, 0);
-		//cv::imwrite(model->getDataPath() + "/imgs/" + std::to_string(i) + "vd.png", r_img*255);
-
-		//std::cout<<"ith view direction: " << i << "\n";
-	}
+    for (int i = 0; i < S_mat.rows(); ++i)
+    {
+        view_dir.x = -S_mat(i, 0);
+        view_dir.y = -S_mat(i, 1);
+        view_dir.z = -S_mat(i, 2);
+        camera()->setViewDirection(view_dir);
+        camera()->fitSphere(scene_center, scene_radius);
 
 
-	glDeleteQueries(1, &visible_query);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //gluLookAt(1.5*scene_radius*view_dir.x, 1.5*scene_radius*view_dir.y, 1.5*scene_radius*view_dir.z, 
+        //	scene_center.x, scene_center.y, scene_center.z, 0, 0, 1);	
+
+        preDraw();
+        draw();
+
+        glBeginQuery(GL_ANY_SAMPLES_PASSED, visible_query);
+        glPointSize(1.5f);
+
+        glBegin(GL_POINTS);
+
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex3f(GLfloat(vertices[pt_id][0]), GLfloat(vertices[pt_id][1]), GLfloat(vertices[pt_id][2]));
+        //std::cout<<vertices[pt_id][0]<<"\t"<<vertices[pt_id][1]<<"\t"<<vertices[pt_id][2]<<"\n";
+
+        glEnd();
+
+        glEndQuery(GL_ANY_SAMPLES_PASSED);
+        glGetQueryObjectuiv(visible_query, GL_QUERY_RESULT, &visible_result);
+        if (visible_result == 0)
+            visb(i) = 0.0f;
+        //else
+        //{
+        //	visb(i) = 1.0f;
+        //	//std::cout <<"visible\n";
+        //}
+
+        //glReadBuffer(GL_COLOR_ATTACHMENT0);
+        //glReadPixels(0, 0, width, height, GL_BGR, GL_FLOAT, image_buffer);
+        //cv::Mat r_img(height, width, CV_32FC3, image_buffer);
+        //cv::flip(r_img, r_img, 0);
+        //cv::imwrite(model->getDataPath() + "/imgs/" + std::to_string(i) + "vd.png", r_img*255);
+
+        //std::cout<<"ith view direction: " << i << "\n";
+    }
 
 
-	restoreStateFromFile();
+    glDeleteQueries(1, &visible_query);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	doneCurrent();
-	std::cout<<"visib test finished...\n";
-	//
+
+    restoreStateFromFile();
+
+    doneCurrent();
+    std::cout<<"visib test finished...\n";
+    //
 }
 
 void Viewer::checkModelVisbs(Model *model, std::vector<std::vector<bool>> &model_visbs)
 {
-	makeCurrent();
-	// change camera type to orthographic projection
-	camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
+    makeCurrent();
+    // change camera type to orthographic projection
+    camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
 
-	// turn on off screen rendering
-	setFBO();
-	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+    // turn on off screen rendering
+    setFBO();
+    glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
 
-	// for each view direction
-	Eigen::MatrixX3f &S_mat = model->getModelLightObj()->getSampleMatrix();
-	qglviewer::Vec view_dir;
+    // for each view direction
+    Eigen::MatrixX3f &S_mat = model->getModelLightObj()->getSampleMatrix();
+    qglviewer::Vec view_dir;
 
-	GLuint visible_query;
-	glGenQueries(1, &visible_query);
-	GLuint visible_result;
+    GLuint visible_query;
+    glGenQueries(1, &visible_query);
+    GLuint visible_result;
 
 
 
@@ -773,59 +941,59 @@ void Viewer::checkModelVisbs(Model *model, std::vector<std::vector<bool>> &model
 bool Viewer::checkVertexVisbs(int pt_id, Model *model, Eigen::Vector3f &view_dir)
 {
 
-	//makeCurrent();
-
-	
-
-	camera()->setViewDirection(qglviewer::Vec(-view_dir(0),-view_dir(1),-view_dir(2)));
-	camera()->fitSphere(scene_center, scene_radius);
+    //makeCurrent();
 
 
-	//gluLookAt(1.5*scene_radius*view_dir.x, 1.5*scene_radius*view_dir.y, 1.5*scene_radius*view_dir.z, 
-	//	scene_center.x, scene_center.y, scene_center.z, 0, 0, 1);	
 
-	preDraw();
-	draw();
+    camera()->setViewDirection(qglviewer::Vec(-view_dir(0),-view_dir(1),-view_dir(2)));
+    camera()->fitSphere(scene_center, scene_radius);
 
-	glBeginQuery(GL_ANY_SAMPLES_PASSED, visible_query);
-	//glPointSize(1.5f);
 
-	glBegin(GL_POINTS);
+    //gluLookAt(1.5*scene_radius*view_dir.x, 1.5*scene_radius*view_dir.y, 1.5*scene_radius*view_dir.z, 
+    //	scene_center.x, scene_center.y, scene_center.z, 0, 0, 1);	
 
-	//glColor3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(GLfloat(vertices[pt_id][0]), GLfloat(vertices[pt_id][1]), GLfloat(vertices[pt_id][2]));
-	//std::cout<<vertices[pt_id][0]<<"\t"<<vertices[pt_id][1]<<"\t"<<vertices[pt_id][2]<<"\n";
+    preDraw();
+    draw();
 
-	glEnd();
+    glBeginQuery(GL_ANY_SAMPLES_PASSED, visible_query);
+    //glPointSize(1.5f);
 
-	glEndQuery(GL_ANY_SAMPLES_PASSED);
-	glGetQueryObjectuiv(visible_query, GL_QUERY_RESULT, &visible_result);
+    glBegin(GL_POINTS);
 
-	//doneCurrent();
-	//std::cout << visible_result<<"\n";
-	if (visible_result == 0)
-		return false;
+    //glColor3f(1.0f, 0.0f, 0.0f);
+    glVertex3f(GLfloat(vertices[pt_id][0]), GLfloat(vertices[pt_id][1]), GLfloat(vertices[pt_id][2]));
+    //std::cout<<vertices[pt_id][0]<<"\t"<<vertices[pt_id][1]<<"\t"<<vertices[pt_id][2]<<"\n";
 
-	return true;
+    glEnd();
+
+    glEndQuery(GL_ANY_SAMPLES_PASSED);
+    glGetQueryObjectuiv(visible_query, GL_QUERY_RESULT, &visible_result);
+
+    //doneCurrent();
+    //std::cout << visible_result<<"\n";
+    if (visible_result == 0)
+        return false;
+
+    return true;
 }
 
 void Viewer::setCheckVisbStatus(bool on)
 {
-	if (on == true)
-	{
-		// change camera type to orthographic projection
-		camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
+    if (on == true)
+    {
+        // change camera type to orthographic projection
+        camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
 
-		// turn on off screen rendering
-		setFBO();
-		glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+        // turn on off screen rendering
+        setFBO();
+        glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
 
-		glGenQueries(1, &visible_query);
-	}
-	else
-	{
-		glDeleteQueries(1, &visible_query);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		restoreStateFromFile();
-	}
+        glGenQueries(1, &visible_query);
+    }
+    else
+    {
+        glDeleteQueries(1, &visible_query);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        restoreStateFromFile();
+    }
 }

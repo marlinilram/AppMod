@@ -56,6 +56,7 @@
    <addaction name="action_Fix_Camera"/>
    <addaction name="action_Reset_Screen"/>
    <addaction name="action_Export_OBJ"/>
+   <addaction name="action_Render"/>
   </widget>
   <widget class="QToolBar" name="toolBar_2">
    <property name="windowTitle">
@@ -200,7 +201,7 @@
           <item>
            <widget class="QPushButton" name="m_pushButton_Run">
             <property name="text">
-             <string>Run!</string>
+             <string>Run! You fools.</string>
             </property>
            </widget>
           </item>
@@ -283,6 +284,11 @@
   <action name="action_Export_OBJ">
    <property name="text">
     <string>Export OBJ</string>
+   </property>
+  </action>
+  <action name="action_Render">
+   <property name="text">
+    <string>Render</string>
    </property>
   </action>
  </widget>

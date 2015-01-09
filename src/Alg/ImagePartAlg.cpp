@@ -836,6 +836,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     model->updateVertexRho();
     model->updateVertexBrightnessAndColor();
 
+
     std::cout<<"Compute BRDF finished...\n";
 
 }

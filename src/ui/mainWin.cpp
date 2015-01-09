@@ -34,6 +34,7 @@ MainWin::MainWin()
     connect(action_Compute_Normal, SIGNAL(triggered()), this, SLOT(computeNormal()));
     connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
 	connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
+    connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
     connect(m_pushButton_set_para, SIGNAL(clicked()), this, SLOT(setOptParatoModel()));
     connect(m_pushButton_Run, SIGNAL(clicked()), this, SLOT(runAll()));
 
@@ -82,6 +83,8 @@ void MainWin::loadModel()
 
     viewer->getModel(coarse_model);
     coarse_model->setRenderer(viewer);
+
+    viewer_img->getModel(coarse_model);
 
 }
 
@@ -156,7 +159,8 @@ void MainWin::updateLight()
 	//	f_v.close();
 	//}
 
-	coarse_model->computeLight();
+	coarse_model->updateVertexRho();
+    renderTexture();
 }
 
 void MainWin::computeNormal()
@@ -202,4 +206,11 @@ void MainWin::runAll()
     {
         emit callRunWholeIter(coarse_model, viewer);
     }
+}
+
+void MainWin::renderTexture()
+{
+    viewer->resetScreen();
+    viewer->getModelWithTexture(coarse_model, coarse_model->getRhoImg());
+    viewer->setShowModel(true);
 }

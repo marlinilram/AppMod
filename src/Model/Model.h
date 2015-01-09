@@ -77,8 +77,11 @@ public:
     inline std::vector<std::vector<int>> *getVertexAdj(){ return &model_vertex_adj; };
     inline std::vector<Eigen::Vector3i> *getFaceListCompact(){ return &model_faces_compact; };
     inline Eigen::Matrix<float, 4, 3> &getRhoSpclr(){ return rho_specular; };
+    inline std::vector<float> &getTextCoord(){ return model_text_coord; };
 
     inline cv::Mat &getRImg(){ return r_img; };
+    inline std::vector<float> &getRhoSpecular(){ return model_rhos; };
+    inline std::vector<float> &getRhodIrr(){ return model_brightness; };
 
     inline std::string getDataPath(){ return data_path + std::to_string(ID); };
 
@@ -106,10 +109,11 @@ protected:
     VectorVec3i model_faces_compact;
 
     // color attributes
-    Colorlist model_colors;
-    Colorlist model_rhos;
-    Colorlist model_brightness;
+    Colorlist model_colors; // not use anymore, we use texture mapping
+    Colorlist model_rhos; // rho specular
+    Colorlist model_brightness; // rho d irradiance
     Eigen::Matrix<float, 4, 3> rho_specular;// it stores as BGR
+    std::vector<float> model_text_coord;
 
     // normals
     Normallist model_normals;
