@@ -199,22 +199,23 @@ void Coarse::updateVertexRho()
 
     model_rhos.clear();
     model_rhos.resize(3 * num_vertices);
+
     model_text_coord.resize(2 * num_vertices);
     for (size_t i = 0; i < num_vertices; ++i)
     {
-        if (v_vis_stat_in_r_img[i] == false)
-        {
-            // if the vertex is invisible in the render image
-            // we put the mean rho in these vertices
-            model_rhos[3 * i + 2] = mean_rho[0];
-            model_rhos[3 * i + 1] = mean_rho[1];
-            model_rhos[3 * i + 0] = mean_rho[2];
+        //if (v_vis_stat_in_r_img[i] == false)
+        //{
+        //    // if the vertex is invisible in the render image
+        //    // we put the mean rho in these vertices
+        //    model_rhos[3 * i + 2] = mean_rho[0];
+        //    model_rhos[3 * i + 1] = mean_rho[1];
+        //    model_rhos[3 * i + 0] = mean_rho[2];
 
-            // set texture coord in rho image
-            model_text_coord[2*i + 0] = 0.0f;
-            model_text_coord[2*i + 1] = 0.0f;
-        }
-        else
+        //    // set texture coord in rho image
+        //    model_text_coord[2*i + 0] = 0.0f;
+        //    model_text_coord[2*i + 1] = 0.0f;
+        //}
+        //else
         {
             float xy_photo[2];
             getCrspFromModelToPhoto(i, xy_photo);

@@ -126,7 +126,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     std::cout << "Building normal constrains and vertical movement constrains...\n";
 
     float lambd_normal = 50.0f;
-    float lambd_vertical_move = 0.0f;
+    float lambd_vertical_move = 10.0f;
 
     std::vector<Eigen::Triplet<float>> normal_triplets;
     normal_triplets.clear();
