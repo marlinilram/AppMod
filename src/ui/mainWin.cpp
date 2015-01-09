@@ -190,7 +190,7 @@ void MainWin::updateGeometry()
 
 void MainWin::refreshScreen()
 {
-    viewer->updateGL();
+    viewer->UpdateGLOutside();
 }
 
 void MainWin::setOptParatoModel()
@@ -221,6 +221,7 @@ void MainWin::renderTexture()
     viewer->resetScreen();
     viewer->getModelWithTexture(coarse_model, coarse_model->getRhoImg());
     viewer->setShowModel(true);
+    viewer->UpdateGLOutside();
 
     viewer->setSnapshotFormat("PNG");
 

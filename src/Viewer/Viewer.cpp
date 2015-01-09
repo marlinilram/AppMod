@@ -1002,3 +1002,13 @@ void Viewer::setCheckVisbStatus(bool on)
         restoreStateFromFile();
     }
 }
+
+void Viewer::UpdateGLOutside()
+{
+    makeCurrent();
+
+    updateGL();
+
+    doneCurrent();
+
+}

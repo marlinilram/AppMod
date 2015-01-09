@@ -993,6 +993,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     // test if we get right faces
     std::cout << "Found number of faces in photo: " << faces_in_photo.size() << "\n";
     viewer->setShowModel(false);
+    std::cout<<"test";
     for (auto &i : faces_in_photo)
     {
         int v0_id = (*face_list)[3 * i + 0];
