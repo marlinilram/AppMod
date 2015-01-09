@@ -262,6 +262,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
     Eigen::Vector3f &view = img_alg_data_ptr->view;
     Eigen::VectorXf &rho_d_last_kmeans = img_alg_data_ptr->rho_d_sig_chan;
     std::vector<int> &cluster_label = img_alg_data_ptr->pixel_cluster_label;
+    std::vector<std::vector<int>> &I_smooth_adj = img_alg_data_ptr->I_smooth_adj;
 
     std::vector<double> para_temp = para;
     Eigen::VectorXf Light_rec = Eigen::Map<Eigen::VectorXd>(&para_temp[4+T_coeff.rows()], S.rows(), 1).cast<float>();
@@ -334,6 +335,16 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
         }
     }
 
+    // rho d smooth term
+    double rho_d_smooth = 0;
+    for (size_t i = 0; i < I_smooth_adj.size(); ++i)
+    {
+        for (size_t j = 0; j < I_smooth_adj[i].size(); ++j)
+        {
+            rho_d_smooth += (rho_d(i) - rho_d(I_smooth_adj[i][j]))*(rho_d(i) - rho_d(I_smooth_adj[i][j]));
+        }
+    }
+
     if (grad.size() != 0)
     {
         // for rho_s, 4 parameters in total
@@ -356,6 +367,11 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
             ////	rho_d_pars_grad += exp(-(Rho[i]-rho_d_last_kmeans(i-4))*(Rho[i]-rho_d_last_kmeans(i-4))/(4*pars_band*pars_band))*(Rho[i]-rho_d_last_kmeans(i-4));
             ////}
             ////rho_d_pars_grad = (-2*rho_d_pars_grad/(n_rho_d*2*pars_band*1.7725)/(4*pars_band*pars_band))/rho_s_pars;
+            // grad of smooth term
+            for (size_t j = 0; j < I_smooth_adj[i-4].size(); ++j)
+            {
+                grad[i] += 4*(rho_d(i-4) - rho_d(I_smooth_adj[i-4][j]));//4 comes from Ii - Ij and Ij - Ii
+            }
 
             //grad[i] += lambd_rho_s_pars*rho_d_pars_grad;
         }
@@ -371,12 +387,12 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
     }
 
-    std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm()
-        <<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
-        <<"\t"<<Light_rec.squaredNorm()
-        <<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+    std::cout << rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+        //<<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
+        //<<"\t"<<Light_rec.squaredNorm()
+        //<<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()
 
-    return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm();
+    return rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm();
 }
 
 double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, void *data)
@@ -437,6 +453,9 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
         }
         //emit(refreshScreen());
     }
+
+    I_smooth_adj.clear();
+    findISmoothAdj(I_smooth_adj, I_xy_vec);
 
 
     T_coef.resize(light_coeffs_vec.size(), light_coeffs.size());
@@ -756,7 +775,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
         //{
         //	x[i+4] = rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[k_chan];
         //}
-        double minf;
+        double minf = 0;
         std::cout<<"Min value initialized: "<<minf<<"\n";
         nlopt::result result = opt.optimize(x, minf);
         std::cout<<"Min value optimized: "<<minf<<"\n";
@@ -1277,7 +1296,45 @@ float ImagePartAlg::sigmoid(float coef, float t)
     return 2.0f / (1.0f + exp(coef*t));
 }
 
+void ImagePartAlg::findISmoothAdj(std::vector<std::vector<int>> &I_smooth_adj, std::vector<Eigen::Vector2i> &I_xy_vec)
+{
+    I_smooth_adj.clear();
 
+
+    for (size_t i = 0; i < I_xy_vec.size(); ++i)
+    {
+        Eigen::Vector2i cur_I_xy = I_xy_vec[i];
+        std::vector<int> cur_I_smooth_adj;
+
+        // find its four neighbour
+        std::vector<Eigen::Vector2i>::iterator id;
+        
+        --cur_I_xy(0);
+        id = find(I_xy_vec.begin(), I_xy_vec.end(), cur_I_xy);
+        if (id != I_xy_vec.end())
+            cur_I_smooth_adj.push_back(static_cast<int> (id - I_xy_vec.begin()));
+
+        ++cur_I_xy(0);
+        ++cur_I_xy(0);
+        id = find(I_xy_vec.begin(), I_xy_vec.end(), cur_I_xy);
+        if (id != I_xy_vec.end())
+            cur_I_smooth_adj.push_back(static_cast<int> (id - I_xy_vec.begin()));
+
+        --cur_I_xy(0);
+        --cur_I_xy(1);
+        id = find(I_xy_vec.begin(), I_xy_vec.end(), cur_I_xy);
+        if (id != I_xy_vec.end())
+            cur_I_smooth_adj.push_back(static_cast<int> (id - I_xy_vec.begin()));
+
+        ++cur_I_xy(1);
+        ++cur_I_xy(1);
+        id = find(I_xy_vec.begin(), I_xy_vec.end(), cur_I_xy);
+        if (id != I_xy_vec.end())
+            cur_I_smooth_adj.push_back(static_cast<int> (id - I_xy_vec.begin()));
+
+        I_smooth_adj.push_back(cur_I_smooth_adj);
+    }
+}
 
 // test NLopt here
 double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)

@@ -20,12 +20,14 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::imshow("mask", mask);
 
     light_rec = Eigen::MatrixX3f::Ones(getModelLightObj()->getNumSamples(), 3);
-    std::vector<cv::Mat> rho_img_split;
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
-    cv::merge(rho_img_split, rho_img);
+    //std::vector<cv::Mat> rho_img_split;
+    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    //cv::merge(rho_img_split, rho_img);
 
+    photo_temp.convertTo(rho_img, CV_32FC3);
+    rho_img = rho_img / 255;
     //rho_img = photo.clone(); // we use rho_img to do cluster now, so it can be updated each iteration
 }
 
