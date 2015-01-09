@@ -230,5 +230,5 @@ void MainWin::renderTexture()
     strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
     std::string file_time_postfix = time_postfix;
 
-    viewer->saveSnapshot(QString((coarse_model->getDataPath()+"/ren_img" + file_time_postfix).c_str()));
+    viewer->saveSnapshot(QString((coarse_model->getOutputPath()+"/ren_img" + file_time_postfix + ".png").c_str()));
 }
