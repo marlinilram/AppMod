@@ -346,7 +346,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
         size_t i = 4;
         for (; i < grad.size() - Light_rec.rows(); ++i)
         {
-            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.3*2*(rho_d(i-4)-rho_d_cluster(i-4)) + 1e-4;
+            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.8*2*(rho_d(i-4)-rho_d_cluster(i-4)) + 1e-4;
 
             // gradient of rho_s_pars
             //double rho_d_pars_grad = 0;
@@ -371,12 +371,12 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
     }
 
-    std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()
+    std::cout << (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm()
         <<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
         <<"\t"<<Light_rec.squaredNorm()
-        <<"\t"<<0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+        <<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
 
-    return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
+    return (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm();
 }
 
 double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, void *data)
@@ -722,7 +722,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     //opt.set_stopval(1e-4);
     //opt.set_ftol_rel(1e-4);
     opt.set_ftol_abs(1e-3);
-    opt.set_maxtime(180);
+    opt.set_maxtime(60);
     //opt.set_xtol_rel(1e-4);
     //opt.set_xtol_abs(1e-3);
 
@@ -809,7 +809,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     std::string file_time_postfix = time_postfix;
 
     cv::imshow("rho_img", rho_img);
-    cv::imwrite(model->getDataPath() + "/rho_img" + file_time_postfix + ".png", rho_img*255);
+    cv::imwrite(model->getOutputPath() + "/rho_img" + file_time_postfix + ".png", rho_img*255);
 
     //cv::Mat brightness;
     //cv::divide(photo, rho_img, brightness);
@@ -819,21 +819,21 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     //brightness = brightness / b_max;
     //cv::imshow("brightness", brightness);
 
-    std::ofstream f_output(model->getDataPath() + "/Rho_rec" + file_time_postfix + ".mat");
+    std::ofstream f_output(model->getOutputPath() + "/Rho_rec" + file_time_postfix + ".mat");
     if (f_output)
     {
         f_output << Rho_rec << "\n";
         f_output.close();
     }
 
-    f_output.open(model->getDataPath() + "/I_mat" + file_time_postfix + ".mat");
+    f_output.open(model->getOutputPath() + "/I_mat" + file_time_postfix + ".mat");
     if (f_output)
     {
         f_output << I_mat << "\n";
         f_output.close();
     }
 
-    f_output.open(model->getDataPath() + "/Light_rec" + file_time_postfix + ".mat");
+    f_output.open(model->getOutputPath() + "/Light_rec" + file_time_postfix + ".mat");
     if (f_output)
     {
         f_output << Light_rec << "\n";
@@ -1228,14 +1228,14 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     //    f_Normal_coeffs.close();
     //}
 
-    std::ofstream f_new_normal(model->getDataPath() + "/new_normal.mat");
+    std::ofstream f_new_normal(model->getOutputPath() + "/new_normal.mat");
     if (f_new_normal)
     {
         f_new_normal << new_face_in_photo_normal;
         f_new_normal.close();
     }
 
-    f_new_normal.open(model->getDataPath() + "/faces_in_photo.mat");
+    f_new_normal.open(model->getOutputPath() + "/faces_in_photo.mat");
     if (f_new_normal)
     {
         f_new_normal << Eigen::Map<Eigen::VectorXi>(&faces_in_photo[0], faces_in_photo.size(), 1);

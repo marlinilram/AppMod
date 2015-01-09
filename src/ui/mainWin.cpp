@@ -71,6 +71,7 @@ void MainWin::loadModel()
     QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
     if (fileName.isEmpty() == true) return;
 
+
     std::string model_file_path = fileName.toStdString();
     std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
     model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
@@ -86,6 +87,13 @@ void MainWin::loadModel()
 
     viewer_img->getModel(coarse_model);
 
+    // make an output dir
+    char time_postfix[50];
+    time_t current_time = time(NULL);
+    strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+    std::string outptu_file_path = coarse_model->getDataPath() + "/output" + time_postfix;
+    dir.mkpath(QString(outptu_file_path.c_str()));
+    coarse_model->setOutputPath(outptu_file_path);
 }
 
 void MainWin::exportOBJ()
@@ -213,4 +221,13 @@ void MainWin::renderTexture()
     viewer->resetScreen();
     viewer->getModelWithTexture(coarse_model, coarse_model->getRhoImg());
     viewer->setShowModel(true);
+
+    viewer->setSnapshotFormat("PNG");
+
+    char time_postfix[50];
+    time_t current_time = time(NULL);
+    strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+    std::string file_time_postfix = time_postfix;
+
+    viewer->saveSnapshot(QString((coarse_model->getDataPath()+"/ren_img" + file_time_postfix).c_str()));
 }

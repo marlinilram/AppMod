@@ -84,6 +84,8 @@ public:
     inline std::vector<float> &getRhodIrr(){ return model_brightness; };
 
     inline std::string getDataPath(){ return data_path + std::to_string(ID); };
+    inline void setOutputPath(std::string &path) { output_path = path; };
+    inline std::string getOutputPath() { return output_path; };
 
 protected:
     bool loadOBJ(const std::string name, const std::string base_path);
@@ -101,6 +103,7 @@ protected:
     int ID;
     std::string data_path;
     std::string file_name;
+    std::string output_path;
 
     // model basic attributes
     VectorF model_vertices;

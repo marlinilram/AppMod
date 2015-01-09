@@ -13,7 +13,7 @@ Model::Model(const int id, const std::string path, const std::string name)
 
     model_light = new ModelLight(1600, 40, 3);
 
-    std::ofstream f_sample(getDataPath() + "/sample.mat");
+    std::ofstream f_sample(getOutputPath() + "/sample.mat");
     if (f_sample)
     {
         f_sample << model_light->getSampleMatrix();
@@ -95,7 +95,7 @@ void Model::exportOBJ(int cur_iter)
     strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
     std::string file_time_postfix = time_postfix;
 
-    std::string output_name = getDataPath() + "/coarse_output" + file_time_postfix + ".obj";
+    std::string output_name = getOutputPath() + "/coarse_output" + file_time_postfix + ".obj";
 	WriteObj(output_name, shapes, materials);
 
 }
