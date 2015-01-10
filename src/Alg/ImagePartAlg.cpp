@@ -1318,7 +1318,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 
     // set new normal to model
     model->setModelNewNormal(new_face_in_photo_normal, faces_in_photo);
-    model->updateVertexBrightnessAndColor();
+    //model->updateVertexBrightnessAndColor(); put this after deformation
     model->drawNormal();
     emit(refreshScreen());
 
@@ -1329,6 +1329,9 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     F_smooth_adj.clear();
 
     std::cout << "Compute new normal finished...\n";
+
+    GeometryPartAlg geoAlg;
+    geoAlg.updateGeometry(model);
 }
 
 float ImagePartAlg::sigmoid(float coef, float t)
