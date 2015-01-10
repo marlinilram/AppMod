@@ -91,7 +91,7 @@ void Ray::passModel(std::vector<float> &vertices, std::vector<unsigned int> &fac
     //triangles->InsertNextCell(triangle);
 
     poly_mesh = vtkSmartPointer<vtkPolyData>::New();
-    std::cout<<"Check mesh right1\n";
+    
     poly_mesh->SetPoints(points);
     //std::cout<<"Check mesh right2\n";
     poly_mesh->SetPolys(triangles);
@@ -105,7 +105,7 @@ void Ray::passModel(std::vector<float> &vertices, std::vector<unsigned int> &fac
     //vertex_glyph->SetInputData(poly_mesh);
     //vertex_glyph->Update();
 
-
+    std::cout<<"BSP tree updated...\n";
 
     //vtkSmartPointer<vtkPolyDataMapper> mapper =	vtkSmartPointer<vtkPolyDataMapper>::New();
     //std::cout<<"Check mesh right4\n";
