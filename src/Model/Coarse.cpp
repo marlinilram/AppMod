@@ -20,14 +20,17 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::imshow("mask", mask);
 
     light_rec = Eigen::MatrixX3f::Ones(getModelLightObj()->getNumSamples(), 3);
-    //std::vector<cv::Mat> rho_img_split;
-    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
-    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
-    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
-    //cv::merge(rho_img_split, rho_img);
+    std::vector<cv::Mat> rho_img_split;
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1)));
+    cv::merge(rho_img_split, rho_img);
 
-    photo_temp.convertTo(rho_img, CV_32FC3);
-    rho_img = rho_img / 255; // we use rho_img to do cluster now, so it can be updated each iteration
+    //photo_temp.convertTo(rho_img, CV_32FC3);
+    //rho_img = rho_img / 255;
+    //rho_img = photo.clone(); // we use rho_img to do cluster now, so it can be updated each iteration
+
+    cur_iter = 0;
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)
@@ -344,7 +347,7 @@ void Coarse::drawNormal()
         normal_dir << model_new_normals[3 * i + 0],
                       model_new_normals[3 * i + 1],
                       model_new_normals[3 * i + 2];
-        Eigen::Vector3f end_pt(start_pt + 10*normal_dir);
+        Eigen::Vector3f end_pt(start_pt + 3.5*normal_dir);
         Eigen::Vector3f blue_color(0.0f, 0.0f, 1.0f);
         renderer->addDrawableLine(start_pt.data(), end_pt.data(), blue_color.data(), blue_color.data());
     }
@@ -354,53 +357,168 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vecto
 {
 	// use x,y image coordinates and r,g,b color values as feature
 	// assume we hav I_xy_vec
-	cv::Mat pixels(xy_in_mask.size(), 2, CV_32F);
-	cv::Mat labels, centers;
-	rhos_temp.resize(xy_in_mask.size(), 3);
-    cv::Mat photo_xyz = rho_img.clone();
-    cv::cvtColor(photo, photo_xyz, CV_BGR2XYZ);
-    cluster_label.resize(xy_in_mask.size());
-
-	for (size_t i = 0; i < xy_in_mask.size(); ++i)
+    if (cur_iter == 0)
 	{
-		Eigen::Vector2i cur_xy = xy_in_mask[i];
-		cv::Vec3f cur_color = photo_xyz.at<cv::Vec3f>(cur_xy(1), cur_xy(0));
-		//pixels.at<float>(i, 0) = cur_xy(0);
-		//pixels.at<float>(i, 1) = cur_xy(1);
-		//pixels.at<float>(i, 0) = cur_color[0];
-		//pixels.at<float>(i, 1) = cur_color[1];
-		//pixels.at<float>(i, 2) = cur_color[2];
-        pixels.at<float>(i, 0) = cur_color[0] / (cur_color[0] + cur_color[1] + cur_color[2]);
-        pixels.at<float>(i, 1) = cur_color[1] / (cur_color[0] + cur_color[1] + cur_color[2]);
-	}
+        cv::Mat pixels(xy_in_mask.size(), 2, CV_32F);
+	    cv::Mat labels, centers;
+	    rhos_temp.resize(xy_in_mask.size(), 3);
+        cv::Mat photo_xyz = rho_img.clone();
+        cv::cvtColor(photo, photo_xyz, CV_BGR2XYZ);
+        cluster_label.resize(xy_in_mask.size());
 
-	cv::kmeans(pixels, nCluster, labels, cv::TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
-		3, cv::KMEANS_PP_CENTERS, centers);
+	    for (size_t i = 0; i < xy_in_mask.size(); ++i)
+	    {
+		    Eigen::Vector2i cur_xy = xy_in_mask[i];
+		    cv::Vec3f cur_color = photo_xyz.at<cv::Vec3f>(cur_xy(1), cur_xy(0));
+		    //pixels.at<float>(i, 0) = cur_xy(0);
+		    //pixels.at<float>(i, 1) = cur_xy(1);
+		    //pixels.at<float>(i, 0) = cur_color[0];
+		    //pixels.at<float>(i, 1) = cur_color[1];
+		    //pixels.at<float>(i, 2) = cur_color[2];
+            pixels.at<float>(i, 0) = cur_color[0] / (cur_color[0] + cur_color[1] + cur_color[2]);
+            pixels.at<float>(i, 1) = cur_color[1] / (cur_color[0] + cur_color[1] + cur_color[2]);
+	    }
+
+	    cv::kmeans(pixels, nCluster, labels, cv::TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
+		    3, cv::KMEANS_PP_CENTERS, centers);
 
 
-	//std::cout<<"type of labels: "<<labels.type()<<"\n";
-	std::cout<<"type of centers: "<<centers.type()<<"\n";
-	std::cout<<"size of centers: "<<centers.size()<<"\n";
-	std::cout<<centers<<"\n";
+	    //std::cout<<"type of labels: "<<labels.type()<<"\n";
+	    std::cout<<"type of centers: "<<centers.type()<<"\n";
+	    std::cout<<"size of centers: "<<centers.size()<<"\n";
+	    std::cout<<centers<<"\n";
 
-	//std::vector<cv::Mat> rho_img_split;
-	//rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
-	//rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
-	//rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
-	//cv::merge(rho_img_split, rho_img);
+	    //std::vector<cv::Mat> rho_img_split;
+	    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	    //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+	    //cv::merge(rho_img_split, rho_img);
 
-	for (size_t i = 0; i < xy_in_mask.size(); ++i)
-	{
-		//Eigen::Vector2i cur_xy = xy_in_mask[i];
-		//cv::Vec<float, 3> cur_center = centers.row(labels.at<int>(i));
-		//rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0)) = cur_center;
-		//rhos_temp(i, 0) = cur_center[0];
-		//rhos_temp(i, 1) = cur_center[1];
-		//rhos_temp(i, 2) = cur_center[2];
-        cluster_label[i] = labels.at<int>(i);
-	}
+	    for (size_t i = 0; i < xy_in_mask.size(); ++i)
+	    {
+		    //Eigen::Vector2i cur_xy = xy_in_mask[i];
+		    //cv::Vec<float, 3> cur_center = centers.row(labels.at<int>(i));
+		    //rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0)) = cur_center;
+		    //rhos_temp(i, 0) = cur_center[0];
+		    //rhos_temp(i, 1) = cur_center[1];
+		    //rhos_temp(i, 2) = cur_center[2];
+            cluster_label[i] = labels.at<int>(i);
+	    }
+    }
 
+    if (cur_iter >= 1)
+    {
+        cv::Mat pixels(xy_in_mask.size(), 3, CV_32F);
+        cv::Mat labels, centers;
+        rhos_temp.resize(xy_in_mask.size(), 3);
+        cv::Mat photo_xyz = rho_img.clone();
+        //cv::cvtColor(photo, photo_xyz, CV_BGR2XYZ);
+        cluster_label.resize(xy_in_mask.size());
+
+        for (size_t i = 0; i < xy_in_mask.size(); ++i)
+        {
+            Eigen::Vector2i cur_xy = xy_in_mask[i];
+            cv::Vec3f cur_color = photo_xyz.at<cv::Vec3f>(cur_xy(1), cur_xy(0));
+            //pixels.at<float>(i, 0) = cur_xy(0);
+            //pixels.at<float>(i, 1) = cur_xy(1);
+            //pixels.at<float>(i, 0) = cur_color[0];
+            //pixels.at<float>(i, 1) = cur_color[1];
+            //pixels.at<float>(i, 2) = cur_color[2];
+            pixels.at<float>(i, 0) = cur_color[0] ;
+            pixels.at<float>(i, 1) = cur_color[1] ;
+            pixels.at<float>(i, 2) = cur_color[2] ;
+        }
+
+        cv::kmeans(pixels, nCluster, labels, cv::TermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 10, 1.0),
+            3, cv::KMEANS_PP_CENTERS, centers);
+
+
+        //std::cout<<"type of labels: "<<labels.type()<<"\n";
+        std::cout<<"type of centers: "<<centers.type()<<"\n";
+        std::cout<<"size of centers: "<<centers.size()<<"\n";
+        std::cout<<centers<<"\n";
+
+        //std::vector<cv::Mat> rho_img_split;
+        //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+        //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+        //rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+        //cv::merge(rho_img_split, rho_img);
+
+        for (size_t i = 0; i < xy_in_mask.size(); ++i)
+        {
+            //Eigen::Vector2i cur_xy = xy_in_mask[i];
+            //cv::Vec<float, 3> cur_center = centers.row(labels.at<int>(i));
+            //rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0)) = cur_center;
+            //rhos_temp(i, 0) = cur_center[0];
+            //rhos_temp(i, 1) = cur_center[1];
+            //rhos_temp(i, 2) = cur_center[2];
+            cluster_label[i] = labels.at<int>(i);
+        }
+    }
 	//cv::imshow("rho image from kmeans", rho_img);
+    
+    //Eigen::Matrix<double, 5, 1> cnt_cluster= Eigen::Matrix<double, 5, 1>::Zero();
+    //Eigen::Matrix<double, 5, 3> center_cluster = Eigen::Matrix<double , 5, 3>::Zero();
+    //for (size_t i = 0; i < xy_in_mask.size(); ++i)
+    //{
+    //    Eigen::Vector2i cur_xy = xy_in_mask[i];
+
+    //    switch(cluster_label[i])
+    //    {
+    //    case 0:
+    //        ++cnt_cluster(0);
+    //        center_cluster(0,0) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[0];
+    //        center_cluster(0,1) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[1];
+    //        center_cluster(0,2) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[2];
+    //        break;
+    //    case 1:
+    //        ++cnt_cluster(1);
+    //        center_cluster(1,0) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[0];
+    //        center_cluster(1,1) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[1];
+    //        center_cluster(1,2) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[2];
+    //        break;
+    //    case 2:
+    //        ++cnt_cluster(2);
+    //        center_cluster(2,0) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[0];
+    //        center_cluster(2,1) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[1];
+    //        center_cluster(2,2) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[2];
+    //        break;
+    //    case 3:
+    //        ++cnt_cluster(3);
+    //        center_cluster(3,0) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[0];
+    //        center_cluster(3,1) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[1];
+    //        center_cluster(3,2) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[2];
+    //        break;
+    //    case 4:
+    //        ++cnt_cluster(4);
+    //        center_cluster(4,0) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[0];
+    //        center_cluster(4,1) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[1];
+    //        center_cluster(4,2) += rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[2];
+    //        break;
+    //    default:
+    //        break;
+    //    }
+    //}
+    //center_cluster.col(0) = (center_cluster.col(0).array()/cnt_cluster.array()).matrix();
+    //center_cluster.col(1) = (center_cluster.col(1).array()/cnt_cluster.array()).matrix();
+    //center_cluster.col(2) = (center_cluster.col(2).array()/cnt_cluster.array()).matrix();
+
+    //for (size_t i = 0; i < xy_in_mask.size(); ++i)
+    //{
+    //    //Eigen::Vector2i cur_xy = xy_in_mask[i];
+    //    //cv::Vec<float, 3> cur_center = centers.row(labels.at<int>(i));
+    //    //rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0)) = cur_center;
+    //    //rhos_temp(i, 0) = cur_center[0];
+    //    //rhos_temp(i, 1) = cur_center[1];
+    //    //rhos_temp(i, 2) = cur_center[2];
+    //    Eigen::Vector2i cur_xy = xy_in_mask[i];
+
+    //    rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[0] = center_cluster(cluster_label[i], 0);
+    //    rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[1] = center_cluster(cluster_label[i], 1);
+    //    rho_img.at<cv::Vec3f>(cur_xy(1), cur_xy(0))[2] = center_cluster(cluster_label[i], 2);
+    //}
+
+    //cv::imshow("rho_img_after_cluster", rho_img);
 
 	//std::ofstream f_rhos_tmep(getDataPath() + "/rhos_temp.mat");
 	//if (f_rhos_tmep)

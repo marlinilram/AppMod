@@ -370,7 +370,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
             // grad of smooth term
             for (size_t j = 0; j < I_smooth_adj[i-4].size(); ++j)
             {
-                grad[i] += 0*4*(rho_d(i-4) - rho_d(I_smooth_adj[i-4][j]));//4 comes from Ii - Ij and Ij - Ii
+                grad[i] += 0.01*4*(rho_d(i-4) - rho_d(I_smooth_adj[i-4][j]));//4 comes from Ii - Ij and Ij - Ii
             }
 
             //grad[i] += lambd_rho_s_pars*rho_d_pars_grad;
@@ -387,12 +387,12 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
     }
 
-    std::cout << 0*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+    std::cout << 0.01*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
         //<<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
         //<<"\t"<<Light_rec.squaredNorm()
         //<<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()
 
-    return 0*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
+    return 0.01*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
 }
 
 double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, void *data)
@@ -584,6 +584,10 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 
     T_coef.resize(0,0);
     brightness_sig_chan.resize(0);
+
+    std::cout<<"Cur iter: " << model->getCurIter() << "finished...\n";
+    ++model->getCurIter();
+    
 }
 
 void ImagePartAlg::updateLight(Coarse *model, Viewer *viewer)
@@ -761,10 +765,46 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
         {
             x[i] = rho_specular(i, k_chan);
         }
-        for (int i = 4; i < n_dim - Light_rec.rows(); ++i)
+        if (model->getCurIter() == -1)
         {
-            x[i] = rho_img.at<cv::Vec3f>(I_xy_vec[i-4](1), I_xy_vec[i-4](0))[k_chan];
+            double rand_cluster_center[5];
+            rand_cluster_center[0] = ((double)rand()/RAND_MAX);
+            rand_cluster_center[1] = ((double)rand()/RAND_MAX);
+            rand_cluster_center[2] = ((double)rand()/RAND_MAX);
+            rand_cluster_center[3] = ((double)rand()/RAND_MAX);
+            rand_cluster_center[4] = ((double)rand()/RAND_MAX);
+            for (int i = 4; i < n_dim - Light_rec.rows(); ++i)
+            {
+                switch(cluster_label[i-4])
+                {
+                case 0:
+                    x[i] = rand_cluster_center[0];
+                    break;
+                case 1:
+                    x[i] = rand_cluster_center[1];
+                    break;
+                case 2:
+                    x[i] = rand_cluster_center[2];
+                    break;
+                case 3:
+                    x[i] = rand_cluster_center[3];
+                    break;
+                case 4:
+                    x[i] = rand_cluster_center[4];
+                    break;
+                default:
+                    break;
+                }
+            }
         }
+        else
+        {
+            for (int i = 4; i < n_dim - Light_rec.rows(); ++i)
+            {
+                x[i] = rho_img.at<cv::Vec3f>(I_xy_vec[i-4](1), I_xy_vec[i-4](0))[k_chan];
+            }
+        }
+
         for (int i = n_dim - Light_rec.rows(); i < n_dim; ++i )
         {
             x[i] = Light_rec(i-(n_dim-Light_rec.rows()), k_chan);

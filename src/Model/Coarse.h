@@ -47,6 +47,7 @@ public:
     inline double getParaNormSfS() { return Norm_sfs; };
     inline double getParaNormSmooth() { return Norm_smooth; };
     inline double getParaNormNormalized() { return Norm_normalized; };
+    inline int &getCurIter() { return cur_iter; };
 
 protected:
     Mat3F model_to_img_trans;
@@ -60,6 +61,7 @@ protected:
 
     // opt parameter
     int num_iter;
+    int cur_iter;
     double BRDF_Light_sfs;
     double Light_Reg;
     double cluster_smooth;
