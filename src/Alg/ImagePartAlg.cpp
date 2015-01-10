@@ -374,7 +374,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
             // grad of smooth term
             for (size_t j = 0; j < I_smooth_adj[i-4].size(); ++j)
             {
-                grad[i] += 0.01*4*(rho_d(i-4) - rho_d(I_smooth_adj[i-4][j]));//4 comes from Ii - Ij and Ij - Ii
+                grad[i] += 0.3*4*(rho_d(i-4) - rho_d(I_smooth_adj[i-4][j]));//4 comes from Ii - Ij and Ij - Ii
             }
 
             //grad[i] += lambd_rho_s_pars*rho_d_pars_grad;
@@ -391,12 +391,12 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
     }
 
-    std::cout << 0.01*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+    std::cout << 0.3*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
         //<<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
         //<<"\t"<<Light_rec.squaredNorm()
         //<<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()
 
-    return 0.01*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
+    return 0.3*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
 }
 
 double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, void *data)
