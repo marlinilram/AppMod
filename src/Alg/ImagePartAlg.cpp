@@ -288,8 +288,12 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
     // update cluster
     Eigen::Matrix<double, 5, 1> cnt_cluster= Eigen::Matrix<double, 5, 1>::Zero();
     Eigen::Matrix<double, 5, 1> center_cluster = Eigen::Matrix<double , 5, 1>::Zero();
+    int cnt_num_cluster = 0; // record how many clusters in the labels
     for (size_t i = 0; i < n_dim - 4 - Light_rec.rows(); ++i)
     {
+        if (cluster_label[i] > cnt_num_cluster)
+            cnt_num_cluster = cluster_label[i];
+
         switch(cluster_label[i])
         {
         case 0:
@@ -323,7 +327,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
     for (size_t i = 0; i < n_dim - 4 - Light_rec.rows(); ++i)
     {
         double min_dist = std::numeric_limits<double>::max();
-        for (int j = 0; j < 5; ++j)
+        for (int j = 0; j < (cnt_num_cluster + 1); ++j)
         {
             double dist = (rho_d(i)-center_cluster(j))*(rho_d(i)-center_cluster(j));
             if (dist < min_dist)
@@ -690,7 +694,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(5, rhos_temp, cluster_label);
+    model->rhoFromKMeans(1, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
 
     // set optimization
