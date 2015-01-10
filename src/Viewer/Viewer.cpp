@@ -422,8 +422,9 @@ void Viewer::getModel(Model *model)
 void Viewer::getModelWithTexture(Model *model, cv::Mat &rho_img)
 {
     getModel(model); 
+    std::cout << glGetError()<<"\n";
     makeCurrent();
-
+    std::cout << glGetError()<<"\n";
     std::vector<float> model_rhos = model->getRhoSpecular();
     std::vector<float> model_rhod_irr = model->getRhodIrr();
 
@@ -442,10 +443,10 @@ void Viewer::getModelWithTexture(Model *model, cv::Mat &rho_img)
     setRealisticRenderBuffer();
 
 
-    std::cout << glGetError()<<"\n";
+    //std::cout << glGetError()<<"\n";
     glBindTexture(GL_TEXTURE_2D, 0);
     glGenTextures(1, &text_ogl);
-    std::cout << glGetError()<<"\n";
+    //std::cout << glGetError()<<"\n";
 
     glBindTexture(GL_TEXTURE_2D, text_ogl);
 
@@ -536,7 +537,7 @@ void Viewer::setRealisticRenderBuffer()
 
     rhod_irradiance_buffer->write(0, rhod_irradiance.constData(), num_vertices * 3 * sizeof(GLfloat));
 
-    rhod_irradiance_buffer->release();
+    rhod_irradiance_buffer->release();std::cout << glGetError()<<"\n";
 
     if (rhos_specular_buffer->isCreated())
         rhos_specular_buffer->destroy();
@@ -546,7 +547,7 @@ void Viewer::setRealisticRenderBuffer()
 
     rhos_specular_buffer->write(0, rhos_specular.constData(), num_vertices * 3 * sizeof(GLfloat));
 
-    rhos_specular_buffer->release();
+    rhos_specular_buffer->release();std::cout << glGetError()<<"\n";
 }
 
 void Viewer::setFBO()
@@ -816,9 +817,10 @@ void Viewer::checkVisibleVertices(Model *model)
 
     model->passVerticesVisbleStatus(vertices_visible_state);
 
+    updateGL();
+
     doneCurrent();
 
-    updateGL();
 }
 
 void Viewer::resetScreen()
