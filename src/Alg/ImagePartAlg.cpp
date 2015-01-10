@@ -357,7 +357,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
         size_t i = 4;
         for (; i < grad.size() - Light_rec.rows(); ++i)
         {
-            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.8*2*(rho_d(i-4)-rho_d_cluster(i-4)) + 1e-4;
+            grad[i] = -2*(intensities(i-4)-rho_d_T_L(i-4)-rho_s_T_L(i-4))*(T_coeff.row(i-4).dot(Light_rec)) + 0.3*2*(rho_d(i-4)-rho_d_cluster(i-4)) + 1e-4;
 
             // gradient of rho_s_pars
             //double rho_d_pars_grad = 0;
@@ -370,7 +370,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
             // grad of smooth term
             for (size_t j = 0; j < I_smooth_adj[i-4].size(); ++j)
             {
-                grad[i] += 4*(rho_d(i-4) - rho_d(I_smooth_adj[i-4][j]));//4 comes from Ii - Ij and Ij - Ii
+                grad[i] += 0*4*(rho_d(i-4) - rho_d(I_smooth_adj[i-4][j]));//4 comes from Ii - Ij and Ij - Ii
             }
 
             //grad[i] += lambd_rho_s_pars*rho_d_pars_grad;
@@ -387,12 +387,12 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
     }
 
-    std::cout << rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
+    std::cout << 0*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm()<<"\n";
         //<<"\t"<<(intensities-rho_d_T_L-rho_s_T_L).squaredNorm()
         //<<"\t"<<Light_rec.squaredNorm()
         //<<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()
 
-    return rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.8*(rho_d-rho_d_cluster).squaredNorm();
+    return 0*rho_d_smooth + (intensities-rho_d_T_L-rho_s_T_L).squaredNorm() + Light_rec.squaredNorm() + 0.3*(rho_d-rho_d_cluster).squaredNorm();
 }
 
 double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, void *data)
@@ -741,7 +741,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     //opt.set_stopval(1e-4);
     //opt.set_ftol_rel(1e-4);
     opt.set_ftol_abs(1e-3);
-    opt.set_maxtime(60);
+    opt.set_maxtime(180);
     //opt.set_xtol_rel(1e-4);
     //opt.set_xtol_abs(1e-3);
 
