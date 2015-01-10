@@ -693,3 +693,26 @@ void Model::computeFaceNormal()
         model_face_normals.push_back(face_normal(2));
     }
 }
+
+void Model::computeVertexNormal()
+{
+    for (size_t i = 0; i < model_vertices.size()/3; ++i)
+    {
+        std::vector<int> &cur_1_ring_face = model_vertices_share_faces[i];
+
+        Eigen::Vector3f cur_v_normal(0.0f,0.0f,0.0f);
+        for (size_t j = 0; j < cur_1_ring_face.size(); ++j)
+        {
+            cur_v_normal(0) += model_face_normals[3*cur_1_ring_face[j] + 0];
+            cur_v_normal(1) += model_face_normals[3*cur_1_ring_face[j] + 1];
+            cur_v_normal(2) += model_face_normals[3*cur_1_ring_face[j] + 2];
+        }
+        cur_v_normal = cur_v_normal / cur_1_ring_face.size();
+        cur_v_normal.normalized();
+
+        model_normals[3*i + 0] = cur_v_normal(0);
+        model_normals[3*i + 1] = cur_v_normal(1);
+        model_normals[3*i + 2] = cur_v_normal(2);
+    }
+
+}

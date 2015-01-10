@@ -330,6 +330,8 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
 	model->computeFaceNormal();
 
+    model->computeVertexNormal();
+
     model->updateBSPtree();
 
     model->computeModelVisbs();
