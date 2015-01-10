@@ -694,7 +694,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(1, rhos_temp, cluster_label);
+    model->rhoFromKMeans(3, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
 
     // set optimization
@@ -1322,7 +1322,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 
     // set new normal to model
     model->setModelNewNormal(new_face_in_photo_normal, faces_in_photo);
-    model->updateVertexBrightnessAndColor();
+    //model->updateVertexBrightnessAndColor(); put this after deformation
     model->drawNormal();
     emit(refreshScreen());
 
@@ -1333,6 +1333,9 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     F_smooth_adj.clear();
 
     std::cout << "Compute new normal finished...\n";
+
+    GeometryPartAlg geoAlg;
+    geoAlg.updateGeometry(model);
 }
 
 float ImagePartAlg::sigmoid(float coef, float t)
