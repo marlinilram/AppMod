@@ -184,7 +184,7 @@ void MainWin::updateGeometry()
     if (coarse_model)
     {
         GeometryPartAlg geoAlg;
-        geoAlg.updateGeometry(coarse_model);
+        //geoAlg.updateGeometry(coarse_model);
     }
 }
 
