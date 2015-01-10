@@ -332,6 +332,10 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
     model->updateBSPtree();
 
+    model->computeModelVisbs();
+
+    model->updateVertexBrightnessAndColor();
+
     std::ofstream f_P_Opt(model->getOutputPath() + "/P_Opt.mat");
     if (f_P_Opt)
     {

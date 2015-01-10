@@ -50,6 +50,7 @@ public:
 	void exportOBJ(int cur_iter = 0);
 
     void computeLight();
+    void computeModelVisbs();
     void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::vector<bool> &visb);
     void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen::VectorXf &visb);
     void computeVisbs(int face_id, std::vector<bool> &visb);
@@ -110,6 +111,7 @@ protected:
     VectorVec3f model_vertices_compact;
     Facelist model_faces;
     VectorVec3i model_faces_compact;
+    VectorF model_vertices_init;
 
     // color attributes
     Colorlist model_colors; // not use anymore, we use texture mapping
@@ -120,6 +122,7 @@ protected:
 
     // normals
     Normallist model_normals;
+    Normallist model_normals_init;
     Normallist model_face_normals;
 
     // auxiliary attributes

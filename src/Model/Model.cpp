@@ -50,7 +50,9 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     }
 
     model_vertices = shapes[0].mesh.positions;
+    model_normals_init = model_vertices;
     model_normals = shapes[0].mesh.normals;
+    model_normals_init = model_normals;
     model_faces = shapes[0].mesh.indices;
     model_colors = Colorlist(model_vertices.size(), 0.5);
     model_rhos = model_colors;
@@ -195,6 +197,66 @@ void Model::computeLight()
 	//	f_v.close();
 	//}
 	//renderer->setCheckVisbStatus(false);
+}
+
+void Model::computeModelVisbs()
+{
+    int num_samples = model_light->getNumSamples();
+    int num_sqrt_samples = model_light->getSqrtNumSamples();
+    int num_channels = model_light->getNumChannels();
+    SAMPLE *samples = model_light->getSamples();
+    int perc = 0;
+    model_visbs.clear();
+    //renderer->setCheckVisbStatus(true);
+
+    // for each model vertex
+    for (decltype(model_vertices.size()) i = 0; i < model_vertices.size() / 3; ++i)
+    {
+        Eigen::Vector3f cur_v_normal(model_normals[i * 3 + 0], model_normals[i * 3 + 1], model_normals[i * 3 + 2]);
+        Eigen::Vector3f cur_v_pos(model_vertices[i * 3 + 0], model_vertices[i * 3 + 1], model_vertices[i * 3 + 2]);
+        Eigen::Vector3d ray_start = cur_v_pos.cast<double>() + 0.02*cur_v_normal.cast<double>();
+
+        float brightness[3] = { 0, 0, 0 };
+        std::vector<bool> cur_v_visb;
+
+        // foreach sample direction
+        for (int k = 0; k < num_samples; ++k)
+        {
+            // check if light * normal > 0
+            float dot = (float)samples[k].direction.dot(cur_v_normal);
+            Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000 * samples[k].direction.cast<double>();
+
+            if (dot > 0.0)
+            {
+
+                if (shadow_on)
+                {
+                    //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+                    //if (renderer->checkVertexVisbs(i, this, samples[k].direction))
+                    if (ray_cast.intersectModel(ray_start, ray_end))
+                    {
+                        cur_v_visb.push_back(true);
+                    }
+                    else { cur_v_visb.push_back(false); }
+                }
+                else
+                {
+                    cur_v_visb.push_back(true);
+                }
+            }
+            else cur_v_visb.push_back(false);
+        }
+
+        model_visbs.push_back(cur_v_visb);
+
+        if (int(i*100.0f / (model_vertices.size() / 3)) > perc)
+        {
+            perc = int(i*100.0f / (model_vertices.size() / 3));
+            std::cout << perc << "...";
+        }
+        //else std::cout << "...";
+    }
+    std::cout << "\n";
 }
 
 void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::vector<bool> &visb)
