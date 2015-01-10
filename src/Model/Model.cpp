@@ -2,7 +2,7 @@
 
 
 Model::Model(const int id, const std::string path, const std::string name) 
-    : ID(id), data_path(path), file_name(name)
+    : ID(id), data_path(path), output_path(path), file_name(name)
 {
     if (!loadOBJ(file_name, path + std::to_string(id)))
     {
