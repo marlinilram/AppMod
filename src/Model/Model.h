@@ -56,6 +56,7 @@ public:
     void computeVisbs(int face_id, std::vector<bool> &visb);
     void computeVisbs(int face_id, Eigen::VectorXf &visb);
 	void computeFaceNormal();
+    void computeVertexNormal();
     inline void updateBSPtree(){ ray_cast.passModel(model_vertices, model_faces); };
 
     void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
