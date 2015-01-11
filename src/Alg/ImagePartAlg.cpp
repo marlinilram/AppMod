@@ -105,8 +105,8 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
             + B.col(i).array()*cur_N.col(1).array() 
             + C.col(i).array()*cur_N.col(2).array()).matrix();
 
-        func_val += lambd_sfs*sfs_ch.squaredNorm();
-        //std::cout<<sfs_temp.squaredNorm()<<"\n";
+        func_val += lambd_sfs*sfs_ch.array().square().sum();
+        //std::cout << sfs_ch.array().square().sum() << "\n";
     }
 
     // smooth energy
@@ -116,14 +116,14 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
 
         for (size_t j = 0; j < cur_f_smooth_adj.size(); ++j)
         {
-            func_val += lambd_smooth*((cur_N.row(i) - cur_N.row(cur_f_smooth_adj[j])).squaredNorm());
+            func_val += lambd_smooth*((cur_N.row(i) - cur_N.row(cur_f_smooth_adj[j])).array().square().sum());
         }
     }
 
     // normalization energy
     for (size_t i = 0; i < n_tuple; ++i)
     {
-        float term_val_temp = cur_N.row(i).squaredNorm()-1;
+        float term_val_temp = cur_N.row(i).array().square().sum() - 1;
         func_val += lambd_norm*term_val_temp*term_val_temp;
     }
 
@@ -155,12 +155,13 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
             }
 
             // normalization grad
-            grad[3*i+0] += lambd_norm*2*(cur_n.squaredNorm()-1)*2*cur_n(0);
-            grad[3*i+1] += lambd_norm*2*(cur_n.squaredNorm()-1)*2*cur_n(1);
-            grad[3*i+2] += lambd_norm*2*(cur_n.squaredNorm()-1)*2*cur_n(2);
+            grad[3 * i + 0] += lambd_norm * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(0);
+            grad[3 * i + 1] += lambd_norm * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(1);
+            grad[3 * i + 2] += lambd_norm * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(2);
         }
     }
 
+    std::cout << func_val << "\n";
 
     return func_val;
 }
@@ -1279,7 +1280,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     }
     
     // give vertex on model its rho
-    model->updateVertexRho();std::cout<<"test";
+    model->updateVertexRho();
     model->updateVertexBrightnessAndColor();
 
 
@@ -1431,7 +1432,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     // test if we get right faces
     std::cout << "Found number of faces in photo: " << faces_in_photo.size() << "\n";
     viewer->setShowModel(false);
-    std::cout<<"test";
+
     for (auto &i : faces_in_photo)
     {
         int v0_id = (*face_list)[3 * i + 0];
@@ -1545,8 +1546,10 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     // get recovered light
     Eigen::MatrixX3f light_rec = model->getRecoveredLight();
 
+
     // get sample direction
     int num_samples = model->getModelLightObj()->getNumSamples();
+    S_mat = model->getModelLightObj()->getSampleMatrix();
     Eigen::MatrixX3f &samples = S_mat; 
 
 
@@ -1612,7 +1615,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
             C_mat(i,j) = C(j);
             //if (C(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
         }
-
+        
         //      // equation for nx
         //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambda_sfs*A.dot(A)));
         //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 1, lambda_sfs*B.dot(A)));
@@ -1636,7 +1639,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         std::vector<int> *cur_face_adj = model->getFaceAdj(faces_in_photo[i]);
         int num_adj_faces_in_photo = 0; // the adjacent list may contains faces that are not visible in the photo
         std::vector<int> cur_f_smooth_adj;
-
+        
 
         for (decltype((*cur_face_adj).size()) j = 0; j < (*cur_face_adj).size(); ++j)
         {
@@ -1660,10 +1663,11 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambda_smooth*num_adj_faces_in_photo));
         //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 1, 3 * i + 1, lambda_smooth*num_adj_faces_in_photo));
         //normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * i + 2, lambda_smooth*num_adj_faces_in_photo));
-
+        
         F_smooth_adj[i] = cur_f_smooth_adj;
     }
 
+    
 
     //Normal_coeffs.setFromTriplets(normal_coeffs.begin(), normal_coeffs.end());
 
