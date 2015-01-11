@@ -106,8 +106,9 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
             + C.col(i).array()*cur_N.col(2).array()).matrix();
 
         func_val += lambd_sfs*sfs_ch.array().square().sum();
-        //std::cout << sfs_ch.array().square().sum() << "\n";
+        
     }
+    //std::cout << func_val << "\n";
 
     // smooth energy
     for (size_t i = 0; i < n_tuple; ++i)
@@ -119,6 +120,7 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
             func_val += lambd_smooth*((cur_N.row(i) - cur_N.row(cur_f_smooth_adj[j])).array().square().sum());
         }
     }
+    //std::cout << func_val << "\n";
 
     // normalization energy
     for (size_t i = 0; i < n_tuple; ++i)
@@ -126,6 +128,7 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
         float term_val_temp = cur_N.row(i).array().square().sum() - 1;
         func_val += lambd_norm*term_val_temp*term_val_temp;
     }
+    //std::cout << func_val << "\n";
 
     if (grad.size() != 0)
     {
@@ -1086,15 +1089,15 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // init x
     for (int i = 0; i < 4; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = rho_specular(i, 0);
-        x[i + 1 * n_dim_sig_chan] = rho_specular(i, 1);
-        x[i + 2 * n_dim_sig_chan] = rho_specular(i, 2);
+        x[i + 0 * n_dim_sig_chan] = 1;// rho_specular(i, 0);
+        x[i + 1 * n_dim_sig_chan] = 1;// rho_specular(i, 1);
+        x[i + 2 * n_dim_sig_chan] = 1;//rho_specular(i, 2);
     }
     for (int i = 4; i < n_dim_sig_chan - n_dim_light; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
-        x[i + 1 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
-        x[i + 2 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
+        x[i + 0 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
+        x[i + 1 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
+        x[i + 2 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
     }
     for (int i = n_dim_sig_chan - n_dim_light; i < n_dim_sig_chan; ++i)
     {
@@ -1526,18 +1529,18 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     Eigen::MatrixX3f brightness_in_photo = (I_in_photo.array() / rho_in_photo.array()).matrix();
 
 
-    std::ofstream f(model->getOutputPath()+"/rho_in_photo.mat");
-    if (f)
-    {
-        f << rho_in_photo;
-        f.close();
-    }
-    f.open(model->getOutputPath() + "/I_in_photo.mat");
-    if (f)
-    {
-        f << I_in_photo;
-        f.close();
-    }
+    //std::ofstream f(model->getOutputPath()+"/rho_in_photo.mat");
+    //if (f)
+    //{
+    //    f << rho_in_photo;
+    //    f.close();
+    //}
+    //f.open(model->getOutputPath() + "/I_in_photo.mat");
+    //if (f)
+    //{
+    //    f << I_in_photo;
+    //    f.close();
+    //}
 
 
 
@@ -1546,6 +1549,10 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     // get recovered light
     Eigen::MatrixX3f light_rec = model->getRecoveredLight();
 
+    // set view
+    float view_temp[3];
+    viewer->getViewDirection(view_temp);
+    view = Eigen::Vector3f(view_temp[0], view_temp[1], view_temp[2]);
 
     // get sample direction
     int num_samples = model->getModelLightObj()->getNumSamples();
@@ -1557,7 +1564,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     //std::vector<Eigen::Triplet<float>> normal_coeffs;
     //Eigen::VectorXf right_hand(3 * faces_in_photo.size());
     //Eigen::SparseMatrix<float> Normal_coeffs(3 * faces_in_photo.size(), 3 * faces_in_photo.size());
-    brightness_mat = (num_samples/4/M_PI)*I_in_photo;// we now consider full render equation, no need to divide rho_d
+    brightness_mat = I_in_photo;// we now consider full render equation, no need to divide rho_d
     A_mat.resize(faces_in_photo.size(), 3);
     B_mat.resize(faces_in_photo.size(), 3);
     C_mat.resize(faces_in_photo.size(), 3);
@@ -1666,8 +1673,10 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
         
         F_smooth_adj[i] = cur_f_smooth_adj;
     }
+    A_mat *= (4 * M_PI / num_samples);
+    B_mat *= (4 * M_PI / num_samples);
+    C_mat *= (4 * M_PI / num_samples);
 
-    
 
     //Normal_coeffs.setFromTriplets(normal_coeffs.begin(), normal_coeffs.end());
 
@@ -1725,10 +1734,10 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     //    f_Normal_coeffs.close();
     //}
 
-    std::ofstream f_new_normal(model->getOutputPath() + "/new_normal.mat");
+    std::ofstream f_new_normal(model->getOutputPath() + "/brightness.mat");
     if (f_new_normal)
     {
-        f_new_normal << new_face_in_photo_normal;
+        f_new_normal << brightness_mat;
         f_new_normal.close();
     }
 

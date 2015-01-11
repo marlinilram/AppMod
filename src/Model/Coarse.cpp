@@ -13,6 +13,10 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     photo_temp.convertTo(photo, CV_32FC3);
     photo = 1e-4 + (photo / 255); // to ensure that I always larger than zero, important!
 
+    cv::Mat photo_ps_temp = cv::imread((path + std::to_string(id) + "/photo_ps.png").c_str());
+    photo_ps_temp.convertTo(photo_ps, CV_32FC3);
+    photo_ps = 1e-4 + (photo_ps / 255);
+
     cv::cvtColor(mask_temp, mask, CV_BGR2GRAY);
     cv::threshold(mask, mask, 100, 255, cv::THRESH_BINARY);
 
