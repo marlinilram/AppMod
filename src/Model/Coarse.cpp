@@ -89,6 +89,9 @@ void Coarse::getCrspFromPhotoToRImg(int x, int y, float xy_rimg[2])
     // get its face id
     xy_rimg[0] = xy_model(0) / xy_model(2);
     xy_rimg[1] = xy_model(1) / xy_model(2);
+
+    xy_rimg[0] = (xy_rimg[0] < primitive_ID.cols && xy_rimg[0] >= 0)?(xy_rimg[0]):(0);
+    xy_rimg[1] = (xy_rimg[1] < primitive_ID.rows && xy_rimg[1] >= 0)?(xy_rimg[1]):(0);
 }
 
 bool Coarse::getCrspFaceIdFromPhotoToRImg(int x, int y, int &face_id)
@@ -137,7 +140,12 @@ void Coarse::findFacesInPhoto(std::vector<int> &faces_in_photo)
             {
                 Eigen::Vector3f xy = model_to_img_trans*Eigen::Vector3f((float)j, (float)i, 1.0);
 
-                if (mask.at<uchar>(int(xy(1)/xy(2)), int(xy(0)/xy(2))) > 0)
+                int xy_photo[2] = {int(xy(0)/xy(2) + 0.5), int(xy(1)/xy(2) + 0.5)};
+
+                xy_photo[0] = (xy_photo[0] < mask.cols && xy_photo[0] >= 0)?(xy_photo[0]):(0);
+                xy_photo[1] = (xy_photo[1] < mask.rows && xy_photo[1] >= 0)?(xy_photo[1]):(0);
+
+                if (mask.at<uchar>(xy_photo[1], xy_photo[0]) > 0)
                 {
                     // we must ensure this face can at least find a pixel in the mask
                     int face_id = primitive_ID_ptr[i*primitive_ID.cols + j];
@@ -259,7 +267,8 @@ void Coarse::updateVertexRho()
         {
             float xy_photo[2];
             getCrspFromModelToPhoto(i, xy_photo);
-            cv::Vec3f cur_rho = rho_img.at<cv::Vec3f>(int(xy_photo[1] + 0.5), int(xy_photo[0] + 0.5));
+
+            cv::Vec3f cur_rho = rho_img.at<cv::Vec3f>(int(xy_photo[1]+0.5), int(xy_photo[0]+0.5));
             model_rhos[3 * i + 2] = cur_rho[0];
             model_rhos[3 * i + 1] = cur_rho[1];
             model_rhos[3 * i + 0] = cur_rho[2];
@@ -285,6 +294,9 @@ void Coarse::getCrspFromModelToPhoto(int v_id, float xy_photo[2])
 
     xy_photo[0] = xy(0) / xy(2);
     xy_photo[1] = xy(1) / xy(2);
+
+    xy_photo[0] = (xy_photo[0] < mask.cols && xy_photo[0] >= 0)?(xy_photo[0]):(0);
+    xy_photo[1] = (xy_photo[1] < mask.rows && xy_photo[1] >= 0)?(xy_photo[1]):(0);
 }
 
 void Coarse::updateVertexBrightnessAndColor()

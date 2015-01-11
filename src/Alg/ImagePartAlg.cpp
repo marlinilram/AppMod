@@ -1014,7 +1014,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(1, rhos_temp, cluster_label);
+    model->rhoFromKMeans(3, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
 
     // set optimization
@@ -1277,9 +1277,9 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
         f_output << Light_rec << "\n";
         f_output.close();
     }
-
+    
     // give vertex on model its rho
-    model->updateVertexRho();
+    model->updateVertexRho();std::cout<<"test";
     model->updateVertexBrightnessAndColor();
 
 
@@ -1465,8 +1465,12 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
             if (primitive_id_ptr[i*primitive_id_img.cols + j] >= 0)
             {
                 Eigen::Vector3f xy = model_to_img_trans*Eigen::Vector3f((float)j, (float)i, 1.0);
-                int x = int(xy(0)/xy(2));
-                int y = int(xy(1)/xy(2));
+                int x = int(xy(0)/xy(2) + 0.5);
+                int y = int(xy(1)/xy(2) + 0.5);
+
+                x = (x < mask.cols && x >= 0)?(x):(0);
+                y = (y < mask.rows && y >= 0)?(y):(0);
+
                 if (mask.at<uchar>(y, x) > 0)
                 {
                     // we must ensure this face can at least find a pixel in the mask
