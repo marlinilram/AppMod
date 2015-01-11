@@ -40,6 +40,8 @@ public:
 	Eigen::MatrixX3f rho_d_mat;
 	Eigen::Vector3f view; 
 
+    int num_pixels_init;
+
     std::vector<double> last_iter_output;
 
     std::vector<int> pixel_cluster_label;
