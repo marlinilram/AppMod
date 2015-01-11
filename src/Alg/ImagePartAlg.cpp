@@ -351,9 +351,9 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
 
     // set lambd
     double lambd_sfs = 1;
-    double lambd_rho_d_smooth = 1;
-    double lambd_rho_d_cluster = 0.3;
-    double lambd_light_l2 = 1;
+    double lambd_rho_d_smooth = 0.3;
+    double lambd_rho_d_cluster = 0.01;
+    double lambd_light_l2 = 0.1;
 
 
     if (grad.size() != 0)
@@ -717,7 +717,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(1, rhos_temp, cluster_label);
+    model->rhoFromKMeans(3, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
 
     // set optimization
@@ -1100,30 +1100,65 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     Eigen::MatrixX3f rho_in_photo = Eigen::MatrixX3f::Zero(faces_in_photo.size(), 3);
     Eigen::MatrixX3f I_in_photo = Eigen::MatrixX3f::Zero(faces_in_photo.size(), 3);
     uchar *mask_ptr = (uchar *)mask.data;
+    cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
+    int *primitive_id_ptr = (int *)primitive_id_img.data;
+    Eigen::Matrix3f model_to_img_trans = model->getModelToImgTrans();
 
     // prepare data
 
-    for (int i = 0; i < mask.rows; ++i)
-    { // OpenCV stores mat in row major from left top while MATLAB is col major from left top
-        for (int j = 0; j < mask.cols; ++j)
+    for (int i = 0; i < primitive_id_img.rows; ++i)
+    {
+        for (int j = 0; j < primitive_id_img.cols; ++j)
         {
-            if (mask_ptr[i*mask.cols + j] > 0)
-            {   
-                int face_id = -1;
-                model->getCrspFaceIdFromPhotoToRImg(j, i, face_id);
-                const std::vector<int>::iterator id = find(faces_in_photo.begin(), faces_in_photo.end(), face_id);
-                const int idx = static_cast<int> (id - faces_in_photo.begin());
-                if (id!=faces_in_photo.end())
+            if (primitive_id_ptr[i*primitive_id_img.cols + j] >= 0)
+            {
+                Eigen::Vector3f xy = model_to_img_trans*Eigen::Vector3f((float)j, (float)i, 1.0);
+                int x = int(xy(0)/xy(2));
+                int y = int(xy(1)/xy(2));
+                if (mask.at<uchar>(y, x) > 0)
                 {
-                    pixel_counts(idx) += 1.0f;
-                    cv::Vec3f color = photo.at<cv::Vec3f>(i, j);
-                    cv::Vec3f rho = rho_img.at<cv::Vec3f>(i, j);
-                    rho_in_photo.row(idx) += Eigen::RowVector3f(rho[0], rho[1], rho[2]);
-                    I_in_photo.row(idx) += Eigen::RowVector3f(color[0], color[1], color[2]);
+                    // we must ensure this face can at least find a pixel in the mask
+                    int face_id = primitive_id_ptr[i*primitive_id_img.cols + j];
+                    const std::vector<int>::iterator id = find(faces_in_photo.begin(), faces_in_photo.end(), face_id);
+                    const int idx = static_cast<int> (id - faces_in_photo.begin());
+                    if (id!=faces_in_photo.end())
+                    {
+                        pixel_counts(idx) += 1.0f;
+                        cv::Vec3f color = photo.at<cv::Vec3f>(y, x);
+                        cv::Vec3f rho = rho_img.at<cv::Vec3f>(y, x);
+                        rho_in_photo.row(idx) += Eigen::RowVector3f(rho[0], rho[1], rho[2]);
+                        I_in_photo.row(idx) += Eigen::RowVector3f(color[0], color[1], color[2]);
+                    }
                 }
             }
         }
     }
+
+
+    //for (int i = 0; i < mask.rows; ++i)
+    //{ // OpenCV stores mat in row major from left top while MATLAB is col major from left top
+    //    for (int j = 0; j < mask.cols; ++j)
+    //    {
+    //        if (mask_ptr[i*mask.cols + j] > 0)
+    //        {   
+    //            int face_id = -1;
+    //            model->getCrspFaceIdFromPhotoToRImg(j, i, face_id);
+    //            const std::vector<int>::iterator id = find(faces_in_photo.begin(), faces_in_photo.end(), face_id);
+    //            const int idx = static_cast<int> (id - faces_in_photo.begin());
+    //            if (id!=faces_in_photo.end())
+    //            {
+    //                pixel_counts(idx) += 1.0f;
+    //                cv::Vec3f color = photo.at<cv::Vec3f>(i, j);
+    //                cv::Vec3f rho = rho_img.at<cv::Vec3f>(i, j);
+    //                rho_in_photo.row(idx) += Eigen::RowVector3f(rho[0], rho[1], rho[2]);
+    //                I_in_photo.row(idx) += Eigen::RowVector3f(color[0], color[1], color[2]);
+    //            }
+    //        }
+    //    }
+    //}
+
+
+
 
     rho_in_photo.col(0) = (rho_in_photo.col(0).array() / pixel_counts.array()).matrix();
     rho_in_photo.col(1) = (rho_in_photo.col(1).array() / pixel_counts.array()).matrix();
@@ -1132,6 +1167,21 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     I_in_photo.col(1) = (I_in_photo.col(1).array() / pixel_counts.array()).matrix();
     I_in_photo.col(2) = (I_in_photo.col(2).array() / pixel_counts.array()).matrix();
     Eigen::MatrixX3f brightness_in_photo = (I_in_photo.array() / rho_in_photo.array()).matrix();
+
+
+    std::ofstream f(model->getOutputPath()+"/rho_in_photo.mat");
+    if (f)
+    {
+        f << rho_in_photo;
+        f.close();
+    }
+    f.open(model->getOutputPath() + "/I_in_photo.mat");
+    if (f)
+    {
+        f << I_in_photo;
+        f.close();
+    }
+
 
 
     // TODO: traverse mask to find faces in photo, record number of pixel of each face and sum of intensity,rho

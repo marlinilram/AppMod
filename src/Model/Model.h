@@ -82,6 +82,7 @@ public:
     inline std::vector<float> &getTextCoord(){ return model_text_coord; };
 
     inline cv::Mat &getRImg(){ return r_img; };
+    inline cv::Mat &getPrimitiveIDImg(){ return primitive_ID; };
     inline std::vector<float> &getRhoSpecular(){ return model_rhos; };
     inline std::vector<float> &getRhodIrr(){ return model_brightness; };
 

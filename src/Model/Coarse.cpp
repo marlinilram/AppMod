@@ -105,22 +105,58 @@ bool Coarse::getCrspFaceIdFromPhotoToRImg(int x, int y, int &face_id)
 
 void Coarse::findFacesInPhoto(std::vector<int> &faces_in_photo)
 {
-    faces_in_photo.clear();
-    uchar *mask_ptr = (uchar *)mask.data;
+    //faces_in_photo.clear();
+    //uchar *mask_ptr = (uchar *)mask.data;
 
-    // for each pixel, Ii = (4*pi/num_samples)*Ti'*L. here we build T and I
-    for (int i = 0; i < mask.rows; ++i)
-    { // OpenCV stores mat in row major from left top while MATLAB is col major from left top
-        for (int j = 0; j < mask.cols; ++j)
+    //// for each pixel, Ii = (4*pi/num_samples)*Ti'*L. here we build T and I
+    //for (int i = 0; i < mask.rows; ++i)
+    //{ // OpenCV stores mat in row major from left top while MATLAB is col major from left top
+    //    for (int j = 0; j < mask.cols; ++j)
+    //    {
+    //        if (mask_ptr[i*mask.cols + j] > 0)
+    //        {
+    //            int face_id = -1;
+    //            if (!getCrspFaceIdFromPhotoToRImg(j, i, face_id)) continue;
+    //            const std::vector<int>::iterator id = find(faces_in_photo.begin(), faces_in_photo.end(), face_id);
+    //            if (id == faces_in_photo.end()) faces_in_photo.push_back(face_id);
+    //        }
+    //    }
+    //}
+
+
+
+    // for each pixel in primitiveID image
+    faces_in_photo.clear();
+    int *primitive_ID_ptr = (int *)primitive_ID.data;
+
+    for (int i = 0; i < primitive_ID.rows; ++i)
+    {
+        for (int j = 0; j < primitive_ID.cols; ++j)
         {
-            if (mask_ptr[i*mask.cols + j] > 0)
+            if (primitive_ID_ptr[i*primitive_ID.cols + j] >= 0)
             {
-                int face_id = -1;
-                if (!getCrspFaceIdFromPhotoToRImg(j, i, face_id)) continue;
-                const std::vector<int>::iterator id = find(faces_in_photo.begin(), faces_in_photo.end(), face_id);
-                if (id == faces_in_photo.end()) faces_in_photo.push_back(face_id);
+                Eigen::Vector3f xy = model_to_img_trans*Eigen::Vector3f((float)j, (float)i, 1.0);
+
+                if (mask.at<uchar>(int(xy(1)/xy(2)), int(xy(0)/xy(2))) > 0)
+                {
+                    // we must ensure this face can at least find a pixel in the mask
+                    int face_id = primitive_ID_ptr[i*primitive_ID.cols + j];
+                    const std::vector<int>::iterator id = find(faces_in_photo.begin(), faces_in_photo.end(), face_id);
+                    if (id == faces_in_photo.end()) faces_in_photo.push_back(face_id);
+                }
             }
         }
+    }
+
+    std::ofstream f(getOutputPath()+"/found_face.mat");
+    if (f)
+    {
+        for (size_t i = 0; i < faces_in_photo.size(); ++i)
+        {
+            f << faces_in_photo[i] << "\n";
+        }
+
+        f.close();
     }
 }
 
