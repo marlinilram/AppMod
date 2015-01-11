@@ -161,6 +161,9 @@ void Model::computeLight()
                         brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
                         brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
                         brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+
+
+
                         cur_v_visb.push_back(true);
                     }
                     else { cur_v_visb.push_back(false); }
