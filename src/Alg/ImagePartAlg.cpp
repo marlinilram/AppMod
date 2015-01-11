@@ -599,7 +599,7 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     // set lambd
     double lambd_sfs = 1;// / num_pixels_init;
     double lambd_rho_d_smooth = 0.01;// / cur_num_pixels;
-    double lambd_rho_d_cluster = 0.3;// / cur_num_pixels;
+    double lambd_rho_d_cluster = 3;// / cur_num_pixels;
     double lambd_light_l2 = 0.1;// / cur_num_pixels;
 
 
