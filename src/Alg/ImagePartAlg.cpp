@@ -600,7 +600,7 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     // set lambd
     double lambd_sfs = 1;// / num_pixels_init;
     double lambd_rho_d_smooth = 0.01;// / cur_num_pixels;
-    double lambd_rho_d_cluster = 3;// / cur_num_pixels;
+    double lambd_rho_d_cluster = 0.3;// / cur_num_pixels;
     double lambd_light_l2 = 0.1;// / cur_num_pixels;
 
 
@@ -1086,21 +1086,21 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // init x
     for (int i = 0; i < 4; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = rho_specular(i, 0);
-        x[i + 1 * n_dim_sig_chan] = rho_specular(i, 1);
-        x[i + 2 * n_dim_sig_chan] = rho_specular(i, 2);
+        x[i + 0 * n_dim_sig_chan] = 1;//rho_specular(i, 0);
+        x[i + 1 * n_dim_sig_chan] = 1;//rho_specular(i, 1);
+        x[i + 2 * n_dim_sig_chan] = 1;//rho_specular(i, 2);
     }
     for (int i = 4; i < n_dim_sig_chan - n_dim_light; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
-        x[i + 1 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
-        x[i + 2 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
+        x[i + 0 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
+        x[i + 1 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
+        x[i + 2 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
     }
     for (int i = n_dim_sig_chan - n_dim_light; i < n_dim_sig_chan; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 0);
-        x[i + 1 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 1);
-        x[i + 2 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 2);
+        x[i + 0 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 0);
+        x[i + 1 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 1);
+        x[i + 2 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 2);
     }
 
     std::ofstream f(model->getOutputPath() + "/x.mat");

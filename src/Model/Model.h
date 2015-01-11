@@ -48,6 +48,7 @@ public:
     Model(const int id, const std::string path, const std::string name);
     void passData(VectorF &vertices, Facelist &faces, Colorlist &colors);
 	void exportOBJ(int cur_iter = 0);
+    void setInit();
 
     void computeLight();
     void computeModelVisbs();

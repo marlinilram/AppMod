@@ -99,6 +99,8 @@ void MainWin::loadModel()
 void MainWin::exportOBJ()
 {
 	coarse_model->exportOBJ();
+
+    //coarse_model->setInit();
 }
 
 void MainWin::snapShot()

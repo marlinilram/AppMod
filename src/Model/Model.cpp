@@ -50,7 +50,7 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     }
 
     model_vertices = shapes[0].mesh.positions;
-    model_normals_init = model_vertices;
+    model_vertices_init = model_vertices;
     model_normals = shapes[0].mesh.normals;
     model_normals_init = model_normals;
     model_faces = shapes[0].mesh.indices;
@@ -78,6 +78,23 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     //model_colors[model_faces[169 * 3 + 2] * 3 + 0] = 1.0;
 
     return true;
+}
+
+void Model::setInit()
+{
+    model_vertices = model_vertices_init;
+
+    model_normals = model_normals_init;
+
+    computeFaceNormal();
+
+
+    //computeVertexNormal();
+
+    updateBSPtree();
+
+    computeLight();
+
 }
 
 void Model::exportOBJ(int cur_iter)
