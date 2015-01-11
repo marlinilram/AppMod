@@ -128,6 +128,8 @@ void Model::computeLight()
     int num_sqrt_samples = model_light->getSqrtNumSamples();
     int num_channels = model_light->getNumChannels();
     SAMPLE *samples = model_light->getSamples();
+	model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
+	Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
     int perc = 0;
     model_visbs.clear();
 	//renderer->setCheckVisbStatus(true);
@@ -158,11 +160,13 @@ void Model::computeLight()
 					//if (renderer->checkVertexVisbs(i, this, samples[k].direction))
                     if (ray_cast.intersectModel(ray_start, ray_end))
                     {
-                        brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
-                        brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
-                        brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+                        //brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
+                        //brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
+                        //brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
 
-
+						brightness[0] += dot*outside_light(k, 0);
+						brightness[1] += dot*outside_light(k, 1);
+						brightness[2] += dot*outside_light(k, 2);
 
                         cur_v_visb.push_back(true);
                     }
@@ -170,9 +174,15 @@ void Model::computeLight()
                 }
                 else
                 {
-                    brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
-                    brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
-                    brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+                    //brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
+                    //brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
+                    //brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+
+					brightness[0] += dot*outside_light(k, 0);
+					brightness[1] += dot*outside_light(k, 1);
+					brightness[2] += dot*outside_light(k, 2);
+
+
                     cur_v_visb.push_back(true);
                 }
             }
