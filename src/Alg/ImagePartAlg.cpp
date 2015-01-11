@@ -1014,7 +1014,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(1, rhos_temp, cluster_label);
+    model->rhoFromKMeans(3, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
 
     // set optimization
