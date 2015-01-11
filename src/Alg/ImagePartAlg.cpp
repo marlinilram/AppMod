@@ -597,10 +597,10 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     // Compute Value Of Objective Function
 
     // set lambd
-    double lambd_sfs = 1 / num_pixels_init;
-    double lambd_rho_d_smooth = 0.01 / cur_num_pixels;
-    double lambd_rho_d_cluster = 0.3 / cur_num_pixels;
-    double lambd_light_l2 = 0.1 / cur_num_pixels;
+    double lambd_sfs = 1;// / num_pixels_init;
+    double lambd_rho_d_smooth = 0.01;// / cur_num_pixels;
+    double lambd_rho_d_cluster = 0.3;// / cur_num_pixels;
+    double lambd_light_l2 = 0.1;// / cur_num_pixels;
 
 
     // rho d smooth term
@@ -804,7 +804,8 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 
 
     T_coef = (4 * M_PI / model->getModelLightObj()->getNumSamples())*T_coef;
-    num_pixels_init = T_coef.rows();
+    if (model->getCurIter() == 0)
+        num_pixels_init = T_coef.rows();
 
 
     // use nlopt to solve bounded non-linear least squares
@@ -1013,7 +1014,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(3, rhos_temp, cluster_label);
+    model->rhoFromKMeans(1, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
 
     // set optimization
@@ -1126,6 +1127,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 
     std::cout << "Return values of NLopt: " << result << "\n";
     
+    std::cout << "Pixels this iter: " << T_coef.rows() << "\tPiexels first iter: " << num_pixels_init << "\n";
 
     //for (int k_chan = 0; k_chan < 3; ++k_chan)
     //{
