@@ -51,6 +51,11 @@ public:
     inline int &getCurIter() { return cur_iter; };
     inline Eigen::Matrix3f &getModelToImgTrans() { return model_to_img_trans; };
     inline int getParaNumCluster() { return num_cluster; };
+	inline double getParaKStrech() { return lambd_k_strech; };
+	inline double getParaKBend() { return lambd_k_bend; };
+	inline double getParaDeformNormal() { return lambd_deform_normal; };
+	inline double getParaVerticalMove() { return lambd_vertical_move; };
+	inline int getParaMaxDeformIter() { return deform_max_iter; };
 
 protected:
     Mat3F model_to_img_trans;
@@ -66,6 +71,7 @@ protected:
     // opt parameter
     int num_iter;
     int cur_iter;
+	// image part parameters
     double BRDF_Light_sfs;
     double Light_Reg;
     double cluster_smooth;
@@ -73,6 +79,13 @@ protected:
     double Norm_smooth;
     double Norm_normalized;
     int num_cluster;
+	// geometry part parameters
+	double lambd_k_strech;
+	double lambd_k_bend;
+	double lambd_deform_normal;
+	double lambd_vertical_move;
+	int deform_max_iter;
+
 };
 
 #endif
