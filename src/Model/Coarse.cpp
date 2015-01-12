@@ -43,6 +43,11 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     Norm_smooth = 0;
     Norm_normalized = 0.5;
     num_cluster = 1;
+
+	lambd_k_strech = 10;
+	lambd_k_bend = 15;
+	lambd_deform_normal = 25;
+	lambd_vertical_move = 10;
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)
