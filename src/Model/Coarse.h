@@ -50,6 +50,7 @@ public:
     inline double getParaNormNormalized() { return Norm_normalized; };
     inline int &getCurIter() { return cur_iter; };
     inline Eigen::Matrix3f &getModelToImgTrans() { return model_to_img_trans; };
+    inline int getParaNumCluster() { return num_cluster; };
 
 protected:
     Mat3F model_to_img_trans;
@@ -71,6 +72,7 @@ protected:
     double Norm_sfs;
     double Norm_smooth;
     double Norm_normalized;
+    int num_cluster;
 };
 
 #endif

@@ -198,7 +198,7 @@ void MainWin::refreshScreen()
 void MainWin::setOptParatoModel()
 {
     int num_iter = m_spinBox_iter_num->value();
-    double other_paras[6];
+    double other_paras[7];
 
     other_paras[0] = m_spinBox_BRDF_Light_sfs->value();
     other_paras[1] = m_spinBox_Light_Reg->value();
@@ -206,8 +206,9 @@ void MainWin::setOptParatoModel()
     other_paras[3] = m_spinBox_norm_sfs->value();
     other_paras[4] = m_spinBox_norm_smooth->value();
     other_paras[5] = m_spinBox_norm_normalized->value();
+    other_paras[6] = m_spinBox_cluster_num->value();
 
-    coarse_model->setOptParameter(num_iter, 6, other_paras);
+    coarse_model->setOptParameter(num_iter, 7, other_paras);
 }
 
 void MainWin::runAll()

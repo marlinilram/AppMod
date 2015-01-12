@@ -590,4 +590,5 @@ void Coarse::setOptParameter(const int &numIter, const int &numParas, double *ot
     Norm_sfs = other_paras[3];
     Norm_smooth = other_paras[4];
     Norm_normalized = other_paras[5];
+    num_cluster = other_paras[6];
 }

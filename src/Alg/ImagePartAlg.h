@@ -58,6 +58,7 @@ public:
     double lambd_norm_sfs;
     double lambd_norm_smooth;
     double lambd_norm_normalized;
+    int  num_cluster;
 
     int cur_iter;
 

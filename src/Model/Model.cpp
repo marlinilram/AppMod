@@ -130,6 +130,14 @@ void Model::computeLight()
     SAMPLE *samples = model_light->getSamples();
 	model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
 	Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
+
+    std::ofstream f_test(getDataPath()+"/Light_loaded.mat");
+    if (f_test)
+    {
+        f_test << outside_light;
+        f_test.close();
+    }
+
     int perc = 0;
     model_visbs.clear();
 	//renderer->setCheckVisbStatus(true);
@@ -199,9 +207,9 @@ void Model::computeLight()
         model_brightness.push_back(brightness[1]);
         model_brightness.push_back(brightness[2]);
 
-        model_colors[3 * i + 0] *= (float)brightness[0];
-        model_colors[3 * i + 1] *= (float)brightness[1];
-        model_colors[3 * i + 2] *= (float)brightness[2];
+        model_colors[3 * i + 0] = (float)brightness[0];
+        model_colors[3 * i + 1] = (float)brightness[1];
+        model_colors[3 * i + 2] = (float)brightness[2];
 
         if (int(i*100.0f / (model_vertices.size() / 3)) > perc)
         {
