@@ -1568,7 +1568,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     // TODO: traverse mask to find faces in photo, record number of pixel of each face and sum of intensity,rho
 
     // get recovered light
-    Eigen::MatrixX3f light_rec = model->getRecoveredLight();
+    Eigen::MatrixX3f light_rec = model->getModelLightObj()->getOutsideLight();
 
     // set view
     float view_temp[3];
