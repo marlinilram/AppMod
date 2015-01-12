@@ -529,50 +529,64 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
 
     // update cluster
     // compute new cluster center 5 clusters at most
-    Eigen::Matrix<float, 5, 1> cnt_cluster = Eigen::Matrix<float, 5, 1>::Zero();
-    Eigen::Matrix<float, 5, 3> center_cluster = Eigen::Matrix<float, 5, 3>::Zero();
-
+    int num_cluster = img_alg_data_ptr->num_cluster;
     int cnt_num_cluster = 0; // record how many clusters in the labels
+
+    Eigen::MatrixXf cnt_cluster = Eigen::MatrixXf::Zero(num_cluster, 1);
+    Eigen::MatrixXf center_cluster = Eigen::MatrixXf::Zero(num_cluster, 3);
+
     for (size_t i = 0; i < n_dim_rho_d; ++i)
     {
-        if (cluster_label[i] > cnt_num_cluster)
-            cnt_num_cluster = cluster_label[i];
-
-        switch (cluster_label[i])
+        for (int k = 0; k < num_cluster; ++k)
         {
-        case 0:
-            ++cnt_cluster(0);
-            center_cluster(0, 0) += rho_d_ch1(i);
-            center_cluster(0, 1) += rho_d_ch2(i);
-            center_cluster(0, 2) += rho_d_ch3(i);
-            break;
-        case 1:
-            ++cnt_cluster(1);
-            center_cluster(1, 0) += rho_d_ch1(i);
-            center_cluster(1, 1) += rho_d_ch2(i);
-            center_cluster(1, 2) += rho_d_ch3(i);
-            break;
-        case 2:
-            ++cnt_cluster(2);
-            center_cluster(2, 0) += rho_d_ch1(i);
-            center_cluster(2, 1) += rho_d_ch2(i);
-            center_cluster(2, 2) += rho_d_ch3(i);
-            break;
-        case 3:
-            ++cnt_cluster(3);
-            center_cluster(3, 0) += rho_d_ch1(i);
-            center_cluster(3, 1) += rho_d_ch2(i);
-            center_cluster(3, 2) += rho_d_ch3(i);
-            break;
-        case 4:
-            ++cnt_cluster(4);
-            center_cluster(4, 0) += rho_d_ch1(i);
-            center_cluster(4, 1) += rho_d_ch2(i);
-            center_cluster(4, 2) += rho_d_ch3(i);
-            break;
-        default:
-            break;
+            if (cluster_label[i] == k)
+            {
+                ++cnt_cluster(k);
+                center_cluster(k, 0) += rho_d_ch1(i);
+                center_cluster(k, 1) += rho_d_ch2(i);
+                center_cluster(k, 2) += rho_d_ch3(i);
+                break;
+            }
         }
+
+        //if (cluster_label[i] > cnt_num_cluster)
+        //    cnt_num_cluster = cluster_label[i];
+
+        //switch (cluster_label[i])
+        //{
+        //case 0:
+        //    ++cnt_cluster(0);
+        //    center_cluster(0, 0) += rho_d_ch1(i);
+        //    center_cluster(0, 1) += rho_d_ch2(i);
+        //    center_cluster(0, 2) += rho_d_ch3(i);
+        //    break;
+        //case 1:
+        //    ++cnt_cluster(1);
+        //    center_cluster(1, 0) += rho_d_ch1(i);
+        //    center_cluster(1, 1) += rho_d_ch2(i);
+        //    center_cluster(1, 2) += rho_d_ch3(i);
+        //    break;
+        //case 2:
+        //    ++cnt_cluster(2);
+        //    center_cluster(2, 0) += rho_d_ch1(i);
+        //    center_cluster(2, 1) += rho_d_ch2(i);
+        //    center_cluster(2, 2) += rho_d_ch3(i);
+        //    break;
+        //case 3:
+        //    ++cnt_cluster(3);
+        //    center_cluster(3, 0) += rho_d_ch1(i);
+        //    center_cluster(3, 1) += rho_d_ch2(i);
+        //    center_cluster(3, 2) += rho_d_ch3(i);
+        //    break;
+        //case 4:
+        //    ++cnt_cluster(4);
+        //    center_cluster(4, 0) += rho_d_ch1(i);
+        //    center_cluster(4, 1) += rho_d_ch2(i);
+        //    center_cluster(4, 2) += rho_d_ch3(i);
+        //    break;
+        //default:
+        //    break;
+        //}
     }
     center_cluster.col(0) = (center_cluster.col(0).array() / cnt_cluster.array()).matrix();
     center_cluster.col(1) = (center_cluster.col(1).array() / cnt_cluster.array()).matrix();
@@ -583,7 +597,7 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     for (size_t i = 0; i < n_dim_rho_d; ++i)
     {
         double min_dist = std::numeric_limits<double>::max();
-        for (int j = 0; j < (cnt_num_cluster + 1); ++j)
+        for (int j = 0; j < num_cluster; ++j)
         {
             double dist = (rho_d_ch1(i) - center_cluster(j, 0))*(rho_d_ch1(i) - center_cluster(j, 0))
                 + (rho_d_ch2(i) - center_cluster(j, 1))*(rho_d_ch2(i) - center_cluster(j, 1))
@@ -1589,7 +1603,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     rho_s.col(2) = (S_C_view.col(2).array().pow(rho_specular(3, 2))).matrix();
 
     lambd_sfs = model->getParaNormSfS();// 10.0f;
-    lambd_smooth = model->getParaNormSmooth; //0.0f;
+    lambd_smooth = model->getParaNormSmooth(); //0.0f;
     lambd_norm = model->getParaNormNormalized();//5.0f;
     float lambda_sfs = 10.0;
     float lambda_smooth = 0.0;
@@ -1786,6 +1800,13 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     GeometryPartAlg geoAlg;
     geoAlg.updateGeometry(model);
 }
+
+
+void ImagePartAlg::runWholeIter(Coarse *model, Viewer *viewer)
+{
+
+}
+
 
 float ImagePartAlg::sigmoid(float coef, float t)
 {

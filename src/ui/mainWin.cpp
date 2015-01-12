@@ -94,6 +94,8 @@ void MainWin::loadModel()
     std::string outptu_file_path = coarse_model->getDataPath() + "/output" + time_postfix;
     dir.mkpath(QString(outptu_file_path.c_str()));
     coarse_model->setOutputPath(outptu_file_path);
+
+    setOptParatoModel();
 }
 
 void MainWin::exportOBJ()
@@ -208,7 +210,8 @@ void MainWin::setOptParatoModel()
     other_paras[5] = m_spinBox_norm_normalized->value();
     other_paras[6] = m_spinBox_cluster_num->value();
 
-    coarse_model->setOptParameter(num_iter, 7, other_paras);
+    if (coarse_model)
+        coarse_model->setOptParameter(num_iter, 7, other_paras);
 }
 
 void MainWin::runAll()

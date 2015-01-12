@@ -73,7 +73,7 @@ private slots:
 	void testNLopt();
     void findISmoothAdj(std::vector<std::vector<int>> &I_smooth_adj, std::vector<Eigen::Vector2i> &I_xy_vec);
 
-    //void runWholeIter()
+    void runWholeIter(Coarse *model, Viewer *viewer);
 
 signals:
     void refreshScreen();

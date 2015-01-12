@@ -14,26 +14,14 @@
    <string>I2S</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="Viewer" name="viewer_img" native="true">
-    <property name="geometry">
-     <rect>
-      <x>507</x>
-      <y>9</y>
-      <width>491</width>
-      <height>556</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="Viewer" name="viewer" native="true">
-    <property name="geometry">
-     <rect>
-      <x>9</x>
-      <y>9</y>
-      <width>492</width>
-      <height>556</height>
-     </rect>
-    </property>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout_3">
+    <item row="0" column="0">
+     <widget class="Viewer" name="viewer" native="true"/>
+    </item>
+    <item row="0" column="1">
+     <widget class="Viewer" name="viewer_img" native="true"/>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -129,7 +117,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_spinBox_BRDF_Light_sfs"/>
+             <widget class="QDoubleSpinBox" name="m_spinBox_BRDF_Light_sfs">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -143,7 +138,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_spinBox_Light_Reg"/>
+             <widget class="QDoubleSpinBox" name="m_spinBox_Light_Reg">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.100000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -157,7 +159,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_spinBox_cluster_smooth"/>
+             <widget class="QDoubleSpinBox" name="m_spinBox_cluster_smooth">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.300000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -192,7 +201,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_spinBox_norm_sfs"/>
+             <widget class="QDoubleSpinBox" name="m_spinBox_norm_sfs">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -206,7 +222,11 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_spinBox_norm_smooth"/>
+             <widget class="QDoubleSpinBox" name="m_spinBox_norm_smooth">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -220,7 +240,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_spinBox_norm_normalized"/>
+             <widget class="QDoubleSpinBox" name="m_spinBox_norm_normalized">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.500000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
