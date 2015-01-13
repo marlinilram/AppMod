@@ -42,6 +42,7 @@ private slots:
     void setOptParatoModel();
     void runAll();
     void renderTexture();
+    void computeAll();
 
 signals:
     void callComputeInitLight(Coarse *, Viewer *);
@@ -49,6 +50,7 @@ signals:
     void callComputeNormal(Coarse *, Viewer *);
 	void callNLoptTest();
     void callRunWholeIter(Coarse *, Viewer *);
+    void callComputeBRDFLightNormal(Coarse *, Viewer *);
 
 public:
     //Viewer *viewer;

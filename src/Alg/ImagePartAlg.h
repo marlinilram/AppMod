@@ -41,6 +41,8 @@ public:
 	Eigen::MatrixX3f rho_d_mat;
 	Eigen::Vector3f view; 
 
+    Eigen::MatrixX3f normal_debug;
+
     int num_pixels_init;
 
     std::vector<double> last_iter_output;

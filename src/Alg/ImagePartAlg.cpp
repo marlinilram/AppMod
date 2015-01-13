@@ -763,7 +763,6 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 	// 3. B_mat
 	// 4. C_mat
 
-
 	Eigen::MatrixX3f &Intensities = img_alg_data_ptr->I_mat;
 	Eigen::MatrixXf &V_coeff = img_alg_data_ptr->V_coef;
 	Eigen::MatrixX3f &S = img_alg_data_ptr->S_mat;
@@ -793,7 +792,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 	Eigen::MatrixX3f cur_N = (cur_N_temp.transpose()).cast<float>();
 
 	// 1. compute T_coeff
-	Eigen::MatrixXf T_coeff = ((cur_N * S.transpose()).array() * V_coeff.array()).matrix();
+	Eigen::MatrixXf T_coeff = (4*M_PI/n_dim_light)*((cur_N * S.transpose()).array() * V_coeff.array()).matrix();
 
 	// pre: set data for BRDFLight all channels
 	// channel 1
@@ -1290,7 +1289,7 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     //}
 
     // output some variables for debug here
-    //std::ofstream f_light_rec(model->getDataPath() + "/T_coef.mat");
+    //std::ofstream f_light_rec(model->getOutputPath() + "/T_coef.mat");
     //if (f_light_rec)
     //{
     //	f_light_rec << T_coef;
@@ -1394,6 +1393,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     {
         S_mat.row(i) = model_samples[i].direction;
     }
+    S_mat = model->getModelLightObj()->getOutsideSampleMatrix();
 
 
     // set S*view matrix for inequality constraints
@@ -2254,7 +2254,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 				float winx, winy;
 				Eigen::Vector3f cur_pixel_normal;
 				Eigen::Vector3f cur_pixel_pos;
-				if (!model->getPixelVisbCoeffs(j, i, visb_coeffs, viewer, winx, winy, cur_pixel_normal)) continue;
+				if (!model->getPixelVisbCoeffs(j, i, visb_coeffs, viewer, winx, winy, cur_pixel_normal, cur_pixel_pos)) continue;
 				visb_coeffs_vec.push_back(visb_coeffs);
 				cv::Vec3f color = photo.at<cv::Vec3f>(i, j);
 				I_vec.push_back(Eigen::Vector3f(color[0], color[1], color[2]));
@@ -2277,7 +2277,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	}
 
 	
-	I_mat = (model->getModelLightObj()->getNumSamples()/4/M_PI)*I;
+	I_mat = I;//(model->getModelLightObj()->getNumSamples()/4/M_PI)*I;
 
 	if (model->getCurIter() == 0)
 		num_pixels_init = V_coef.rows();
@@ -2299,7 +2299,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	// set S matrix
 	SAMPLE *model_samples = model->getModelLightObj()->getSamples();
 	int num_samples = model->getModelLightObj()->getNumSamples();
-	S_mat = model->getModelLightObj()->getSampleMatrix();
+	S_mat = model->getModelLightObj()->getOutsideSampleMatrix();
 
 	// set lambda parameters
 	lambd_BRDF_Light_sfs = model->getParaBRDFLightSfS();
@@ -2311,9 +2311,11 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	lambd_norm = model->getParaNormNormalized();//5.0f;
 
 
+
+
 	// some data
 	std::cout<<V_coef.rows()<<"\n";
-	Eigen::MatrixX3f Rho_rec(T_coef.rows() + 4, 3);
+	Eigen::MatrixX3f Rho_rec(V_coef.rows() + 4, 3);
 	Eigen::Matrix<float, 4, 3> &rho_specular = model->getRhoSpclr();
 
 	// use the I_xy_vec to compute kmeans
@@ -2357,12 +2359,16 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	opt.set_upper_bounds(ub);
 
 	// objective function
-	opt.set_min_objective(funcSFSLightBRDFAllChn, this);
+	opt.set_min_objective(funcSFSLightBRDFNormal, this);
 
-	opt.set_ftol_rel(1e-4);
-	opt.set_ftol_abs(1e-4);
-	opt.set_xtol_rel(1e-4);
-	opt.set_xtol_abs(1e-4);
+	//opt.set_ftol_rel(1e-4);
+	//opt.set_ftol_abs(1e-4);
+	//opt.set_xtol_rel(1e-4);
+	//opt.set_xtol_abs(1e-4);
+ //   opt.set_stopval(1000);
+
+    opt.set_ftol_abs(1e-3);
+    opt.set_maxtime(180*3);
 
 	// declare initial x
 	std::vector<double> x(n_total_dim);
@@ -2405,7 +2411,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
 
 	Eigen::Map<Eigen::MatrixX3d>BRDFLight_rec_mat(&x[0], n_dim_sig_chan, 3);
-	Eigen::Map<Eigen::Matrix3Xd>normal_rec_mat(&x[3*n_dim_sig_chan], 3, n_dim_normal);
+	//Eigen::Map<Eigen::Matrix3Xd>normal_rec_mat(&x[3*n_dim_sig_chan], 3, n_dim_normal);
 
 	Rho_rec.col(0) = (BRDFLight_rec_mat.col(0).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
 	Rho_rec.col(1) = (BRDFLight_rec_mat.col(1).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
@@ -2414,9 +2420,8 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	Light_rec.col(1) = (BRDFLight_rec_mat.col(1).segment(n_dim_rho_s + n_dim_rho_d, n_dim_light)).cast<float>();
 	Light_rec.col(2) = (BRDFLight_rec_mat.col(2).segment(n_dim_rho_s + n_dim_rho_d, n_dim_light)).cast<float>();
 
-	std::cout << "Return values of NLopt: " << result << "\n";
 
-	std::cout << "Pixels this iter: " << T_coef.rows() << "\tPiexels first iter: " << num_pixels_init << "\n";
+	std::cout << "Pixels this iter: " << V_coef.rows() << "\tPiexels first iter: " << num_pixels_init << "\n";
 
 	rho_specular.row(0) = Rho_rec.row(0);
 	rho_specular.row(1) = Rho_rec.row(1);
@@ -2459,12 +2464,12 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	model->updateVertexRho();
 	model->updateVertexBrightnessAndColor();
 
-	std::ofstream f_debug(model->getOutputPath() + "/normal.mat");
-	if (f_debug)
-	{
-		f_debug << normal_rec_mat.transpose() <<"\n";
-		f_debug.close();
-	}
+	//std::ofstream f_debug(model->getOutputPath() + "/normal.mat");
+	//if (f_debug)
+	//{
+	//	f_debug << normal_rec_mat.transpose() <<"\n";
+	//	f_debug.close();
+	//}
 	
 
 

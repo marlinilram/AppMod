@@ -30,13 +30,14 @@ MainWin::MainWin()
     connect(action_Init_Light, SIGNAL(triggered()), this, SLOT(initLight()));
     connect(action_Check_Visible, SIGNAL(triggered()), this, SLOT(checkVisibleVertices()));
     connect(action_Reset_Screen, SIGNAL(triggered()), this, SLOT(resetScreen()));
-    connect(action_Update_Light, SIGNAL(triggered()), this, SLOT(updateLight()));
+    //connect(action_Update_Light, SIGNAL(triggered()), this, SLOT(updateLight()));
     connect(action_Compute_Normal, SIGNAL(triggered()), this, SLOT(computeNormal()));
     connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
 	connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
     connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
     connect(m_pushButton_set_para, SIGNAL(clicked()), this, SLOT(setOptParatoModel()));
     connect(m_pushButton_Run, SIGNAL(clicked()), this, SLOT(runAll()));
+    connect(action_Compute_All, SIGNAL(triggered()), this, SLOT(computeAll()));
 
     this->show();
 
@@ -50,6 +51,7 @@ MainWin::MainWin()
     connect(this, SIGNAL(callComputeNormal(Coarse *, Viewer *)), img_part_alg, SLOT(computeNormal(Coarse *, Viewer *)));
     connect(this, SIGNAL(callRunWholeIter(Coarse *, Viewer *)), img_part_alg, SLOT(runWholeIter(Coarse *, Viewer *)));
 	connect(this, SIGNAL(callNLoptTest()), img_part_alg, SLOT(testNLopt()));
+    connect(this, SIGNAL(callComputeBRDFLightNormal(Coarse *, Viewer *)), img_part_alg, SLOT(solveRenderEqAll(Coarse *, Viewer *)));
     connect(img_part_alg, SIGNAL(refreshScreen()), this, SLOT(refreshScreen()));
 
     img_part_alg->moveToThread(img_part_alg_thread);
@@ -252,4 +254,12 @@ void MainWin::renderTexture()
     std::string file_time_postfix = time_postfix;
 
     viewer->saveSnapshot(QString((coarse_model->getOutputPath()+"/ren_img" + file_time_postfix + ".png").c_str()));
+}
+
+void MainWin::computeAll()
+{
+    if (coarse_model)
+    {
+        emit callComputeBRDFLightNormal(coarse_model, viewer);
+    }
 }

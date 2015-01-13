@@ -90,12 +90,13 @@ bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Vi
     // to decrease precision loss we put it to I when solving lsq
     SAMPLE *light_samples = model_light->getSamples();
     int num_samples = model_light->getNumSamples();
+    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
 
     light_coeffs = Eigen::VectorXf::Zero(num_samples);
     for (int i = 0; i < num_samples; ++i)
     {
         // the max(0, dot) has been considered in visb
-        light_coeffs(i) = (xyz_normal.dot(light_samples[i].direction))*visb[i];
+        light_coeffs(i) = (xyz_normal.dot(s_mat.row(i)))*visb[i];
     }
 
     return true;

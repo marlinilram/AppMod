@@ -71,9 +71,9 @@
    <addaction name="action_Load_S2I_Transform"/>
    <addaction name="action_Check_Visible"/>
    <addaction name="action_Init_Light"/>
-   <addaction name="action_Update_Light"/>
    <addaction name="action_Compute_Normal"/>
    <addaction name="action_Update_Geometry"/>
+   <addaction name="action_Compute_All"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget">
    <attribute name="dockWidgetArea">
@@ -435,11 +435,6 @@
     <string>Reset Screen</string>
    </property>
   </action>
-  <action name="action_Update_Light">
-   <property name="text">
-    <string>Update Light</string>
-   </property>
-  </action>
   <action name="action_Compute_Normal">
    <property name="text">
     <string>Compute Normal</string>
@@ -458,6 +453,11 @@
   <action name="action_Render">
    <property name="text">
     <string>Render</string>
+   </property>
+  </action>
+  <action name="action_Compute_All">
+   <property name="text">
+    <string>Compute All</string>
    </property>
   </action>
  </widget>
