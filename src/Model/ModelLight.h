@@ -16,9 +16,11 @@ public:
     int getSqrtNumSamples();
     int getNumChannels();
 	void loadOutsideLight(std::string file);
+    void loadOutsideSample(std::string file);
 	inline Eigen::MatrixX3f &getOutsideLight() { return light_matrix; };
     SAMPLE *getSamples();
     inline Eigen::MatrixX3f &getSampleMatrix(){ return sample_matrix; };
+    inline Eigen::MatrixX3f &getOutsideSampleMatrix(){ return sample_matrix_outside; };
 
 private:
     int num_samples;
@@ -28,6 +30,7 @@ private:
     SAMPLE *samples;
     Eigen::MatrixX3f sample_matrix;
 	Eigen::MatrixX3f light_matrix;
+    Eigen::MatrixX3f sample_matrix_outside;
 };
 
 #endif

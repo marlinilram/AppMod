@@ -48,6 +48,8 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
 	lambd_k_bend = 15;
 	lambd_deform_normal = 25;
 	lambd_vertical_move = 10;
+    deform_max_iter = 20;
+
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)
@@ -412,7 +414,7 @@ void Coarse::drawNormal()
         normal_dir << model_new_normals[3 * i + 0],
                       model_new_normals[3 * i + 1],
                       model_new_normals[3 * i + 2];
-        Eigen::Vector3f end_pt(start_pt + 3.5*normal_dir);
+        Eigen::Vector3f end_pt(start_pt + 0.01*normal_dir);
         Eigen::Vector3f blue_color(0.0f, 0.0f, 1.0f);
         renderer->addDrawableLine(start_pt.data(), end_pt.data(), blue_color.data(), blue_color.data());
     }
@@ -611,4 +613,15 @@ void Coarse::setOptParameter(const int &numIter, const int &numParas, double *ot
     std::cout<<"Norm_normalized:\t"<<Norm_normalized<<"\n";
     num_cluster = other_paras[6];
     std::cout<<"num_cluster:\t"<<num_cluster<<"\n";
+
+    lambd_k_strech = other_paras[7];
+    std::cout<<"K Strech:\t"<<lambd_k_strech<<"\n";
+    lambd_k_bend = other_paras[8];
+    std::cout<<"K Bend:\t"<<lambd_k_bend<<"\n";
+    lambd_deform_normal = other_paras[9];
+    std::cout<<"Deform Normal:\t"<<lambd_deform_normal<<"\n";
+    lambd_vertical_move = other_paras[10];
+    std::cout<<"Vertical Move:\t"<<lambd_vertical_move<<"\n";
+    deform_max_iter = other_paras[11];
+    std::cout<<"Deform Max Iter:\t"<<deform_max_iter<<"\n";
 }

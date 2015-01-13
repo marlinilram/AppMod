@@ -5,6 +5,7 @@
 
 #include "Viewer.h"
 #include "Coarse.h"
+#include "GroundTruth.h"
 #include "ImagePartAlg.h"
 #include "GeometryPartAlg.h"
 
@@ -53,6 +54,8 @@ public:
     //Viewer *viewer;
     //Viewer *viewer_img;
     Coarse *coarse_model;
+    Groundtruth *gt_model;
+
 
     ImagePartAlg *img_part_alg;
     QThread *img_part_alg_thread;

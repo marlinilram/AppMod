@@ -26,7 +26,10 @@ Model::Model(const int id, const std::string path, const std::string name)
 
     computeLight();
 
-    rho_specular = Eigen::MatrixXf::Ones(4, 3);
+    rho_specular = Eigen::MatrixXf::Zero(4, 3);
+    rho_specular(3,0)=1;
+    rho_specular(3,1)=1;
+    rho_specular(3,2)=1;
 }
 
 Model::~Model()
@@ -129,14 +132,16 @@ void Model::computeLight()
     int num_channels = model_light->getNumChannels();
     SAMPLE *samples = model_light->getSamples();
 	model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
+    model_light->loadOutsideSample(getDataPath()+"/sample.mat");
 	Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
+    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
 
-    std::ofstream f_test(getDataPath()+"/Light_loaded.mat");
-    if (f_test)
-    {
-        f_test << outside_light;
-        f_test.close();
-    }
+    //std::ofstream f_test(getDataPath()+"/s_mat.mat");
+    //if (f_test)
+    //{
+    //    f_test << s_mat;
+    //    f_test.close();
+    //}
 
     int perc = 0;
     model_visbs.clear();
@@ -156,8 +161,10 @@ void Model::computeLight()
         for (int k = 0; k < num_samples; ++k)
         {
             // check if light * normal > 0
-            float dot = (float)samples[k].direction.dot(cur_v_normal);
-            Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000*samples[k].direction.cast<double>();
+            //float dot = (float)samples[k].direction.dot(cur_v_normal);
+            float dot = (float)s_mat.row(k).dot(cur_v_normal);
+            //Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000*samples[k].direction.cast<double>();
+            Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000*s_mat.row(k).transpose().cast<double>();
 
             if (dot > 0.0)
             {
@@ -207,9 +214,9 @@ void Model::computeLight()
         model_brightness.push_back(brightness[1]);
         model_brightness.push_back(brightness[2]);
 
-        model_colors[3 * i + 0] = (float)brightness[0];
-        model_colors[3 * i + 1] = (float)brightness[1];
-        model_colors[3 * i + 2] = (float)brightness[2];
+        model_colors[3 * i + 0] *= (float)brightness[0];
+        model_colors[3 * i + 1] *= (float)brightness[1];
+        model_colors[3 * i + 2] *= (float)brightness[2];
 
         if (int(i*100.0f / (model_vertices.size() / 3)) > perc)
         {
@@ -243,6 +250,7 @@ void Model::computeModelVisbs()
     int num_sqrt_samples = model_light->getSqrtNumSamples();
     int num_channels = model_light->getNumChannels();
     SAMPLE *samples = model_light->getSamples();
+    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
     int perc = 0;
     model_visbs.clear();
     //renderer->setCheckVisbStatus(true);
@@ -261,8 +269,10 @@ void Model::computeModelVisbs()
         for (int k = 0; k < num_samples; ++k)
         {
             // check if light * normal > 0
-            float dot = (float)samples[k].direction.dot(cur_v_normal);
-            Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000 * samples[k].direction.cast<double>();
+            //float dot = (float)samples[k].direction.dot(cur_v_normal);
+            float dot = (float)s_mat.row(k).dot(cur_v_normal);
+            //Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000 * samples[k].direction.cast<double>();
+            Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000 * s_mat.row(k).transpose().cast<double>();
 
             if (dot > 0.0)
             {
@@ -302,13 +312,16 @@ void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::v
     // point should be (original point + 0.02*normal at this point)
     int num_samples = model_light->getNumSamples();
     SAMPLE *samples = model_light->getSamples();
+    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
     Eigen::Vector3d ray_start = point.cast<double>() + 0.05*normal.cast<double>();
     visb.clear();
 
     for (int k = 0; k < num_samples; ++k)
     {
-        float dot = (float)samples[k].direction.dot(normal);
-        Eigen::Vector3d ray_end = point.cast<double>() + 10000*samples[k].direction.cast<double>();
+        //float dot = (float)samples[k].direction.dot(normal);
+        float dot = (float)s_mat.row(k).dot(normal);
+        //Eigen::Vector3d ray_end = point.cast<double>() + 10000*samples[k].direction.cast<double>();
+        Eigen::Vector3d ray_end = point.cast<double>() + 10000*s_mat.row(k).transpose().cast<double>();
 
         if (dot > 0.0)
         {
@@ -334,13 +347,16 @@ void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen:
     // point should be (original point + 0.02*normal at this point)
     int num_samples = model_light->getNumSamples();
     SAMPLE *samples = model_light->getSamples();
+    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
     Eigen::Vector3d ray_start = point.cast<double>() + 0.02*normal.cast<double>();
     visb = Eigen::VectorXf(num_samples);
 
     for (int k = 0; k < num_samples; ++k)
     {
-        float dot = (float)samples[k].direction.dot(normal);
-        Eigen::Vector3d ray_end = point.cast<double>() + 10000*samples[k].direction.cast<double>();
+        //float dot = (float)samples[k].direction.dot(normal);
+        float dot = (float)s_mat.row(k).dot(normal);
+        //Eigen::Vector3d ray_end = point.cast<double>() + 10000*samples[k].direction.cast<double>();
+        Eigen::Vector3d ray_end = point.cast<double>() + 10000*s_mat.row(k).transpose().cast<double>();
 
         if (dot > 0.0)
         {
@@ -359,6 +375,14 @@ void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen:
         }
         else visb(k) = 0.0;
     }
+}
+
+void Model::computeVerVisbs(int pt_id, Eigen::VectorXf &visb)
+{
+    int i = pt_id;
+    Eigen::Vector3f cur_v_normal(model_normals[i * 3 + 0], model_normals[i * 3 + 1], model_normals[i * 3 + 2]);
+    Eigen::Vector3f cur_v_pos(model_vertices[i * 3 + 0], model_vertices[i * 3 + 1], model_vertices[i * 3 + 2]);
+    computeVisbs(cur_v_pos, cur_v_normal, visb);
 }
 
 void Model::computeVisbs(int face_id, std::vector<bool> &visb)
@@ -753,4 +777,82 @@ void Model::computeVertexNormal()
         model_normals[3*i + 2] = cur_v_normal(2);
     }
 
+}
+
+void Model::exportPtRenderInfo(int pt_id)
+{
+    Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
+    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
+
+    Eigen::VectorXf visb;
+    int i = pt_id;
+    Eigen::Vector3f cur_v_normal(model_normals[i * 3 + 0], model_normals[i * 3 + 1], model_normals[i * 3 + 2]);
+    Eigen::Vector3f cur_v_pos(model_vertices[i * 3 + 0], model_vertices[i * 3 + 1], model_vertices[i * 3 + 2]);
+    computeVisbs(cur_v_pos, cur_v_normal, visb);
+
+    std::ofstream f_debug(getOutputPath()+"/pt_234_eq.mat");
+    if (f_debug)
+    {
+        f_debug <<"A: "<<(outside_light.col(0).array()*visb.array()*s_mat.col(0).array()).sum()<<"\t"
+                       <<(outside_light.col(0).array()*visb.array()*s_mat.col(1).array()).sum()<<"\t"
+                       <<(outside_light.col(0).array()*visb.array()*s_mat.col(2).array()).sum()<<"\n";
+
+        f_debug <<"B: "<<(outside_light.col(1).array()*visb.array()*s_mat.col(0).array()).sum()<<"\t"
+                       <<(outside_light.col(1).array()*visb.array()*s_mat.col(1).array()).sum()<<"\t"
+                       <<(outside_light.col(1).array()*visb.array()*s_mat.col(2).array()).sum()<<"\n";
+
+        f_debug <<"C: "<<(outside_light.col(2).array()*visb.array()*s_mat.col(0).array()).sum()<<"\t"
+                       <<(outside_light.col(2).array()*visb.array()*s_mat.col(1).array()).sum()<<"\t"
+                       <<(outside_light.col(2).array()*visb.array()*s_mat.col(2).array()).sum()<<"\n";
+
+        f_debug<<"Normal: "<<cur_v_normal<<"\n";
+
+        f_debug<<"Pos: "<<cur_v_pos<<"\n";
+
+        f_debug << "Color: "<<model_colors[3*i+0]<<"\t"
+            << model_colors[3*i+1]<<"\t"
+            << model_colors[3*i+2]<<"\n";
+
+        f_debug.close();
+    }
+}
+
+void Model::drawFaceNormal()
+{
+    if (model_face_normals.size() != model_faces.size())
+    {
+        std::cout << "Error: number of model new normal is different from that of model faces.\n";
+        return;
+    }
+
+    std::cout<<"in draw face normal, number: "<<model_faces.size()<<"\n";
+
+    for (decltype(model_faces.size()) i = 0; i < model_faces.size() / 3; ++i)
+    {
+        int v0_id = model_faces[3 * i + 0];
+        int v1_id = model_faces[3 * i + 1];
+        int v2_id = model_faces[3 * i + 2];
+
+        Eigen::Vector3f v0;
+        v0 << model_vertices[3 * v0_id + 0], 
+              model_vertices[3 * v0_id + 1], 
+              model_vertices[3 * v0_id + 2];
+        Eigen::Vector3f v1;
+        v1 << model_vertices[3 * v1_id + 0], 
+              model_vertices[3 * v1_id + 1], 
+              model_vertices[3 * v1_id + 2];
+        Eigen::Vector3f v2;
+        v2 << model_vertices[3 * v2_id + 0], 
+              model_vertices[3 * v2_id + 1], 
+              model_vertices[3 * v2_id + 2];
+
+        Eigen::Vector3f start_pt(v0 / 3 + v1 / 3 + v2 / 3);
+        Eigen::Vector3f normal_dir;
+        normal_dir << model_face_normals[3 * i + 0],
+                      model_face_normals[3 * i + 1],
+                      model_face_normals[3 * i + 2];
+        Eigen::Vector3f end_pt(start_pt + 0.01*normal_dir);
+        Eigen::Vector3f blue_color(0.0f, 0.0f, 1.0f);
+        renderer->addDrawableLine(start_pt.data(), end_pt.data(), blue_color.data(), blue_color.data());
+    }
 }

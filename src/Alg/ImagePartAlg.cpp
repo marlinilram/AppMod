@@ -164,7 +164,7 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
         }
     }
 
-    std::cout << func_val << "\n";
+    //std::cout << func_val << "\n";
 
     return func_val;
 }
@@ -1577,7 +1577,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 
     // get sample direction
     int num_samples = model->getModelLightObj()->getNumSamples();
-    S_mat = model->getModelLightObj()->getSampleMatrix();
+    S_mat = model->getModelLightObj()->getOutsideSampleMatrix();
     Eigen::MatrixX3f &samples = S_mat; 
 
 
@@ -1602,6 +1602,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     rho_s.col(1) = (S_C_view.col(1).array().pow(rho_specular(3, 1))).matrix();
     rho_s.col(2) = (S_C_view.col(2).array().pow(rho_specular(3, 2))).matrix();
 
+
     lambd_sfs = model->getParaNormSfS();// 10.0f;
     lambd_smooth = model->getParaNormSmooth(); //0.0f;
     lambd_norm = model->getParaNormNormalized();//5.0f;
@@ -1611,14 +1612,20 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 
     for (decltype(faces_in_photo.size()) i = 0; i < faces_in_photo.size(); ++i)
     {
+
         //for each face we need to build its 3 equations for nx, ny and nz
         Eigen::VectorXf visb;
-        model->computeVisbs(faces_in_photo[i], visb);
+
+        model->getGtModelPtr()->computeVisbs(faces_in_photo[i], visb);
+
 
         // for 3 channels
         Eigen::Vector3f A(0.0, 0.0, 0.0);
         Eigen::Vector3f B(0.0, 0.0, 0.0);
         Eigen::Vector3f C(0.0, 0.0, 0.0);
+
+
+
 
         for (int j = 0; j < 3; ++j)
         {
@@ -1632,18 +1639,18 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
             //if (A(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
 
             Eigen::VectorXf B_temp_vec = (light_rec.col(j).array()*samples.col(1).array()*visb.array()).matrix();
-            B(j) = rho_in_photo(i, j)*(light_rec.col(j).array()*samples.col(1).array()*visb.array()).sum();
+            B(j) = rho_in_photo(i, j)*B_temp_vec.array().sum();
             B(j) += (rho_s.col(j).array()*B_temp_vec.array()).sum();
             B_mat(i, j) = B(j);
             //if (B(j) < 0) std::cout << "Normal coefficient is less than zero!t" << "i j: " << i << "\t" << j << "\n";
 
             Eigen::VectorXf C_temp_vec = (light_rec.col(j).array()*samples.col(2).array()*visb.array()).matrix();
-            C(j) = rho_in_photo(i, j)*(light_rec.col(j).array()*samples.col(2).array()*visb.array()).sum();
+            C(j) = rho_in_photo(i, j)*C_temp_vec.array().sum();
             C(j) += (rho_s.col(j).array()*C_temp_vec.array()).sum();
             C_mat(i,j) = C(j);
             //if (C(j) < 0) std::cout << "Normal coefficient is less than zero!\t" << "i j: " << i << "\t" << j << "\n";
         }
-        
+
         //      // equation for nx
         //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambda_sfs*A.dot(A)));
         //      normal_coeffs.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 1, lambda_sfs*B.dot(A)));
@@ -1755,19 +1762,40 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     //    f_Normal_coeffs.close();
     //}
 
-    std::ofstream f_new_normal(model->getOutputPath() + "/brightness.mat");
+    std::ofstream f_new_normal(model->getOutputPath() + "/pixel_counts.mat");
     if (f_new_normal)
     {
-        f_new_normal << brightness_mat;
+        f_new_normal << pixel_counts;
         f_new_normal.close();
     }
 
-    f_new_normal.open(model->getOutputPath() + "/faces_in_photo.mat");
-    if (f_new_normal)
-    {
-        f_new_normal << Eigen::Map<Eigen::VectorXi>(&faces_in_photo[0], faces_in_photo.size(), 1);
-        f_new_normal.clear();
-    }
+    //f_new_normal.open(model->getOutputPath() + "/faces_new_normal.mat");
+    //if (f_new_normal)
+    //{
+    //    f_new_normal << new_face_in_photo_normal;
+    //    f_new_normal.close();
+    //}
+
+    //f_new_normal.open(model->getOutputPath() + "/A_mat.mat");
+    //if (f_new_normal)
+    //{
+    //    f_new_normal << A_mat;
+    //    f_new_normal.close();
+    //}
+
+    //f_new_normal.open(model->getOutputPath() + "/B_mat.mat");
+    //if (f_new_normal)
+    //{
+    //    f_new_normal << B_mat;
+    //    f_new_normal.close();
+    //}
+
+    //f_new_normal.open(model->getOutputPath() + "/C_mat.mat");
+    //if (f_new_normal)
+    //{
+    //    f_new_normal << C_mat;
+    //    f_new_normal.close();
+    //}
 
     //std::ofstream f_right_hand(model->getDataPath() + "/right_hand.mat");
     //if (f_right_hand)
@@ -1787,6 +1815,8 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     model->setModelNewNormal(new_face_in_photo_normal, faces_in_photo);
     //model->updateVertexBrightnessAndColor(); put this after deformation
     model->drawNormal();
+    // show error with ground truth
+    model->getGtModelPtr()->computeErrorColor(model);
     emit(refreshScreen());
 
     brightness_mat.resize(0, 3);

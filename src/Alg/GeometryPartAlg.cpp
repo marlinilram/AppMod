@@ -59,7 +59,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
         {
             bending_edges.push_back(cross_pi < cross_pj ? Edge(cross_pi, cross_pj) : Edge(cross_pj, cross_pi));
         }
-        else std::cout << "Error: can not find a cross edge...\n";
+        //else std::cout << "Error: can not find a cross edge...\n";
     }
 
     std::cout << "Bending edge number: " << bending_edges.size() << "\n";
@@ -282,7 +282,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     // alternative solve vertex and d iteratively
     std::cout << "Iterative alternative optimization...\n";
 
-    int max_iter = 20;
+    int max_iter = model->getParaMaxDeformIter(); //20;
     int cur_iter = 0;
     Eigen::VectorXf P_Opt;
 
@@ -403,7 +403,7 @@ bool GeometryPartAlg::findShareVertex(int pi, int pj, Coarse *model, int &cross_
     }
     else
     {
-        std::cout << "Error: number of shared face is more than 2...\n";
+        //std::cout << "Error: number of shared face is more than 2...\n";
         return false;
     }
 }
@@ -425,7 +425,7 @@ void GeometryPartAlg::getConnectedPtID(int i_pt, int points_in_face[3], int conn
     } 
     else
     {
-        std::cout << "Error: can not find point in the given face!\n";
+        //std::cout << "Error: can not find point in the given face!\n";
         // get the other point's id in this cell
     }
 }

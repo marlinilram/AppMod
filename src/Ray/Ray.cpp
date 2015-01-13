@@ -100,6 +100,7 @@ void Ray::passModel(std::vector<float> &vertices, std::vector<unsigned int> &fac
     bsptree = vtkSmartPointer< vtkModifiedBSPTree >::New();
     bsptree->SetDataSet(poly_mesh);
     bsptree->BuildLocator();
+    bsptree->Update();
 
     //vtkSmartPointer< vtkVertexGlyphFilter > vertex_glyph = vtkSmartPointer< vtkVertexGlyphFilter >::New();
     //vertex_glyph->SetInputData(poly_mesh);

@@ -50,15 +50,19 @@ public:
 	void exportOBJ(int cur_iter = 0);
     void setInit();
 
+    void drawFaceNormal();
+
     void computeLight();
     void computeModelVisbs();
     void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::vector<bool> &visb);
     void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen::VectorXf &visb);
     void computeVisbs(int face_id, std::vector<bool> &visb);
     void computeVisbs(int face_id, Eigen::VectorXf &visb);
+    void computeVerVisbs(int pt_id, Eigen::VectorXf &visb);
 	void computeFaceNormal();
     void computeVertexNormal();
     inline void updateBSPtree(){ ray_cast.passModel(model_vertices, model_faces); };
+    void exportPtRenderInfo(int pt_id);
 
     void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
     void passRenderImgInfo(cv::Mat &zImg, cv::Mat &primitiveID, cv::Mat &rImg);
@@ -153,6 +157,7 @@ protected:
     Eigen::Matrix4f m_projection;
     Eigen::Matrix4f m_inv_modelview_projection;
     Eigen::Vector4i m_viewport;
+
 };
 
 #endif

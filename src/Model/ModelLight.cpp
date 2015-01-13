@@ -78,3 +78,32 @@ void ModelLight::loadOutsideLight(std::string file)
 	}
 
 }
+
+void ModelLight::loadOutsideSample(std::string file)
+{
+    std::ifstream f_light(file);
+    std::vector<Eigen::Vector3f> sample_vec;
+
+    if (f_light)
+    {
+        while (!f_light.eof())
+        {
+            std::string line;
+            getline(f_light, line);
+
+            std::stringstream parser(line);
+            Eigen::Vector3f cur_row;
+            parser >> cur_row(0) >> cur_row(1) >> cur_row(2);
+            sample_vec.push_back(cur_row);
+        }
+
+        f_light.close();
+    }
+
+    // pass light vec to light matrix
+    sample_matrix_outside.resize(sample_vec.size(), 3);
+    for (size_t i = 0; i < sample_vec.size(); ++i)
+    {
+        sample_matrix_outside.row(i) = sample_vec[i];
+    }
+}

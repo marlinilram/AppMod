@@ -2,7 +2,10 @@
 #define Coarse_H
 
 #include "Model.h"
+#include "GroundTruth.h"
 #include "Viewer.h"
+
+class Groundtruth;
 
 class Coarse : public Model
 {
@@ -56,6 +59,9 @@ public:
 	inline double getParaDeformNormal() { return lambd_deform_normal; };
 	inline double getParaVerticalMove() { return lambd_vertical_move; };
 	inline int getParaMaxDeformIter() { return deform_max_iter; };
+    
+    inline void setGtModelPtr(Groundtruth *gtModel){gt_model = gtModel;};
+    inline Groundtruth *getGtModelPtr(){return gt_model;};
 
 protected:
     Mat3F model_to_img_trans;
@@ -86,6 +92,8 @@ protected:
 	double lambd_vertical_move;
 	int deform_max_iter;
 
+
+    Groundtruth *gt_model;
 };
 
 #endif

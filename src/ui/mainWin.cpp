@@ -41,6 +41,7 @@ MainWin::MainWin()
     this->show();
 
     coarse_model = nullptr;
+    gt_model = nullptr;
     img_part_alg = new ImagePartAlg;
     img_part_alg_thread = new QThread;
 
@@ -85,8 +86,6 @@ void MainWin::loadModel()
     viewer->getModel(coarse_model);
     coarse_model->setRenderer(viewer);
 
-    viewer_img->getModel(coarse_model);
-
     // make an output dir
     char time_postfix[50];
     time_t current_time = time(NULL);
@@ -96,6 +95,17 @@ void MainWin::loadModel()
     coarse_model->setOutputPath(outptu_file_path);
 
     setOptParatoModel();
+
+    //coarse_model->exportPtRenderInfo(233);
+    //coarse_model->drawFaceNormal();
+
+    if (gt_model == nullptr)
+    {
+        gt_model = new Groundtruth(coarse_model);
+        viewer_img->getModel(gt_model);
+        gt_model->setRenderer(viewer_img);
+    }
+    coarse_model->setGtModelPtr(gt_model);
 }
 
 void MainWin::exportOBJ()
@@ -200,7 +210,7 @@ void MainWin::refreshScreen()
 void MainWin::setOptParatoModel()
 {
     int num_iter = m_spinBox_iter_num->value();
-    double other_paras[7];
+    double other_paras[12];
 
     other_paras[0] = m_spinBox_BRDF_Light_sfs->value();
     other_paras[1] = m_spinBox_Light_Reg->value();
@@ -209,9 +219,14 @@ void MainWin::setOptParatoModel()
     other_paras[4] = m_spinBox_norm_smooth->value();
     other_paras[5] = m_spinBox_norm_normalized->value();
     other_paras[6] = m_spinBox_cluster_num->value();
+    other_paras[7] = m_spinBox_k_strech->value();
+    other_paras[8] = m_spinBox_k_bend->value();
+    other_paras[9] = m_spinBox_deform_normal->value();
+    other_paras[10] = m_spinBox_vertical_move->value();
+    other_paras[11] = m_spinBox_deform_iter->value();
 
     if (coarse_model)
-        coarse_model->setOptParameter(num_iter, 7, other_paras);
+        coarse_model->setOptParameter(num_iter, 12, other_paras);
 }
 
 void MainWin::runAll()
