@@ -25,6 +25,7 @@ public:
 public:
 	Eigen::VectorXf brightness_sig_chan;
 	Eigen::MatrixXf T_coef;
+	Eigen::MatrixXf V_coef;
 
 	Eigen::MatrixX3f brightness_mat;
 	Eigen::MatrixX3f A_mat;
@@ -74,6 +75,8 @@ private slots:
     void findISmoothAdj(std::vector<std::vector<int>> &I_smooth_adj, std::vector<Eigen::Vector2i> &I_xy_vec);
 
     void runWholeIter(Coarse *model, Viewer *viewer);
+
+	void solveRenderEqAll(Coarse *model, Viewer *viewer);
 
 signals:
     void refreshScreen();

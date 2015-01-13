@@ -101,6 +101,40 @@ bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Vi
     return true;
 }
 
+bool Coarse::getPixelVisbCoeffs(int x, int y, Eigen::VectorXf &visb_coeffs, Viewer *viewer, float &winx, float &winy, Eigen::Vector3f &cur_normal, Eigen::Vector3f &cur_pos)
+{
+	// this function computes a corresponding virtual point of an arbitrary pixel, its normal and visibility.
+
+	// 0,0 is the left up corner as in cv::mat, and row major
+
+	// compute xy coord in render image
+	Eigen::Vector3f xy_model = model_to_img_trans.inverse()*Eigen::Vector3f((float)x, (float)y, 1.0);
+
+	// get its face id
+	winx = xy_model(0) / xy_model(2);
+	winy = xy_model(1) / xy_model(2);
+	int face_id = primitive_ID.at<int>((int)(winy + 0.5), (int)(winx + 0.5));
+
+	cv::Mat temp = primitive_ID;
+
+	if (face_id < 0) return false;
+
+	// compute its world xyz coord
+	Eigen::Vector3f xyz_model;
+	if (!getWorldCoord(xy_model, xyz_model)) return false;
+	cur_pos = xyz_model;
+
+	viewer->addDrawablePoint(xyz_model(0), xyz_model(1), xyz_model(2), 1.0f, 0.0f, 0.0f);
+	//std::cout << "find one point\n";
+
+	// get its normal
+	Eigen::Vector3f xyz_normal;
+	getPtNormalInFace(xyz_model, face_id, xyz_normal);
+	cur_normal = xyz_normal;
+
+	computeVisbs(xyz_model, xyz_normal, visb_coeffs);
+}
+
 void Coarse::getCrspFromPhotoToRImg(int x, int y, float xy_rimg[2])
 {
     Eigen::Vector3f xy_model = model_to_img_trans.inverse()*Eigen::Vector3f((float)x, (float)y, 1.0);

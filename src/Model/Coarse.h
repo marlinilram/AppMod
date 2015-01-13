@@ -24,6 +24,7 @@ public:
     void updateVertexBrightnessAndColor();
     bool getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy);
     inline Eigen::MatrixX3f getRecoveredLight(){ return light_rec; };
+	bool getPixelVisbCoeffs(int x, int y, Eigen::VectorXf &visb_coeffs, Viewer *viewer, float &winx, float &winy, Eigen::Vector3f &cur_normal, Eigen::Vector3f &cur_pos);
 
     void getCrspFromModelToPhoto(int v_id, float xy_photo[2]);
     void getCrspFromPhotoToRImg(int x, int y, float xy_rimg[2]);
