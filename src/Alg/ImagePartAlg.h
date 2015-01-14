@@ -21,6 +21,13 @@ public:
     //ImagePartAlg(Coarse *model, Viewer *model_viewer);
     ~ImagePartAlg();
 
+    inline double get_time()
+    {
+        LARGE_INTEGER t, frequency;
+        QueryPerformanceCounter(&t);
+        QueryPerformanceFrequency(&frequency);
+        return (double)t.QuadPart / (double)frequency.QuadPart;
+    };
 
 public:
 	Eigen::VectorXf brightness_sig_chan;
