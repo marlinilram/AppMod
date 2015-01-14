@@ -218,7 +218,7 @@ void MainWin::setOptParatoModel()
     int_paras[2] = m_spinBox_cluster_num->value();
 
 
-    double double_paras[10];
+    double double_paras[13];
 
     double_paras[0] = m_spinBox_BRDF_Light_sfs->value();
     double_paras[1] = m_spinBox_Light_Reg->value();
@@ -230,9 +230,12 @@ void MainWin::setOptParatoModel()
     double_paras[7] = m_spinBox_k_bend->value();
     double_paras[8] = m_spinBox_deform_normal->value();
     double_paras[9] = m_spinBox_vertical_move->value();
+    double_paras[10] = m_spinBox_rho_smooth->value();
+    double_paras[11] = m_spinBox_rho_s_r->value();
+    double_paras[12] = m_spinBox_norm_smooth->value();
 
     if (coarse_model)
-        coarse_model->getParaObjPtr()->setOptParameter(3, int_paras, 10, double_paras);
+        coarse_model->getParaObjPtr()->setOptParameter(3, int_paras, 13, double_paras);
 }
 
 void MainWin::runAll()

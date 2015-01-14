@@ -20,10 +20,13 @@ public:
     // image part parameters
     double BRDF_Light_sfs;
     double Light_Reg;
+    double rho_d_smooth;
+    double rho_s_r;
     double cluster_smooth;
     double Norm_sfs;
     double Norm_smooth;
     double Norm_normalized;
+    double Norm_prior;
     int num_cluster;
 
     // geometry part parameters

@@ -87,7 +87,7 @@
         <string>GroupBox</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
+        <item row="0" column="0" rowspan="2" colspan="2">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout">
@@ -159,12 +159,33 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_doubleSpinBox_rho_smooth">
+             <widget class="QDoubleSpinBox" name="m_spinBox_rho_smooth">
               <property name="singleStep">
                <double>0.010000000000000</double>
               </property>
               <property name="value">
                <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_18">
+            <item>
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>Rho R</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="m_spinBox_rho_s_r">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -282,7 +303,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_doubleSpinBox_norm_prior"/>
+             <widget class="QDoubleSpinBox" name="m_doubleSpinBox_norm_prior">
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.300000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -414,6 +442,19 @@
            </widget>
           </item>
          </layout>
+        </item>
+        <item row="1" column="1">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>495</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>
