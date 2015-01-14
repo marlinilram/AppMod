@@ -303,7 +303,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="m_doubleSpinBox_norm_prior">
+             <widget class="QDoubleSpinBox" name="m_spinBox_norm_prior">
               <property name="singleStep">
                <double>0.100000000000000</double>
               </property>

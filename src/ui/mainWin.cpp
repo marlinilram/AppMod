@@ -232,7 +232,7 @@ void MainWin::setOptParatoModel()
     double_paras[9] = m_spinBox_vertical_move->value();
     double_paras[10] = m_spinBox_rho_smooth->value();
     double_paras[11] = m_spinBox_rho_s_r->value();
-    double_paras[12] = m_spinBox_norm_smooth->value();
+    double_paras[12] = m_spinBox_norm_prior->value();
 
     if (coarse_model)
         coarse_model->getParaObjPtr()->setOptParameter(3, int_paras, 13, double_paras);

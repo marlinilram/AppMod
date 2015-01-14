@@ -974,13 +974,13 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
     // set lambd
     double lambd_sfs = opt_para->BRDF_Light_sfs; //1;// / num_pixels_init;
-    double lambd_rho_d_smooth = 0.01;// / cur_num_pixels;
+    double lambd_rho_d_smooth = opt_para->rho_d_smooth; //0.01;// / cur_num_pixels;
     double lambd_rho_d_cluster = opt_para->cluster_smooth; //0.3;// / cur_num_pixels;
     double lambd_light_l2 = opt_para->Light_Reg; //0.1;// / cur_num_pixels;
     double lambd_norm_smooth = opt_para->Norm_smooth;
     double lambd_norm_normalized = opt_para->Norm_normalized;
-    double lambd_norm_prior = 0.3;
-    double lambd_rho_s_r = 0;
+    double lambd_norm_prior = opt_para->Norm_prior; //0.3;
+    double lambd_rho_s_r = opt_para->rho_s_r; //0;
 
 
     // rho d smooth term
@@ -1026,7 +1026,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     double norm_normalization = 0;
     for (size_t i = 0; i < n_dim_normal; ++i)
     {
-        float term_val_temp = cur_N.row(i).array().square().sum() - 1;
+        float term_val_temp = cur_N.row(i).dot(n_init_piror[i]) - 1;
         norm_normalization += term_val_temp*term_val_temp;
     }
 
@@ -1034,12 +1034,12 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     //cout << "N Norm: " << _startT << " secs\t";
     //_startT = img_alg_data_ptr->get_time();
 
-    // normal prior
-    double norm_prior = 0;
-    for (size_t i = 0; i < n_dim_normal; ++i)
-    {
-        norm_prior += (cur_N.row(i).transpose() - n_init_piror[i]).array().square().sum();
-    }
+    // normal prior ,merge with normalization term now
+    //double norm_prior = 0;
+    //for (size_t i = 0; i < n_dim_normal; ++i)
+    //{
+    //    norm_prior += (cur_N.row(i).transpose() - n_init_piror[i]).array().square().sum();
+    //}
 
     //_startT = img_alg_data_ptr->get_time() - _startT;
     //cout << "N Prior: " << _startT << " secs\t";
@@ -1069,7 +1069,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
     funcval += lambd_norm_normalized*norm_normalization;
 
-    funcval += lambd_norm_prior*norm_prior;
+    //funcval += lambd_norm_prior*norm_prior;
 
     _startT = img_alg_data_ptr->get_time() - _startT;
     cout << "Main Func: " << _startT << " secs\t";
@@ -1205,14 +1205,14 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
 
             // normalization grad
-            grad[offset + 3 * i + 0] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(0);
-            grad[offset + 3 * i + 1] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(1);
-            grad[offset + 3 * i + 2] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(2);
+            grad[offset + 3 * i + 0] += lambd_norm_normalized * 2 * (cur_n.dot(n_init_piror[i]) - 1) * 2 * n_init_piror[i](0);
+            grad[offset + 3 * i + 1] += lambd_norm_normalized * 2 * (cur_n.dot(n_init_piror[i]) - 1) * 2 * n_init_piror[i](1);
+            grad[offset + 3 * i + 2] += lambd_norm_normalized * 2 * (cur_n.dot(n_init_piror[i]) - 1) * 2 * n_init_piror[i](2);
 
             // norm prior
-            grad[offset + 3 * i + 0] += lambd_norm_prior * 2 * (cur_n(0) - n_init_piror[i](0));
-            grad[offset + 3 * i + 1] += lambd_norm_prior * 2 * (cur_n(1) - n_init_piror[i](1));
-            grad[offset + 3 * i + 2] += lambd_norm_prior * 2 * (cur_n(2) - n_init_piror[i](2));
+            //grad[offset + 3 * i + 0] += lambd_norm_prior * 2 * (cur_n(0) - n_init_piror[i](0));
+            //grad[offset + 3 * i + 1] += lambd_norm_prior * 2 * (cur_n(1) - n_init_piror[i](1));
+            //grad[offset + 3 * i + 2] += lambd_norm_prior * 2 * (cur_n(2) - n_init_piror[i](2));
         }
 
 
