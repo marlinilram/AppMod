@@ -2394,15 +2394,15 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	// init x
 	for (size_t i = 0; i < 4; ++i)
 	{
-		x[i + 0 * n_dim_sig_chan] =  rho_specular(i, 0);
+		x[i + 0 * n_dim_sig_chan] = 1; //rho_specular(i, 0);
 		x[i + 1 * n_dim_sig_chan] =  rho_specular(i, 1);
 		x[i + 2 * n_dim_sig_chan] = rho_specular(i, 2);
 	}
 	for (size_t i = 4; i < n_dim_sig_chan - n_dim_light; ++i)
 	{
-		x[i + 0 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
-		x[i + 1 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
-		x[i + 2 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
+		x[i + 0 * n_dim_sig_chan] = 1; //rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
+		x[i + 1 * n_dim_sig_chan] = 1; //rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
+		x[i + 2 * n_dim_sig_chan] = 1; //rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
 	}
 	for (size_t i = n_dim_sig_chan - n_dim_light; i < n_dim_sig_chan; ++i)
 	{
