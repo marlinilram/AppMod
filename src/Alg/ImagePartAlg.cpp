@@ -975,6 +975,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     double lambd_norm_smooth = img_alg_data_ptr->lambd_norm_smooth;
     double lambd_norm_normalized = img_alg_data_ptr->lambd_norm_normalized;
     double lambd_norm_prior = 0.3;
+    double lambd_rho_s_r = 0;
 
 
     // rho d smooth term
@@ -1055,6 +1056,10 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
     funcval += lambd_rho_d_smooth*rho_d_smooth;
 
+    funcval += lambd_rho_s_r*(1/(rho_s_para_ch1(3)*rho_s_para_ch1(3)) 
+        +1/(rho_s_para_ch2(3)*rho_s_para_ch2(3))
+        +1/(rho_s_para_ch3(3)*rho_s_para_ch3(3)));
+
     funcval += lambd_norm_smooth*norm_smooth;
 
     funcval += lambd_norm_normalized*norm_normalization;
@@ -1073,17 +1078,17 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
         // for rho_s, 4 parameters in total
 
         // ch1
-        grad[0 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_log_T_L_ch1.array()).sum() + 1e-4;
+        grad[0 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_log_T_L_ch1.array()).sum() - 2*lambd_rho_s_r/(rho_s_para_ch1(3)*rho_s_para_ch1(3)*rho_s_para_ch1(3)) + 1e-4;
         grad[0 * n_dim_sig_chan + 0] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_exp_n_1_T_L_x_ch1.array()).sum() + 1e-4;
         grad[0 * n_dim_sig_chan + 1] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_exp_n_1_T_L_y_ch1.array()).sum() + 1e-4;
         grad[0 * n_dim_sig_chan + 2] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_exp_n_1_T_L_z_ch1.array()).sum() + 1e-4;
         //ch2
-        grad[1 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_log_T_L_ch2.array()).sum() + 1e-4;
+        grad[1 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_log_T_L_ch2.array()).sum() - 2*lambd_rho_s_r/(rho_s_para_ch2(3)*rho_s_para_ch2(3)*rho_s_para_ch2(3)) + 1e-4;
         grad[1 * n_dim_sig_chan + 0] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_exp_n_1_T_L_x_ch2.array()).sum() + 1e-4;
         grad[1 * n_dim_sig_chan + 1] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_exp_n_1_T_L_y_ch2.array()).sum() + 1e-4;
         grad[1 * n_dim_sig_chan + 2] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_exp_n_1_T_L_z_ch2.array()).sum() + 1e-4;
         //ch3
-        grad[2 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_log_T_L_ch3.array()).sum() + 1e-4;
+        grad[2 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_log_T_L_ch3.array()).sum() - 2*lambd_rho_s_r/(rho_s_para_ch3(3)*rho_s_para_ch3(3)*rho_s_para_ch3(3)) + 1e-4;
         grad[2 * n_dim_sig_chan + 0] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_exp_n_1_T_L_x_ch3.array()).sum() + 1e-4;
         grad[2 * n_dim_sig_chan + 1] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_exp_n_1_T_L_y_ch3.array()).sum() + 1e-4;
         grad[2 * n_dim_sig_chan + 2] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_exp_n_1_T_L_z_ch3.array()).sum() + 1e-4;
@@ -2556,14 +2561,16 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
     // give vertex on model its rho
     model->updateVertexRho();
+
+
     model->updateVertexBrightnessAndColor();
 
-    //std::ofstream f_debug(model->getOutputPath() + "/normal.mat");
-    //if (f_debug)
-    //{
-    //	f_debug << normal_rec_mat.transpose() <<"\n";
-    //	f_debug.close();
-    //}
+    std::ofstream f_debug(model->getOutputPath() + "/Rho_rec.mat");
+    if (f_debug)
+    {
+        f_debug << Rho_rec <<"\n";
+        f_debug.close();
+    }
 
 
 
