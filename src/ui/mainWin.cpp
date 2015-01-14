@@ -211,24 +211,28 @@ void MainWin::refreshScreen()
 
 void MainWin::setOptParatoModel()
 {
-    int num_iter = m_spinBox_iter_num->value();
-    double other_paras[12];
+    int int_paras[3];
+    
+    int_paras[0] = m_spinBox_iter_num->value();
+    int_paras[1] = m_spinBox_deform_iter->value();
+    int_paras[2] = m_spinBox_cluster_num->value();
 
-    other_paras[0] = m_spinBox_BRDF_Light_sfs->value();
-    other_paras[1] = m_spinBox_Light_Reg->value();
-    other_paras[2] = m_spinBox_cluster_smooth->value();
-    other_paras[3] = m_spinBox_norm_sfs->value();
-    other_paras[4] = m_spinBox_norm_smooth->value();
-    other_paras[5] = m_spinBox_norm_normalized->value();
-    other_paras[6] = m_spinBox_cluster_num->value();
-    other_paras[7] = m_spinBox_k_strech->value();
-    other_paras[8] = m_spinBox_k_bend->value();
-    other_paras[9] = m_spinBox_deform_normal->value();
-    other_paras[10] = m_spinBox_vertical_move->value();
-    other_paras[11] = m_spinBox_deform_iter->value();
+
+    double double_paras[10];
+
+    double_paras[0] = m_spinBox_BRDF_Light_sfs->value();
+    double_paras[1] = m_spinBox_Light_Reg->value();
+    double_paras[2] = m_spinBox_cluster_smooth->value();
+    double_paras[3] = m_spinBox_norm_sfs->value();
+    double_paras[4] = m_spinBox_norm_smooth->value();
+    double_paras[5] = m_spinBox_norm_normalized->value();
+    double_paras[6] = m_spinBox_k_strech->value();
+    double_paras[7] = m_spinBox_k_bend->value();
+    double_paras[8] = m_spinBox_deform_normal->value();
+    double_paras[9] = m_spinBox_vertical_move->value();
 
     if (coarse_model)
-        coarse_model->setOptParameter(num_iter, 12, other_paras);
+        coarse_model->getParaObjPtr()->setOptParameter(3, int_paras, 10, double_paras);
 }
 
 void MainWin::runAll()

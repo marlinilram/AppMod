@@ -4,6 +4,7 @@
 #include "Model.h"
 #include "GroundTruth.h"
 #include "Viewer.h"
+#include "MPara.h"
 
 class Groundtruth;
 
@@ -14,7 +15,7 @@ public:
 
 public:
     Coarse(){};
-    ~Coarse(){};
+    ~Coarse();
 
     Coarse(const int id, const std::string path, const std::string name);
 
@@ -44,22 +45,9 @@ public:
 
     void drawNormal();
 
-    void setOptParameter(const int &numIter, const int &numParas, double *other_paras);
-    inline int getParaNumIter() { return num_iter; };
-    inline double getParaBRDFLightSfS() { return BRDF_Light_sfs; };
-    inline double getParaLightReg() { return Light_Reg; };
-    inline double getParaClutserSmooth() { return cluster_smooth; };
-    inline double getParaNormSfS() { return Norm_sfs; };
-    inline double getParaNormSmooth() { return Norm_smooth; };
-    inline double getParaNormNormalized() { return Norm_normalized; };
     inline int &getCurIter() { return cur_iter; };
+    inline MPara *getParaObjPtr() { return m_para; };
     inline Eigen::Matrix3f &getModelToImgTrans() { return model_to_img_trans; };
-    inline int getParaNumCluster() { return num_cluster; };
-	inline double getParaKStrech() { return lambd_k_strech; };
-	inline double getParaKBend() { return lambd_k_bend; };
-	inline double getParaDeformNormal() { return lambd_deform_normal; };
-	inline double getParaVerticalMove() { return lambd_vertical_move; };
-	inline int getParaMaxDeformIter() { return deform_max_iter; };
     
     inline void setGtModelPtr(Groundtruth *gtModel){gt_model = gtModel;};
     inline Groundtruth *getGtModelPtr(){return gt_model;};
@@ -76,22 +64,9 @@ protected:
     std::vector<Eigen::Vector2i> xy_in_mask;
 
     // opt parameter
-    int num_iter;
     int cur_iter;
-	// image part parameters
-    double BRDF_Light_sfs;
-    double Light_Reg;
-    double cluster_smooth;
-    double Norm_sfs;
-    double Norm_smooth;
-    double Norm_normalized;
-    int num_cluster;
-	// geometry part parameters
-	double lambd_k_strech;
-	double lambd_k_bend;
-	double lambd_deform_normal;
-	double lambd_vertical_move;
-	int deform_max_iter;
+    MPara *m_para;
+
 
 
     Groundtruth *gt_model;
