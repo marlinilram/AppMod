@@ -26,7 +26,7 @@ Model::Model(const int id, const std::string path, const std::string name)
 
     computeLight();
 
-    rho_specular = Eigen::MatrixXf::Zero(4, 3);
+    rho_specular = Eigen::MatrixXf::Ones(4, 3);
     rho_specular(3,0)=1;
     rho_specular(3,1)=1;
     rho_specular(3,2)=1;

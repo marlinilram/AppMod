@@ -42,6 +42,7 @@ public:
 	Eigen::Vector3f view; 
 
     Eigen::MatrixX3f normal_debug;
+    std::vector<Eigen::Vector3f> pixel_init_normal;
 
     int num_pixels_init;
 

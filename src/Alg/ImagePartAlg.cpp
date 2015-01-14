@@ -770,6 +770,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 	std::vector<int> &cluster_label = img_alg_data_ptr->pixel_cluster_label;
 	std::vector<std::vector<int>> &I_smooth_adj = img_alg_data_ptr->I_smooth_adj;
 	std::vector<std::vector<int>> &F_smooth_adj = img_alg_data_ptr->I_smooth_adj;
+    std::vector<Eigen::Vector3f> &n_init_piror = img_alg_data_ptr->pixel_init_normal;
 
 
 	size_t n_total_dim = para.size();
@@ -887,7 +888,9 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 		C_mat(i, 1) = ((rho_s_ch2.array()+rho_d_ch2(i))*(Light_rec_ch2.array()*S.col(2).array()*V_coeff.row(i).transpose().array())).sum();
 		C_mat(i, 2) = ((rho_s_ch3.array()+rho_d_ch3(i))*(Light_rec_ch3.array()*S.col(2).array()*V_coeff.row(i).transpose().array())).sum();
 	}
-
+    A_mat *= (4 * M_PI / n_dim_light);
+    B_mat *= (4 * M_PI / n_dim_light);
+    C_mat *= (4 * M_PI / n_dim_light);
 
 	// update cluster
 	// compute new cluster center 5 clusters at most
@@ -944,6 +947,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 	double lambd_light_l2 = img_alg_data_ptr->lambd_Light_Reg; //0.1;// / cur_num_pixels;
 	double lambd_norm_smooth = img_alg_data_ptr->lambd_norm_smooth;
 	double lambd_norm_normalized = img_alg_data_ptr->lambd_norm_normalized;
+    double lambd_norm_prior = 0.3;
 
 
 	// rho d smooth term
@@ -985,6 +989,12 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 		norm_normalization += term_val_temp*term_val_temp;
 	}
 
+    // normal prior
+    double norm_prior = 0;
+    for (size_t i = 0; i < n_dim_normal; ++i)
+    {
+        norm_prior += (cur_N.row(i).transpose() - n_init_piror[i]).array().square().sum();
+    }
 
 	// compute value of objective function
 	double funcval = 0;
@@ -1005,6 +1015,8 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 	funcval += lambd_norm_smooth*norm_smooth;
 
 	funcval += lambd_norm_normalized*norm_normalization;
+
+    funcval += lambd_norm_prior*norm_prior;
 
 
 	if (grad.size() != 0)
@@ -1082,7 +1094,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
 		// gradient of normal
 		i = 0;
-		size_t offset = 3*n_dim_sig_chan;
+		offset = 3*n_dim_sig_chan;
 		for (; i < n_dim_normal; ++i)
 		{
 
@@ -1116,6 +1128,11 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 			grad[offset + 3 * i + 0] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(0);
 			grad[offset + 3 * i + 1] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(1);
 			grad[offset + 3 * i + 2] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(2);
+
+            // norm prior
+            grad[offset+3*i+0] += lambd_norm_prior*2*(cur_n(0)-n_init_piror[i](0));
+            grad[offset+3*i+1] += lambd_norm_prior*2*(cur_n(1)-n_init_piror[i](1));
+            grad[offset+3*i+2] += lambd_norm_prior*2*(cur_n(2)-n_init_piror[i](2));
 		}
 	}
 
@@ -2239,7 +2256,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	Eigen::VectorXf visb_coeffs;
 	std::vector<Eigen::VectorXf> visb_coeffs_vec;
 	std::vector<Eigen::Vector3f> I_vec;
-	std::vector<Eigen::Vector3f> pixel_init_normal;
+	pixel_init_normal.clear();
 	std::vector<Eigen::Vector3f> pixel_init_pos;
 	I_xy_vec.clear();
 
@@ -2377,21 +2394,21 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 	// init x
 	for (size_t i = 0; i < 4; ++i)
 	{
-		x[i + 0 * n_dim_sig_chan] = 1;// rho_specular(i, 0);
-		x[i + 1 * n_dim_sig_chan] = 1;// rho_specular(i, 1);
-		x[i + 2 * n_dim_sig_chan] = 1;//rho_specular(i, 2);
+		x[i + 0 * n_dim_sig_chan] =  rho_specular(i, 0);
+		x[i + 1 * n_dim_sig_chan] =  rho_specular(i, 1);
+		x[i + 2 * n_dim_sig_chan] = rho_specular(i, 2);
 	}
 	for (size_t i = 4; i < n_dim_sig_chan - n_dim_light; ++i)
 	{
-		x[i + 0 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
-		x[i + 1 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
-		x[i + 2 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
+		x[i + 0 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
+		x[i + 1 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
+		x[i + 2 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
 	}
 	for (size_t i = n_dim_sig_chan - n_dim_light; i < n_dim_sig_chan; ++i)
 	{
-		x[i + 0 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 0);
-		x[i + 1 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 1);
-		x[i + 2 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 2);
+		x[i + 0 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 0);
+		x[i + 1 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 1);
+		x[i + 2 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 2);
 	}
 
 	// we set the initial x as its original normal
