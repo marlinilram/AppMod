@@ -59,19 +59,7 @@ public:
 
     std::vector<std::vector<int>> I_smooth_adj;
 
-	float lambd_sfs;
-	float lambd_smooth;
-	float lambd_norm;
-
-    double lambd_BRDF_Light_sfs;
-    double lambd_Light_Reg;
-    double lambd_cluster_smooth;
-    double lambd_norm_sfs;
-    double lambd_norm_smooth;
-    double lambd_norm_normalized;
-    int  num_cluster;
-
-    int cur_iter;
+    MPara *m_para;
 
     //void setRunFunctionType(int functionType);
 private slots:

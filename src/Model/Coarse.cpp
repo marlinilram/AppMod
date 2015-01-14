@@ -35,21 +35,14 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     //rho_img = photo.clone(); // we use rho_img to do cluster now, so it can be updated each iteration
 
     cur_iter = 0;
-    num_iter = 1;
-    BRDF_Light_sfs = 1;
-    Light_Reg = 0.1;
-    cluster_smooth = 0.3;
-    Norm_sfs = 1;
-    Norm_smooth = 0;
-    Norm_normalized = 0.5;
-    num_cluster = 1;
+    
+    m_para = new MPara;
 
-	lambd_k_strech = 10;
-	lambd_k_bend = 15;
-	lambd_deform_normal = 25;
-	lambd_vertical_move = 10;
-    deform_max_iter = 20;
+}
 
+Coarse::~Coarse()
+{
+    delete m_para;
 }
 
 bool Coarse::getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy)
@@ -628,35 +621,4 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vecto
 	//	f_rhos_tmep << rhos_temp;
 	//	f_rhos_tmep.close();
 	//}
-}
-
-void Coarse::setOptParameter(const int &numIter, const int &numParas, double *other_paras)
-{
-    num_iter = numIter;
-
-    BRDF_Light_sfs = other_paras[0];
-    std::cout<<"BRDF_Light_sfs:\t"<<BRDF_Light_sfs<<"\n";
-    Light_Reg = other_paras[1];
-    std::cout<<"Light_Reg:\t"<<Light_Reg<<"\n";
-    cluster_smooth = other_paras[2];
-    std::cout<<"cluster_smooth:\t"<<cluster_smooth<<"\n";
-    Norm_sfs = other_paras[3];
-    std::cout<<"Norm_sfs:\t"<<Norm_sfs<<"\n";
-    Norm_smooth = other_paras[4];
-    std::cout<<"Norm_smooth:\t"<<Norm_smooth<<"\n";
-    Norm_normalized = other_paras[5];
-    std::cout<<"Norm_normalized:\t"<<Norm_normalized<<"\n";
-    num_cluster = other_paras[6];
-    std::cout<<"num_cluster:\t"<<num_cluster<<"\n";
-
-    lambd_k_strech = other_paras[7];
-    std::cout<<"K Strech:\t"<<lambd_k_strech<<"\n";
-    lambd_k_bend = other_paras[8];
-    std::cout<<"K Bend:\t"<<lambd_k_bend<<"\n";
-    lambd_deform_normal = other_paras[9];
-    std::cout<<"Deform Normal:\t"<<lambd_deform_normal<<"\n";
-    lambd_vertical_move = other_paras[10];
-    std::cout<<"Vertical Move:\t"<<lambd_vertical_move<<"\n";
-    deform_max_iter = other_paras[11];
-    std::cout<<"Deform Max Iter:\t"<<deform_max_iter<<"\n";
 }

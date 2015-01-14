@@ -1,7 +1,7 @@
 cmake_minimum_required( VERSION 2.8 )
 project( ImageToShape )
 
-SET( CMAKE_PREFIX_PATH "D:\\Qt\\Qt5.3.2\\5.3\\msvc2013_64_opengl" 
+SET( CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.2.1\\5.2.1\\msvc2012_64_opengl" 
 						"C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64" )
 
 # Find includes in corresponding build directories

@@ -20,6 +20,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     std::vector<float> *new_normals = model->getModelNewNormal();
     std::vector<float> *vertex_list = model->getVertexList();
     std::vector<float> *normal_list = model->getNormalList();
+    m_para = model->getParaObjPtr();
 
     // build edge graph
     std::cout << "Building edge graph...\n";
@@ -68,8 +69,8 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
     std::cout << "Building L matrix...\n";
 
-    float lambd_k_strech = (float)model->getParaKStrech(); //10.0f;
-    float lambd_k_bend = (float)model->getParaKBend(); //15.0f;
+    float lambd_k_strech = (float)m_para->lambd_k_strech; //10.0f;
+    float lambd_k_bend = (float)m_para->lambd_k_bend; //15.0f;
     float k = lambd_k_strech;
     int P_Num = (*vertex_list).size() / 3;
 
@@ -125,8 +126,8 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
     std::cout << "Building normal constrains and vertical movement constrains...\n";
 
-    float lambd_normal = model->getParaDeformNormal(); //25.0f;
-    float lambd_vertical_move = model->getParaVerticalMove(); //10.0f;
+    float lambd_normal = (float)m_para->lambd_deform_normal; //25.0f;
+    float lambd_vertical_move = (float)m_para->lambd_vertical_move; //10.0f;
 
     std::vector<Eigen::Triplet<float>> normal_triplets;
     normal_triplets.clear();
@@ -282,7 +283,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     // alternative solve vertex and d iteratively
     std::cout << "Iterative alternative optimization...\n";
 
-    int max_iter = model->getParaMaxDeformIter(); //20;
+    int max_iter = model->getParaObjPtr()->deform_max_iter; //20;
     int cur_iter = 0;
     Eigen::VectorXf P_Opt;
 

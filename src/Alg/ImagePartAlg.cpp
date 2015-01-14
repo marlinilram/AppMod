@@ -72,6 +72,8 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
 {
     // reinterpret data_ptr
     ImagePartAlg *img_alg_data_ptr = reinterpret_cast<ImagePartAlg *>(data_ptr);
+    MPara *opt_para = img_alg_data_ptr->m_para;
+
     size_t n_dim = N.size();
     size_t n_tuple = N.size() / 3;
 
@@ -87,9 +89,9 @@ double funcSFSNormal(const std::vector<double> &N, std::vector<double> &grad, vo
     Eigen::MatrixX3f &B = img_alg_data_ptr->B_mat;
     Eigen::MatrixX3f &C = img_alg_data_ptr->C_mat;
     std::vector<std::vector<int>> &F_smooth_adj = img_alg_data_ptr->F_smooth_adj;
-    float lambd_sfs = img_alg_data_ptr->lambd_sfs;
-    float lambd_smooth = img_alg_data_ptr->lambd_smooth;
-    float lambd_norm = img_alg_data_ptr->lambd_norm;
+    float lambd_sfs = opt_para->BRDF_Light_sfs;
+    float lambd_smooth = opt_para->Norm_smooth;
+    float lambd_norm = opt_para->Norm_normalized;
 
     double func_val = 0;
 
@@ -267,6 +269,7 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
     Eigen::VectorXf &rho_d_last_kmeans = img_alg_data_ptr->rho_d_sig_chan;
     std::vector<int> &cluster_label = img_alg_data_ptr->pixel_cluster_label;
     std::vector<std::vector<int>> &I_smooth_adj = img_alg_data_ptr->I_smooth_adj;
+    MPara *opt_para = img_alg_data_ptr->m_para;
 
     std::vector<double> para_temp = para;
     Eigen::VectorXf Light_rec = Eigen::Map<Eigen::VectorXd>(&para_temp[4 + T_coeff.rows()], S.rows(), 1).cast<float>();
@@ -354,10 +357,10 @@ double funcSFSLightBRDF(const std::vector<double> &para, std::vector<double> &gr
     }
 
     // set lambd
-    double lambd_sfs = img_alg_data_ptr->lambd_BRDF_Light_sfs; //1;
+    double lambd_sfs = opt_para->BRDF_Light_sfs; //1;
     double lambd_rho_d_smooth = 0.01;
-    double lambd_rho_d_cluster = img_alg_data_ptr->lambd_cluster_smooth;//1;
-    double lambd_light_l2 = img_alg_data_ptr->lambd_Light_Reg; //0.1;
+    double lambd_rho_d_cluster = opt_para->cluster_smooth;//1;
+    double lambd_light_l2 = opt_para->Light_Reg; //0.1;
 
 
     if (grad.size() != 0)
@@ -442,6 +445,7 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     std::vector<std::vector<int>> &I_smooth_adj = img_alg_data_ptr->I_smooth_adj;
     int num_pixels_init = img_alg_data_ptr->num_pixels_init;
     int cur_num_pixels = T_coeff.rows();
+    MPara *opt_para = img_alg_data_ptr->m_para;
 
 
 
@@ -529,7 +533,7 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
 
     // update cluster
     // compute new cluster center 5 clusters at most
-    int num_cluster = img_alg_data_ptr->num_cluster;
+    int num_cluster = opt_para->num_cluster;
     int cnt_num_cluster = 0; // record how many clusters in the labels
 
     Eigen::MatrixXf cnt_cluster = Eigen::MatrixXf::Zero(num_cluster, 1);
@@ -615,10 +619,10 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     // Compute Value Of Objective Function
 
     // set lambd
-    double lambd_sfs = img_alg_data_ptr->lambd_BRDF_Light_sfs; //1;// / num_pixels_init;
+    double lambd_sfs = opt_para->BRDF_Light_sfs; //1;// / num_pixels_init;
     double lambd_rho_d_smooth = 0.01;// / cur_num_pixels;
-    double lambd_rho_d_cluster = img_alg_data_ptr->lambd_cluster_smooth; //0.3;// / cur_num_pixels;
-    double lambd_light_l2 = img_alg_data_ptr->lambd_Light_Reg; //0.1;// / cur_num_pixels;
+    double lambd_rho_d_cluster = opt_para->cluster_smooth; //0.3;// / cur_num_pixels;
+    double lambd_light_l2 = opt_para->Light_Reg; //0.1;// / cur_num_pixels;
 
 
     // rho d smooth term
@@ -773,6 +777,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     std::vector<std::vector<int>> &I_smooth_adj = img_alg_data_ptr->I_smooth_adj;
     std::vector<std::vector<int>> &F_smooth_adj = img_alg_data_ptr->I_smooth_adj;
     std::vector<Eigen::Vector3f> &n_init_piror = img_alg_data_ptr->pixel_init_normal;
+    MPara *opt_para = img_alg_data_ptr->m_para;
 
 
     size_t n_total_dim = para.size();
@@ -916,7 +921,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
     // update cluster
     // compute new cluster center 5 clusters at most
-    int num_cluster = img_alg_data_ptr->num_cluster;
+    int num_cluster = opt_para->num_cluster;
     int cnt_num_cluster = 0; // record how many clusters in the labels
 
     Eigen::MatrixXf cnt_cluster = Eigen::MatrixXf::Zero(num_cluster, 1);
@@ -968,13 +973,14 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     // Compute Value Of Objective Function
 
     // set lambd
-    double lambd_sfs = img_alg_data_ptr->lambd_BRDF_Light_sfs; //1;// / num_pixels_init;
+    double lambd_sfs = opt_para->BRDF_Light_sfs; //1;// / num_pixels_init;
     double lambd_rho_d_smooth = 0.01;// / cur_num_pixels;
-    double lambd_rho_d_cluster = img_alg_data_ptr->lambd_cluster_smooth; //0.3;// / cur_num_pixels;
-    double lambd_light_l2 = img_alg_data_ptr->lambd_Light_Reg; //0.1;// / cur_num_pixels;
-    double lambd_norm_smooth = img_alg_data_ptr->lambd_norm_smooth;
-    double lambd_norm_normalized = img_alg_data_ptr->lambd_norm_normalized;
+    double lambd_rho_d_cluster = opt_para->cluster_smooth; //0.3;// / cur_num_pixels;
+    double lambd_light_l2 = opt_para->Light_Reg; //0.1;// / cur_num_pixels;
+    double lambd_norm_smooth = opt_para->Norm_smooth;
+    double lambd_norm_normalized = opt_para->Norm_normalized;
     double lambd_norm_prior = 0.3;
+    double lambd_rho_s_r = 0;
 
 
     // rho d smooth term
@@ -1055,6 +1061,10 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
     funcval += lambd_rho_d_smooth*rho_d_smooth;
 
+    funcval += lambd_rho_s_r*(1/(rho_s_para_ch1(3)*rho_s_para_ch1(3)) 
+        +1/(rho_s_para_ch2(3)*rho_s_para_ch2(3))
+        +1/(rho_s_para_ch3(3)*rho_s_para_ch3(3)));
+
     funcval += lambd_norm_smooth*norm_smooth;
 
     funcval += lambd_norm_normalized*norm_normalization;
@@ -1073,17 +1083,17 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
         // for rho_s, 4 parameters in total
 
         // ch1
-        grad[0 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_log_T_L_ch1.array()).sum() + 1e-4;
+        grad[0 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_log_T_L_ch1.array()).sum() - 2*lambd_rho_s_r/(rho_s_para_ch1(3)*rho_s_para_ch1(3)*rho_s_para_ch1(3)) + 1e-4;
         grad[0 * n_dim_sig_chan + 0] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_exp_n_1_T_L_x_ch1.array()).sum() + 1e-4;
         grad[0 * n_dim_sig_chan + 1] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_exp_n_1_T_L_y_ch1.array()).sum() + 1e-4;
         grad[0 * n_dim_sig_chan + 2] = -lambd_sfs * 2 * ((Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).array()*rho_s_exp_n_1_T_L_z_ch1.array()).sum() + 1e-4;
         //ch2
-        grad[1 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_log_T_L_ch2.array()).sum() + 1e-4;
+        grad[1 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_log_T_L_ch2.array()).sum() - 2*lambd_rho_s_r/(rho_s_para_ch2(3)*rho_s_para_ch2(3)*rho_s_para_ch2(3)) + 1e-4;
         grad[1 * n_dim_sig_chan + 0] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_exp_n_1_T_L_x_ch2.array()).sum() + 1e-4;
         grad[1 * n_dim_sig_chan + 1] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_exp_n_1_T_L_y_ch2.array()).sum() + 1e-4;
         grad[1 * n_dim_sig_chan + 2] = -lambd_sfs * 2 * ((Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array()*rho_s_exp_n_1_T_L_z_ch2.array()).sum() + 1e-4;
         //ch3
-        grad[2 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_log_T_L_ch3.array()).sum() + 1e-4;
+        grad[2 * n_dim_sig_chan + 3] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_log_T_L_ch3.array()).sum() - 2*lambd_rho_s_r/(rho_s_para_ch3(3)*rho_s_para_ch3(3)*rho_s_para_ch3(3)) + 1e-4;
         grad[2 * n_dim_sig_chan + 0] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_exp_n_1_T_L_x_ch3.array()).sum() + 1e-4;
         grad[2 * n_dim_sig_chan + 1] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_exp_n_1_T_L_y_ch3.array()).sum() + 1e-4;
         grad[2 * n_dim_sig_chan + 2] = -lambd_sfs * 2 * ((Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array()*rho_s_exp_n_1_T_L_z_ch3.array()).sum() + 1e-4;
@@ -1499,10 +1509,11 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
 
 
     // set lambda parameters
-    lambd_BRDF_Light_sfs = model->getParaBRDFLightSfS();
-    lambd_Light_Reg = model->getParaLightReg();
-    lambd_cluster_smooth = model->getParaClutserSmooth();
-    num_cluster = model->getParaNumCluster();
+    //lambd_BRDF_Light_sfs = model->getParaBRDFLightSfS();
+    //lambd_Light_Reg = model->getParaLightReg();
+    //lambd_cluster_smooth = model->getParaClutserSmooth();
+    //num_cluster = model->getParaNumCluster();
+    m_para = model->getParaObjPtr();
 
 
     // some data
@@ -1521,7 +1532,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(num_cluster, rhos_temp, cluster_label);
+    model->rhoFromKMeans(m_para->num_cluster, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
 
     // set optimization
@@ -2085,11 +2096,9 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     rho_s.col(2) = (S_C_view.col(2).array().pow(rho_specular(3, 2))).matrix();
 
 
-    lambd_sfs = model->getParaNormSfS();// 10.0f;
-    lambd_smooth = model->getParaNormSmooth(); //0.0f;
-    lambd_norm = model->getParaNormNormalized();//5.0f;
-    float lambda_sfs = 10.0;
-    float lambda_smooth = 0.0;
+    m_para = model->getParaObjPtr();
+    //float lambda_sfs = 10.0;
+    //float lambda_smooth = 0.0;
 
 
     for (decltype(faces_in_photo.size()) i = 0; i < faces_in_photo.size(); ++i)
@@ -2394,13 +2403,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     S_mat = model->getModelLightObj()->getOutsideSampleMatrix();
 
     // set lambda parameters
-    lambd_BRDF_Light_sfs = model->getParaBRDFLightSfS();
-    lambd_Light_Reg = model->getParaLightReg();
-    lambd_cluster_smooth = model->getParaClutserSmooth();
-    num_cluster = model->getParaNumCluster();
-    lambd_sfs = model->getParaNormSfS();// 10.0f;
-    lambd_smooth = model->getParaNormSmooth(); //0.0f;
-    lambd_norm = model->getParaNormNormalized();//5.0f;
+    m_para = model->getParaObjPtr();
 
 
 
@@ -2413,7 +2416,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     // use the I_xy_vec to compute kmeans
     Eigen::MatrixX3f rhos_temp;
     std::vector<int> cluster_label;
-    model->rhoFromKMeans(num_cluster, rhos_temp, cluster_label);
+    model->rhoFromKMeans(m_para->num_cluster, rhos_temp, cluster_label);
     pixel_cluster_label = cluster_label;
 
     // set optimization
@@ -2556,14 +2559,16 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
     // give vertex on model its rho
     model->updateVertexRho();
+
+
     model->updateVertexBrightnessAndColor();
 
-    //std::ofstream f_debug(model->getOutputPath() + "/normal.mat");
-    //if (f_debug)
-    //{
-    //	f_debug << normal_rec_mat.transpose() <<"\n";
-    //	f_debug.close();
-    //}
+    std::ofstream f_debug(model->getOutputPath() + "/Rho_rec.mat");
+    if (f_debug)
+    {
+        f_debug << Rho_rec <<"\n";
+        f_debug.close();
+    }
 
 
 
