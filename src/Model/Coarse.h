@@ -25,7 +25,7 @@ public:
     void updateVertexBrightnessAndColor();
     bool getPixelLightCoeffs(int x, int y, Eigen::VectorXf &light_coeffs, Viewer *viewer, float &winx, float &winy);
     inline Eigen::MatrixX3f getRecoveredLight(){ return light_rec; };
-	bool getPixelVisbCoeffs(int x, int y, Eigen::VectorXf &visb_coeffs, Viewer *viewer, float &winx, float &winy, Eigen::Vector3f &cur_normal, Eigen::Vector3f &cur_pos);
+	bool getPixelVisbCoeffs(int x, int y, int &face_id, Eigen::VectorXf &visb_coeffs, Viewer *viewer, float &winx, float &winy, Eigen::Vector3f &cur_normal, Eigen::Vector3f &cur_pos);
 
     void getCrspFromModelToPhoto(int v_id, float xy_photo[2]);
     void getCrspFromPhotoToRImg(int x, int y, float xy_rimg[2]);
@@ -41,6 +41,7 @@ public:
     inline Eigen::MatrixX3f &getLightRec(){ return light_rec; };
     inline std::vector<Eigen::Vector2i> &getXYInMask(){ return xy_in_mask; };
     inline cv::Mat &getPhotoPS(){ return photo_ps; };
+    inline cv::Mat &getNormalImg(){ return normal_img; };
 
 
     void drawNormal();
@@ -62,6 +63,7 @@ protected:
     cv::Mat mask;
     cv::Mat rho_img;
     std::vector<Eigen::Vector2i> xy_in_mask;
+    cv::Mat normal_img;
 
     // opt parameter
     int cur_iter;

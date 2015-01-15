@@ -134,7 +134,7 @@ void Model::computeLight()
 	model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
     model_light->loadOutsideSample(getDataPath()+"/sample.mat");
 	Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
-    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
+    Eigen::MatrixX3f &s_mat = model_light->getSampleMatrix();
 
     //std::ofstream f_test(getDataPath()+"/s_mat.mat");
     //if (f_test)
@@ -250,7 +250,7 @@ void Model::computeModelVisbs()
     int num_sqrt_samples = model_light->getSqrtNumSamples();
     int num_channels = model_light->getNumChannels();
     SAMPLE *samples = model_light->getSamples();
-    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
+    Eigen::MatrixX3f &s_mat = model_light->getSampleMatrix();
     int perc = 0;
     model_visbs.clear();
     //renderer->setCheckVisbStatus(true);
@@ -312,7 +312,7 @@ void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::v
     // point should be (original point + 0.02*normal at this point)
     int num_samples = model_light->getNumSamples();
     SAMPLE *samples = model_light->getSamples();
-    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
+    Eigen::MatrixX3f &s_mat = model_light->getSampleMatrix();
     Eigen::Vector3d ray_start = point.cast<double>() + 0.05*normal.cast<double>();
     visb.clear();
 
@@ -347,7 +347,7 @@ void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen:
     // point should be (original point + 0.02*normal at this point)
     int num_samples = model_light->getNumSamples();
     SAMPLE *samples = model_light->getSamples();
-    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
+    Eigen::MatrixX3f &s_mat = model_light->getSampleMatrix();
     Eigen::Vector3d ray_start = point.cast<double>() + 0.02*normal.cast<double>();
     visb = Eigen::VectorXf(num_samples);
 

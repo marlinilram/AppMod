@@ -1026,7 +1026,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     double norm_normalization = 0;
     for (size_t i = 0; i < n_dim_normal; ++i)
     {
-        float term_val_temp = cur_N.row(i).dot(n_init_piror[i]) - 1;
+        float term_val_temp = cur_N.row(i).array().square().sum() - 1;
         norm_normalization += term_val_temp*term_val_temp;
     }
 
@@ -1034,12 +1034,13 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     //cout << "N Norm: " << _startT << " secs\t";
     //_startT = img_alg_data_ptr->get_time();
 
-    // normal prior ,merge with normalization term now
-    //double norm_prior = 0;
-    //for (size_t i = 0; i < n_dim_normal; ++i)
-    //{
-    //    norm_prior += (cur_N.row(i).transpose() - n_init_piror[i]).array().square().sum();
-    //}
+    // normal prior
+    double norm_prior = 0;
+    for (size_t i = 0; i < n_dim_normal; ++i)
+    {
+        float term_val_temp = cur_N.row(i).dot(n_init_piror[i]) - 1;
+        norm_prior += term_val_temp*term_val_temp;
+    }
 
     //_startT = img_alg_data_ptr->get_time() - _startT;
     //cout << "N Prior: " << _startT << " secs\t";
@@ -1069,7 +1070,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
     funcval += lambd_norm_normalized*norm_normalization;
 
-    //funcval += lambd_norm_prior*norm_prior;
+    funcval += lambd_norm_prior*norm_prior;
 
     _startT = img_alg_data_ptr->get_time() - _startT;
     cout << "Main Func: " << _startT << " secs\t";
@@ -1205,14 +1206,14 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
 
             // normalization grad
-            grad[offset + 3 * i + 0] += lambd_norm_normalized * 2 * (cur_n.dot(n_init_piror[i]) - 1) * 2 * n_init_piror[i](0);
-            grad[offset + 3 * i + 1] += lambd_norm_normalized * 2 * (cur_n.dot(n_init_piror[i]) - 1) * 2 * n_init_piror[i](1);
-            grad[offset + 3 * i + 2] += lambd_norm_normalized * 2 * (cur_n.dot(n_init_piror[i]) - 1) * 2 * n_init_piror[i](2);
+            grad[offset + 3 * i + 0] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(0);
+            grad[offset + 3 * i + 1] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(1);
+            grad[offset + 3 * i + 2] += lambd_norm_normalized * 2 * (cur_n.dot(cur_n) - 1) * 2 * cur_n(2);
 
             // norm prior
-            //grad[offset + 3 * i + 0] += lambd_norm_prior * 2 * (cur_n(0) - n_init_piror[i](0));
-            //grad[offset + 3 * i + 1] += lambd_norm_prior * 2 * (cur_n(1) - n_init_piror[i](1));
-            //grad[offset + 3 * i + 2] += lambd_norm_prior * 2 * (cur_n(2) - n_init_piror[i](2));
+            grad[offset + 3 * i + 0] += lambd_norm_prior * 2 * (cur_n.dot(n_init_piror[i]) - 1) * n_init_piror[i](0);
+            grad[offset + 3 * i + 1] += lambd_norm_prior * 2 * (cur_n.dot(n_init_piror[i]) - 1) * n_init_piror[i](1);
+            grad[offset + 3 * i + 2] += lambd_norm_prior * 2 * (cur_n.dot(n_init_piror[i]) - 1) * n_init_piror[i](2);
         }
 
 
@@ -1495,7 +1496,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     {
         S_mat.row(i) = model_samples[i].direction;
     }
-    S_mat = model->getModelLightObj()->getOutsideSampleMatrix();
+    S_mat = model->getModelLightObj()->getSampleMatrix();
 
 
     // set S*view matrix for inequality constraints
@@ -2070,7 +2071,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
 
     // get sample direction
     int num_samples = model->getModelLightObj()->getNumSamples();
-    S_mat = model->getModelLightObj()->getOutsideSampleMatrix();
+    S_mat = model->getModelLightObj()->getSampleMatrix();
     Eigen::MatrixX3f &samples = S_mat;
 
 
@@ -2329,10 +2330,10 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     cv::Mat &photo = model->getPhoto();
     cv::Mat &mask = model->getMask();
     cv::Mat &rho_img = model->getRhoImg();
+    cv::Mat &normal_img = model->getNormalImg();
 
 
     Eigen::MatrixX3f &Light_rec = model->getLightRec();
-    Light_rec.resize(model->getModelLightObj()->getNumSamples(), 3);
     std::vector<Eigen::Vector2i> &I_xy_vec = model->getXYInMask();
 
     // prepare visibility coefficients V_mat
@@ -2342,6 +2343,9 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     std::vector<Eigen::Vector3f> I_vec;
     pixel_init_normal.clear();
     std::vector<Eigen::Vector3f> pixel_init_pos;
+    std::vector<int> face_id_in_photo;
+    std::vector<int> faces_in_photo;
+    model->findFacesInPhoto(faces_in_photo);
     I_xy_vec.clear();
 
     std::cout << "Compute pixel-wise visibility coefficients...\n";
@@ -2353,15 +2357,17 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
             if (mask_ptr[i*mask.cols + j] > 0)
             { // TODO: need to refine, pixel in photo may not have correspondences in RImg, vice versa
                 float winx, winy;
+                int face_id;
                 Eigen::Vector3f cur_pixel_normal;
                 Eigen::Vector3f cur_pixel_pos;
-                if (!model->getPixelVisbCoeffs(j, i, visb_coeffs, viewer, winx, winy, cur_pixel_normal, cur_pixel_pos)) continue;
+                if (!model->getPixelVisbCoeffs(j, i, face_id, visb_coeffs, viewer, winx, winy, cur_pixel_normal, cur_pixel_pos)) continue;
                 visb_coeffs_vec.push_back(visb_coeffs);
                 cv::Vec3f color = photo.at<cv::Vec3f>(i, j);
                 I_vec.push_back(Eigen::Vector3f(color[0], color[1], color[2]));
                 I_xy_vec.push_back(Eigen::Vector2i(j, i));
                 pixel_init_normal.push_back(cur_pixel_normal);
                 pixel_init_pos.push_back(cur_pixel_pos);
+                face_id_in_photo.push_back(face_id);
             }
         }
         //emit(refreshScreen());
@@ -2400,7 +2406,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     // set S matrix
     SAMPLE *model_samples = model->getModelLightObj()->getSamples();
     int num_samples = model->getModelLightObj()->getNumSamples();
-    S_mat = model->getModelLightObj()->getOutsideSampleMatrix();
+    S_mat = model->getModelLightObj()->getSampleMatrix();
 
     // set lambda parameters
     m_para = model->getParaObjPtr();
@@ -2463,7 +2469,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     //   opt.set_stopval(1000);
 
     opt.set_ftol_abs(1e-3);
-    opt.set_maxtime(180*3);
+    opt.set_maxtime(900);
 
 
     // declare initial x
@@ -2508,7 +2514,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
 
     Eigen::Map<Eigen::MatrixX3d>BRDFLight_rec_mat(&x[0], n_dim_sig_chan, 3);
-    //Eigen::Map<Eigen::Matrix3Xd>normal_rec_mat(&x[3*n_dim_sig_chan], 3, n_dim_normal);
+    Eigen::Map<Eigen::Matrix3Xd>normal_rec_mat(&x[3*n_dim_sig_chan], 3, n_dim_normal);
 
     Rho_rec.col(0) = (BRDFLight_rec_mat.col(0).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
     Rho_rec.col(1) = (BRDFLight_rec_mat.col(1).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
@@ -2547,6 +2553,11 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = Rho_rec(i + 4, 2);
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
+
+        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = normal_rec_mat(0, i);
+        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = normal_rec_mat(1, i);
+        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = normal_rec_mat(2, i);
+
     }
 
     char time_postfix[50];
@@ -2563,13 +2574,123 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
     model->updateVertexBrightnessAndColor();
 
+
+    // process normal, accumulate normal with same face id
+    std::cout<<"Retrieve new normals...\n";
+
+
+
+    Eigen::VectorXf pixel_counts = Eigen::VectorXf::Zero(faces_in_photo.size());
+    Eigen::MatrixX3f normal_in_photo = Eigen::MatrixX3f::Zero(faces_in_photo.size(), 3);
+    cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
+    int *primitive_id_ptr = (int *)primitive_id_img.data;
+    Eigen::Matrix3f model_to_img_trans = model->getModelToImgTrans();
+
+    // prepare data
+
+    for (int i = 0; i < primitive_id_img.rows; ++i)
+    {
+        for (int j = 0; j < primitive_id_img.cols; ++j)
+        {
+            if (primitive_id_ptr[i*primitive_id_img.cols + j] >= 0)
+            {
+                Eigen::Vector3f xy = model_to_img_trans*Eigen::Vector3f((float)j, (float)i, 1.0);
+                int x = int(xy(0) / xy(2) + 0.5);
+                int y = int(xy(1) / xy(2) + 0.5);
+
+                x = (x < mask.cols && x >= 0) ? (x) : (0);
+                y = (y < mask.rows && y >= 0) ? (y) : (0);
+
+                if (mask.at<uchar>(y, x) > 0)
+                {
+                    // we must ensure this face can at least find a pixel in the mask
+                    int face_id = primitive_id_ptr[i*primitive_id_img.cols + j];
+                    const std::vector<int>::iterator id = find(faces_in_photo.begin(), faces_in_photo.end(), face_id);
+                    const int idx = static_cast<int> (id - faces_in_photo.begin());
+                    if (id != faces_in_photo.end())
+                    {
+                        pixel_counts(idx) += 1.0f;
+                        cv::Vec3f cur_norm = normal_img.at<cv::Vec3f>(y, x);
+                        normal_in_photo.row(idx) += Eigen::RowVector3f(cur_norm[0], cur_norm[1], cur_norm[2]);
+                    }
+                }
+            }
+        }
+    }
+    normal_in_photo.col(0) = (normal_in_photo.col(0).array() / pixel_counts.array()).matrix();
+    normal_in_photo.col(1) = (normal_in_photo.col(1).array() / pixel_counts.array()).matrix();
+    normal_in_photo.col(2) = (normal_in_photo.col(2).array() / pixel_counts.array()).matrix();
+
+    Eigen::VectorXf new_face_normal = Eigen::Map<Eigen::VectorXf>(normal_in_photo.transpose().data(), 3*faces_in_photo.size(), 1);
+
+    std::cout<<"Num of faces with new normals: "<<faces_in_photo.size()<<"\n";
+
+    //std::map<int, std::pair<int, Eigen::Vector3d>> organize_normal;
+    //std::map<int, std::pair<int, Eigen::Vector3d>>::iterator org_n_iter;
+    //for (size_t i = 0; i < face_id_in_photo.size(); ++i)
+    //{
+    //    org_n_iter = organize_normal.find(face_id_in_photo[i]);
+    //    Eigen::Vector3d cur_n = normal_rec_mat.col(i);
+
+    //    if (org_n_iter == organize_normal.end())
+    //    {
+    //        std::pair<int, std::pair<int, Eigen::Vector3d>> cur_pair(face_id_in_photo[i], std::pair<int, Eigen::Vector3d>(1, cur_n));
+    //        organize_normal.insert(cur_pair);
+    //    }
+    //    else
+    //    {
+    //        organize_normal[face_id_in_photo[i]].first += 1;
+    //        organize_normal[face_id_in_photo[i]].second += cur_n;
+    //    }
+    //}
+
+    //// compute new normal
+    //std::vector<int> new_face_id;
+    //std::vector<float> new_face_normal;
+    //for (auto &i : organize_normal)
+    //{
+    //    new_face_id.push_back(i.first);
+
+    //    std::pair<int, Eigen::Vector3d> sum_normal = i.second;
+    //    Eigen::Vector3f cur_new_normal = sum_normal.second.cast<float>() / sum_normal.first;
+    //    new_face_normal.push_back(cur_new_normal(0));
+    //    new_face_normal.push_back(cur_new_normal(1));
+    //    new_face_normal.push_back(cur_new_normal(2));
+
+    //}
+    //std::cout<<"Num of faces with new normals: "<<new_face_id.size()<<"\n";
+    //std::cout<<"Num of normals: "<<new_face_normal.size()<<"\n";
+
+    // set new normal to model
+    std::cout<<"Set new normal to model...\n";
+    //Eigen::VectorXf new_face_normals = Eigen::Map<Eigen::VectorXf>(&new_face_normal[0], new_face_normal.size(), 1);
+    model->setModelNewNormal(new_face_normal, faces_in_photo);
+    //model->updateVertexBrightnessAndColor(); put this after deformation
+    
+    std::cout <<"Draw normal...\n";
+    model->drawNormal();
+    emit(refreshScreen());
+
+    std::cout<<"Deform...\n";
+    GeometryPartAlg geoAlg;
+    geoAlg.updateGeometry(model);
+
+
     std::ofstream f_debug(model->getOutputPath() + "/Rho_rec.mat");
     if (f_debug)
     {
         f_debug << Rho_rec <<"\n";
         f_debug.close();
     }
+    f_debug.open(model->getOutputPath() + "/Light_rec.mat");
+    if (f_debug)
+    {
+        f_debug << Light_rec << "\n";
+        f_debug.close();
+    }
 
+    std::cout << "Cur iter: " << model->getCurIter() << "finished...\n";
+    ++model->getCurIter();
 
 
     V_coef.resize(0, 0);
