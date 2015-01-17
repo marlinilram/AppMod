@@ -21,7 +21,7 @@ MPara::MPara()
     lambd_k_strech = 10;
     lambd_k_bend = 15;
     lambd_deform_normal = 25;
-    lambd_vertical_move = 10;
+    lambd_vertical_move = 1;
     deform_max_iter = 20;
 }
 

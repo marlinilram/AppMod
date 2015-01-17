@@ -14,7 +14,7 @@
 #include "LOG.h"
 
 //Initiate log
-bool LOG::Init(char * newFilename)
+bool LOG::Init(const char * newFilename)
 {
     //Save filename
     if(filename)

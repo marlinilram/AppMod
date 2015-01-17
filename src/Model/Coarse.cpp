@@ -23,7 +23,7 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::imshow("photo", photo);
     cv::imshow("mask", mask);
 
-    light_rec = Eigen::MatrixX3f::Ones(getModelLightObj()->getNumSamples(), 3);
+    light_rec = Eigen::MatrixX3f::Zero(getModelLightObj()->getNumSamples(), 3);
     std::vector<cv::Mat> rho_img_split;
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0.5)));
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0.5)));

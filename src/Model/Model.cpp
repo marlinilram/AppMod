@@ -57,7 +57,23 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     model_normals = shapes[0].mesh.normals;
     model_normals_init = model_normals;
     model_faces = shapes[0].mesh.indices;
-    model_colors = Colorlist(model_vertices.size(), 0.5);
+    model_colors = Colorlist(model_vertices.size(), 0.5);// inti color with gaussian
+    for (size_t i = 0; i < model_vertices.size()/3; ++i)
+    {
+        if (model_vertices[3*i+0] >= 0.5)
+        {
+            model_colors[3*i+0] = 0.1;//exp(-model_vertices[3*i+0]*model_vertices[3*i+0]/2)/(sqrt(2*M_PI));
+            model_colors[3*i+1] = 0.3;//exp(-model_vertices[3*i+1]*model_vertices[3*i+1]/2)/(sqrt(2*M_PI));
+            model_colors[3*i+2] = 0.5;//exp(-model_vertices[3*i+2]*model_vertices[3*i+2]/2)/(sqrt(2*M_PI));
+        }
+        else
+        {
+            model_colors[3*i+0] = 0.5;//exp(-model_vertices[3*i+0]*model_vertices[3*i+0]/8)/(sqrt(2*M_PI)*2);
+            model_colors[3*i+1] = 0.3;//exp(-model_vertices[3*i+1]*model_vertices[3*i+1]/8)/(sqrt(2*M_PI)*2);
+            model_colors[3*i+2] = 0.1;//exp(-model_vertices[3*i+2]*model_vertices[3*i+2]/8)/(sqrt(2*M_PI)*2);
+        }
+
+    }
     model_rhos = model_colors;
     model_brightness = model_colors;
 

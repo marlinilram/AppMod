@@ -11,6 +11,7 @@
 #include "Coarse.h"
 #include "Viewer.h"
 #include "GeometryPartAlg.h"
+#include "LOG.h"
 
 class ImagePartAlg : public QObject
 {

@@ -26,6 +26,8 @@ protected:
 	{}
 	LOG & operator= (const LOG &)
 	{}
+    LOG(const char * newFilename)
+    {  Init(newFilename);}
 
 public:
 	//public function to access the instance of the log class
@@ -35,8 +37,14 @@ public:
 		static LOG instance;
 		return &instance;
 	}
+
+    static LOG * Instance(const char * newFilename)
+    {
+        static LOG instance(newFilename);
+        return &instance;
+    }
 	
-	bool Init(char * newFilename);
+	bool Init(const char * newFilename);
 
 	//Output a new line
 	void OutputNewLine();

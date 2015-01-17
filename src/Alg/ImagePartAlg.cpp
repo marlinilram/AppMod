@@ -899,17 +899,26 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     //    C_mat(i, 2) = ((rho_s_ch3.array() + rho_d_ch3(i))*(Light_rec_ch3.array()*S.col(2).array()*V_coeff.row(i).transpose().array())).sum();
     //}
 
-    A_mat.col(0) = V_coeff*(Light_rec_ch1.array()*S.col(0).array()*rho_s_ch1.array()).matrix() + ((V_coeff*(Light_rec_ch1.array()*S.col(0).array()).matrix()).array()*rho_d_ch1.array()).matrix();
-    A_mat.col(1) = V_coeff*(Light_rec_ch2.array()*S.col(0).array()*rho_s_ch2.array()).matrix() + ((V_coeff*(Light_rec_ch2.array()*S.col(0).array()).matrix()).array()*rho_d_ch2.array()).matrix();
-    A_mat.col(2) = V_coeff*(Light_rec_ch3.array()*S.col(0).array()*rho_s_ch3.array()).matrix() + ((V_coeff*(Light_rec_ch3.array()*S.col(0).array()).matrix()).array()*rho_d_ch3.array()).matrix();
+    A_mat.col(0) = V_coeff*(Light_rec_ch1.array()*S.col(0).array()*rho_s_ch1.array()).matrix();
+    A_mat.col(0).noalias() += ((V_coeff*(Light_rec_ch1.array()*S.col(0).array()).matrix()).array()*rho_d_ch1.array()).matrix();
+    A_mat.col(1) = V_coeff*(Light_rec_ch2.array()*S.col(0).array()*rho_s_ch2.array()).matrix();
+    A_mat.col(1).noalias() += ((V_coeff*(Light_rec_ch2.array()*S.col(0).array()).matrix()).array()*rho_d_ch2.array()).matrix();
+    A_mat.col(2) = V_coeff*(Light_rec_ch3.array()*S.col(0).array()*rho_s_ch3.array()).matrix();
+    A_mat.col(2).noalias() += ((V_coeff*(Light_rec_ch3.array()*S.col(0).array()).matrix()).array()*rho_d_ch3.array()).matrix();
 
-    B_mat.col(0) = V_coeff*(Light_rec_ch1.array()*S.col(1).array()*rho_s_ch1.array()).matrix() + ((V_coeff*(Light_rec_ch1.array()*S.col(1).array()).matrix()).array()*rho_d_ch1.array()).matrix();
-    B_mat.col(1) = V_coeff*(Light_rec_ch2.array()*S.col(1).array()*rho_s_ch2.array()).matrix() + ((V_coeff*(Light_rec_ch2.array()*S.col(1).array()).matrix()).array()*rho_d_ch2.array()).matrix();
-    B_mat.col(2) = V_coeff*(Light_rec_ch3.array()*S.col(1).array()*rho_s_ch3.array()).matrix() + ((V_coeff*(Light_rec_ch3.array()*S.col(1).array()).matrix()).array()*rho_d_ch3.array()).matrix();
+    B_mat.col(0) = V_coeff*(Light_rec_ch1.array()*S.col(1).array()*rho_s_ch1.array()).matrix();
+    B_mat.col(0).noalias() += ((V_coeff*(Light_rec_ch1.array()*S.col(1).array()).matrix()).array()*rho_d_ch1.array()).matrix();
+    B_mat.col(1) = V_coeff*(Light_rec_ch2.array()*S.col(1).array()*rho_s_ch2.array()).matrix();
+    B_mat.col(1).noalias() += ((V_coeff*(Light_rec_ch2.array()*S.col(1).array()).matrix()).array()*rho_d_ch2.array()).matrix();
+    B_mat.col(2) = V_coeff*(Light_rec_ch3.array()*S.col(1).array()*rho_s_ch3.array()).matrix();
+    B_mat.col(2).noalias() += ((V_coeff*(Light_rec_ch3.array()*S.col(1).array()).matrix()).array()*rho_d_ch3.array()).matrix();
 
-    C_mat.col(0) = V_coeff*(Light_rec_ch1.array()*S.col(2).array()*rho_s_ch1.array()).matrix() + ((V_coeff*(Light_rec_ch1.array()*S.col(2).array()).matrix()).array()*rho_d_ch1.array()).matrix();
-    C_mat.col(1) = V_coeff*(Light_rec_ch2.array()*S.col(2).array()*rho_s_ch2.array()).matrix() + ((V_coeff*(Light_rec_ch2.array()*S.col(2).array()).matrix()).array()*rho_d_ch2.array()).matrix();
-    C_mat.col(2) = V_coeff*(Light_rec_ch3.array()*S.col(2).array()*rho_s_ch3.array()).matrix() + ((V_coeff*(Light_rec_ch3.array()*S.col(2).array()).matrix()).array()*rho_d_ch3.array()).matrix();
+    C_mat.col(0) = V_coeff*(Light_rec_ch1.array()*S.col(2).array()*rho_s_ch1.array()).matrix();
+    C_mat.col(0).noalias() += ((V_coeff*(Light_rec_ch1.array()*S.col(2).array()).matrix()).array()*rho_d_ch1.array()).matrix();
+    C_mat.col(1) = V_coeff*(Light_rec_ch2.array()*S.col(2).array()*rho_s_ch2.array()).matrix();
+    C_mat.col(1).noalias() += ((V_coeff*(Light_rec_ch2.array()*S.col(2).array()).matrix()).array()*rho_d_ch2.array()).matrix();
+    C_mat.col(2) = V_coeff*(Light_rec_ch3.array()*S.col(2).array()*rho_s_ch3.array()).matrix();
+    C_mat.col(2).noalias() += ((V_coeff*(Light_rec_ch3.array()*S.col(2).array()).matrix()).array()*rho_d_ch3.array()).matrix();
 
     A_mat *= (4 * M_PI / n_dim_light);
     B_mat *= (4 * M_PI / n_dim_light);
@@ -1147,25 +1156,26 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
         //_startT = img_alg_data_ptr->get_time();
 
         // gradient of light
+        Eigen::VectorXf g_light_temp;
         for (; i < n_dim_sig_chan; ++i)
         {
 
-            Eigen::VectorXf temp = (T_coeff.col(i - 4 - T_coeff.rows()).array()*rho_d_ch1.array()).matrix()
+            g_light_temp = (T_coeff.col(i - 4 - T_coeff.rows()).array()*rho_d_ch1.array()).matrix()
                 + rho_s_ch1(i - 4 - T_coeff.rows())*T_coeff.col(i - 4 - T_coeff.rows());
 
-            grad[i + 0 * offset] = -lambd_sfs * 2 * (Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).dot(temp);
+            grad[i + 0 * offset] = -lambd_sfs * 2 * (Intensities.col(0) - rho_d_T_L_ch1 - rho_s_T_L_ch1).dot(g_light_temp);
             grad[i + 0 * offset] += lambd_light_l2 * 2 * Light_rec_ch1(i - (4 + T_coeff.rows())) + 1e-4;
 
-            temp = (T_coeff.col(i - 4 - T_coeff.rows()).array()*rho_d_ch2.array()).matrix()
+            g_light_temp = (T_coeff.col(i - 4 - T_coeff.rows()).array()*rho_d_ch2.array()).matrix()
                 + rho_s_ch2(i - 4 - T_coeff.rows())*T_coeff.col(i - 4 - T_coeff.rows());
 
-            grad[i + 1 * offset] = -lambd_sfs * 2 * (Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).dot(temp);
+            grad[i + 1 * offset] = -lambd_sfs * 2 * (Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).dot(g_light_temp);
             grad[i + 1 * offset] += lambd_light_l2 * 2 * Light_rec_ch2(i - (4 + T_coeff.rows())) + 1e-4;
 
-            temp = (T_coeff.col(i - 4 - T_coeff.rows()).array()*rho_d_ch3.array()).matrix()
+            g_light_temp = (T_coeff.col(i - 4 - T_coeff.rows()).array()*rho_d_ch3.array()).matrix()
                 + rho_s_ch3(i - 4 - T_coeff.rows())*T_coeff.col(i - 4 - T_coeff.rows());
 
-            grad[i + 2 * offset] = -lambd_sfs * 2 * (Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).dot(temp);
+            grad[i + 2 * offset] = -lambd_sfs * 2 * (Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).dot(g_light_temp);
             grad[i + 2 * offset] += lambd_light_l2 * 2 * Light_rec_ch3(i - (4 + T_coeff.rows())) + 1e-4;
         }
 
@@ -1176,13 +1186,16 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
         // gradient of normal
         i = 0;
         offset = 3 * n_dim_sig_chan;
+        Eigen::Vector3f cur_brightness;
+        Eigen::Vector3f cur_n;
+        Eigen::Matrix3f cur_ABC;
         for (; i < n_dim_normal; ++i)
         {
 
             // sfs grad
-            Eigen::Vector3f cur_brightness = Intensities.row(i);
-            Eigen::Vector3f cur_n = cur_N.row(i);
-            Eigen::Matrix3f cur_ABC;
+            cur_brightness = Intensities.row(i);
+            cur_n = cur_N.row(i);
+            cur_ABC;
             cur_ABC.col(0) = A_mat.row(i);
             cur_ABC.col(1) = B_mat.row(i);
             cur_ABC.col(2) = C_mat.row(i);
@@ -2416,7 +2429,6 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
     // some data
     std::cout << V_coef.rows() << "\n";
-    Eigen::MatrixX3f Rho_rec(V_coef.rows() + 4, 3);
     Eigen::Matrix<float, 4, 3> &rho_specular = model->getRhoSpclr();
 
     // use the I_xy_vec to compute kmeans
@@ -2433,7 +2445,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     size_t n_dim_sig_chan = n_dim_rho_s + n_dim_rho_d + n_dim_light;
     size_t n_dim_normal = V_coef.rows();
 
-    nlopt::opt opt(nlopt::LD_MMA, n_total_dim);
+    nlopt::opt opt(nlopt::LD_AUGLAG_EQ, n_total_dim);
 
     // set bounds
     std::vector<double> lb(n_total_dim, 0);
@@ -2446,14 +2458,20 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
         lb[i] = -HUGE_VAL;
     }
 
-    std::vector<double> ub(n_total_dim, 1);
-    ub[0] = ub[0 + 1 * n_dim_sig_chan] = ub[0 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    ub[1] = ub[1 + 1 * n_dim_sig_chan] = ub[1 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    ub[2] = ub[2 + 1 * n_dim_sig_chan] = ub[2 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    ub[3] = ub[3 + 1 * n_dim_sig_chan] = ub[3 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    for (size_t i = 3 * n_dim_sig_chan; i < ub.size(); ++i)
+    std::vector<double> ub(n_total_dim, HUGE_VAL);
+    //ub[0] = ub[0 + 1 * n_dim_sig_chan] = ub[0 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    //ub[1] = ub[1 + 1 * n_dim_sig_chan] = ub[1 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    //ub[2] = ub[2 + 1 * n_dim_sig_chan] = ub[2 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    //ub[3] = ub[3 + 1 * n_dim_sig_chan] = ub[3 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    //for (size_t i = 3 * n_dim_sig_chan; i < ub.size(); ++i)
+    //{
+    //    ub[i] = HUGE_VAL;
+    //}
+    for (size_t i = n_dim_rho_d + n_dim_rho_s; i < n_dim_sig_chan; ++i)
     {
-        ub[i] = HUGE_VAL;
+        ub[0*n_dim_sig_chan + i] = 1;
+        ub[1*n_dim_sig_chan + i] = 1;
+        ub[2*n_dim_sig_chan + i] = 1;
     }
 
     opt.set_lower_bounds(lb);
@@ -2468,7 +2486,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     //opt.set_xtol_abs(1e-4);
     //   opt.set_stopval(1000);
 
-    opt.set_ftol_abs(1e-3);
+    opt.set_ftol_rel(1e-3);
     opt.set_maxtime(900);
 
 
@@ -2516,47 +2534,76 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     Eigen::Map<Eigen::MatrixX3d>BRDFLight_rec_mat(&x[0], n_dim_sig_chan, 3);
     Eigen::Map<Eigen::Matrix3Xd>normal_rec_mat(&x[3*n_dim_sig_chan], 3, n_dim_normal);
 
-    Rho_rec.col(0) = (BRDFLight_rec_mat.col(0).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
-    Rho_rec.col(1) = (BRDFLight_rec_mat.col(1).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
-    Rho_rec.col(2) = (BRDFLight_rec_mat.col(2).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
+
+    Eigen::MatrixX3f Rho_d_rec(V_coef.rows(), 3);
+    Eigen::MatrixXf Rho_s_rec(4, 3);
+
+
+    Rho_d_rec.col(0) = (BRDFLight_rec_mat.col(0).segment(n_dim_rho_s, n_dim_rho_d)).cast<float>();
+    Rho_d_rec.col(1) = (BRDFLight_rec_mat.col(1).segment(n_dim_rho_s, n_dim_rho_d)).cast<float>();
+    Rho_d_rec.col(2) = (BRDFLight_rec_mat.col(2).segment(n_dim_rho_s, n_dim_rho_d)).cast<float>();
+    Rho_s_rec.col(0) = (BRDFLight_rec_mat.col(0).segment(0, n_dim_rho_s)).cast<float>();
+    Rho_s_rec.col(1) = (BRDFLight_rec_mat.col(1).segment(0, n_dim_rho_s)).cast<float>();
+    Rho_s_rec.col(2) = (BRDFLight_rec_mat.col(2).segment(0, n_dim_rho_s)).cast<float>();
     Light_rec.col(0) = (BRDFLight_rec_mat.col(0).segment(n_dim_rho_s + n_dim_rho_d, n_dim_light)).cast<float>();
     Light_rec.col(1) = (BRDFLight_rec_mat.col(1).segment(n_dim_rho_s + n_dim_rho_d, n_dim_light)).cast<float>();
     Light_rec.col(2) = (BRDFLight_rec_mat.col(2).segment(n_dim_rho_s + n_dim_rho_d, n_dim_light)).cast<float>();
 
 
+    Rho_d_rec = Rho_d_rec / Rho_d_rec.maxCoeff();
+
+
+    std::ofstream f_debug(model->getOutputPath() + "/Rho_rec.mat");
+    if (f_debug)
+    {
+        f_debug << Rho_d_rec <<"\n";
+        f_debug.close();
+    }
+    f_debug.open(model->getOutputPath() + "/Light_rec.mat");
+    if (f_debug)
+    {
+        f_debug << Light_rec << "\n";
+        f_debug.close();
+    }
+
+    std::cout<<"Max coef in Rho_d_rec: " << Rho_d_rec.maxCoeff() <<"\n";
+
     std::cout << "Pixels this iter: " << V_coef.rows() << "\tPiexels first iter: " << num_pixels_init << "\n";
 
-    rho_specular.row(0) = Rho_rec.row(0);
-    rho_specular.row(1) = Rho_rec.row(1);
-    rho_specular.row(2) = Rho_rec.row(2);
-    rho_specular.row(3) = Rho_rec.row(3);
+    rho_specular.row(0) = Rho_s_rec.row(0);
+    rho_specular.row(1) = Rho_s_rec.row(1);
+    rho_specular.row(2) = Rho_s_rec.row(2);
+    rho_specular.row(3) = Rho_s_rec.row(3);
 
     std::vector<cv::Mat> rho_img_split;
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(Rho_rec.col(0).tail(Rho_rec.rows() - 4).mean())));
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(Rho_rec.col(1).tail(Rho_rec.rows() - 4).mean())));
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(Rho_rec.col(2).tail(Rho_rec.rows() - 4).mean())));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(Rho_d_rec.col(0).mean())));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(Rho_d_rec.col(1).mean())));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(Rho_d_rec.col(2).mean())));
     cv::merge(rho_img_split, rho_img);
 
     for (decltype(I_xy_vec.size()) i = 0; i < I_xy_vec.size(); ++i)
     {
-        if (Rho_rec(i + 4, 0) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = Rho_rec(i + 4, 0);
+        if (Rho_d_rec(i, 0) <= 1.0f)
+            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = Rho_d_rec(i, 0);
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = 1.0f;
 
-        if (Rho_rec(i + 4, 1) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = Rho_rec(i + 4, 1);
+        if (Rho_d_rec(i, 1) <= 1.0f)
+            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = Rho_d_rec(i, 1);
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = 1.0f;
 
-        if (Rho_rec(i + 4, 2) <= 1.0f)
-            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = Rho_rec(i + 4, 2);
+        if (Rho_d_rec(i, 2) <= 1.0f)
+            rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = Rho_d_rec(i, 2);
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
 
-        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = normal_rec_mat(0, i);
-        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = normal_rec_mat(1, i);
-        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = normal_rec_mat(2, i);
+        float square_sum = normal_rec_mat(0, i)*normal_rec_mat(0, i)
+            + normal_rec_mat(1, i)*normal_rec_mat(1, i)
+            + normal_rec_mat(2, i)*normal_rec_mat(2, i);
+        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = normal_rec_mat(0, i) / square_sum;
+        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = normal_rec_mat(1, i) / square_sum;
+        normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = normal_rec_mat(2, i) / square_sum;
 
     }
 
@@ -2582,11 +2629,14 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
     Eigen::VectorXf pixel_counts = Eigen::VectorXf::Zero(faces_in_photo.size());
     Eigen::MatrixX3f normal_in_photo = Eigen::MatrixX3f::Zero(faces_in_photo.size(), 3);
+    std::vector<std::vector<Eigen::Vector3f>> face_crsp_normal_lsit(faces_in_photo.size());
     cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
     int *primitive_id_ptr = (int *)primitive_id_img.data;
     Eigen::Matrix3f model_to_img_trans = model->getModelToImgTrans();
 
     // prepare data
+
+    std::vector<std::vector<Eigen::Vector2i>> face_output(faces_in_photo.size());
 
     for (int i = 0; i < primitive_id_img.rows; ++i)
     {
@@ -2612,6 +2662,8 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
                         pixel_counts(idx) += 1.0f;
                         cv::Vec3f cur_norm = normal_img.at<cv::Vec3f>(y, x);
                         normal_in_photo.row(idx) += Eigen::RowVector3f(cur_norm[0], cur_norm[1], cur_norm[2]);
+                        face_crsp_normal_lsit[idx].push_back(Eigen::Vector3f(cur_norm[0], cur_norm[1], cur_norm[2]));
+                        face_output[idx].push_back(Eigen::Vector2i(x, y));
                     }
                 }
             }
@@ -2621,9 +2673,50 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     normal_in_photo.col(1) = (normal_in_photo.col(1).array() / pixel_counts.array()).matrix();
     normal_in_photo.col(2) = (normal_in_photo.col(2).array() / pixel_counts.array()).matrix();
 
-    Eigen::VectorXf new_face_normal = Eigen::Map<Eigen::VectorXf>(normal_in_photo.transpose().data(), 3*faces_in_photo.size(), 1);
+    Eigen::MatrixXf normal_in_photo_transpose = normal_in_photo.transpose();
+    Eigen::VectorXf new_face_normal = Eigen::Map<Eigen::VectorXf>(normal_in_photo_transpose.data(), 3*faces_in_photo.size(), 1);
+
+    // use pca to compute normal
 
     std::cout<<"Num of faces with new normals: "<<faces_in_photo.size()<<"\n";
+
+    std::ofstream f_normal_debug(model->getOutputPath() + "/xy_normal.mat");
+    if (f_normal_debug)
+    {
+        for (size_t i = 0; i < I_xy_vec.size(); ++i)
+        {
+            f_normal_debug << I_xy_vec[i](0) << "\t" << I_xy_vec[i](1) << "\t"
+                << normal_rec_mat.col(i).transpose() << "\n";
+        }
+        f_normal_debug.close();
+    }
+    f_normal_debug.open(model->getOutputPath() + "/primitive_xy.mat");
+    if (f_normal_debug)
+    {
+        for (size_t i = 0; i < faces_in_photo.size(); ++i)
+        {
+            f_normal_debug << faces_in_photo[i] << "\t";
+            for (size_t j = 0 ; j < face_output[i].size(); ++j)
+            {
+                f_normal_debug << face_output[i][j].transpose() << "\t";
+            }
+            f_normal_debug << "\n";
+        }
+        f_normal_debug.close();
+    }
+    f_normal_debug.open(model->getOutputPath() + "/primitive_normal_vec.mat");
+    if (f_normal_debug)
+    {
+        f_normal_debug << new_face_normal;
+        f_normal_debug.close();
+    }
+    f_normal_debug.open(model->getOutputPath() + "/primitive_normal.mat");
+    if (f_normal_debug)
+    {
+        f_normal_debug << normal_in_photo;
+        f_normal_debug.close();
+    }
+
 
     //std::map<int, std::pair<int, Eigen::Vector3d>> organize_normal;
     //std::map<int, std::pair<int, Eigen::Vector3d>>::iterator org_n_iter;
@@ -2631,6 +2724,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     //{
     //    org_n_iter = organize_normal.find(face_id_in_photo[i]);
     //    Eigen::Vector3d cur_n = normal_rec_mat.col(i);
+    //    cur_n.normalize();
 
     //    if (org_n_iter == organize_normal.end())
     //    {
@@ -2656,7 +2750,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     //    new_face_normal.push_back(cur_new_normal(0));
     //    new_face_normal.push_back(cur_new_normal(1));
     //    new_face_normal.push_back(cur_new_normal(2));
-
+    //    std::cout << sum_normal.first << "\n";
     //}
     //std::cout<<"Num of faces with new normals: "<<new_face_id.size()<<"\n";
     //std::cout<<"Num of normals: "<<new_face_normal.size()<<"\n";
@@ -2676,18 +2770,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     geoAlg.updateGeometry(model);
 
 
-    std::ofstream f_debug(model->getOutputPath() + "/Rho_rec.mat");
-    if (f_debug)
-    {
-        f_debug << Rho_rec <<"\n";
-        f_debug.close();
-    }
-    f_debug.open(model->getOutputPath() + "/Light_rec.mat");
-    if (f_debug)
-    {
-        f_debug << Light_rec << "\n";
-        f_debug.close();
-    }
+
 
     std::cout << "Cur iter: " << model->getCurIter() << "finished...\n";
     ++model->getCurIter();
