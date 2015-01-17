@@ -21,18 +21,9 @@ FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( GLEW REQUIRED )
 find_package( OpenCV REQUIRED )
 
-FILE( GLOB Project_SRCS "src/*.cpp"
-						"src/ui/*.cpp" 
-						"src/Model/*.cpp"
-						"src/OBJ/*.cc" 
-						"src/LOG/*.cpp"
-						"src/Samples/*.cpp"
-						"src/Light/*.cpp"
-						"src/Ray/*.cpp"
-						"src/Viewer/*.cpp" 
-						"src/Camera/*.cpp"
-						"src/Alg/*.cpp"
-						"src/Deform/*.cpp" )
+FILE( GLOB Project_SRCS "src/*.*"
+						"src/*/*.cpp" 
+						"src/*/*.cc")
 						
 SET( Project_INCLUDE_DIR src/
 						 src/ui 
@@ -46,6 +37,7 @@ SET( Project_INCLUDE_DIR src/
 						 src/Camera
 						 src/Alg
 						 src/Deform
+						 src/SIFTFlow
 						 src/extern
 						 src/extern/nlopt/api 
 						 src/extern/eigen )
@@ -79,6 +71,29 @@ ADD_EXECUTABLE( ${PROJECT_NAME}
 				${MainWin_UIS_H} 
 				${MainWin_MOC_SRCS} )
 				
+				
+FILE( GLOB UI 			"src/ui/*.*" ) 
+FILE( GLOB Model 		"src/Model/*.*" )
+FILE( GLOB TinyOBJ 		"src/OBJ/*.*" )
+FILE( GLOB Utility 		"src/LOG/*.*" )
+FILE( GLOB Render 		"src/Samples/*.*"
+						"src/Light/*.*"
+						"src/Ray/*.*" )
+FILE( GLOB GLViewer 	"src/Viewer/*.*" 
+						"src/Camera/*.*" )
+FILE( GLOB SIRDeform 	"src/Alg/*.*"
+						"src/Deform/*.*" )
+FILE( GLOB SIFTFlow 	"src/SIFTFlow/*.*" )
+					 
+source_group("UI" 			FILES ${UI} )
+source_group("Model" 		FILES ${Model} )
+source_group("TinyOBJ" 		FILES ${TinyOBJ} )
+source_group("Utility" 		FILES ${Utility} )
+source_group("Render" 		FILES ${Render} )
+source_group("GLViewer" 	FILES ${GLViewer} )
+source_group("Algorithm\\SIRDeform" FILES ${SIRDeform} )
+source_group("Algorithm\\SIFTFlow" 	FILES ${SIFTFlow} )
+				
 TARGET_LINK_LIBRARIES( ${PROJECT_NAME} 
 					   ${Qt5Widgets_LIBRARIES} 
 					   ${Qt5Xml_LIBRARIES}
@@ -92,4 +107,4 @@ TARGET_LINK_LIBRARIES( ${PROJECT_NAME}
 					   debug ${QGLViewer_lib_debug} 
 					   optimized ${QGLViewer_lib_release} )
 					   
-MESSAGE( STATUS "${OPENGL_LIBRARIES}" )
+MESSAGE( STATUS "${Project_SRCS}" )
