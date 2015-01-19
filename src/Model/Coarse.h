@@ -5,6 +5,8 @@
 #include "GroundTruth.h"
 #include "Viewer.h"
 #include "MPara.h"
+#include "SIFTFlowWrapper.h"
+
 
 class Groundtruth;
 
@@ -33,6 +35,7 @@ public:
     void findFacesInPhoto(std::vector<int> &faces_in_photo);
     void setModelNewNormal(Eigen::VectorXf &new_face_in_photo_normal, std::vector<int> &faces_in_photo);
 	void rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vector<int> &cluster_label);
+    void computeSIFTFlow();
 
     inline std::vector<float> *getModelNewNormal(){ return &model_new_normals; };
     inline cv::Mat &getPhoto(){ return photo; };
@@ -42,6 +45,7 @@ public:
     inline std::vector<Eigen::Vector2i> &getXYInMask(){ return xy_in_mask; };
     inline cv::Mat &getPhotoPS(){ return photo_ps; };
     inline cv::Mat &getNormalImg(){ return normal_img; };
+    inline cv::Mat &getCrspRImg(){ return crsp_rimg; };
 
 
     void drawNormal();
@@ -69,9 +73,12 @@ protected:
     int cur_iter;
     MPara *m_para;
 
-
+    cv::Mat crsp_Pimg;
+    cv::Mat crsp_rimg;
 
     Groundtruth *gt_model;
+
+    bool use_SIFTFlow;
 };
 
 #endif

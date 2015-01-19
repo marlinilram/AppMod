@@ -50,6 +50,8 @@ public:
 	Eigen::Vector3f view; 
 
     //Eigen::MatrixX3f reweighted_mat;
+    Eigen::MatrixX3f light_reweighted_mat;
+    Eigen::MatrixX3f rho_d_reweighted_mat;
 
     Eigen::MatrixX3f normal_debug;
     std::vector<Eigen::Vector3f> pixel_init_normal;

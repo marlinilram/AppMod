@@ -12,6 +12,7 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     //cv::cvtColor(photo_temp, photo_temp, CV_BGR2RGB);
     photo_temp.convertTo(photo, CV_32FC3);
     photo = 1e-4 + (photo / 255); // to ensure that I always larger than zero, important!
+    cv::threshold(photo, photo, 1.0f, 1.0f, THRESH_TRUNC);
 
     cv::Mat photo_ps_temp = cv::imread((path + std::to_string(id) + "/photo_ps.png").c_str());
     photo_ps_temp.convertTo(photo_ps, CV_32FC3);
@@ -23,15 +24,15 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::imshow("photo", photo);
     cv::imshow("mask", mask);
 
-    light_rec = Eigen::MatrixX3f::Zero(getModelLightObj()->getNumSamples(), 3);
+    light_rec = Eigen::MatrixX3f::Constant(getModelLightObj()->getNumSamples(), 3, 0.05);
     std::vector<cv::Mat> rho_img_split;
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0.5)));
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0.5)));
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0.5)));
     cv::merge(rho_img_split, rho_img);
 
-    photo_temp.convertTo(rho_img, CV_32FC3);
-    rho_img = rho_img / 255;
+    //photo_temp.convertTo(rho_img, CV_32FC3);
+    //rho_img = rho_img / 255;
     //rho_img = photo.clone(); // we use rho_img to do cluster now, so it can be updated each iteration
 
     std::vector<cv::Mat> normal_img_split;
@@ -41,9 +42,14 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::merge(normal_img_split, normal_img);
 
 
+    std::cout<<"Info of rho imag: "<< "cols: " << rho_img.cols << "\trows: " << rho_img.rows << "\tnchan: "
+        << rho_img.channels() << "\n";
+
     cur_iter = 0;
 
     m_para = new MPara;
+
+    use_SIFTFlow = false;
 
 }
 
@@ -114,9 +120,27 @@ bool Coarse::getPixelVisbCoeffs(int x, int y, int &face_id, Eigen::VectorXf &vis
     // get its face id
     winx = xy_model(0) / xy_model(2);
     winy = xy_model(1) / xy_model(2);
+
+
+    if (use_SIFTFlow)
+    {
+        if (cur_iter > 0)
+        {
+            winx = crsp_Pimg.at<cv::Vec2d>(y, x)[0];
+            winy = crsp_Pimg.at<cv::Vec2d>(y, x)[1];
+            xy_model << winx , winy, 1.0f;
+        }
+    }
+
+
+
+
+    winx = (winx < primitive_ID.cols && winx >= 0) ? (winx) : (0);
+    winy = (winy < primitive_ID.rows && winy >= 0) ? (winy) : (0);
+
     face_id = primitive_ID.at<int>((int)(winy + 0.5), (int)(winx + 0.5));
 
-    cv::Mat temp = primitive_ID;
+
 
     if (face_id < 0) return false;
 
@@ -124,6 +148,7 @@ bool Coarse::getPixelVisbCoeffs(int x, int y, int &face_id, Eigen::VectorXf &vis
     Eigen::Vector3f xyz_model;
     if (!getWorldCoord(xy_model, xyz_model)) return false;
     cur_pos = xyz_model;
+
 
     viewer->addDrawablePoint(xyz_model(0), xyz_model(1), xyz_model(2), 1.0f, 0.0f, 0.0f);
     //std::cout << "find one point\n";
@@ -133,6 +158,7 @@ bool Coarse::getPixelVisbCoeffs(int x, int y, int &face_id, Eigen::VectorXf &vis
     getPtNormalInFace(xyz_model, face_id, xyz_normal);
     cur_normal = xyz_normal;
 
+    //visb_coeffs = Eigen::VectorXf::Ones(model_light->getNumSamples(), 1);
     computeVisbs(xyz_model, xyz_normal, visb_coeffs);
 }
 
@@ -195,6 +221,16 @@ void Coarse::findFacesInPhoto(std::vector<int> &faces_in_photo)
                 Eigen::Vector3f xy = model_to_img_trans*Eigen::Vector3f((float)j, (float)i, 1.0);
 
                 int xy_photo[2] = {int(xy(0)/xy(2) + 0.5), int(xy(1)/xy(2) + 0.5)};
+
+                if (use_SIFTFlow)
+                {
+                    if (cur_iter > 0)
+                    {
+                        xy_photo[0] = int(crsp_rimg.at<cv::Vec2d>(i, j)[0] + 0.5);
+                        xy_photo[1] = int(crsp_rimg.at<cv::Vec2d>(i, j)[1] + 0.5);
+                    }
+                }
+
 
                 xy_photo[0] = (xy_photo[0] < mask.cols && xy_photo[0] >= 0)?(xy_photo[0]):(0);
                 xy_photo[1] = (xy_photo[1] < mask.rows && xy_photo[1] >= 0)?(xy_photo[1]):(0);
@@ -628,4 +664,31 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vecto
     //	f_rhos_tmep << rhos_temp;
     //	f_rhos_tmep.close();
     //}
+}
+
+void Coarse::computeSIFTFlow()
+{
+    std::cout<<"Compute SIFTFlow...\n";
+
+    SIFTFlowWrapper siftflow;
+
+    siftflow.doSIFTFlow(crsp_rimg, r_img, mask_rimg, photo, mask);
+    siftflow.doSIFTFlow(crsp_Pimg, photo, mask, r_img, mask_rimg);
+
+
+
+    std::ofstream f_debug(getOutputPath()+"/crsp_rimg.mat");
+    if (f_debug)
+    {
+        f_debug << crsp_rimg;
+        f_debug.close();
+    }
+    f_debug.open(getOutputPath()+"/crsp_Pimg.mat");
+    if (f_debug)
+    {
+        f_debug << crsp_Pimg;
+        f_debug.close();
+    }
+
+    std::cout<<"finished...\n";
 }

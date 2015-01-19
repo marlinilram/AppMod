@@ -9,7 +9,7 @@ Model::Model(const int id, const std::string path, const std::string name)
         std::cerr << "Init model failed...\n";
     }
 
-    shadow_on = true;
+    shadow_on = false;
 
     model_light = new ModelLight(1600, 40, 3);
 
@@ -457,6 +457,18 @@ void Model::passRenderImgInfo(cv::Mat &zImg, cv::Mat &primitiveID, cv::Mat &rImg
     z_img = zImg.clone();
     primitive_ID = primitiveID.clone();
     r_img = rImg.clone();
+
+    cv::Mat mask_temp = (primitive_ID >= 0);
+    mask_temp.convertTo(mask_rimg, CV_8UC1);
+
+    //cv::imshow("mask_rimg", mask_rimg);
+    std::ofstream f_debug(getOutputPath() + "/z_img.mat");
+    if (f_debug)
+    {
+        f_debug<<z_img;
+
+        f_debug.close();
+    }
 }
 
 void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4])

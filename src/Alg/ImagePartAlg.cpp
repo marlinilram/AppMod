@@ -620,7 +620,7 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
 
     // set lambd
     double lambd_sfs = opt_para->BRDF_Light_sfs; //1;// / num_pixels_init;
-    double lambd_rho_d_smooth = 0.01;// / cur_num_pixels;
+    double lambd_rho_d_smooth = opt_para->rho_d_smooth; //0.01;// / cur_num_pixels;
     double lambd_rho_d_cluster = opt_para->cluster_smooth; //0.3;// / cur_num_pixels;
     double lambd_light_l2 = opt_para->Light_Reg; //0.1;// / cur_num_pixels;
 
@@ -677,14 +677,20 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
 
         // gradient of rho d
         size_t i = n_dim_rho_s;
+
+        Eigen::VectorXf g_rho_d_ch1 = T_coeff*Light_rec_ch1;
+        Eigen::VectorXf g_rho_d_ch2 = T_coeff*Light_rec_ch2;
+        Eigen::VectorXf g_rho_d_ch3 = T_coeff*Light_rec_ch3;
+
+
         for (; i < n_dim_sig_chan - n_dim_light; ++i)
         {
             size_t offset = n_dim_sig_chan;
 
-            // sfs term           
-            grad[i + 0 * offset] = -lambd_sfs * 2 * (Intensities(i - 4, 0) - rho_d_T_L_ch1(i - 4) - rho_s_T_L_ch1(i - 4))*(T_coeff.row(i - 4).dot(Light_rec_ch1));
-            grad[i + 1 * offset] = -lambd_sfs * 2 * (Intensities(i - 4, 1) - rho_d_T_L_ch2(i - 4) - rho_s_T_L_ch2(i - 4))*(T_coeff.row(i - 4).dot(Light_rec_ch2));
-            grad[i + 2 * offset] = -lambd_sfs * 2 * (Intensities(i - 4, 2) - rho_d_T_L_ch3(i - 4) - rho_s_T_L_ch3(i - 4))*(T_coeff.row(i - 4).dot(Light_rec_ch3));
+            // sfs term      
+            grad[i + 0 * offset] = -lambd_sfs * 2 * (Intensities(i - 4, 0) - rho_d_T_L_ch1(i - 4) - rho_s_T_L_ch1(i - 4))*g_rho_d_ch1(i - 4);
+            grad[i + 1 * offset] = -lambd_sfs * 2 * (Intensities(i - 4, 1) - rho_d_T_L_ch2(i - 4) - rho_s_T_L_ch2(i - 4))*g_rho_d_ch2(i - 4);
+            grad[i + 2 * offset] = -lambd_sfs * 2 * (Intensities(i - 4, 2) - rho_d_T_L_ch3(i - 4) - rho_s_T_L_ch3(i - 4))*g_rho_d_ch3(i - 4);
 
             // cluster term
             grad[i + 0 * offset] += lambd_rho_d_cluster * 2 * (rho_d_ch1(i - 4) - rho_d_cluster(i - 4, 0)) + 1e-4;
@@ -1026,6 +1032,29 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
         }
     }
 
+    // rho_d smooth l0.8 regularization
+    //Eigen::MatrixX3f rho_d_reweighted = img_alg_data_ptr->rho_d_reweighted_mat;
+
+    //norm_smooth += (rho_d_ch1.array().square()).sum();
+    //norm_smooth += (rho_d_ch2.array().square()).sum();
+    //norm_smooth += (rho_d_ch3.array().square()).sum();
+
+    //img_alg_data_ptr->rho_d_reweighted_mat.col(0) = (rho_d_ch1.array().abs() <= 1e-4).select(1e-4, rho_d_ch1.array().abs()).pow(-1.2).matrix();
+    //img_alg_data_ptr->rho_d_reweighted_mat.col(1) = (rho_d_ch2.array().abs() <= 1e-4).select(1e-4, rho_d_ch2.array().abs()).pow(-1.2).matrix();
+    //img_alg_data_ptr->rho_d_reweighted_mat.col(2) = (rho_d_ch3.array().abs() <= 1e-4).select(1e-4, rho_d_ch3.array().abs()).pow(-1.2).matrix();
+
+    // light smooth l0.8 regularzation
+    double light_smooth = 0;
+    Eigen::MatrixX3f light_reweighted = img_alg_data_ptr->light_reweighted_mat;
+
+    light_smooth += (Light_rec_ch1.array().square()).sum();
+    light_smooth += (Light_rec_ch2.array().square()).sum();
+    light_smooth += (Light_rec_ch3.array().square()).sum();
+
+    //img_alg_data_ptr->light_reweighted_mat.col(0) = (Light_rec_ch1.array().abs() <= 1e-4).select(1e-4, Light_rec_ch1.array().abs()).pow(-1.2).matrix();
+    //img_alg_data_ptr->light_reweighted_mat.col(1) = (Light_rec_ch2.array().abs() <= 1e-4).select(1e-4, Light_rec_ch2.array().abs()).pow(-1.2).matrix();
+    //img_alg_data_ptr->light_reweighted_mat.col(2) = (Light_rec_ch3.array().abs() <= 1e-4).select(1e-4, Light_rec_ch3.array().abs()).pow(-1.2).matrix();
+
     //_startT = img_alg_data_ptr->get_time() - _startT;
     //cout << "N Smooth: " << _startT << " secs\t";
     //_startT = img_alg_data_ptr->get_time();
@@ -1061,9 +1090,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
         + (Intensities.col(1) - rho_d_T_L_ch2 - rho_s_T_L_ch2).array().square().sum()
         + (Intensities.col(2) - rho_d_T_L_ch3 - rho_s_T_L_ch3).array().square().sum());
 
-    funcval += lambd_light_l2*(Light_rec_ch1.array().square().sum()
-        + Light_rec_ch2.array().square().sum()
-        + Light_rec_ch3.array().square().sum());
+    funcval += lambd_light_l2*light_smooth;
 
     funcval += lambd_rho_d_cluster*((rho_d_ch1 - rho_d_cluster.col(0)).array().square().sum()
         + (rho_d_ch2 - rho_d_cluster.col(1)).array().square().sum()
@@ -1146,6 +1173,10 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
                     grad[i + 1 * offset] += lambd_rho_d_smooth * 4 * (rho_d_ch2(i - 4) - rho_d_ch2(I_smooth_adj[i - 4][j]));
                     grad[i + 2 * offset] += lambd_rho_d_smooth * 4 * (rho_d_ch3(i - 4) - rho_d_ch3(I_smooth_adj[i - 4][j]));
                 }
+
+                //grad[i + 0 * offset] += lambd_rho_d_smooth * 2 * rho_d_ch1(i - 4);
+                //grad[i + 1 * offset] += lambd_rho_d_smooth * 2 * rho_d_ch2(i - 4);
+                //grad[i + 2 * offset] += lambd_rho_d_smooth * 2 * rho_d_ch3(i - 4);
             }
 
             //grad[i] += lambd_rho_s_pars*rho_d_pars_grad;
@@ -1556,7 +1587,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     size_t n_dim_rho_s = 4;
     size_t n_dim_light = T_coef.cols();
 
-    nlopt::opt opt(nlopt::LD_MMA, n_dim);
+    nlopt::opt opt(nlopt::LD_AUGLAG_EQ, n_dim);
 
 
     // set bounds
@@ -1605,7 +1636,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // stop criteria
     //opt.set_stopval(1e-4);
     //opt.set_ftol_rel(1e-4);
-    opt.set_ftol_abs(1e-3);
+    opt.set_ftol_rel(1e-3);
     opt.set_maxtime(180 * 3);
     //opt.set_xtol_rel(1e-4);
     //opt.set_xtol_abs(1e-3);
@@ -1617,21 +1648,21 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     // init x
     for (int i = 0; i < 4; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = 1;// rho_specular(i, 0);
-        x[i + 1 * n_dim_sig_chan] = 1;// rho_specular(i, 1);
-        x[i + 2 * n_dim_sig_chan] = 1;//rho_specular(i, 2);
+        x[i + 0 * n_dim_sig_chan] = rho_specular(i, 0);
+        x[i + 1 * n_dim_sig_chan] = rho_specular(i, 1);
+        x[i + 2 * n_dim_sig_chan] = rho_specular(i, 2);
     }
     for (int i = 4; i < n_dim_sig_chan - n_dim_light; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
-        x[i + 1 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
-        x[i + 2 * n_dim_sig_chan] = 1;//rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
+        x[i + 0 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[0];
+        x[i + 1 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[1];
+        x[i + 2 * n_dim_sig_chan] = rho_img.at<cv::Vec3f>(I_xy_vec[i - 4](1), I_xy_vec[i - 4](0))[2];
     }
     for (int i = n_dim_sig_chan - n_dim_light; i < n_dim_sig_chan; ++i)
     {
-        x[i + 0 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 0);
-        x[i + 1 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 1);
-        x[i + 2 * n_dim_sig_chan] = 1;//Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 2);
+        x[i + 0 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 0);
+        x[i + 1 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 1);
+        x[i + 2 * n_dim_sig_chan] = Light_rec(i - (n_dim_rho_d + n_dim_rho_s), 2);
     }
 
     std::ofstream f(model->getOutputPath() + "/x.mat");
@@ -1644,10 +1675,15 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
         f.close();
     }
 
+    double opt_start_time = get_time();
+
     double minf = 0;
     std::cout << "Min value initialized: " << minf << "\n";
     nlopt::result result = opt.optimize(x, minf);
     std::cout << "Min value optimized: " << minf << "\n";
+
+    opt_start_time = get_time() - opt_start_time;
+    cout << "Total Opt Time: " << opt_start_time << " secs\t";
 
     Eigen::Map<Eigen::MatrixX3d>output_mat(&x[0], n_dim_sig_chan, 3);
     Rho_rec.col(0) = (output_mat.col(0).segment(0, n_dim_rho_s + n_dim_rho_d)).cast<float>();
@@ -2075,7 +2111,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     // TODO: traverse mask to find faces in photo, record number of pixel of each face and sum of intensity,rho
 
     // get recovered light
-    Eigen::MatrixX3f light_rec = model->getModelLightObj()->getOutsideLight();
+    Eigen::MatrixX3f light_rec = model->getLightRec();
 
     // set view
     float view_temp[3];
@@ -2087,7 +2123,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     S_mat = model->getModelLightObj()->getSampleMatrix();
     Eigen::MatrixX3f &samples = S_mat;
 
-
+        std::cout<<"test1";
     // build linear sys
     //std::vector<Eigen::Triplet<float>> normal_coeffs;
     //Eigen::VectorXf right_hand(3 * faces_in_photo.size());
@@ -2114,14 +2150,14 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     //float lambda_sfs = 10.0;
     //float lambda_smooth = 0.0;
 
-
+        std::cout<<"test2";
     for (decltype(faces_in_photo.size()) i = 0; i < faces_in_photo.size(); ++i)
     {
 
         //for each face we need to build its 3 equations for nx, ny and nz
         Eigen::VectorXf visb;
 
-        model->getGtModelPtr()->computeVisbs(faces_in_photo[i], visb);
+        model->computeVisbs(faces_in_photo[i], visb);
 
 
         // for 3 channels
@@ -2210,7 +2246,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     B_mat *= (4 * M_PI / num_samples);
     C_mat *= (4 * M_PI / num_samples);
 
-
+        std::cout<<"test3";
     //Normal_coeffs.setFromTriplets(normal_coeffs.begin(), normal_coeffs.end());
 
     //Eigen::SimplicialCholesky<Eigen::SparseMatrix<float>> chol(Normal_coeffs);
@@ -2220,7 +2256,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     // use nlopt to solve bounded non-linear least squares
 
     int n_dim = faces_in_photo.size() * 3;
-    nlopt::opt opt(nlopt::LD_MMA, n_dim);
+    nlopt::opt opt(nlopt::LD_AUGLAG_EQ, n_dim);
 
     opt.set_min_objective(funcSFSNormal, this);
 
@@ -2340,6 +2376,11 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 {
     std::cout << "\nBegin compute rendring equation...\n";
 
+    if (model->getCurIter() > 0)
+    {
+        model->computeSIFTFlow();
+    }
+
     cv::Mat &photo = model->getPhoto();
     cv::Mat &mask = model->getMask();
     cv::Mat &rho_img = model->getRhoImg();
@@ -2381,6 +2422,12 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
                 pixel_init_normal.push_back(cur_pixel_normal);
                 pixel_init_pos.push_back(cur_pixel_pos);
                 face_id_in_photo.push_back(face_id);
+                //if (model->getCurIter() > 0)
+                //{
+                //    std::cout << "x: " << i << "\ty: " <<j << "\n";
+                //    std::cout<< "winx: " << winx <<"\twiny: "<<winy<<"\n";
+                //   system("pause");
+                //}
             }
         }
         //emit(refreshScreen());
@@ -2458,21 +2505,21 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
         lb[i] = -HUGE_VAL;
     }
 
-    std::vector<double> ub(n_total_dim, HUGE_VAL);
-    //ub[0] = ub[0 + 1 * n_dim_sig_chan] = ub[0 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    //ub[1] = ub[1 + 1 * n_dim_sig_chan] = ub[1 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    //ub[2] = ub[2 + 1 * n_dim_sig_chan] = ub[2 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    //ub[3] = ub[3 + 1 * n_dim_sig_chan] = ub[3 + 2 * n_dim_sig_chan] = HUGE_VAL;
-    //for (size_t i = 3 * n_dim_sig_chan; i < ub.size(); ++i)
-    //{
-    //    ub[i] = HUGE_VAL;
-    //}
-    for (size_t i = n_dim_rho_d + n_dim_rho_s; i < n_dim_sig_chan; ++i)
+    std::vector<double> ub(n_total_dim, 1);
+    ub[0] = ub[0 + 1 * n_dim_sig_chan] = ub[0 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    ub[1] = ub[1 + 1 * n_dim_sig_chan] = ub[1 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    ub[2] = ub[2 + 1 * n_dim_sig_chan] = ub[2 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    ub[3] = ub[3 + 1 * n_dim_sig_chan] = ub[3 + 2 * n_dim_sig_chan] = HUGE_VAL;
+    for (size_t i = 3 * n_dim_sig_chan; i < ub.size(); ++i)
     {
-        ub[0*n_dim_sig_chan + i] = 1;
-        ub[1*n_dim_sig_chan + i] = 1;
-        ub[2*n_dim_sig_chan + i] = 1;
+        ub[i] = HUGE_VAL;
     }
+    //for (size_t i = n_dim_rho_d + n_dim_rho_s; i < n_dim_sig_chan; ++i)
+    //{
+    //    ub[0*n_dim_sig_chan + i] = 1;
+    //    ub[1*n_dim_sig_chan + i] = 1;
+    //    ub[2*n_dim_sig_chan + i] = 1;
+    //}
 
     opt.set_lower_bounds(lb);
     opt.set_upper_bounds(ub);
@@ -2523,6 +2570,12 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
         x[offset + 3 * i + 2] = pixel_init_normal[i](2);
     }
 
+    // set reweighted mat for rho_d and light
+    rho_d_reweighted_mat = Eigen::MatrixX3f::Ones(n_dim_rho_d, 3);
+    light_reweighted_mat = Eigen::MatrixX3f::Ones(n_dim_light, 3);
+
+    double opt_start_time = get_time();
+
     double minf;
     std::cout << "Min value initialized: " << minf << "\n";
 
@@ -2530,6 +2583,8 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     std::cout << "Min value optimized: " << minf << "\n";
     std::cout << "Return values of NLopt: " << result << "\n";
 
+    opt_start_time = get_time() - opt_start_time;
+    cout << "Total Opt Time: " << opt_start_time << " secs\t";
 
     Eigen::Map<Eigen::MatrixX3d>BRDFLight_rec_mat(&x[0], n_dim_sig_chan, 3);
     Eigen::Map<Eigen::Matrix3Xd>normal_rec_mat(&x[3*n_dim_sig_chan], 3, n_dim_normal);
@@ -2550,7 +2605,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     Light_rec.col(2) = (BRDFLight_rec_mat.col(2).segment(n_dim_rho_s + n_dim_rho_d, n_dim_light)).cast<float>();
 
 
-    Rho_d_rec = Rho_d_rec / Rho_d_rec.maxCoeff();
+    //Rho_d_rec = Rho_d_rec / Rho_d_rec.maxCoeff();
 
 
     std::ofstream f_debug(model->getOutputPath() + "/Rho_rec.mat");
@@ -2633,6 +2688,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
     int *primitive_id_ptr = (int *)primitive_id_img.data;
     Eigen::Matrix3f model_to_img_trans = model->getModelToImgTrans();
+    cv::Mat &crsp_rimg = model->getCrspRImg();
 
     // prepare data
 
@@ -2647,6 +2703,13 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
                 Eigen::Vector3f xy = model_to_img_trans*Eigen::Vector3f((float)j, (float)i, 1.0);
                 int x = int(xy(0) / xy(2) + 0.5);
                 int y = int(xy(1) / xy(2) + 0.5);
+
+                if (model->getCurIter() > 0)
+                {
+                    x = int(crsp_rimg.at<cv::Vec2d>(i, j)[0] + 0.5);
+                    y = int(crsp_rimg.at<cv::Vec2d>(i, j)[1] + 0.5);
+                }
+
 
                 x = (x < mask.cols && x >= 0) ? (x) : (0);
                 y = (y < mask.rows && y >= 0) ? (y) : (0);

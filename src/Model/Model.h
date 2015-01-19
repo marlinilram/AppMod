@@ -149,6 +149,7 @@ protected:
     cv::Mat z_img;
     cv::Mat primitive_ID;
     cv::Mat r_img;
+    cv::Mat mask_rimg;
     std::vector<bool> v_vis_stat_in_r_img;
     Viewer *renderer;
 

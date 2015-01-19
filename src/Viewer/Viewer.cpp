@@ -94,6 +94,7 @@ void Viewer::draw()
 
             shaderProgramTexture->bind();
 
+            shaderProgram->setUniformValue("fMeshSize", GLfloat(num_faces));
 
             colors_buffer->bind();
             shaderProgramTexture->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
@@ -719,6 +720,7 @@ void Viewer::getSnapShot(Model *model)
 
     //std::string a = "PrimitiveID:\n";
     for (int j = 0; j < width; ++j)
+    {
         for (int i = 0; i < height; ++i)
         {
             float fPrimitive = primitive_ID_img.at<float>(i, j);
@@ -739,18 +741,21 @@ void Viewer::getSnapShot(Model *model)
         }
         //LOG::Instance()->OutputMisc(a.c_str());
         //cv::imwrite("primitiveImg.png", primitive_ID_img * 255);
+    }
 
-        model->passRenderImgInfo(z_img, primitive_ID, r_img);
-        model->passCameraPara(modelview, projection, viewport);
+    model->passRenderImgInfo(z_img, primitive_ID, r_img);
+    model->passCameraPara(modelview, projection, viewport);
 
-        std::string data_path = model->getOutputPath();
-        cv::imwrite(data_path + "/matched.png", r_img*255);
+    std::string data_path = model->getOutputPath();
+    cv::imwrite(data_path + "/matched.png", r_img*255);
 
-        delete primitive_buffer;
-        delete z_buffer;
-        delete image_buffer;
+    delete primitive_buffer;
+    delete z_buffer;
+    delete image_buffer;
 
-        doneCurrent();
+    std::cout<<"znear: "<<camera()->zNear()<<"\tzfar: "<<camera()->zFar()<<"\n";
+
+    doneCurrent();
 }
 
 void Viewer::fixCamera()
