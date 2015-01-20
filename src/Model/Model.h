@@ -53,6 +53,7 @@ public:
     void drawFaceNormal();
 
     void computeLight();
+    void computeBrightness();
     void computeModelVisbs();
     void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::vector<bool> &visb);
     void computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen::VectorXf &visb);
@@ -85,6 +86,8 @@ public:
     inline std::vector<Eigen::Vector3i> *getFaceListCompact(){ return &model_faces_compact; };
     inline Eigen::Matrix<float, 4, 3> &getRhoSpclr(){ return rho_specular; };
     inline std::vector<float> &getTextCoord(){ return model_text_coord; };
+    inline void setShadowOff(){shadow_on = false;};
+    inline void setShadowOn(){shadow_on = true;};
 
     inline cv::Mat &getRImg(){ return r_img; };
     inline cv::Mat &getPrimitiveIDImg(){ return primitive_ID; };

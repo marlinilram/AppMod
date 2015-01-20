@@ -24,6 +24,7 @@ MainWin::MainWin()
     //main_grid_layout->addWidget(viewer_img, 0, 1, 1, 1);
 
     connect(action_Load_Model, SIGNAL(triggered()), this, SLOT(loadModel()));
+    connect(action_Load_LightingBall, SIGNAL(triggered()), this, SLOT(loadLightingBall()));
     connect(action_Snap_Shot, SIGNAL(triggered()), this, SLOT(snapShot()));
     connect(action_Load_S2I_Transform, SIGNAL(triggered()), this, SLOT(loadS2ITransform()));
     connect(action_Fix_Camera, SIGNAL(triggered()), this, SLOT(fixCamera()));
@@ -43,6 +44,7 @@ MainWin::MainWin()
 
     coarse_model = nullptr;
     gt_model = nullptr;
+    lighting_ball = nullptr;
     img_part_alg = new ImagePartAlg;
     img_part_alg_thread = new QThread;
 
@@ -101,13 +103,44 @@ void MainWin::loadModel()
     //coarse_model->exportPtRenderInfo(233);
     //coarse_model->drawFaceNormal();
 
-    if (gt_model == nullptr)
-    {
-        gt_model = new Groundtruth(coarse_model);
-        viewer_img->getModel(gt_model);
-        gt_model->setRenderer(viewer_img);
-    }
-    coarse_model->setGtModelPtr(gt_model);
+    //if (gt_model == nullptr)
+    //{
+    //    gt_model = new Groundtruth(coarse_model);
+    //    viewer_img->getModel(gt_model);
+    //    gt_model->setRenderer(viewer_img);
+    //}
+    //coarse_model->setGtModelPtr(gt_model);
+}
+
+void MainWin::loadLightingBall()
+{
+    QString filter;
+    filter = "obj file (*.obj)";
+
+    QDir dir;
+    QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
+    if (fileName.isEmpty() == true) return;
+
+
+    std::string model_file_path = fileName.toStdString();
+    std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
+    model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
+    int model_id = atoi(model_file_path.substr(model_file_path.find_last_of('/') + 1).c_str());
+    model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/') + 1);
+
+    if (lighting_ball != nullptr) 
+        delete lighting_ball;
+    lighting_ball = new Model(model_id, model_file_path, model_file_name);
+
+    //viewer->getModel(coarse_model);
+    lighting_ball->setRenderer(viewer_img);
+
+    //lighting_ball->getModelLightObj()->getOutsideLight() = coarse_model->getModelLightObj()->getOutsideLight();
+    //lighting_ball->getModelLightObj()->getOutsideSampleMatrix() = coarse_model->getModelLightObj()->getSampleMatrix();
+
+    //lighting_ball->computeBrightness();
+    viewer_img->getModel(lighting_ball);
+
 }
 
 void MainWin::exportOBJ()

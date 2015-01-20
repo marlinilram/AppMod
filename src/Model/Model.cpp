@@ -9,7 +9,7 @@ Model::Model(const int id, const std::string path, const std::string name)
         std::cerr << "Init model failed...\n";
     }
 
-    shadow_on = false;
+    shadow_on = true;
 
     model_light = new ModelLight(1600, 40, 3);
 
@@ -258,6 +258,109 @@ void Model::computeLight()
 	//	f_v.close();
 	//}
 	//renderer->setCheckVisbStatus(false);
+}
+
+void Model::computeBrightness()
+{
+    int num_samples = model_light->getNumSamples();
+    int num_sqrt_samples = model_light->getSqrtNumSamples();
+    int num_channels = model_light->getNumChannels();
+    SAMPLE *samples = model_light->getSamples();
+    model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
+    model_light->loadOutsideSample(getDataPath()+"/sample.mat");
+    Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
+    Eigen::MatrixX3f &s_mat = model_light->getSampleMatrix();
+
+    //std::ofstream f_test(getDataPath()+"/s_mat.mat");
+    //if (f_test)
+    //{
+    //    f_test << s_mat;
+    //    f_test.close();
+    //}
+
+    int perc = 0;
+    model_visbs.clear();
+    //renderer->setCheckVisbStatus(true);
+
+    // for each model vertex
+    for (decltype(model_vertices.size()) i = 0; i < model_vertices.size()/3; ++i)
+    {
+        Eigen::Vector3f cur_v_normal(model_normals[i * 3 + 0], model_normals[i * 3 + 1], model_normals[i * 3 + 2]);
+        Eigen::Vector3f cur_v_pos(model_vertices[i * 3 + 0], model_vertices[i * 3 + 1], model_vertices[i * 3 + 2]);
+        Eigen::Vector3d ray_start = cur_v_pos.cast<double>() + 0.02*cur_v_normal.cast<double>();
+
+        float brightness[3] = { 0, 0, 0 };
+        std::vector<bool> cur_v_visb;
+
+        // foreach sample direction
+        for (int k = 0; k < num_samples; ++k)
+        {
+            // check if light * normal > 0
+            //float dot = (float)samples[k].direction.dot(cur_v_normal);
+            float dot = (float)s_mat.row(k).dot(cur_v_normal);
+            //Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000*samples[k].direction.cast<double>();
+            Eigen::Vector3d ray_end = cur_v_pos.cast<double>() + 10000*s_mat.row(k).transpose().cast<double>();
+
+            if (dot > 0.0)
+            {
+
+                if (shadow_on)
+                {
+                    //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
+                    //if (renderer->checkVertexVisbs(i, this, samples[k].direction))
+                    if (ray_cast.intersectModel(ray_start, ray_end))
+                    {
+                        //brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
+                        //brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
+                        //brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+
+                        brightness[0] += dot*outside_light(k, 0);
+                        brightness[1] += dot*outside_light(k, 1);
+                        brightness[2] += dot*outside_light(k, 2);
+
+                        cur_v_visb.push_back(true);
+                    }
+                    else { cur_v_visb.push_back(false); }
+                }
+                else
+                {
+                    //brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
+                    //brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
+                    //brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+
+                    brightness[0] += dot*outside_light(k, 0);
+                    brightness[1] += dot*outside_light(k, 1);
+                    brightness[2] += dot*outside_light(k, 2);
+
+
+                    cur_v_visb.push_back(true);
+                }
+            }
+            else cur_v_visb.push_back(false);
+        }
+
+        model_visbs.push_back(cur_v_visb);
+
+        brightness[0] *= (float)(4 * M_PI / num_samples);
+        brightness[1] *= (float)(4 * M_PI / num_samples);
+        brightness[2] *= (float)(4 * M_PI / num_samples);
+
+        model_brightness.push_back(brightness[0]);
+        model_brightness.push_back(brightness[1]);
+        model_brightness.push_back(brightness[2]);
+
+        model_colors[3 * i + 0] = (float)brightness[0];
+        model_colors[3 * i + 1] = (float)brightness[1];
+        model_colors[3 * i + 2] = (float)brightness[2];
+
+        if (int(i*100.0f / (model_vertices.size() / 3)) > perc)
+        {
+            perc = int(i*100.0f / (model_vertices.size() / 3));
+            std::cout << perc << "...";
+        }
+        //else std::cout << "...";
+    }
+    std::cout<<"\n";
 }
 
 void Model::computeModelVisbs()

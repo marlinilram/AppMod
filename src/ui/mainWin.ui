@@ -37,7 +37,7 @@
      <string>Open</string>
     </property>
     <addaction name="action_Load_Model"/>
-    <addaction name="action_Load_photo"/>
+    <addaction name="action_Load_LightingBall"/>
    </widget>
    <addaction name="menuOpen"/>
   </widget>
@@ -472,9 +472,9 @@
     <string>SnapShot</string>
    </property>
   </action>
-  <action name="action_Load_photo">
+  <action name="action_Load_LightingBall">
    <property name="text">
-    <string>Load photo</string>
+    <string>Load Lighting Ball</string>
    </property>
   </action>
   <action name="action_Load_S2I_Transform">

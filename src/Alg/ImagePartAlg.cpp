@@ -441,7 +441,7 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     Eigen::MatrixXf &T_coeff = img_alg_data_ptr->T_coef;
     Eigen::MatrixX3f &S = img_alg_data_ptr->S_mat;
     Eigen::Vector3f &view = img_alg_data_ptr->view;
-    std::vector<int> &cluster_label = img_alg_data_ptr->pixel_cluster_label;
+    std::vector<int> cluster_label = img_alg_data_ptr->pixel_cluster_label;
     std::vector<std::vector<int>> &I_smooth_adj = img_alg_data_ptr->I_smooth_adj;
     int num_pixels_init = img_alg_data_ptr->num_pixels_init;
     int cur_num_pixels = T_coeff.rows();
@@ -741,6 +741,19 @@ double funcSFSLightBRDFAllChn(const std::vector<double> &para, std::vector<doubl
     //<<"\t"<<Light_rec.squaredNorm()
     //<<"\t"<<0.8*(rho_d-rho_d_cluster).squaredNorm()
 
+
+    if (funcval < img_alg_data_ptr->cur_min_funval)
+    {
+        img_alg_data_ptr->cur_min_funval = funcval;
+        img_alg_data_ptr->pixel_cluster_label = cluster_label;
+
+        std::cout<<center_cluster.rows() << "\t" << center_cluster.cols()<<"\t"<<center_cluster<<"\n";
+        std::cout<<cnt_cluster<<"\n";
+    }
+
+    std::cout << "Cur Min Val: " << img_alg_data_ptr->cur_min_funval << "\n";
+
+
     return funcval;
 }
 
@@ -779,7 +792,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     Eigen::MatrixXf &V_coeff = img_alg_data_ptr->V_coef;
     Eigen::MatrixX3f &S = img_alg_data_ptr->S_mat;
     Eigen::Vector3f &view = img_alg_data_ptr->view;
-    std::vector<int> &cluster_label = img_alg_data_ptr->pixel_cluster_label;
+    std::vector<int> cluster_label = img_alg_data_ptr->pixel_cluster_label;
     std::vector<std::vector<int>> &I_smooth_adj = img_alg_data_ptr->I_smooth_adj;
     std::vector<std::vector<int>> &F_smooth_adj = img_alg_data_ptr->I_smooth_adj;
     std::vector<Eigen::Vector3f> &n_init_piror = img_alg_data_ptr->pixel_init_normal;
@@ -939,8 +952,8 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     int num_cluster = opt_para->num_cluster;
     int cnt_num_cluster = 0; // record how many clusters in the labels
 
-    Eigen::MatrixXf cnt_cluster = Eigen::MatrixXf::Zero(num_cluster, 1);
-    Eigen::MatrixXf center_cluster = Eigen::MatrixXf::Zero(num_cluster, 3);
+    Eigen::VectorXf cnt_cluster = Eigen::VectorXf::Zero(num_cluster, 1);
+    Eigen::MatrixX3f center_cluster = Eigen::MatrixX3f::Zero(num_cluster, 3);
 
     for (size_t i = 0; i < n_dim_rho_d; ++i)
     {
@@ -959,6 +972,7 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
     center_cluster.col(0) = (center_cluster.col(0).array() / cnt_cluster.array()).matrix();
     center_cluster.col(1) = (center_cluster.col(1).array() / cnt_cluster.array()).matrix();
     center_cluster.col(2) = (center_cluster.col(2).array() / cnt_cluster.array()).matrix();
+
 
     // set new label for each pixel
     Eigen::MatrixX3f rho_d_cluster(cluster_label.size(), 3);
@@ -1268,6 +1282,17 @@ double funcSFSLightBRDFNormal(const std::vector<double> &para, std::vector<doubl
 
     std::cout << "Cur Val: " << funcval << "\n";
 
+    if (funcval < img_alg_data_ptr->cur_min_funval)
+    {
+        img_alg_data_ptr->cur_min_funval = funcval;
+        img_alg_data_ptr->pixel_cluster_label = cluster_label;
+
+        std::cout<<center_cluster.rows() << "\t" << center_cluster.cols()<<"\t"<<center_cluster<<"\n";
+        std::cout<<cnt_cluster<<"\n";
+    }
+
+    std::cout << "Cur Min Val: " << img_alg_data_ptr->cur_min_funval << "\n";
+
     return funcval;
 }
 
@@ -1290,6 +1315,12 @@ double constraintsRhoC(const std::vector<double> &C, std::vector<double> &grad, 
 void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
 {
     std::cout << "\nBegin compute init light...\n";
+
+    if (model->getCurIter() == 0)
+    {
+        model->setShadowOff();
+    }
+    else model->setShadowOn();
 
     cv::Mat &photo = model->getPhoto();
     cv::Mat &mask = model->getMask();
@@ -1566,6 +1597,8 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     Eigen::MatrixX3f Rho_rec(T_coef.rows() + 4, 3);
     Eigen::MatrixX3f &Light_rec = model->getLightRec();
     cv::Mat &rho_img = model->getRhoImg();
+    cv::Mat &photo = model->getPhoto();
+    cv::Mat &mask = model->getMask();
     std::vector<Eigen::Vector2i> &I_xy_vec = model->getXYInMask();
     Eigen::Matrix<float, 4, 3> &rho_specular = model->getRhoSpclr();
     //Eigen::MatrixX3f rho_s_mat(I_xy_vec.size(), 3);
@@ -1579,6 +1612,11 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     std::vector<int> cluster_label;
     model->rhoFromKMeans(m_para->num_cluster, rhos_temp, cluster_label);
     rho_d_mat = rhos_temp;
+    pixel_cluster_label = cluster_label;
+
+    setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
+
+
 
     // set optimization
     size_t n_dim = 3 * (T_coef.rows() + 4 + T_coef.cols());
@@ -1642,7 +1680,6 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     //opt.set_xtol_abs(1e-3);
 
 
-    pixel_cluster_label = cluster_label;
     std::vector<double> x(n_dim);
 
     // init x
@@ -1678,6 +1715,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     double opt_start_time = get_time();
 
     double minf = 0;
+    cur_min_funval = std::numeric_limits<double>::max();
     std::cout << "Min value initialized: " << minf << "\n";
     nlopt::result result = opt.optimize(x, minf);
     std::cout << "Min value optimized: " << minf << "\n";
@@ -1775,8 +1813,6 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     //}
 
     // update rho
-    cv::Mat &photo = model->getPhoto();
-    cv::Mat &mask = model->getMask();
 
 
 
@@ -2380,6 +2416,11 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     {
         model->computeSIFTFlow();
     }
+    if (model->getCurIter() == 0)
+    {
+        model->setShadowOff();
+    }
+    else model->setShadowOn();
 
     cv::Mat &photo = model->getPhoto();
     cv::Mat &mask = model->getMask();
@@ -2484,6 +2525,20 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     model->rhoFromKMeans(m_para->num_cluster, rhos_temp, cluster_label);
     pixel_cluster_label = cluster_label;
 
+    setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
+
+    //std::ofstream f_cluster_debug;
+    //f_cluster_debug.open(model->getOutputPath() + "/cluster_label_init.mat");
+    //if (f_cluster_debug)
+    //{
+    //    for (auto i : pixel_cluster_label)
+    //    {
+    //        f_cluster_debug << i << "\n";
+    //    }
+    //    f_cluster_debug.close();
+    //}
+
+
     // set optimization
     size_t n_total_dim = 3 * (V_coef.rows() + 4 + V_coef.cols()) + 3 * V_coef.rows();
     size_t n_dim_rho_d = V_coef.rows();
@@ -2577,6 +2632,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     double opt_start_time = get_time();
 
     double minf;
+    cur_min_funval = std::numeric_limits<double>::max();
     std::cout << "Min value initialized: " << minf << "\n";
 
     nlopt::result result = opt.optimize(x, minf);
@@ -2653,9 +2709,9 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
         else
             rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = 1.0f;
 
-        float square_sum = normal_rec_mat(0, i)*normal_rec_mat(0, i)
+        float square_sum = sqrt(normal_rec_mat(0, i)*normal_rec_mat(0, i)
             + normal_rec_mat(1, i)*normal_rec_mat(1, i)
-            + normal_rec_mat(2, i)*normal_rec_mat(2, i);
+            + normal_rec_mat(2, i)*normal_rec_mat(2, i));
         normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = normal_rec_mat(0, i) / square_sum;
         normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = normal_rec_mat(1, i) / square_sum;
         normal_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = normal_rec_mat(2, i) / square_sum;
@@ -2736,8 +2792,13 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     normal_in_photo.col(1) = (normal_in_photo.col(1).array() / pixel_counts.array()).matrix();
     normal_in_photo.col(2) = (normal_in_photo.col(2).array() / pixel_counts.array()).matrix();
 
+
+
     Eigen::MatrixXf normal_in_photo_transpose = normal_in_photo.transpose();
     Eigen::VectorXf new_face_normal = Eigen::Map<Eigen::VectorXf>(normal_in_photo_transpose.data(), 3*faces_in_photo.size(), 1);
+
+    Eigen::VectorXf new_face_normal_geomean;
+    getNewNormal(new_face_normal_geomean, face_crsp_normal_lsit);
 
     // use pca to compute normal
 
@@ -2750,6 +2811,15 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
         {
             f_normal_debug << I_xy_vec[i](0) << "\t" << I_xy_vec[i](1) << "\t"
                 << normal_rec_mat.col(i).transpose() << "\n";
+        }
+        f_normal_debug.close();
+    }
+    f_normal_debug.open(model->getOutputPath() + "/cluster_label.mat");
+    if (f_normal_debug)
+    {
+        for (auto i : pixel_cluster_label)
+        {
+            f_normal_debug << i << "\n";
         }
         f_normal_debug.close();
     }
@@ -2771,6 +2841,12 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     if (f_normal_debug)
     {
         f_normal_debug << new_face_normal;
+        f_normal_debug.close();
+    }
+    f_normal_debug.open(model->getOutputPath() + "/nomal_vec_geomean.mat");
+    if (f_normal_debug)
+    {
+        f_normal_debug << new_face_normal_geomean;
         f_normal_debug.close();
     }
     f_normal_debug.open(model->getOutputPath() + "/primitive_normal.mat");
@@ -2821,7 +2897,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     // set new normal to model
     std::cout<<"Set new normal to model...\n";
     //Eigen::VectorXf new_face_normals = Eigen::Map<Eigen::VectorXf>(&new_face_normal[0], new_face_normal.size(), 1);
-    model->setModelNewNormal(new_face_normal, faces_in_photo);
+    model->setModelNewNormal(new_face_normal_geomean, faces_in_photo);
     //model->updateVertexBrightnessAndColor(); put this after deformation
     
     std::cout <<"Draw normal...\n";
@@ -2895,50 +2971,85 @@ void ImagePartAlg::findISmoothAdj(std::vector<std::vector<int>> &I_smooth_adj, s
     }
 }
 
-// test NLopt here
-double myvfunc(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+void ImagePartAlg::geodesticNormalMean(std::vector<Eigen::Vector3f> &normal_list, Eigen::Vector3f &new_normal)
 {
-    if (!grad.empty()) {
-        grad[0] = 0.0;
-        grad[1] = 0.5 / sqrt(x[1]);
+    double theta = 0;
+    double phi = 0;
+    //Eigen::Vector3f temp(0,0,0);
+
+    for (size_t i = 0; i < normal_list.size(); ++i)
+    {
+        theta += acos(normal_list[i](2));
+        if (normal_list[i](0) > 0 && normal_list[i](1) > 0)
+            phi += atan(normal_list[i](1)/normal_list[i](0));
+        else if (normal_list[i](0) < 0 && normal_list[i](1) > 0)
+            phi += M_PI - atan(-normal_list[i](1)/normal_list[i](0));
+        else if (normal_list[i](0) < 0 && normal_list[i](1) < 0)
+            phi += M_PI + atan(normal_list[i](1)/normal_list[i](0));
+        else if (normal_list[i](0) > 0 && normal_list[i](1) < 0)
+            phi += 2*M_PI - atan(-normal_list[i](1)/normal_list[i](0));
+        else if (normal_list[i](0) == 0 && normal_list[i](1) > 0)
+            phi += M_PI/2;
+        else if (normal_list[i](0) == 0 && normal_list[i](1) < 0)
+            phi += 3*M_PI/2;
+        else if (normal_list[i](0) >= 0 && normal_list[i](1) == 0)
+            phi += 0;
+        else if (normal_list[i](0) < 0 && normal_list[i](1) == 0)
+            phi += M_PI;
+
+        //temp += normal_list[i];
     }
-    return sqrt(x[1]);
+    theta = theta / normal_list.size();
+    phi = phi / normal_list.size();
+    //temp = temp / normal_list.size();
+
+    new_normal(0) = sin(theta)*cos(phi);
+    new_normal(1) = sin(theta)*sin(phi);
+    new_normal(2) = cos(theta);
+    //new_normal = temp;
 }
 
-typedef struct {
-    double a, b;
-} my_constraint_data;
-
-double myconstraint(unsigned n, const double *x, double *grad, void *data)
+void ImagePartAlg::getNewNormal(Eigen::VectorXf &new_normal, std::vector<std::vector<Eigen::Vector3f>> &face_crsp_normal_lsit)
 {
-    my_constraint_data *d = (my_constraint_data *)data;
-    double a = d->a, b = d->b;
-    if (grad) {
-        grad[0] = 3 * a * (a*x[0] + b) * (a*x[0] + b);
-        grad[1] = -1.0;
+    new_normal.resize(3*face_crsp_normal_lsit.size(), 1);
+
+    Eigen::Vector3f cur_normal;
+    for (size_t i = 0; i < face_crsp_normal_lsit.size(); ++i)
+    {
+        geodesticNormalMean(face_crsp_normal_lsit[i], cur_normal);
+        new_normal(3*i+0) = cur_normal(0);
+        new_normal(3*i+1) = cur_normal(1);
+        new_normal(3*i+2) = cur_normal(2);
     }
-    return ((a*x[0] + b) * (a*x[0] + b) * (a*x[0] + b) - x[1]);
 }
 
-void ImagePartAlg::testNLopt()
+void ImagePartAlg::setRhodInitFromKMeans(cv::Mat &rho_img, cv::Mat &photo, std::vector<Eigen::Vector2i> &I_xy_vec)
 {
+    Eigen::VectorXf cnt_cluster = Eigen::VectorXf::Zero(m_para->num_cluster, 1);
+    Eigen::MatrixX3f center_cluster = Eigen::MatrixX3f::Zero(m_para->num_cluster, 3);
 
-    nlopt::opt opt(nlopt::LD_MMA, 2);
+    for (size_t i = 0; i < I_xy_vec.size(); ++i)
+    {
+        for (int k = 0; k < m_para->num_cluster; ++k)
+        {
+            if (pixel_cluster_label[i] == k)
+            {
+                ++cnt_cluster(k);
+                center_cluster(k, 0) += photo.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0];
+                center_cluster(k, 1) += photo.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1];
+                center_cluster(k, 2) += photo.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2];
+                break;
+            }
+        }
+    }
+    center_cluster.col(0) = (center_cluster.col(0).array() / cnt_cluster.array()).matrix();
+    center_cluster.col(1) = (center_cluster.col(1).array() / cnt_cluster.array()).matrix();
+    center_cluster.col(2) = (center_cluster.col(2).array() / cnt_cluster.array()).matrix();
 
-    std::vector<double> lb(2);
-    lb[0] = -HUGE_VAL; lb[1] = 0;
-    opt.set_lower_bounds(lb);
-
-    opt.set_min_objective(myvfunc, NULL);
-
-    my_constraint_data data[2] = { { 2, 0 }, { -1, 1 } };
-    opt.add_inequality_constraint(myconstraint, &data[0], 1e-8);
-    opt.add_inequality_constraint(myconstraint, &data[1], 1e-8);
-
-    opt.set_xtol_rel(1e-4);
-
-    std::vector<double> x(2);
-    x[0] = 1.234; x[1] = 5.678;
-    double minf;
-    nlopt::result result = opt.optimize(x, minf);
+    for (size_t i = 0; i < I_xy_vec.size(); ++i)
+    {
+        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[0] = center_cluster.row(pixel_cluster_label[i])(0);
+        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = center_cluster.row(pixel_cluster_label[i])(1);
+        rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = center_cluster.row(pixel_cluster_label[i])(2);
+    }
 }

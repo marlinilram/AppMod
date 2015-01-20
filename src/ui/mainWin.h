@@ -43,6 +43,7 @@ private slots:
     void runAll();
     void renderTexture();
     void computeAll();
+    void loadLightingBall();
 
 signals:
     void callComputeInitLight(Coarse *, Viewer *);
@@ -57,6 +58,7 @@ public:
     //Viewer *viewer_img;
     Coarse *coarse_model;
     Groundtruth *gt_model;
+    Model *lighting_ball;
 
 
     ImagePartAlg *img_part_alg;
