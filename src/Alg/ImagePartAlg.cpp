@@ -2393,7 +2393,7 @@ void ImagePartAlg::computeNormal(Coarse *model, Viewer *viewer)
     //model->updateVertexBrightnessAndColor(); put this after deformation
     model->drawNormal();
     // show error with ground truth
-    model->getGtModelPtr()->computeErrorColor(model);
+    //model->getGtModelPtr()->computeErrorColor(model);
     emit(refreshScreen());
 
     brightness_mat.resize(0, 3);
@@ -2798,63 +2798,72 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     Eigen::VectorXf new_face_normal = Eigen::Map<Eigen::VectorXf>(normal_in_photo_transpose.data(), 3*faces_in_photo.size(), 1);
 
     Eigen::VectorXf new_face_normal_geomean;
-    getNewNormal(new_face_normal_geomean, face_crsp_normal_lsit);
+    getNewNormal(new_face_normal, face_crsp_normal_lsit);
 
     // use pca to compute normal
 
     std::cout<<"Num of faces with new normals: "<<faces_in_photo.size()<<"\n";
 
-    std::ofstream f_normal_debug(model->getOutputPath() + "/xy_normal.mat");
-    if (f_normal_debug)
-    {
-        for (size_t i = 0; i < I_xy_vec.size(); ++i)
-        {
-            f_normal_debug << I_xy_vec[i](0) << "\t" << I_xy_vec[i](1) << "\t"
-                << normal_rec_mat.col(i).transpose() << "\n";
-        }
-        f_normal_debug.close();
-    }
-    f_normal_debug.open(model->getOutputPath() + "/cluster_label.mat");
-    if (f_normal_debug)
-    {
-        for (auto i : pixel_cluster_label)
-        {
-            f_normal_debug << i << "\n";
-        }
-        f_normal_debug.close();
-    }
-    f_normal_debug.open(model->getOutputPath() + "/primitive_xy.mat");
-    if (f_normal_debug)
-    {
-        for (size_t i = 0; i < faces_in_photo.size(); ++i)
-        {
-            f_normal_debug << faces_in_photo[i] << "\t";
-            for (size_t j = 0 ; j < face_output[i].size(); ++j)
-            {
-                f_normal_debug << face_output[i][j].transpose() << "\t";
-            }
-            f_normal_debug << "\n";
-        }
-        f_normal_debug.close();
-    }
-    f_normal_debug.open(model->getOutputPath() + "/primitive_normal_vec.mat");
-    if (f_normal_debug)
-    {
-        f_normal_debug << new_face_normal;
-        f_normal_debug.close();
-    }
-    f_normal_debug.open(model->getOutputPath() + "/nomal_vec_geomean.mat");
-    if (f_normal_debug)
-    {
-        f_normal_debug << new_face_normal_geomean;
-        f_normal_debug.close();
-    }
-    f_normal_debug.open(model->getOutputPath() + "/primitive_normal.mat");
-    if (f_normal_debug)
-    {
-        f_normal_debug << normal_in_photo;
-        f_normal_debug.close();
-    }
+    //std::ofstream f_normal_debug(model->getOutputPath() + "/xy_normal.mat");
+    //if (f_normal_debug)
+    //{
+    //    for (size_t i = 0; i < I_xy_vec.size(); ++i)
+    //    {
+    //        f_normal_debug << I_xy_vec[i](0) << "\t" << I_xy_vec[i](1) << "\t"
+    //            << normal_rec_mat.col(i).transpose() << "\n";
+    //    }
+    //    f_normal_debug.close();
+    //}
+    //f_normal_debug.open(model->getOutputPath() + "/cluster_label.mat");
+    //if (f_normal_debug)
+    //{
+    //    for (auto i : pixel_cluster_label)
+    //    {
+    //        f_normal_debug << i << "\n";
+    //    }
+    //    f_normal_debug.close();
+    //}
+    //f_normal_debug.open(model->getOutputPath() + "/primitive_xy.mat");
+    //if (f_normal_debug)
+    //{
+    //    for (size_t i = 0; i < faces_in_photo.size(); ++i)
+    //    {
+    //        f_normal_debug << faces_in_photo[i] << "\t";
+    //        for (size_t j = 0 ; j < face_output[i].size(); ++j)
+    //        {
+    //            f_normal_debug << face_output[i][j].transpose() << "\t";
+    //        }
+    //        f_normal_debug << "\n";
+    //    }
+    //    f_normal_debug.close();
+    //}
+    //f_normal_debug.open(model->getOutputPath() + "/primitive_normal_vec.mat");
+    //if (f_normal_debug)
+    //{
+    //    f_normal_debug << new_face_normal;
+    //    f_normal_debug.close();
+    //}
+    //f_normal_debug.open(model->getOutputPath() + "/nomal_vec_geomean.mat");
+    //if (f_normal_debug)
+    //{
+    //    f_normal_debug << new_face_normal_geomean;
+    //    f_normal_debug.close();
+    //}
+    //f_normal_debug.open(model->getOutputPath() + "/primitive_normal.mat");
+    //if (f_normal_debug)
+    //{
+    //    for (size_t i = 0; i < face_crsp_normal_lsit.size(); ++i)
+    //    {
+    //        f_normal_debug << faces_in_photo[i] << "\t";
+    //        for (size_t j = 0; j < face_crsp_normal_lsit[i].size(); ++j)
+    //        {
+    //            f_normal_debug << face_crsp_normal_lsit[i][j].transpose() << "\t";
+    //        }
+    //        f_normal_debug << "\n";
+    //    }
+    //    f_normal_debug << normal_in_photo;
+    //    f_normal_debug.close();
+    //}
 
 
     //std::map<int, std::pair<int, Eigen::Vector3d>> organize_normal;
@@ -2897,7 +2906,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     // set new normal to model
     std::cout<<"Set new normal to model...\n";
     //Eigen::VectorXf new_face_normals = Eigen::Map<Eigen::VectorXf>(&new_face_normal[0], new_face_normal.size(), 1);
-    model->setModelNewNormal(new_face_normal_geomean, faces_in_photo);
+    model->setModelNewNormal(new_face_normal, faces_in_photo);
     //model->updateVertexBrightnessAndColor(); put this after deformation
     
     std::cout <<"Draw normal...\n";

@@ -9,7 +9,7 @@ Model::Model(const int id, const std::string path, const std::string name)
         std::cerr << "Init model failed...\n";
     }
 
-    shadow_on = true;
+    shadow_on = false;
 
     model_light = new ModelLight(1600, 40, 3);
 
@@ -30,6 +30,8 @@ Model::Model(const int id, const std::string path, const std::string name)
     rho_specular(3,0)=1;
     rho_specular(3,1)=1;
     rho_specular(3,2)=1;
+
+    shadow_on = true;
 }
 
 Model::~Model()
@@ -266,8 +268,8 @@ void Model::computeBrightness()
     int num_sqrt_samples = model_light->getSqrtNumSamples();
     int num_channels = model_light->getNumChannels();
     SAMPLE *samples = model_light->getSamples();
-    model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
-    model_light->loadOutsideSample(getDataPath()+"/sample.mat");
+    //model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
+    //model_light->loadOutsideSample(getDataPath()+"/sample.mat");
     Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
     Eigen::MatrixX3f &s_mat = model_light->getSampleMatrix();
 

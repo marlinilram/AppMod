@@ -461,6 +461,8 @@ void Coarse::drawNormal()
         return;
     }
 
+    double norm_length = renderer->sceneRadius() / 30;
+
     for (decltype(model_faces.size()) i = 0; i < model_faces.size() / 3; ++i)
     {
         int v0_id = model_faces[3 * i + 0];
@@ -485,7 +487,7 @@ void Coarse::drawNormal()
         normal_dir << model_new_normals[3 * i + 0],
             model_new_normals[3 * i + 1],
             model_new_normals[3 * i + 2];
-        Eigen::Vector3f end_pt(start_pt + 0.01*normal_dir);
+        Eigen::Vector3f end_pt(start_pt + norm_length*normal_dir);
         Eigen::Vector3f blue_color(0.0f, 0.0f, 1.0f);
         renderer->addDrawableLine(start_pt.data(), end_pt.data(), blue_color.data(), blue_color.data());
     }
@@ -495,7 +497,7 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vecto
 {
     // use x,y image coordinates and r,g,b color values as feature
     // assume we hav I_xy_vec
-    if (cur_iter == 0)
+    if (cur_iter >= 0)
     {
         cv::Mat pixels(xy_in_mask.size(), 2, CV_32F);
         cv::Mat labels, centers;
@@ -544,7 +546,7 @@ void Coarse::rhoFromKMeans(int nCluster, Eigen::MatrixX3f &rhos_temp, std::vecto
         }
     }
 
-    if (cur_iter >= 1)
+    if (cur_iter >= 10)
     {
         cv::Mat pixels(xy_in_mask.size(), 3, CV_32F);
         cv::Mat labels, centers;
