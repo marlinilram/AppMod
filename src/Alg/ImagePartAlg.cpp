@@ -1614,7 +1614,7 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     rho_d_mat = rhos_temp;
     pixel_cluster_label = cluster_label;
 
-    setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
+    //setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
 
 
 
