@@ -46,6 +46,7 @@ public:
     inline cv::Mat &getPhotoPS(){ return photo_ps; };
     inline cv::Mat &getNormalImg(){ return normal_img; };
     inline cv::Mat &getCrspRImg(){ return crsp_rimg; };
+    inline bool getUseSIFTFlow(){return use_SIFTFlow;};
 
 
     void drawNormal();

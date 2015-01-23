@@ -240,18 +240,6 @@ void MainWin::updateGeometry()
 void MainWin::refreshScreen()
 {
     viewer->UpdateGLOutside();
-
-    if (lighting_ball)
-    {
-        lighting_ball->getModelLightObj()->getOutsideLight() = coarse_model->getLightRec();
-        lighting_ball->getModelLightObj()->getOutsideSampleMatrix() = coarse_model->getModelLightObj()->getSampleMatrix();
-
-        lighting_ball->computeBrightness();
-
-        viewer_img->getModel(lighting_ball);
-
-        viewer_img->UpdateGLOutside();
-    }
 }
 
 void MainWin::setOptParatoModel()

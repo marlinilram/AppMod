@@ -363,6 +363,20 @@ void Model::computeBrightness()
         //else std::cout << "...";
     }
     std::cout<<"\n";
+
+    float max_brightness = std::numeric_limits<float>::min();
+    for (auto i : model_colors)
+    {
+        if (i > max_brightness)
+        {
+            max_brightness = i;
+        }
+    }
+    for (auto &i : model_colors)
+    {
+        i  = i / max_brightness;
+    }
+
 }
 
 void Model::computeModelVisbs()

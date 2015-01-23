@@ -1320,7 +1320,7 @@ void ImagePartAlg::computeInitLight(Coarse *model, Viewer *viewer)
     {
         model->setShadowOff();
     }
-    else model->setShadowOn();
+    //else model->setShadowOn();
 
     cv::Mat &photo = model->getPhoto();
     cv::Mat &mask = model->getMask();
@@ -1614,7 +1614,8 @@ void ImagePartAlg::updateRho(Coarse *model, Viewer *viewer)
     rho_d_mat = rhos_temp;
     pixel_cluster_label = cluster_label;
 
-    //setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
+    if (model->getCurIter() == 0)
+        setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
 
 
 
@@ -2414,7 +2415,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
 
     if (model->getCurIter() > 0)
     {
-        model->computeSIFTFlow();
+        //model->computeSIFTFlow();
     }
     if (model->getCurIter() == 0)
     {
@@ -2525,7 +2526,8 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     model->rhoFromKMeans(m_para->num_cluster, rhos_temp, cluster_label);
     pixel_cluster_label = cluster_label;
 
-    setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
+    if (model->getCurIter() == 0)
+        setRhodInitFromKMeans(rho_img, photo, I_xy_vec);
 
     //std::ofstream f_cluster_debug;
     //f_cluster_debug.open(model->getOutputPath() + "/cluster_label_init.mat");
@@ -2760,12 +2762,14 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
                 int x = int(xy(0) / xy(2) + 0.5);
                 int y = int(xy(1) / xy(2) + 0.5);
 
-                if (model->getCurIter() > 0)
+                if (model->getUseSIFTFlow())
                 {
-                    x = int(crsp_rimg.at<cv::Vec2d>(i, j)[0] + 0.5);
-                    y = int(crsp_rimg.at<cv::Vec2d>(i, j)[1] + 0.5);
+                    if (model->getCurIter() > 0)
+                    {
+                        x = int(crsp_rimg.at<cv::Vec2d>(i, j)[0] + 0.5);
+                        y = int(crsp_rimg.at<cv::Vec2d>(i, j)[1] + 0.5);
+                    }
                 }
-
 
                 x = (x < mask.cols && x >= 0) ? (x) : (0);
                 y = (y < mask.rows && y >= 0) ? (y) : (0);
@@ -2798,7 +2802,7 @@ void ImagePartAlg::solveRenderEqAll(Coarse *model, Viewer *viewer)
     Eigen::VectorXf new_face_normal = Eigen::Map<Eigen::VectorXf>(normal_in_photo_transpose.data(), 3*faces_in_photo.size(), 1);
 
     Eigen::VectorXf new_face_normal_geomean;
-    getNewNormal(new_face_normal, face_crsp_normal_lsit);
+    getNewNormal(new_face_normal_geomean, face_crsp_normal_lsit);
 
     // use pca to compute normal
 
@@ -3061,4 +3065,6 @@ void ImagePartAlg::setRhodInitFromKMeans(cv::Mat &rho_img, cv::Mat &photo, std::
         rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[1] = center_cluster.row(pixel_cluster_label[i])(1);
         rho_img.at<cv::Vec3f>(I_xy_vec[i](1), I_xy_vec[i](0))[2] = center_cluster.row(pixel_cluster_label[i])(2);
     }
+
+    cv::imwrite("rho_kmeans.png", rho_img*255);
 }

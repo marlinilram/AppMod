@@ -24,11 +24,11 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::imshow("photo", photo);
     cv::imshow("mask", mask);
 
-    light_rec = Eigen::MatrixX3f::Constant(getModelLightObj()->getNumSamples(), 3, 0.05);
+    light_rec = Eigen::MatrixX3f::Constant(getModelLightObj()->getNumSamples(), 3, 0);
     std::vector<cv::Mat> rho_img_split;
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1.0)));
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1.0)));
-    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(1.0)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
+    rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
     cv::merge(rho_img_split, rho_img);
 
     //photo_temp.convertTo(rho_img, CV_32FC3);
