@@ -52,7 +52,7 @@ MainWin::MainWin()
     connect(this, SIGNAL(callUpdateLight(Coarse *, Viewer *)), img_part_alg, SLOT(updateLight(Coarse *, Viewer *)));
     connect(this, SIGNAL(callComputeNormal(Coarse *, Viewer *)), img_part_alg, SLOT(computeNormal(Coarse *, Viewer *)));
     connect(this, SIGNAL(callRunWholeIter(Coarse *, Viewer *)), img_part_alg, SLOT(runWholeIter(Coarse *, Viewer *)));
-	connect(this, SIGNAL(callNLoptTest()), img_part_alg, SLOT(testNLopt()));
+
     connect(this, SIGNAL(callComputeBRDFLightNormal(Coarse *, Viewer *)), img_part_alg, SLOT(solveRenderEqAll(Coarse *, Viewer *)));
     connect(img_part_alg, SIGNAL(refreshScreen()), this, SLOT(refreshScreen()));
 
@@ -233,7 +233,7 @@ void MainWin::updateGeometry()
     if (coarse_model)
     {
         GeometryPartAlg geoAlg;
-        //geoAlg.updateGeometry(coarse_model);
+        geoAlg.test(coarse_model);
     }
 }
 

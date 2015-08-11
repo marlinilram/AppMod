@@ -39,6 +39,7 @@ public:
     typedef Eigen::Vector3f Vector3f;
     typedef std::vector<Vector3i> VectorVec3i;
     typedef std::vector<Vector3f> VectorVec3f;
+    typedef std::pair<int, int> UDEdge;
     
 
 public:
@@ -97,6 +98,8 @@ public:
     inline std::string getDataPath(){ return data_path + std::to_string(ID); };
     inline void setOutputPath(std::string &path) { output_path = path; };
     inline std::string getOutputPath() { return output_path; };
+
+    inline Eigen::Matrix4f& getProjectInvMat() { return m_inv_modelview_projection; };
 
 protected:
     bool loadOBJ(const std::string name, const std::string base_path);

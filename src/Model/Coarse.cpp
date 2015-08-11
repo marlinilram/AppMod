@@ -8,10 +8,13 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
 
     cv::Mat photo_temp = cv::imread((path + std::to_string(id) + "/photo.png").c_str());
     cv::Mat mask_temp = cv::imread(path + std::to_string(id) + "/mask.png");
+    cv::Mat ref_temp = cv::imread(path + std::to_string(id) + "/reflectance.png");
 
     //cv::cvtColor(photo_temp, photo_temp, CV_BGR2RGB);
     photo_temp.convertTo(photo, CV_32FC3);
+    
     photo = 1e-4 + (photo / 255); // to ensure that I always larger than zero, important!
+
     cv::threshold(photo, photo, 1.0f, 1.0f, THRESH_TRUNC);
 
     cv::Mat photo_ps_temp = cv::imread((path + std::to_string(id) + "/photo_ps.png").c_str());
@@ -31,9 +34,15 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     rho_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0)));
     cv::merge(rho_img_split, rho_img);
 
-    //photo_temp.convertTo(rho_img, CV_32FC3);
-    //rho_img = rho_img / 255;
+    photo_temp.convertTo(rho_img, CV_32FC3);
+    rho_img = rho_img / 255;
+    ref_temp.convertTo(rho_img, CV_32FC3);
+    rho_img = rho_img / 255;
     //rho_img = photo.clone(); // we use rho_img to do cluster now, so it can be updated each iteration
+
+    rho_s_img = rho_img.clone();
+
+    shading_img = cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0));
 
     std::vector<cv::Mat> normal_img_split;
     normal_img_split.push_back(cv::Mat(mask.rows, mask.cols, CV_32F, cv::Scalar(0.0)));
@@ -674,23 +683,27 @@ void Coarse::computeSIFTFlow()
 
     SIFTFlowWrapper siftflow;
 
+    //cv::imshow("mask r", mask_rimg);
+
     siftflow.doSIFTFlow(crsp_rimg, r_img, mask_rimg, photo, mask);
-    siftflow.doSIFTFlow(crsp_Pimg, photo, mask, r_img, mask_rimg);
+    //siftflow.doSIFTFlow(crsp_Pimg, photo, mask, r_img, mask_rimg);
+
+    //cv::imshow("crsp_rimg", crsp_rimg);
+    //cv::imshow("crsp_Pimg", crsp_Pimg);
 
 
-
-    std::ofstream f_debug(getOutputPath()+"/crsp_rimg.mat");
-    if (f_debug)
-    {
-        f_debug << crsp_rimg;
-        f_debug.close();
-    }
-    f_debug.open(getOutputPath()+"/crsp_Pimg.mat");
-    if (f_debug)
-    {
-        f_debug << crsp_Pimg;
-        f_debug.close();
-    }
+    //std::ofstream f_debug(getOutputPath()+"/crsp_rimg.mat");
+    //if (f_debug)
+    //{
+    //    f_debug << crsp_rimg;
+    //    f_debug.close();
+    //}
+    //f_debug.open(getOutputPath()+"/crsp_Pimg.mat");
+    //if (f_debug)
+    //{
+    //    f_debug << crsp_Pimg;
+    //    f_debug.close();
+    //}
 
     std::cout<<"finished...\n";
 }

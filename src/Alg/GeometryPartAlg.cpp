@@ -341,12 +341,12 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
     model->updateVertexBrightnessAndColor();
 
-    std::ofstream f_P_Opt(model->getOutputPath() + "/P_Opt.mat");
-    if (f_P_Opt)
-    {
-        f_P_Opt << P_Opt;
-        f_P_Opt.close();
-    }
+    //std::ofstream f_P_Opt(model->getOutputPath() + "/P_Opt.mat");
+    //if (f_P_Opt)
+    //{
+    //    f_P_Opt << P_Opt;
+    //    f_P_Opt.close();
+    //}
 
     std::cout << "Update geometry finished...\n";
 }
@@ -429,4 +429,100 @@ void GeometryPartAlg::getConnectedPtID(int i_pt, int points_in_face[3], int conn
         //std::cout << "Error: can not find point in the given face!\n";
         // get the other point's id in this cell
     }
+}
+
+void GeometryPartAlg::test(Coarse* model)
+{
+  cv::FileStorage fs(model->getDataPath()+"/normal.xml", cv::FileStorage::READ);
+
+  cv::Mat photo_normal;
+  fs["normal"] >> photo_normal;
+
+  cv::imshow("normal_img", photo_normal);
+
+  // the origin of coordinate system of normal image
+  // is top left corner
+  // channel 1 -> n_y
+  // channel 2 -> n_x
+  // channel 3 -> n_z
+  // screen system origin bottom left corner
+
+  
+
+  model->computeSIFTFlow();
+
+  cv::Mat r_img_syn = cv::Mat::zeros(model->getRImg().size(), CV_32FC3);
+  cv::Mat& crsp_r_img = model->getCrspRImg();
+  cv::Mat& photo = model->getPhoto();
+  cv::Mat& mask = model->getMask();
+  cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
+  int *primitive_id_ptr = (int *)primitive_id_img.data;
+
+  std::map<int, Eigen::Vector3f> normal_map;
+  std::map<int, Eigen::Vector3f>::iterator iter_normal_map;
+
+  for (int i = 0; i < crsp_r_img.rows; ++i)
+  {
+    for (int j = 0; j < crsp_r_img.cols; ++j)
+    {
+      if (primitive_id_ptr[i*primitive_id_img.cols + j] >= 0)
+      {
+        int x = int(crsp_r_img.at<cv::Vec2d>(i, j)[0] + 0.5);
+        int y = int(crsp_r_img.at<cv::Vec2d>(i, j)[1] + 0.5);
+
+        x = (x < mask.cols && x >= 0) ? (x) : (0);
+        y = (y < mask.rows && y >= 0) ? (y) : (0);
+
+        r_img_syn.at<cv::Vec3f>(i, j) = photo.at<cv::Vec3f>(y, x);
+
+        if (mask.at<uchar>(y, x) > 0)
+        {
+          cv::Vec3d normal_in_photo = photo_normal.at<cv::Vec3f>(y, x);
+          Eigen::Vector3f new_normal;
+          new_normal << 
+            normal_in_photo[0],
+            normal_in_photo[1],
+            normal_in_photo[2];
+          this->unprojectVector(model, new_normal.data());
+
+          // we must ensure this face can at least find a pixel in the mask
+          int face_id = primitive_id_ptr[i*primitive_id_img.cols + j];
+          iter_normal_map = normal_map.find(face_id);
+          if (iter_normal_map != normal_map.end())
+          {
+            iter_normal_map->second += new_normal;
+          }
+          else
+          {
+            normal_map[face_id] = new_normal;
+          }
+        }
+      }
+    }
+  }
+
+  std::vector<int> faces_in_photo;
+  Eigen::VectorXf faces_new_normal(3*normal_map.size());
+  int i = 0;
+  for (iter_normal_map = normal_map.begin(); iter_normal_map != normal_map.end(); ++iter_normal_map)
+  {
+    faces_in_photo.push_back(iter_normal_map->first);
+    faces_new_normal(3 * i + 0) = iter_normal_map->second(0);
+    faces_new_normal(3 * i + 1) = iter_normal_map->second(1);
+    faces_new_normal(3 * i + 2) = iter_normal_map->second(2);
+    ++i;
+  }
+  model->setModelNewNormal(faces_new_normal, faces_in_photo);
+  this->updateGeometry(model); 
+}
+
+void GeometryPartAlg::unprojectVector(Coarse* model, float* vec)
+{
+  Eigen::Matrix3f inv_project = model->getProjectInvMat().block(0,0,3,3);
+
+  Eigen::Vector3f ori_vec(vec[0], vec[1], vec[2]);
+  ori_vec = inv_project * Eigen::Map<Eigen::Vector3f>(vec, 3, 1);
+  vec[0] = ori_vec(0);
+  vec[1] = ori_vec(1);
+  vec[2] = ori_vec(2);
 }

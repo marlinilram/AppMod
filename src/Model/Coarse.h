@@ -41,6 +41,8 @@ public:
     inline cv::Mat &getPhoto(){ return photo; };
     inline cv::Mat &getMask(){ return mask; };
     inline cv::Mat &getRhoImg(){ return rho_img; };
+    inline cv::Mat &getRhoSImg(){ return rho_s_img; };
+    inline cv::Mat &getShadingImg(){ return shading_img; };
     inline Eigen::MatrixX3f &getLightRec(){ return light_rec; };
     inline std::vector<Eigen::Vector2i> &getXYInMask(){ return xy_in_mask; };
     inline cv::Mat &getPhotoPS(){ return photo_ps; };
@@ -67,6 +69,8 @@ protected:
     cv::Mat photo_ps;
     cv::Mat mask;
     cv::Mat rho_img;
+    cv::Mat rho_s_img;
+    cv::Mat shading_img;
     std::vector<Eigen::Vector2i> xy_in_mask;
     cv::Mat normal_img;
 

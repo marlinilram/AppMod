@@ -56,26 +56,25 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
 
     model_vertices = shapes[0].mesh.positions;
     model_vertices_init = model_vertices;
-    model_normals = shapes[0].mesh.normals;
-    model_normals_init = model_normals;
+    model_normals = model_vertices;
     model_faces = shapes[0].mesh.indices;
     model_colors = Colorlist(model_vertices.size(), 0.5);// inti color with gaussian
-    for (size_t i = 0; i < model_vertices.size()/3; ++i)
-    {
-        if (model_vertices[3*i+0] >= 0.5)
-        {
-            model_colors[3*i+0] = 0.1;//exp(-model_vertices[3*i+0]*model_vertices[3*i+0]/2)/(sqrt(2*M_PI));
-            model_colors[3*i+1] = 0.3;//exp(-model_vertices[3*i+1]*model_vertices[3*i+1]/2)/(sqrt(2*M_PI));
-            model_colors[3*i+2] = 0.5;//exp(-model_vertices[3*i+2]*model_vertices[3*i+2]/2)/(sqrt(2*M_PI));
-        }
-        else
-        {
-            model_colors[3*i+0] = 0.5;//exp(-model_vertices[3*i+0]*model_vertices[3*i+0]/8)/(sqrt(2*M_PI)*2);
-            model_colors[3*i+1] = 0.3;//exp(-model_vertices[3*i+1]*model_vertices[3*i+1]/8)/(sqrt(2*M_PI)*2);
-            model_colors[3*i+2] = 0.1;//exp(-model_vertices[3*i+2]*model_vertices[3*i+2]/8)/(sqrt(2*M_PI)*2);
-        }
+    //for (size_t i = 0; i < model_vertices.size()/3; ++i)
+    //{
+    //    if (model_vertices[3*i+0] >= 0.5)
+    //    {
+    //        model_colors[3*i+0] = 0.1;//exp(-model_vertices[3*i+0]*model_vertices[3*i+0]/2)/(sqrt(2*M_PI));
+    //        model_colors[3*i+1] = 0.3;//exp(-model_vertices[3*i+1]*model_vertices[3*i+1]/2)/(sqrt(2*M_PI));
+    //        model_colors[3*i+2] = 0.5;//exp(-model_vertices[3*i+2]*model_vertices[3*i+2]/2)/(sqrt(2*M_PI));
+    //    }
+    //    else
+    //    {
+    //        model_colors[3*i+0] = 0.5;//exp(-model_vertices[3*i+0]*model_vertices[3*i+0]/8)/(sqrt(2*M_PI)*2);
+    //        model_colors[3*i+1] = 0.3;//exp(-model_vertices[3*i+1]*model_vertices[3*i+1]/8)/(sqrt(2*M_PI)*2);
+    //        model_colors[3*i+2] = 0.1;//exp(-model_vertices[3*i+2]*model_vertices[3*i+2]/8)/(sqrt(2*M_PI)*2);
+    //    }
 
-    }
+    //}
     model_rhos = model_colors;
     model_brightness = model_colors;
 
@@ -93,6 +92,8 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
 
 	std::cout<<"Computing face normals...\n";
     computeFaceNormal();
+    computeVertexNormal();
+    model_normals_init = model_normals;
 
     //model_colors[model_faces[169 * 3 + 0] * 3 + 0] = 1.0;
     //model_colors[model_faces[169 * 3 + 1] * 3 + 0] = 1.0;
@@ -152,7 +153,7 @@ void Model::computeLight()
 	model_light->loadOutsideLight(getDataPath()+"/Light_rec.mat");
     model_light->loadOutsideSample(getDataPath()+"/sample.mat");
 	Eigen::MatrixX3f &outside_light = model_light->getOutsideLight();
-    Eigen::MatrixX3f &s_mat = model_light->getSampleMatrix();
+    Eigen::MatrixX3f &s_mat = model_light->getOutsideSampleMatrix();
 
     //std::ofstream f_test(getDataPath()+"/s_mat.mat");
     //if (f_test)
@@ -163,6 +164,7 @@ void Model::computeLight()
 
     int perc = 0;
     model_visbs.clear();
+    bool use_simple_light = true;
 	//renderer->setCheckVisbStatus(true);
 
     // for each model vertex
@@ -193,13 +195,18 @@ void Model::computeLight()
 					//if (renderer->checkVertexVisbs(i, this, samples[k].direction))
                     if (ray_cast.intersectModel(ray_start, ray_end))
                     {
-                        //brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
-                        //brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
-                        //brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
-
-						brightness[0] += dot*outside_light(k, 0);
+                        if (use_simple_light)
+                        {
+                            brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
+                        brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
+                        brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+                        }
+                        else
+						{
+                            brightness[0] += dot*outside_light(k, 0);
 						brightness[1] += dot*outside_light(k, 1);
 						brightness[2] += dot*outside_light(k, 2);
+                        }
 
                         cur_v_visb.push_back(true);
                     }
@@ -207,13 +214,18 @@ void Model::computeLight()
                 }
                 else
                 {
-                    //brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
-                    //brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
-                    //brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
-
-					brightness[0] += dot*outside_light(k, 0);
+                    if (use_simple_light)
+                    {
+                        brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
+                    brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
+                    brightness[2] += dot*(float)Light(samples[k].theta, samples[k].phi, 2);
+                    }
+                    else
+					{
+                        brightness[0] += dot*outside_light(k, 0);
 					brightness[1] += dot*outside_light(k, 1);
 					brightness[2] += dot*outside_light(k, 2);
+                    }
 
 
                     cur_v_visb.push_back(true);
@@ -743,21 +755,83 @@ void Model::getPtNormalInFace(Eigen::Vector3f &pt, int face_id, Eigen::Vector3f 
 void Model::buildFaceAdj()
 {
     model_faces_adj.clear();
-    for (decltype(model_faces.size()) i = 0; i < model_faces.size() / 3; ++i)
+    //for (decltype(model_faces.size()) i = 0; i < model_faces.size() / 3; ++i)
+    //{
+    //    std::vector<int> cur_face_adj;
+    //    // traverse the face list to find adjacent faces
+    //    for (decltype(model_faces.size()) j = 0; j < model_faces.size() / 3; ++j)
+    //    {
+    //        // if i == j its the same face, ignore
+    //        if (i != j)
+    //        {
+    //            if (shareEdge((int)i, (int)j))
+    //                cur_face_adj.push_back((int)j);
+    //        }
+    //    }
+    //    model_faces_adj.push_back(cur_face_adj);
+    //}
+
+
+    std::map<UDEdge, int> edge_face_map;
+    std::map<UDEdge, int>::iterator EFMap_iter;
+    model_faces_adj.resize(model_faces.size() / 3);
+
+    for (decltype(model_faces.size()) face_id = 0; face_id < model_faces.size() / 3; ++face_id)
     {
-        std::vector<int> cur_face_adj;
-        // traverse the face list to find adjacent faces
-        for (decltype(model_faces.size()) j = 0; j < model_faces.size() / 3; ++j)
+        int pt_1 = model_faces[3*face_id + 0];
+        int pt_2 = model_faces[3*face_id + 1];
+        int pt_3 = model_faces[3*face_id + 2];
+
+        UDEdge edge_1 = pt_1 < pt_2 ? UDEdge(pt_1, pt_2) : UDEdge(pt_2, pt_1);
+        UDEdge edge_2 = pt_2 < pt_3 ? UDEdge(pt_2, pt_3) : UDEdge(pt_3, pt_2);
+        UDEdge edge_3 = pt_3 < pt_1 ? UDEdge(pt_3, pt_1) : UDEdge(pt_1, pt_3);
+
+        EFMap_iter = edge_face_map.find(edge_1);
+        if (EFMap_iter == edge_face_map.end())
+            edge_face_map.insert(std::pair<UDEdge, int>(edge_1, face_id));
+        else
         {
-            // if i == j its the same face, ignore
-            if (i != j)
-            {
-                if (shareEdge((int)i, (int)j))
-                    cur_face_adj.push_back((int)j);
-            }
+            int share_edge_face_id = edge_face_map[edge_1];
+            model_faces_adj[face_id].push_back(share_edge_face_id);
+            model_faces_adj[share_edge_face_id].push_back(face_id);
         }
-        model_faces_adj.push_back(cur_face_adj);
+
+        EFMap_iter = edge_face_map.find(edge_2);
+        if (EFMap_iter == edge_face_map.end())
+            edge_face_map.insert(std::pair<UDEdge, int>(edge_2, face_id));
+        else
+        {
+            int share_edge_face_id = edge_face_map[edge_2];
+            model_faces_adj[face_id].push_back(share_edge_face_id);
+            model_faces_adj[share_edge_face_id].push_back(face_id);
+        }
+
+        EFMap_iter = edge_face_map.find(edge_3);
+        if (EFMap_iter == edge_face_map.end())
+            edge_face_map.insert(std::pair<UDEdge, int>(edge_3, face_id));
+        else
+        {
+            int share_edge_face_id = edge_face_map[edge_3];
+            model_faces_adj[face_id].push_back(share_edge_face_id);
+            model_faces_adj[share_edge_face_id].push_back(face_id);
+        }
     }
+
+    //    std::ofstream f_debug(getDataPath()+"/face_adj.txt");
+    //if (f_debug)
+    //{
+    //    for (size_t i = 0; i < model_faces_adj.size(); ++i)
+    //    {
+    //        for (auto &j : model_faces_adj[i])
+    //        {
+    //            f_debug << j << "\t";
+    //        }
+    //        f_debug << "\n";
+    //    }
+    //    f_debug.close();
+    //}
+
+
 }
 
 bool Model::shareEdge(int face0, int face1)

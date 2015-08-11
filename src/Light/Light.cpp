@@ -34,11 +34,11 @@
 
 double Light(double theta, double phi, int chn)
 {
-    if (chn == 0) return (theta < 1 * M_PI / 6 && theta > 0 * M_PI / 4 && phi < 8 * M_PI / 4 && phi > 0 * M_PI / 4) ? 1.0 : 0;
-    else if (chn == 1) return (theta < 1 * M_PI / 6 && theta > 0 * M_PI / 4 && phi < 8 * M_PI / 4 && phi > 0 * M_PI / 4) ? 1.0 : 0;
-    else return (theta < 1 * M_PI / 6 && theta > 0 * M_PI / 4 && phi < 8 * M_PI / 4 && phi > 0 * M_PI / 4) ? 1.0 : 0;
+    //if (chn == 0) return (theta < 1 * M_PI / 6 && theta > 0 * M_PI / 4 && phi < 8 * M_PI / 4 && phi > 0 * M_PI / 4) ? 1.0 : 0;
+    //else if (chn == 1) return (theta < 1 * M_PI / 6 && theta > 0 * M_PI / 4 && phi < 8 * M_PI / 4 && phi > 0 * M_PI / 4) ? 1.0 : 0;
+    //else return (theta < 1 * M_PI / 6 && theta > 0 * M_PI / 4 && phi < 8 * M_PI / 4 && phi > 0 * M_PI / 4) ? 1.0 : 0;
 
     //return 0.1;
-    //return (theta < 3 * M_PI / 4 && theta > 1 * M_PI / 4 && phi < 7 * M_PI / 4 && phi > 5 * M_PI / 4) ? 0.5 : 0;
-    //return (theta < M_PI / 6) ? 1 : 0;
+    return (theta < 4 * M_PI / 6 && phi < 4 * M_PI / 3 && phi > 2 * M_PI / 3) ? 0.7 : 0;
+    //return (theta < M_PI / 6) ? 0.8 : 0;
 }
