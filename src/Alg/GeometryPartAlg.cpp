@@ -335,11 +335,11 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
     model->updateBSPtree();
 
-    model->computeModelVisbs();
+    //model->computeModelVisbs();
 
-    model->updateVertexRho();
+    //model->updateVertexRho();
 
-    model->updateVertexBrightnessAndColor();
+    //model->updateVertexBrightnessAndColor();
 
     //std::ofstream f_P_Opt(model->getOutputPath() + "/P_Opt.mat");
     //if (f_P_Opt)
@@ -431,7 +431,7 @@ void GeometryPartAlg::getConnectedPtID(int i_pt, int points_in_face[3], int conn
     }
 }
 
-void GeometryPartAlg::test(Coarse* model)
+void GeometryPartAlg::updateWithExNormal(Coarse* model)
 {
   cv::FileStorage fs(model->getDataPath()+"/normal.xml", cv::FileStorage::READ);
 
@@ -525,4 +525,26 @@ void GeometryPartAlg::unprojectVector(Coarse* model, float* vec)
   vec[0] = ori_vec(0);
   vec[1] = ori_vec(1);
   vec[2] = ori_vec(2);
+}
+
+void GeometryPartAlg::test(Coarse* model)
+{
+    Model* target;
+    string data_path = model->getDataPath();
+    int model_id = atoi(data_path.substr(data_path.find_last_of('/') + 1).c_str());
+    data_path = data_path.substr(0, data_path.find_last_of('/') + 1);
+    string file_name = model->getFileName();
+    file_name = file_name.substr(0, file_name.find_last_of('.'));
+    target = new Model(model_id, data_path, file_name + "-smoothed.obj");
+
+    std::vector<unsigned int>* target_face_list = target->getFaceList();
+    std::vector<float>* target_normal = target->getFaceNormalList();
+    std::vector<int> faces_in_photo;
+    for (int i = 0; i < (*target_face_list).size(); ++i)
+    {
+        faces_in_photo.push_back((*target_face_list)[i]);
+    }
+    Eigen::VectorXf faces_new_normal = Eigen::Map<Eigen::VectorXf>(&(*target_normal)[0], (*target_normal).size());
+    model->setModelNewNormal(faces_new_normal, faces_in_photo);
+    this->updateGeometry(model);
 }

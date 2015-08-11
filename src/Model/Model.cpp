@@ -31,7 +31,7 @@ Model::Model(const int id, const std::string path, const std::string name)
     rho_specular(3,1)=1;
     rho_specular(3,2)=1;
 
-    shadow_on = true;
+    shadow_on = false;
 }
 
 Model::~Model()

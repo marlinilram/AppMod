@@ -98,6 +98,7 @@ public:
     inline std::string getDataPath(){ return data_path + std::to_string(ID); };
     inline void setOutputPath(std::string &path) { output_path = path; };
     inline std::string getOutputPath() { return output_path; };
+    inline std::string getFileName() { return file_name; };
 
     inline Eigen::Matrix4f& getProjectInvMat() { return m_inv_modelview_projection; };
 

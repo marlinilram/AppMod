@@ -234,6 +234,10 @@ void MainWin::updateGeometry()
     {
         GeometryPartAlg geoAlg;
         geoAlg.test(coarse_model);
+
+        coarse_model->computeLight();
+        viewer->getModel(coarse_model);
+        this->refreshScreen();
     }
 }
 
