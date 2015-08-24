@@ -1,8 +1,11 @@
 #ifndef Bound_H
 #define Bound_H
 
-struct Bound
+class Bound
 {
+public:
+    Bound() {};
+    ~Bound() {};
     float minX;
     float maxX;
     float minY;

@@ -1,5 +1,12 @@
+#include "Viewer.h"
 #include "mainWin.h"
-
+#include "Coarse.h"
+#include "GroundTruth.h"
+#include "ImagePartAlg.h"
+#include "GeometryPartAlg.h"
+#include "ModelLight.h"
+#include "MPara.h"
+#include "tele2d.h"
 
 MainWin::MainWin()
 {
@@ -34,7 +41,7 @@ MainWin::MainWin()
     //connect(action_Update_Light, SIGNAL(triggered()), this, SLOT(updateLight()));
     connect(action_Compute_Normal, SIGNAL(triggered()), this, SLOT(computeNormal()));
     connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
-	connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
+	  connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
     connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
     connect(m_pushButton_set_para, SIGNAL(clicked()), this, SLOT(setOptParatoModel()));
     connect(m_pushButton_Run, SIGNAL(clicked()), this, SLOT(runAll()));
@@ -88,6 +95,7 @@ void MainWin::loadModel()
     coarse_model = new Coarse(model_id, model_file_path, model_file_name);
 
     viewer->getModel(coarse_model);
+    viewer->resetCamera(coarse_model);
     coarse_model->setRenderer(viewer);
 
     // make an output dir
@@ -153,7 +161,7 @@ void MainWin::exportOBJ()
 void MainWin::snapShot()
 {
     if (coarse_model)
-        viewer->getSnapShot(coarse_model);
+        viewer->getSnapShot(coarse_model, true);
 
 }
 
@@ -233,7 +241,7 @@ void MainWin::updateGeometry()
     if (coarse_model)
     {
         GeometryPartAlg geoAlg;
-        geoAlg.test(coarse_model);
+        geoAlg.updateWithExNormal(coarse_model);
 
         coarse_model->computeLight();
         viewer->getModel(coarse_model);
@@ -302,8 +310,32 @@ void MainWin::renderTexture()
 
 void MainWin::computeAll()
 {
-    if (coarse_model)
-    {
-        emit callComputeBRDFLightNormal(coarse_model, viewer);
-    }
+    //if (coarse_model)
+    //{
+    //    emit callComputeBRDFLightNormal(coarse_model, viewer);
+    //}
+
+    // test tele-reg
+
+  tele2d *teleRegister = new tele2d( 50, 0.02,1 ) ;
+
+  CURVES curves ;
+  std::vector<std::vector<int>> group ;
+  std::vector<int2> endps ;
+
+	
+  teleRegister->load_Curves( "curves.txt", curves, group, endps );
+
+
+  teleRegister->init( curves, group, endps  ) ;
+
+
+  //// Uncomment the 3 lines below, you can directly run the registration and save the result.
+  //teleRegister->runRegister() ;
+  //teleRegister->outputResCurves( "rescurves.txt") ;
+  //return 0;
+
+
+
+  teleRegister->setInputField() ; // only for visualization
 }

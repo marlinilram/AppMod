@@ -1,4 +1,6 @@
+#include "Viewer.h"
 #include "GroundTruth.h"
+#include "Ray.h"
 
 Groundtruth::Groundtruth(Coarse *model)
 {
@@ -17,7 +19,7 @@ Groundtruth::Groundtruth(Coarse *model)
 
     std::cout<<"model_vertices size: "<<model_vertices.size()<<"\n";
     std::cout<<"model_faces size: "<<model_faces.size()<<"\n";
-    ray_cast.passModel(model_vertices, model_faces);
+    ray_cast->passModel(model_vertices, model_faces);
 
 
     rho_specular = Eigen::MatrixXf::Zero(4, 3);

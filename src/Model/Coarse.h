@@ -2,13 +2,9 @@
 #define Coarse_H
 
 #include "Model.h"
-#include "GroundTruth.h"
-#include "Viewer.h"
-#include "MPara.h"
-#include "SIFTFlowWrapper.h"
-
 
 class Groundtruth;
+class MPara;
 
 class Coarse : public Model
 {

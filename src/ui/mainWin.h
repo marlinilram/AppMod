@@ -1,14 +1,7 @@
 #ifndef MainWin_H
 #define MainWin_H
 
-#include <windows.h>
-
-#include "Viewer.h"
-#include "Coarse.h"
-#include "GroundTruth.h"
-#include "ImagePartAlg.h"
-#include "GeometryPartAlg.h"
-
+#include <glew-1.11.0/include/GL/glew.h>
 #include <QMainWindow>
 #include <QGridLayout>
 #include <QFileDialog>
@@ -17,6 +10,11 @@
 #include <QThread>
 #include "ui_mainWin.h"
 
+class Viewer;
+class Model;
+class Coarse;
+class Groundtruth;
+class ImagePartAlg;
 
 class MainWin : public QMainWindow, public Ui::MainWindow
 {

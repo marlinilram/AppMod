@@ -1,4 +1,9 @@
+#include "Viewer.h"
 #include "Coarse.h"
+#include "GroundTruth.h"
+#include "ModelLight.h"
+#include "MPara.h"
+#include "SIFTFlowWrapper.h"
 
 Coarse::Coarse(const int id, const std::string path, const std::string name)
     :Model(id, path, name)
@@ -283,6 +288,8 @@ void Coarse::setModelNewNormal(Eigen::VectorXf &new_face_in_photo_normal, std::v
         model_new_normals[3 * faces_in_photo[i] + 1] = cur_normal(1);
         model_new_normals[3 * faces_in_photo[i] + 2] = cur_normal(2);
     }
+
+    //model_face_normals = model_new_normals;
 }
 
 void Coarse::loadS2ITransform()
@@ -688,7 +695,7 @@ void Coarse::computeSIFTFlow()
     siftflow.doSIFTFlow(crsp_rimg, r_img, mask_rimg, photo, mask);
     //siftflow.doSIFTFlow(crsp_Pimg, photo, mask, r_img, mask_rimg);
 
-    //cv::imshow("crsp_rimg", crsp_rimg);
+    //cv::imshow("crsp_rimg", mask_rimg);
     //cv::imshow("crsp_Pimg", crsp_Pimg);
 
 

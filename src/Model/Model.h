@@ -1,7 +1,6 @@
 #ifndef Model_H
 #define Model_H
 
-
 #include <vector>
 #include <iostream>
 #include <string>
@@ -14,17 +13,11 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include "ModelLight.h"
-#include "Bound.h"
-#include "Viewer.h"
-#include "tiny_obj_loader.h"
-#include "obj_writer.h"
-#include "ModelLight.h"
-#include "Ray.h"
-#include "Light.h"
-
-
 class Viewer;
+class ModelLight;
+class Bound;
+class Ray;
+class Light;
 
 class Model
 {
@@ -43,7 +36,7 @@ public:
     
 
 public:
-    Model(){};
+    Model();
     ~Model();
 
     Model(const int id, const std::string path, const std::string name);
@@ -63,7 +56,7 @@ public:
     void computeVerVisbs(int pt_id, Eigen::VectorXf &visb);
 	void computeFaceNormal();
     void computeVertexNormal();
-    inline void updateBSPtree(){ ray_cast.passModel(model_vertices, model_faces); };
+    void updateBSPtree();
     void exportPtRenderInfo(int pt_id);
 
     void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
@@ -72,14 +65,16 @@ public:
     bool getWorldCoord(Eigen::Vector3f rimg_coord, Eigen::Vector3f &w_coord);
     void getPtNormalInFace(Eigen::Vector3f &pt, int face_id, Eigen::Vector3f &normal);
     inline void setRenderer(Viewer *viewer){ renderer = viewer; };
+    inline Viewer* getRenderer() { return renderer; };
 
     inline ModelLight *getModelLightObj(){ return model_light; };
     inline std::vector<int> *getFaceAdj(int face_id){ return &model_faces_adj[face_id]; };
-    inline Bound getBounds(){ return model_bounds; };
+    inline Bound* getBounds(){ return model_bounds; };
     inline std::vector<unsigned int> *getFaceList(){ return &model_faces; };
     inline std::vector<float> *getVertexList(){ return &model_vertices; };
     inline std::vector<float> *getNormalList(){ return &model_normals; };
 	inline std::vector<float> *getFaceNormalList(){ return &model_face_normals; };
+    inline std::vector<float> *getColors() { return &model_colors; };
     inline std::vector<float> *getRhoList(){ return &model_rhos; };
     inline std::vector<std::vector<int>> *getVertexShareFaces(){ return &model_vertices_share_faces; };
     inline std::vector<int> *getVertexShareFaces(int vertex_id){ return &model_vertices_share_faces[vertex_id]; };
@@ -91,7 +86,10 @@ public:
     inline void setShadowOn(){shadow_on = true;};
 
     inline cv::Mat &getRImg(){ return r_img; };
+    inline cv::Mat &getRBGRAImg() { return rBGRA_img; };
     inline cv::Mat &getPrimitiveIDImg(){ return primitive_ID; };
+    inline cv::Mat &getZImg() { return z_img; };
+    inline cv::Mat &getRMask() { return mask_rimg; };
     inline std::vector<float> &getRhoSpecular(){ return model_rhos; };
     inline std::vector<float> &getRhodIrr(){ return model_brightness; };
 
@@ -144,17 +142,18 @@ protected:
     FaceAdjlist model_vertices_share_faces;// vertex one-ring faces
     VertexAdjlist model_vertex_adj;// vertex adjacent list
     
-    Bound model_bounds;
+    Bound* model_bounds;
 
     // Lighting
     ModelLight *model_light;
     std::vector<std::vector<bool>> model_visbs;
-	Ray ray_cast;
+	  Ray* ray_cast;
     bool shadow_on;
 
     // information from renderer
     cv::Mat z_img;
     cv::Mat primitive_ID;
+    cv::Mat rBGRA_img;
     cv::Mat r_img;
     cv::Mat mask_rimg;
     std::vector<bool> v_vis_stat_in_r_img;

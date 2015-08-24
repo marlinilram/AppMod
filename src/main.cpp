@@ -1,3 +1,4 @@
+#include <glew-1.11.0/include/GL/glew.h>
 #include "mainWin.h"
 #include <QtWidgets/QApplication>
 

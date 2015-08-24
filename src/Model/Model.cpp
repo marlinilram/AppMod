@@ -1,8 +1,23 @@
+#include "Viewer.h"
 #include "Model.h"
+#include "ModelLight.h"
+#include "Bound.h"
+#include "tiny_obj_loader.h"
+#include "obj_writer.h"
+#include "ModelLight.h"
+#include "Ray.h"
+#include "Light.h"
 
+Model::Model()
+{
+  ray_cast = NULL;
+  model_bounds = NULL;
+  model_light = NULL;
+}
 
 Model::Model(const int id, const std::string path, const std::string name) 
-    : ID(id), data_path(path), output_path(path), file_name(name)
+    : ID(id), data_path(path), output_path(path), file_name(name), ray_cast(NULL),
+      model_bounds(NULL), model_light(NULL)
 {
     if (!loadOBJ(file_name, path + std::to_string(id)))
     {
@@ -13,16 +28,16 @@ Model::Model(const int id, const std::string path, const std::string name)
 
     model_light = new ModelLight(1600, 40, 3);
 
-    std::ofstream f_sample(getOutputPath() + "/sample.mat");
-    if (f_sample)
-    {
-        f_sample << model_light->getSampleMatrix();
-        f_sample.close();
-    }
+    //std::ofstream f_sample(getOutputPath() + "/sample.mat");
+    //if (f_sample)
+    //{
+    //    f_sample << model_light->getSampleMatrix();
+    //    f_sample.close();
+    //}
 
-	//ray_cast = new Ray;
+	  ray_cast = new Ray;
     //ray_cast->passModel(model_vertices, model_faces);
-    ray_cast.passModel(model_vertices, model_faces);
+    ray_cast->passModel(model_vertices, model_faces);
 
     computeLight();
 
@@ -36,8 +51,18 @@ Model::Model(const int id, const std::string path, const std::string name)
 
 Model::~Model()
 {
+  if (model_light)
+  {
     delete model_light;
-    //delete ray_cast;
+  }
+  if (ray_cast)
+  {
+    delete ray_cast;
+  }
+  if (model_bounds)
+  {
+    delete model_bounds;
+  }
 }
 
 bool Model::loadOBJ(const std::string name, const std::string base_path)
@@ -88,6 +113,11 @@ bool Model::loadOBJ(const std::string name, const std::string base_path)
     buildVertexAdj();
 
 	std::cout<<"Computing bounding box...\n";
+  if (model_bounds)
+  {
+    delete model_bounds;
+  }
+  model_bounds = new Bound;
     computeBounds();
 
 	std::cout<<"Computing face normals...\n";
@@ -193,7 +223,7 @@ void Model::computeLight()
                 {
                     //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
 					//if (renderer->checkVertexVisbs(i, this, samples[k].direction))
-                    if (ray_cast.intersectModel(ray_start, ray_end))
+                    if (ray_cast->intersectModel(ray_start, ray_end))
                     {
                         if (use_simple_light)
                         {
@@ -244,9 +274,9 @@ void Model::computeLight()
         model_brightness.push_back(brightness[1]);
         model_brightness.push_back(brightness[2]);
 
-        model_colors[3 * i + 0] *= (float)brightness[0];
-        model_colors[3 * i + 1] *= (float)brightness[1];
-        model_colors[3 * i + 2] *= (float)brightness[2];
+        model_colors[3 * i + 0] = 0.5 * (float)brightness[0];
+        model_colors[3 * i + 1] = 0.5 * (float)brightness[1];
+        model_colors[3 * i + 2] = 0.5 * (float)brightness[2];
 
         if (int(i*100.0f / (model_vertices.size() / 3)) > perc)
         {
@@ -322,7 +352,7 @@ void Model::computeBrightness()
                 {
                     //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
                     //if (renderer->checkVertexVisbs(i, this, samples[k].direction))
-                    if (ray_cast.intersectModel(ray_start, ray_end))
+                    if (ray_cast->intersectModel(ray_start, ray_end))
                     {
                         //brightness[0] += dot*(float)Light(samples[k].theta, samples[k].phi, 0);
                         //brightness[1] += dot*(float)Light(samples[k].theta, samples[k].phi, 1);
@@ -428,7 +458,7 @@ void Model::computeModelVisbs()
                 {
                     //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
                     //if (renderer->checkVertexVisbs(i, this, samples[k].direction))
-                    if (ray_cast.intersectModel(ray_start, ray_end))
+                    if (ray_cast->intersectModel(ray_start, ray_end))
                     {
                         cur_v_visb.push_back(true);
                     }
@@ -477,7 +507,7 @@ void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, std::v
             if (shadow_on)
             {
                 //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
-                if (ray_cast.intersectModel(ray_start, ray_end))
+                if (ray_cast->intersectModel(ray_start, ray_end))
                 {
                     visb.push_back(true);
                 }
@@ -512,7 +542,7 @@ void Model::computeVisbs(Eigen::Vector3f &point, Eigen::Vector3f &normal, Eigen:
             if (shadow_on)
             {
                 //if (!intersectModel(ray_start, samples[k].direction, model_vertices, model_faces))
-                if (ray_cast.intersectModel(ray_start, ray_end))
+                if (ray_cast->intersectModel(ray_start, ray_end))
                 {
                     visb(k) = 1.0;
                 }
@@ -923,12 +953,12 @@ void Model::buildFaceListCompact()
 
 void Model::computeBounds()
 {
-    model_bounds.minX = std::numeric_limits<float>::max();
-    model_bounds.maxX = std::numeric_limits<float>::min();
-    model_bounds.minY = std::numeric_limits<float>::max();
-    model_bounds.maxY = std::numeric_limits<float>::min();
-    model_bounds.minZ = std::numeric_limits<float>::max();
-    model_bounds.maxZ = std::numeric_limits<float>::min();
+    model_bounds->minX = std::numeric_limits<float>::max();
+    model_bounds->maxX = std::numeric_limits<float>::min();
+    model_bounds->minY = std::numeric_limits<float>::max();
+    model_bounds->maxY = std::numeric_limits<float>::min();
+    model_bounds->minZ = std::numeric_limits<float>::max();
+    model_bounds->maxZ = std::numeric_limits<float>::min();
 
     for (decltype(model_vertices.size()) i = 0; i < model_vertices.size() / 3; ++i)
     {
@@ -936,12 +966,12 @@ void Model::computeBounds()
         float y = model_vertices[3 * i + 1];
         float z = model_vertices[3 * i + 2];
 
-        if (x < model_bounds.minX) model_bounds.minX = x;
-        if (x > model_bounds.maxX) model_bounds.maxX = x;
-        if (y < model_bounds.minY) model_bounds.minY = y;
-        if (y > model_bounds.maxY) model_bounds.maxY = y;
-        if (z < model_bounds.minZ) model_bounds.minZ = z;
-        if (z > model_bounds.maxZ) model_bounds.maxZ = z;
+        if (x < model_bounds->minX) model_bounds->minX = x;
+        if (x > model_bounds->maxX) model_bounds->maxX = x;
+        if (y < model_bounds->minY) model_bounds->minY = y;
+        if (y > model_bounds->maxY) model_bounds->maxY = y;
+        if (z < model_bounds->minZ) model_bounds->minZ = z;
+        if (z > model_bounds->maxZ) model_bounds->maxZ = z;
     }
 }
 
@@ -1072,8 +1102,13 @@ void Model::drawFaceNormal()
         normal_dir << model_face_normals[3 * i + 0],
                       model_face_normals[3 * i + 1],
                       model_face_normals[3 * i + 2];
-        Eigen::Vector3f end_pt(start_pt + 0.01*normal_dir);
+        Eigen::Vector3f end_pt(start_pt + 0.1*normal_dir);
         Eigen::Vector3f blue_color(0.0f, 0.0f, 1.0f);
         renderer->addDrawableLine(start_pt.data(), end_pt.data(), blue_color.data(), blue_color.data());
     }
+}
+
+void Model::updateBSPtree()
+{
+  ray_cast->passModel(model_vertices, model_faces);
 }
