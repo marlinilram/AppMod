@@ -128,7 +128,7 @@ public:
 	std::vector<std::vector<double2>> bridging_curves ;	// curves that bridge 2 curves in "curves" 
 	std::vector<int2> bridging_curves_endpoints ;		// index of endpoints of curves in "curves" that bridging_curves bridge
 	std::vector<std::vector<int>> curves_group;			// each group if curves is a set of curves that lie on the same image piece
-	std::vector<double2>  vector_field;					// normalized ambient vector field
+	std::vector<double2>  vector_field;					// normalized ambient vector field start from left bottom stored as (x,y) not (row,col)
 	std::vector<std::vector<int>> constrained_vertices_mark ;  // where in the field is constrained by the input curves
 	std::vector<int2> endpoints ;			// the endpoints selected to be bridged
 	std::vector<Circle> osculatingCircles ;			// osculating circles at ends of curves

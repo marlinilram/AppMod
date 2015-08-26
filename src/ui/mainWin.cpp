@@ -2,11 +2,8 @@
 #include "mainWin.h"
 #include "Coarse.h"
 #include "GroundTruth.h"
-#include "ImagePartAlg.h"
-#include "GeometryPartAlg.h"
 #include "ModelLight.h"
-#include "MPara.h"
-#include "tele2d.h"
+#include "I2SAlgorithms.h"
 
 MainWin::MainWin()
 {
@@ -54,6 +51,7 @@ MainWin::MainWin()
     lighting_ball = nullptr;
     img_part_alg = new ImagePartAlg;
     img_part_alg_thread = new QThread;
+    feature_guided = new FeatureGuided;
 
     connect(this, SIGNAL(callComputeInitLight(Coarse *, Viewer *)), img_part_alg, SLOT(computeInitLight(Coarse *, Viewer *)));
     connect(this, SIGNAL(callUpdateLight(Coarse *, Viewer *)), img_part_alg, SLOT(updateLight(Coarse *, Viewer *)));
@@ -72,6 +70,7 @@ MainWin::~MainWin()
 {
     delete img_part_alg;
     delete img_part_alg_thread;
+    delete feature_guided;
 }
 
 void MainWin::loadModel()
@@ -122,32 +121,32 @@ void MainWin::loadModel()
 
 void MainWin::loadLightingBall()
 {
-    QString filter;
-    filter = "obj file (*.obj)";
+    //QString filter;
+    //filter = "obj file (*.obj)";
 
-    QDir dir;
-    QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
-    if (fileName.isEmpty() == true) return;
+    //QDir dir;
+    //QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
+    //if (fileName.isEmpty() == true) return;
 
 
-    std::string model_file_path = fileName.toStdString();
-    std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
-    model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
-    int model_id = atoi(model_file_path.substr(model_file_path.find_last_of('/') + 1).c_str());
-    model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/') + 1);
+    //std::string model_file_path = fileName.toStdString();
+    //std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
+    //model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
+    //int model_id = atoi(model_file_path.substr(model_file_path.find_last_of('/') + 1).c_str());
+    //model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/') + 1);
 
-    if (lighting_ball != nullptr) 
-        delete lighting_ball;
-    lighting_ball = new Model(model_id, model_file_path, model_file_name);
+    //if (lighting_ball != nullptr) 
+    //    delete lighting_ball;
+    //lighting_ball = new Model(model_id, model_file_path, model_file_name);
 
-    //viewer->getModel(coarse_model);
-    lighting_ball->setRenderer(viewer_img);
+    ////viewer->getModel(coarse_model);
+    //lighting_ball->setRenderer(viewer_img);
 
-    lighting_ball->getModelLightObj()->getOutsideLight() = coarse_model->getLightRec();
-    lighting_ball->getModelLightObj()->getOutsideSampleMatrix() = coarse_model->getModelLightObj()->getSampleMatrix();
+    //lighting_ball->getModelLightObj()->getOutsideLight() = coarse_model->getLightRec();
+    //lighting_ball->getModelLightObj()->getOutsideSampleMatrix() = coarse_model->getModelLightObj()->getSampleMatrix();
 
-    lighting_ball->computeBrightness();
-    viewer_img->getModel(lighting_ball);
+    //lighting_ball->computeBrightness();
+    //viewer_img->getModel(lighting_ball);
 
 }
 
@@ -317,25 +316,39 @@ void MainWin::computeAll()
 
     // test tele-reg
 
-  tele2d *teleRegister = new tele2d( 50, 0.02,1 ) ;
+  //tele2d *teleRegister = new tele2d( 50, 0.02,1 ) ;
 
-  CURVES curves ;
-  std::vector<std::vector<int>> group ;
-  std::vector<int2> endps ;
+  //CURVES curves ;
+  //std::vector<std::vector<int>> group ;
+  //std::vector<int2> endps ;
 
 	
-  teleRegister->load_Curves( "curves.txt", curves, group, endps );
+  //teleRegister->load_Curves( "curves.txt", curves, group, endps );
 
 
-  teleRegister->init( curves, group, endps  ) ;
+  //teleRegister->init( curves, group, endps  ) ;
 
 
-  //// Uncomment the 3 lines below, you can directly run the registration and save the result.
-  //teleRegister->runRegister() ;
-  //teleRegister->outputResCurves( "rescurves.txt") ;
-  //return 0;
+  ////// Uncomment the 3 lines below, you can directly run the registration and save the result.
+  ////teleRegister->runRegister() ;
+  ////teleRegister->outputResCurves( "rescurves.txt") ;
+  ////return 0;
 
 
 
-  teleRegister->setInputField() ; // only for visualization
+  //teleRegister->setInputField() ; // only for visualization
+
+  QString filter;
+  filter = "image file (*.png)";
+
+  QDir dir;
+  QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
+  if (fileName.isEmpty() == true) return;
+
+
+  std::string fileSource = fileName.toStdString();
+  std::string fileTarget = fileSource.substr(0, fileSource.find_last_of('/') + 1) + "featureP.png";
+  feature_guided->initImages(fileSource, fileTarget);
+  feature_guided->initRegister();
+  feature_guided->initVisualization(viewer_img);
 }

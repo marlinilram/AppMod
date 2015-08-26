@@ -19,7 +19,7 @@
      <widget class="Viewer" name="viewer" native="true"/>
     </item>
     <item row="0" column="1">
-     <widget class="Viewer" name="viewer_img" native="true"/>
+     <widget class="BasicViewer" name="viewer_img" native="true"/>
     </item>
    </layout>
   </widget>
@@ -532,7 +532,13 @@
   <customwidget>
    <class>Viewer</class>
    <extends>QWidget</extends>
-   <header location="global">Viewer.h</header>
+   <header>Viewer.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BasicViewer</class>
+   <extends>QWidget</extends>
+   <header location="global">BasicViewer.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

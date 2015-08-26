@@ -36,8 +36,8 @@ SET( Project_INCLUDE_DIR src/
 						 src/DispModule/Viewer
 						 src/DispModule/Camera
 						 src/Alg
-						 src/Alg/InverseRendering
-						 src/Alg/NormalGuidedDeform
+						 src/Alg/SIRFS
+						 src/Alg/Deform
 						 src/Alg/Solver
 						 src/Alg/SIFTFlow
 						 src/Alg/TeleReg
@@ -47,12 +47,11 @@ SET( Project_INCLUDE_DIR src/
 
 SET( MainWin_UIS src/ui/mainWin.ui )
 SET( MainWin_MOC_HDRS src/ui/mainWin.h 
-					  src/Alg/ImagePartAlg.h )
+					  src/Alg/SIRFS/ImagePartAlg.h )
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-dev")
 
 QT5_WRAP_UI( MainWin_UIS_H ${MainWin_UIS} )
 QT5_WRAP_CPP( MainWin_MOC_SRCS ${MainWin_MOC_HDRS} )
@@ -87,8 +86,8 @@ FILE( GLOB Render 		"src/DispModule/Samples/*.*"
 FILE( GLOB GLViewer 	"src/DispModule/Viewer/*.*" 
 						"src/DispModule/Camera/*.*" )
 FILE( GLOB SIRDeform 	"src/Alg/*.*"
-						"src/Alg/InverseRendering/*.*"
-						"src/Alg/NormalGuidedDeform/*.*" )
+						"src/Alg/SIRFS/*.*"
+						"src/Alg/Deform/*.*" )
 FILE( GLOB SIFTFlow 	"src/Alg/SIFTFlow/*.*" )
 FILE( GLOB Solver		"src/Alg/Solver/*.*" )
 FILE( GLOB TeleReg  	"src/Alg/TeleReg/*.*" )

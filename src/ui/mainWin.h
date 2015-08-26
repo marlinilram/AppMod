@@ -15,6 +15,7 @@ class Model;
 class Coarse;
 class Groundtruth;
 class ImagePartAlg;
+class FeatureGuided;
 
 class MainWin : public QMainWindow, public Ui::MainWindow
 {
@@ -61,6 +62,8 @@ public:
 
     ImagePartAlg *img_part_alg;
     QThread *img_part_alg_thread;
+
+    FeatureGuided* feature_guided;
 
     //QGridLayout *main_grid_layout;
 };

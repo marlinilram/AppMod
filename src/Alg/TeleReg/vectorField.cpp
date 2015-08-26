@@ -107,7 +107,7 @@ void tele2d::computeVectorField(){
 			
 			if(constrained_vertices_mark[i][j] == 0 ){
 				b[i+j*resolution].x = 0; 
-				b[i+j*resolution].y = 0; 
+				b[i+j*resolution].y = 0;
 				continue ;
 			}
 
@@ -130,6 +130,8 @@ void tele2d::computeVectorField(){
 				}
 			}
 
+
+
 			// compute the vector of the vertex indexed by (i,j)
 			int pid1 = pointid_record-1 > 0 ? pointid_record-1 : 0 ;
 			int pid2 = pointid_record+1 <  allcurves[curveid_record].size()-1 ? pointid_record+1 : allcurves[curveid_record].size()-1;
@@ -141,12 +143,21 @@ void tele2d::computeVectorField(){
 			vector_of_vertex.x /= norm ;
 			vector_of_vertex.y /= norm ;
 
+      if (!(norm > 0 && norm < 1))
+      {
+        b[i+j*resolution ].x = 0;
+        b[i+j*resolution ].y = 0;
+      }
+      else
+      {
+        b[i+j*resolution ] = vector_of_vertex ;
+      }
 
-			assert( norm > 0 && norm < 1) ;
+			//assert( norm > 0 && norm < 1) ;
 
 			//std::cout<<"norm "<<norm<<std::endl;
 			
-			b[i+j*resolution ] = vector_of_vertex ;
+
 
 
 		}
@@ -372,7 +383,7 @@ void tele2d::computeVectorField(){
 	//std::cout<<"time consumed by computing A and b: " << (double)(time2-time1)/CLOCKS_PER_SEC <<" s" <<std::endl ;
 	//std::cout<<"time consumed by solving the system: " << (double)(time3-time2)/CLOCKS_PER_SEC <<" s" <<std::endl ;
 
-	//std::cout<<"vector field computing completed."<<std::endl; ;
+	std::cout<<"vector field computing completed."<<std::endl; ;
 	int count = 0;
 	for( int i=0; i<L_add_P.data.size(); ++i)
 		count += L_add_P.data[i].size() ;
