@@ -41,8 +41,17 @@ void FeatureGuidedVis::init(FeatureGuided* init_data_ptr)
 
 bool FeatureGuidedVis::display()
 {
+  bool display_correct = true;
+  display_correct = display_correct && this->displayVectorField();
+  display_correct = display_correct && this->displayTargetCurves();
+  //display_correct = display_correct && this->displaySourceCurves();
+  return display_correct;
+}
+
+bool FeatureGuidedVis::displayVectorField()
+{
   tele2d* teleRegister = data_ptr->GetTeleRegister();
-  display_step = teleRegister->resolution / 40;
+  display_step = teleRegister->resolution / 20;
 
   // draw scalar field
   //if( teleRegister->osculatingCircles.size()){
@@ -80,7 +89,7 @@ bool FeatureGuidedVis::display()
 
         glColor3f( 1.0, 1, 1 ) ;
 
-        double len = 4.0  * resolution / 200;
+        double len = 4.0  * resolution / 100;
 
         if( j%2 == 0){
 
@@ -282,3 +291,59 @@ bool FeatureGuidedVis::display()
   return true;
 }
 
+bool FeatureGuidedVis::displayTargetCurves()
+{
+  tele2d* teleRegister = this->data_ptr->GetTeleRegister();
+  display_step = teleRegister->resolution / 40;
+
+  CURVES target_curves;
+  data_ptr->NormalizedTargetCurves(target_curves);
+  glPointSize(2) ;
+  glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
+  for (int i = 0; i < target_curves.size(); ++i)
+  {
+    glBegin(GL_LINE_STRIP);
+    for (int j = 0; j < target_curves[i].size(); ++j)
+    {
+      double2 pos = target_curves[i][j];
+      glVertex3f( pos.x,pos.y, 0 ) ;
+    }
+      glEnd();
+  }
+  return true;
+}
+
+bool FeatureGuidedVis::displaySourceCurves()
+{
+  tele2d* teleRegister = this->data_ptr->GetTeleRegister();
+  display_step = teleRegister->resolution / 40;
+
+  CURVES source_curves;
+  data_ptr->NormalizedSourceCurves(source_curves);
+  glPointSize(2) ;
+  glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;
+  for (int i = 0; i < source_curves.size(); ++i)
+  {
+    glBegin(GL_LINE_STRIP);
+    for (int j = 0; j < source_curves[i].size(); ++j)
+    {
+      double2 pos = source_curves[i][j];
+      glVertex3f( pos.x,pos.y, 0 ) ;
+    }
+    glEnd();
+  }
+  return true;
+}
+
+Bound* FeatureGuidedVis::getBoundBox()
+{
+  int resolution = this->data_ptr->GetTeleRegister()->resolution;
+
+  this->bound.minX = 0;
+  this->bound.maxX = resolution;
+  this->bound.minY = 0;
+  this->bound.maxY = resolution;
+  this->bound.minZ = 0.0;
+  this->bound.maxZ = 0.1;
+  return &this->bound;
+}

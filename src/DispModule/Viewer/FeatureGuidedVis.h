@@ -13,8 +13,13 @@ public:
   virtual ~FeatureGuidedVis();
 
   virtual bool display();
+  virtual Bound* getBoundBox();
 
   void init(FeatureGuided* init_data_ptr);
+
+  bool displayVectorField();
+  bool displayTargetCurves();
+  bool displaySourceCurves();
 
 protected:
   FeatureGuided* data_ptr;

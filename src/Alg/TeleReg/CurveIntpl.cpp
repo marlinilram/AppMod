@@ -36,7 +36,7 @@
 #include "tele2d.h"
 
 int first_time_interpolate = 1 ;
-double2 get_hermite_value( double2 p0, double2 p1, double2 tan0, double2 tan1, double t ){
+double2 tele2d::get_hermite_value( double2 p0, double2 p1, double2 tan0, double2 tan1, double t ){
 
 	tan0.normalize() ;
 	tan1.normalize() ;

@@ -51,7 +51,7 @@ void FeatureGuided::initImages(std::string sourceFile, std::string targetFile)
 void FeatureGuided::initRegister()
 {
   FeatureGuided::ExtractCurves(this->source_img, source_curves);
-  //FeatureGuided::ExtractCurves(this->target_img, target_curves);
+  FeatureGuided::ExtractCurves(this->target_img, target_curves);
   std::vector<std::vector<int>> group(1);
   std::vector<int2> endps;
   for (int i = 0; i < source_curves.size(); ++i)
@@ -66,6 +66,7 @@ void FeatureGuided::initRegister()
   tele_register = new tele2d(100, 0.02, 1);
   tele_register->init(source_curves, group, endps);
   tele_register->setInputField();
+  //this->OptimizeConnection();
 }
 
 void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
@@ -89,13 +90,11 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
       }
     }
   }
-#define DEBUG
 #ifdef DEBUG
   // draw curves
   cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC1);
   for (int i = 0; i < curves.size(); ++i)
   {
-
     for (int j = 0; j < curves[i].size(); ++j)
     {
       contour.at<uchar>(source.rows - 1 - curves[i][j].y, curves[i][j].x) = 255;
@@ -232,17 +231,11 @@ CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
   CURVES reorganized;
   for (int i = 0; i < curves.size(); ++i)
   {
-    double cur_length = 0;
-    for (int j = 1; j < curves[i].size(); ++j)
-    {
-      cur_length += 
-        sqrt(pow(curves[i][j].x - curves[i][j - 1].x, 2)
-          + pow(curves[i][j].y - curves[i][j - 1].y, 2));
-    }
+    double cur_length = FeatureGuided::CurveLength(curves[i]);
 
-    if (cur_length > 10)
+    if (cur_length > 50)
     {
-      if (curves[i].size() > 30)
+      if (curves[i].size() > 50)
       {
         int step = 1 + curves[i].size() / 50;
         int tail = 0;
@@ -288,4 +281,193 @@ CURVES FeatureGuided::SplitCurve(std::vector<double2> curve)
     curves.insert(curves.end(), r_curves.begin(), r_curves.end());
     return curves;
   }
+}
+
+std::vector<double2> FeatureGuided::ConnectCurves(std::vector<double2> curve0, std::vector<double2> curve1,
+  int endtag0, int endtag1)
+{
+  const int endpid1_id = (endtag0%2 == 0) ? 0 : curve0.size() -1;
+  const int endpid2_id = (endtag1%2 == 0) ? 0 : curve1.size() -1;
+
+  double2 p0 = curve0[endpid1_id] ;
+  double2 p1 = curve1[endpid2_id] ;
+  double2 tan0, tan1 ;
+
+  // slope of tangent
+  if( endpid1_id == 0 )
+    tan0 = curve0[0] - curve0[1] ;
+  else
+    tan0 = curve0.back() - curve0[curve0.size()-2] ;
+
+  if( endpid2_id == 0 )
+    tan1 = curve1[1] - curve1[0] ; 
+  else
+    tan1 = curve1[curve1.size()-2] - curve1.back() ;
+
+  tan0.normalize();
+  tan1.normalize();
+
+
+  std::vector<double2>  nullcurve;
+  for( double t=0.0; t<=1.0; t+=0.01 )
+  {
+    nullcurve.push_back( tele2d::get_hermite_value( p0, p1, tan0, tan1, t ) );
+  }
+
+  return nullcurve;
+}
+
+void FeatureGuided::NormalizedTargetCurves(CURVES& curves)
+{
+  curves = this->target_curves;
+  FeatureGuided::NormalizedCurves(curves);
+}
+
+void FeatureGuided::NormalizedSourceCurves(CURVES& curves)
+{
+  curves = this->source_curves;
+  FeatureGuided::NormalizedCurves(curves);
+}
+
+void FeatureGuided::EliminateRedundancy(CURVES& curves)
+{
+
+}
+
+void FeatureGuided::OptimizeConnection()
+{
+  // delete curves highly incompatible with the vector field
+
+  CURVES new_target_curves;
+  CURVES normalized_target_curves;
+  this->NormalizedTargetCurves(normalized_target_curves);
+
+  for (int i = 0; i < this->target_curves.size(); ++i)
+  {
+
+    if (this->MatchScoreToVectorField(normalized_target_curves[i]) >= 0.6)
+    {
+      new_target_curves.push_back(this->target_curves[i]);
+    }
+  }
+
+  CURVES best_connections;
+  normalized_target_curves = new_target_curves;
+  FeatureGuided::NormalizedCurves(normalized_target_curves);
+
+  for (int i = 0; i < normalized_target_curves.size(); ++i)
+  {
+    double cur_best_score = std::numeric_limits<double>::min();
+    std::vector<double2> cur_best_connection;
+    int2 cur_best_end;
+    int cur_best_curve_id;
+    for (int j = 0; j < normalized_target_curves.size(); ++j)
+    {
+      if (i != j) {
+      for (int endi = 0; endi < 2; ++endi)
+      {
+        for (int endj = 0; endj < 2; ++endj)
+        {
+          double cur_score = this->MatchScoreToVectorField(
+            FeatureGuided::ConnectCurves(
+              normalized_target_curves[i], normalized_target_curves[j], endi, endj));
+          double2 dis = 
+            normalized_target_curves[i][endi * (normalized_target_curves[i].size() - 1)]
+            - normalized_target_curves[j][endi * (normalized_target_curves[j].size() - 1)];
+          //cur_score /= dis.norm();
+          if (cur_score > cur_best_score)
+          {
+            cur_best_score = cur_score;
+            cur_best_end.first = endi;
+            cur_best_end.second = endj;
+            cur_best_curve_id = j;
+          }
+        }
+      }}
+    }
+    best_connections.push_back(FeatureGuided::ConnectCurves(
+      new_target_curves[i], new_target_curves[cur_best_curve_id],
+      cur_best_end.first, cur_best_end.second));
+  }
+
+  for (int i = 0; i < best_connections.size(); ++i)
+  {
+    if (FeatureGuided::CurveLength(best_connections[i]) < 150)
+    {
+      new_target_curves.push_back(best_connections[i]);
+    }
+  }
+  this->target_curves = new_target_curves;
+
+#ifdef DEBUG
+  // draw curves
+  cv::Mat contour = cv::Mat::zeros(this->target_img.rows, this->target_img.cols, CV_8UC1);
+  for (int i = 0; i < new_target_curves.size(); ++i)
+  {
+    for (int j = 0; j < new_target_curves[i].size(); ++j)
+    {
+      contour.at<uchar>(this->target_img.rows - 1 - new_target_curves[i][j].y, new_target_curves[i][j].x) = 255;
+    }
+    cv::imwrite("optimized_" + std::to_string(i) + ".png", contour);
+  }
+#endif
+}
+
+double FeatureGuided::MatchScoreToVectorField(std::vector<double2>& curve)
+{
+  // integrate
+  int resolution = this->tele_register->resolution;
+  std::vector<double2>& vector_field = this->tele_register->vector_field;
+  double angle = 0;
+  double curve_length = 0;
+  for (int i = 1; i < curve.size(); ++i)
+  {
+    double2 curve_angle = curve[i] - curve[i - 1];
+    curve_angle.normalize();
+    double2 vector_field_pos = (curve[i] + curve[i - 1]) / 2;
+    int x = (vector_field_pos.x * resolution + 0.5);
+    int y = (vector_field_pos.y * resolution + 0.5);
+    x = (x >= resolution ? resolution : x);
+    y = (y >= resolution ? resolution : y);
+    double2 vector_field_dir = vector_field[x + y * resolution];
+    vector_field_dir.normalize();
+    angle += abs(curve_angle.x * vector_field_dir.x + curve_angle.y * vector_field_dir.y);
+  }
+  angle /= (curve.size() - 1);
+  return angle;
+}
+
+void FeatureGuided::NormalizedCurves(CURVES& curves)
+{
+  double2 minCorner ( 1e10, 1e10);
+  double2 maxCorner (-1e10, -1e10);
+  for( int i=0; i<curves.size(); ++i )
+    for( int j=0; j<curves[i].size(); ++j ){
+      if( curves[i][j].x < minCorner.x  ) minCorner.x =  curves[i][j].x ;
+      if( curves[i][j].y < minCorner.y  ) minCorner.y =  curves[i][j].y ;
+      if( curves[i][j].x > maxCorner.x  ) maxCorner.x =  curves[i][j].x ;
+      if( curves[i][j].y > maxCorner.y  ) maxCorner.y =  curves[i][j].y ;
+    }
+
+    double2 cter = (minCorner+maxCorner) / 2 ;
+    double2 normalize_translate =  double2(0.5, 0.5 ) - cter ;
+    double normalize_scale = 0.6 / std::max( (maxCorner-minCorner).x, (maxCorner-minCorner).y  ) ;
+
+
+    for( int i=0; i<curves.size(); ++i )
+      for( int j=0; j<curves[i].size(); ++j ){
+        curves[i][j] = ( curves[i][j] + normalize_translate - double2(0.5, 0.5 ) ) * normalize_scale + double2(0.5, 0.5 );
+      }
+}
+
+double FeatureGuided::CurveLength(std::vector<double2>& curve)
+{
+  double cur_length = 0;
+  for (int j = 1; j < curve.size(); ++j)
+  {
+    cur_length += 
+      sqrt(pow(curve[j].x - curve[j - 1].x, 2)
+      + pow(curve[j].y - curve[j - 1].y, 2));
+  }
+  return cur_length;
 }

@@ -23,6 +23,10 @@ public:
   void initVisualization(BasicViewer* renderer);
 
   inline tele2d* GetTeleRegister() { return tele_register; };
+  void NormalizedTargetCurves(CURVES& curves);
+  void NormalizedSourceCurves(CURVES& curves);
+  void OptimizeConnection();
+  double MatchScoreToVectorField(std::vector<double2>& curve);
 
   static void ExtractCurves(const cv::Mat& source, CURVES& curves);
   static std::vector<double2> SearchCurve(
@@ -34,6 +38,12 @@ public:
     std::vector<double2>& curve);
   static CURVES ReorganizeCurves(CURVES& curves);
   static CURVES SplitCurve(std::vector<double2> curve);
+  static std::vector<double2> ConnectCurves(
+    std::vector<double2> curve0, std::vector<double2> curve1,
+    int endtag0, int endtag1);
+  static double CurveLength(std::vector<double2>& curve);
+  static void EliminateRedundancy(CURVES& curves);
+  static void NormalizedCurves(CURVES& curves);
 
 private:
   cv::Mat source_img;

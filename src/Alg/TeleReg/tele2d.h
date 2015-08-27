@@ -112,7 +112,7 @@ public:
 	bool updateVectorFieldWhenComputingEnegergy ;
 	double get_penalty(std::vector<double2> samples, int endp1, int endp2 ) ;
 
-
+  static double2 get_hermite_value( double2 p0, double2 p1, double2 tan0, double2 tan1, double t );
 	
 	double getScalarValue_4cc( std::vector<Circle> oscircle , std::vector<int2> endpoints,  double2 p , bool consider_all = false) ; 
 	double distance_to_arc(Circle cir, double2 p, int head_or_tail ) ;
