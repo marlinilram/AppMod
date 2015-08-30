@@ -21,6 +21,9 @@ FIND_PACKAGE( OpenGL REQUIRED )
 FIND_PACKAGE( GLEW REQUIRED )
 find_package( OpenCV REQUIRED )
 
+# BOOST FILES
+FIND_PATH( BOOST_DIR "boost" )
+
 FILE( GLOB Project_SRCS "src/*.*"
 						"src/*/*.*" 
 						"src/*/*/*.*")
@@ -57,11 +60,12 @@ QT5_WRAP_UI( MainWin_UIS_H ${MainWin_UIS} )
 QT5_WRAP_CPP( MainWin_MOC_SRCS ${MainWin_MOC_HDRS} )
 
 INCLUDE_DIRECTORIES( ${Project_INCLUDE_DIR} 
-					 ${CMAKE_CURRENT_BINARY_DIR} 
-					 ${Qt5Widgets_INCLUDE_DIRS} 
-					 ${Qt5Xml_INCLUDE_DIRS} 
-					 ${Qt5OpenGL_INCLUDE_DIRS} 
-					 ${OPENGL_INCLUDE_DIR} )
+                     ${CMAKE_CURRENT_BINARY_DIR} 
+                     ${Qt5Widgets_INCLUDE_DIRS} 
+                     ${Qt5Xml_INCLUDE_DIRS} 
+                     ${Qt5OpenGL_INCLUDE_DIRS} 
+                     ${OPENGL_INCLUDE_DIR}
+                     ${BOOST_DIR} )
 					 
 
 SET( QGLViewer_lib_debug 	${CMAKE_CURRENT_SOURCE_DIR}/lib/QGLViewerd2.lib )

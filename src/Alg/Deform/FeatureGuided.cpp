@@ -84,7 +84,7 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
       if (source.at<uchar>(i, j) > 200 && visited_table[i][j] == false)
       {
         curve.clear();
-        FeatureGuided::SearchCurve(source, i, j, i, j, visited_table, curve);
+        FeatureGuided::SearchCurve(source, i, j, visited_table, curve);
         CURVES cur_curves = FeatureGuided::ReorganizeCurves(FeatureGuided::SplitCurve(curve));
         curves.insert(curves.end(), cur_curves.begin(), cur_curves.end());
       }
@@ -150,7 +150,7 @@ void FeatureGuided::initVisualization(BasicViewer* renderer)
 }
 
 void FeatureGuided::SearchCurve(const cv::Mat& source,
-  int cur_row, int cur_col, int last_row, int last_col,
+  int cur_row, int cur_col,
   std::vector<std::vector<bool>>& visited_table,
   std::vector<double2>& curve)
 {
@@ -167,28 +167,28 @@ void FeatureGuided::SearchCurve(const cv::Mat& source,
 
   int new_row = cur_row;
   int new_col = cur_col + 1;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   new_row = cur_row + 1;
   new_col = cur_col;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   new_row = cur_row;
   new_col = cur_col - 1;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   new_row = cur_row - 1;
   new_col = cur_col;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   new_row = cur_row + 1;
   new_col = cur_col + 1;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   new_row = cur_row + 1;
   new_col = cur_col - 1;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   new_row = cur_row - 1;
   new_col = cur_col - 1;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   new_row = cur_row - 1;
   new_col = cur_col + 1;
-  FeatureGuided::SearchCurve(source, new_row, new_col, cur_row, cur_col, visited_table, curve);
+  FeatureGuided::SearchCurve(source, new_row, new_col, visited_table, curve);
   //for (int i = 0; i < 3; ++i)
   //{
   //  for (int j = 0; j < 3; ++j)

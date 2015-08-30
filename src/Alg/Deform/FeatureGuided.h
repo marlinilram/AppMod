@@ -33,7 +33,7 @@ public:
     const cv::Mat& source, int r, int c, 
     std::vector<std::vector<bool>>& visited_table);
   static void SearchCurve(const cv::Mat& source,
-    int cur_row, int cur_col, int last_row, int last_col,
+    int cur_row, int cur_col,
     std::vector<std::vector<bool>>& visited_table,
     std::vector<double2>& curve);
   static CURVES ReorganizeCurves(CURVES& curves);
