@@ -14,12 +14,17 @@ public:
 
   virtual bool display();
   virtual Bound* getBoundBox();
+  virtual void setGLProperty();
 
   void init(FeatureGuided* init_data_ptr);
 
   bool displayVectorField();
   bool displayTargetCurves();
   bool displaySourceCurves();
+  bool displayScalarField();
+  bool displayFittedCurves();
+
+  void setScalarField();
 
 protected:
   FeatureGuided* data_ptr;
@@ -27,6 +32,10 @@ protected:
   float alpha;
   float alpha_bridging;
   int display_step;
+
+  float u_max;
+  float v_max;
+  float ratio;
 
 private:
   FeatureGuidedVis(const FeatureGuidedVis&);

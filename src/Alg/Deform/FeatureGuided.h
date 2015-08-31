@@ -4,10 +4,14 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include "tele2d.h"
+#include "tele_basicType.h"
+#include "kdtree.h" // to make life easier...
 
 class BasicViewer;
 class FeatureGuidedVis;
+class tele2d;
+typedef std::vector<std::vector<double2> > CURVES;
+typedef             std::vector<double2>  CURVE;
 
 class FeatureGuided
 {
@@ -16,17 +20,22 @@ public:
   FeatureGuided();
   virtual ~FeatureGuided();
 
+  void initAllPtr();
   void initImages(const cv::Mat& source, const cv::Mat& target);
   void initImages(std::string sourceFile, std::string targetFile);
   void initRegister();
   void initDispObj();
   void initVisualization(BasicViewer* renderer);
+  kdtree::KDTree* getSourceKDTree();
 
   inline tele2d* GetTeleRegister() { return tele_register; };
   void NormalizedTargetCurves(CURVES& curves);
   void NormalizedSourceCurves(CURVES& curves);
   void OptimizeConnection();
   double MatchScoreToVectorField(std::vector<double2>& curve);
+  void BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDTree_data);
+  void GetSourceNormalizePara(double2& translate, double& scale);
+  void GetFittedCurves(CURVES& curves);
 
   static void ExtractCurves(const cv::Mat& source, CURVES& curves);
   static std::vector<double2> SearchCurve(
@@ -44,6 +53,9 @@ public:
   static double CurveLength(std::vector<double2>& curve);
   static void EliminateRedundancy(CURVES& curves);
   static void NormalizedCurves(CURVES& curves);
+  static void NormalizedCurves(CURVES& curves, double2 translate, double scale);
+  static void NormalizedCurve(std::vector<double2>& curve, double2 translate, double scale);
+  static void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
 private:
   cv::Mat source_img;
@@ -51,6 +63,11 @@ private:
 
   CURVES source_curves;
   CURVES target_curves;
+
+  kdtree::KDTree* source_KDTree;
+  kdtree::KDTreeArray source_KDTree_data;
+  kdtree::KDTree* target_KDTree;
+  kdtree::KDTreeArray target_KDTree_data;
 
   tele2d* tele_register;
 

@@ -96,6 +96,8 @@ void MainWin::loadModel()
     viewer->getModel(coarse_model);
     viewer->resetCamera(coarse_model);
     coarse_model->setRenderer(viewer);
+    viewer->setBackGroundImage(QString::fromStdString(
+      model_file_path + std::to_string(model_id) + "/photo.png"));
 
     // make an output dir
     char time_postfix[50];

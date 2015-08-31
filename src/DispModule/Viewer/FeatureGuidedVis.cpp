@@ -1,5 +1,9 @@
 #include "FeatureGuidedVis.h"
 #include "FeatureGuided.h"
+#include "tele2d.h"
+#include "Colormap.h"
+
+#include "opencv2/contrib/contrib.hpp"
 
 #define __E  2.718
 #define __H  0.6
@@ -27,6 +31,10 @@ FeatureGuidedVis::FeatureGuidedVis()
   alpha = 1.0;
   alpha_bridging = 0.3;
   display_step = 5;
+
+  u_max = 1.0;
+  v_max = 1.0;
+  ratio = 1.0;
 }
 
 FeatureGuidedVis::~FeatureGuidedVis()
@@ -42,16 +50,18 @@ void FeatureGuidedVis::init(FeatureGuided* init_data_ptr)
 bool FeatureGuidedVis::display()
 {
   bool display_correct = true;
-  display_correct = display_correct && this->displayVectorField();
+  //display_correct = display_correct && this->displayVectorField();
   display_correct = display_correct && this->displayTargetCurves();
-  //display_correct = display_correct && this->displaySourceCurves();
+  display_correct = display_correct && this->displaySourceCurves();
+  display_correct = display_correct && this->displayFittedCurves();
+  //display_correct = display_correct && this->displayScalarField();
   return display_correct;
 }
 
 bool FeatureGuidedVis::displayVectorField()
 {
   tele2d* teleRegister = data_ptr->GetTeleRegister();
-  display_step = teleRegister->resolution / 20;
+  display_step = teleRegister->resolution / 40;
 
   // draw scalar field
   //if( teleRegister->osculatingCircles.size()){
@@ -89,7 +99,7 @@ bool FeatureGuidedVis::displayVectorField()
 
         glColor3f( 1.0, 1, 1 ) ;
 
-        double len = 4.0  * resolution / 100;
+        double len = 4.0  * resolution / 200;
 
         if( j%2 == 0){
 
@@ -299,6 +309,7 @@ bool FeatureGuidedVis::displayTargetCurves()
   CURVES target_curves;
   data_ptr->NormalizedTargetCurves(target_curves);
   glPointSize(2) ;
+  glLineWidth(1);
   glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
   for (int i = 0; i < target_curves.size(); ++i)
   {
@@ -319,8 +330,9 @@ bool FeatureGuidedVis::displaySourceCurves()
   display_step = teleRegister->resolution / 40;
 
   CURVES source_curves;
-  data_ptr->NormalizedSourceCurves(source_curves);
+  this->data_ptr->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
+  glLineWidth(1);
   glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;
   for (int i = 0; i < source_curves.size(); ++i)
   {
@@ -328,6 +340,27 @@ bool FeatureGuidedVis::displaySourceCurves()
     for (int j = 0; j < source_curves[i].size(); ++j)
     {
       double2 pos = source_curves[i][j];
+      glVertex3f( pos.x,pos.y, 0 ) ;
+    }
+    glEnd();
+  }
+  return true;
+}
+
+bool FeatureGuidedVis::displayFittedCurves()
+{
+  CURVES fitted_curves;
+  this->data_ptr->GetFittedCurves(fitted_curves);
+  glPointSize(2) ;
+  glLineWidth(5);
+  //glClear(GL_DEPTH_BUFFER_BIT);
+  glColor4f( 0.0f, 1.0f, 0.75f, alpha ) ;
+  for (int i = 0; i < fitted_curves.size(); ++i)
+  {
+    glBegin(GL_LINE_STRIP);
+    for (int j = 0; j < fitted_curves[i].size(); ++j)
+    {
+      double2 pos = fitted_curves[i][j];
       glVertex3f( pos.x,pos.y, 0 ) ;
     }
     glEnd();
@@ -346,4 +379,104 @@ Bound* FeatureGuidedVis::getBoundBox()
   this->bound.minZ = 0.0;
   this->bound.maxZ = 0.1;
   return &this->bound;
+}
+
+bool FeatureGuidedVis::displayScalarField()
+{
+
+  glEnable(GL_TEXTURE_2D);
+  glColor3f(1,1,1);
+
+  glNormal3f(0.0, 0.0, 1.0);
+  glBegin(GL_QUADS);
+  glTexCoord2f(0.0, 1.0 - v_max);   glVertex2i(0, 0);
+  glTexCoord2f(0.0, 1.0);           glVertex2i(0, 1);
+  glTexCoord2f(u_max, 1.0);         glVertex2i(1, 1);
+  glTexCoord2f(u_max, 1.0 - v_max); glVertex2i(1, 0);
+  glEnd();
+
+  glClear(GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_TEXTURE_2D);
+
+  return true;
+}
+
+void FeatureGuidedVis::setScalarField()
+{
+  GLubyte* bgmap = new GLubyte[800*800*3];
+  float* dmap = new float[800 * 800];
+
+  std::vector<float> query(2, 0.0);
+  kdtree::KDTreeResultVector result;
+  kdtree::KDTree* edge_KDTree = data_ptr->getSourceKDTree();
+  float max_dist = std::numeric_limits<float>::min();
+  double2 normalized_translate(0.0, 0.0);
+  double normalized_scale = 0.0;
+  this->data_ptr->GetSourceNormalizePara(normalized_translate, normalized_scale);
+
+  for (int i = 0; i < 800; ++i)
+  {
+    for (int j = 0; j < 800; ++j)
+    {
+      query[0] = ((j / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.x;
+      query[1] = ((i / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.y;
+      edge_KDTree->n_nearest(query, 1, result);
+      dmap[j + i * 800] = result[0].dis;
+      if (result[0].dis > max_dist)
+      {
+        max_dist = result[0].dis;
+      }
+    }
+  }
+
+  //cv::Mat dimg = cv::Mat(800, 800, CV_32FC1, dmap);
+  //cv::Mat mappedDimg;
+  //dimg = 100 * dimg;
+  //dimg.convertTo(mappedDimg, CV_8UC1);
+  ////cv::applyColorMap(dimg*100, mappedDimg, cv::COLORMAP_JET);
+  //cv::imshow("dimg", mappedDimg);
+  QVector<QColor> color_map = makeColorMap();
+
+  for (int i = 0; i < 800; ++i)
+  {
+    for (int j = 0; j < 800; ++j)
+    {
+      QColor color = 
+        qtJetColor(dmap[j + i * 800] / max_dist, 0, 0.01);
+      bgmap[(j + i * 800) * 3 + 0] = color.red();
+      bgmap[(j + i * 800) * 3 + 1] = color.green();
+      bgmap[(j + i * 800) * 3 + 2] = color.blue();
+    }
+  }
+
+
+
+  int newWidth = 1 << (int)(1 + log(800 - 1 + 1E-3) / log(2.0));
+  int newHeight = 1 << (int)(1 + log(800 - 1 + 1E-3) / log(2.0));
+
+  u_max = 1.0;//800 / (float)newWidth;
+  v_max = 1.0;//800 / (float)newHeight;
+  ratio = newWidth / (float)newHeight;
+
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+
+  glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+  glTexImage2D( GL_TEXTURE_2D, 0, 3, 800, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, bgmap);
+
+#define GL_DEBUG
+#ifdef GL_DEBUG
+  if (glGetError() != 0)
+  {
+    std::cout<<"GL Error when set texture image.\n";
+  }
+#endif
+
+  delete[] dmap;
+  delete[] bgmap;
+}
+
+void FeatureGuidedVis::setGLProperty()
+{
+  this->setScalarField();
 }

@@ -30,7 +30,12 @@ void BasicViewer::draw()
 
 void BasicViewer::addDispObj(DispObject* disp_obj)
 {
+  makeCurrent();
+
   dispObjects.push_back(disp_obj);
+  dispObjects.back()->setGLProperty();
+
+  doneCurrent();
 }
 
 void BasicViewer::init()

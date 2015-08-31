@@ -1,34 +1,50 @@
 #include "FeatureGuided.h"
 #include "FeatureGuidedVis.h"
+#include "tele2d.h"
 
 FeatureGuided::FeatureGuided()
 {
-  this->disp_obj = nullptr;
-  this->tele_register = nullptr;
+  this->initAllPtr();
 }
 
 FeatureGuided::~FeatureGuided()
 {
-  if (!this->disp_obj)
+  if (this->disp_obj)
   {
     delete this->disp_obj;
   }
-  if (!this->tele_register)
+  if (this->tele_register)
   {
     delete this->tele_register;
+  }
+  if (this->source_KDTree)
+  {
+    delete this->source_KDTree;
+  }
+  if (this->target_KDTree)
+  {
+    delete this->target_KDTree;
   }
 }
 
 FeatureGuided::FeatureGuided(std::string sourceFile, std::string targetFile)
 {
-  this->disp_obj = nullptr;
+  this->initAllPtr();
   this->initImages(sourceFile, targetFile);
   this->initRegister();
 }
 
+void FeatureGuided::initAllPtr()
+{
+  this->disp_obj = nullptr;
+  this->tele_register = nullptr;
+  this->source_KDTree = nullptr;
+  this->target_KDTree = nullptr;
+}
+
 void FeatureGuided::initDispObj()
 {
-  if (!this->disp_obj)
+  if (this->disp_obj)
   {
     delete this->disp_obj;
   }
@@ -50,8 +66,11 @@ void FeatureGuided::initImages(std::string sourceFile, std::string targetFile)
 
 void FeatureGuided::initRegister()
 {
+  // extract edges from souce image and target image
   FeatureGuided::ExtractCurves(this->source_img, source_curves);
   FeatureGuided::ExtractCurves(this->target_img, target_curves);
+
+  // init tele2d
   std::vector<std::vector<int>> group(1);
   std::vector<int2> endps;
   for (int i = 0; i < source_curves.size(); ++i)
@@ -59,21 +78,28 @@ void FeatureGuided::initRegister()
     group[0].push_back(i);
     endps.push_back(int2(1, 0));
   }
-  if (!this->tele_register)
+  if (this->tele_register)
   {
     delete this->tele_register;
   }
-  tele_register = new tele2d(100, 0.02, 1);
-  tele_register->init(source_curves, group, endps);
-  tele_register->setInputField();
+  this->tele_register = new tele2d(100, 0.02, 1);
+  this->tele_register->init(source_curves, group, endps);
+  this->tele_register->setInputField();
+
+  // init source distance map
+  this->BuildDispMap(source_img, source_KDTree_data);
+  if (this->source_KDTree)
+  {
+    delete this->source_KDTree;
+  }
+  this->source_KDTree = new kdtree::KDTree(source_KDTree_data);
+
+  // Optimize Connection
   //this->OptimizeConnection();
 }
 
 void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
 {
-  std::vector<std::vector<cv::Point>> contours;
-  //cv::findContours(source, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
-
   // find curves
   std::vector<std::vector<bool>> visited_table(source.rows, std::vector<bool>(source.cols, false));
   std::vector<double2> curve;
@@ -90,7 +116,10 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
       }
     }
   }
+
 #ifdef DEBUG
+  std::vector<std::vector<cv::Point>> contours;
+  //cv::findContours(source, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
   // draw curves
   cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC1);
   for (int i = 0; i < curves.size(); ++i)
@@ -317,18 +346,6 @@ std::vector<double2> FeatureGuided::ConnectCurves(std::vector<double2> curve0, s
   return nullcurve;
 }
 
-void FeatureGuided::NormalizedTargetCurves(CURVES& curves)
-{
-  curves = this->target_curves;
-  FeatureGuided::NormalizedCurves(curves);
-}
-
-void FeatureGuided::NormalizedSourceCurves(CURVES& curves)
-{
-  curves = this->source_curves;
-  FeatureGuided::NormalizedCurves(curves);
-}
-
 void FeatureGuided::EliminateRedundancy(CURVES& curves)
 {
 
@@ -344,7 +361,6 @@ void FeatureGuided::OptimizeConnection()
 
   for (int i = 0; i < this->target_curves.size(); ++i)
   {
-
     if (this->MatchScoreToVectorField(normalized_target_curves[i]) >= 0.6)
     {
       new_target_curves.push_back(this->target_curves[i]);
@@ -437,7 +453,45 @@ double FeatureGuided::MatchScoreToVectorField(std::vector<double2>& curve)
   return angle;
 }
 
+void FeatureGuided::NormalizedTargetCurves(CURVES& curves)
+{
+  curves = this->target_curves;
+  FeatureGuided::NormalizedCurves(curves);
+}
+
+void FeatureGuided::NormalizedSourceCurves(CURVES& curves)
+{
+  curves = this->source_curves;
+  FeatureGuided::NormalizedCurves(curves);
+}
+
 void FeatureGuided::NormalizedCurves(CURVES& curves)
+{
+  double2 normalize_translate;
+  double normalize_scale;
+
+  FeatureGuided::NormalizePara(curves, normalize_translate, normalize_scale);
+
+  FeatureGuided::NormalizedCurves(curves, normalize_translate, normalize_scale);
+}
+
+void FeatureGuided::NormalizedCurves(CURVES& curves, double2 translate, double scale)
+{
+  for( int i=0; i<curves.size(); ++i )
+    for( int j=0; j<curves[i].size(); ++j ){
+      curves[i][j] = ( curves[i][j] + translate - double2(0.5, 0.5 ) ) * scale + double2(0.5, 0.5 );
+    }
+}
+
+void FeatureGuided::NormalizedCurve(std::vector<double2>& curve, double2 translate, double scale)
+{
+  for (int i = 0; i < curve.size(); ++i)
+  {
+    curve[i] = ( curve[i] + translate - double2(0.5, 0.5 ) ) * scale + double2(0.5, 0.5 );
+  }
+}
+
+void FeatureGuided::NormalizePara(CURVES& curves, double2& translate, double& scale)
 {
   double2 minCorner ( 1e10, 1e10);
   double2 maxCorner (-1e10, -1e10);
@@ -450,14 +504,13 @@ void FeatureGuided::NormalizedCurves(CURVES& curves)
     }
 
     double2 cter = (minCorner+maxCorner) / 2 ;
-    double2 normalize_translate =  double2(0.5, 0.5 ) - cter ;
-    double normalize_scale = 0.6 / std::max( (maxCorner-minCorner).x, (maxCorner-minCorner).y  ) ;
+    translate =  double2(0.5, 0.5 ) - cter ;
+    scale = 0.6 / std::max( (maxCorner-minCorner).x, (maxCorner-minCorner).y  ) ;
+}
 
-
-    for( int i=0; i<curves.size(); ++i )
-      for( int j=0; j<curves[i].size(); ++j ){
-        curves[i][j] = ( curves[i][j] + normalize_translate - double2(0.5, 0.5 ) ) * normalize_scale + double2(0.5, 0.5 );
-      }
+void FeatureGuided::GetSourceNormalizePara(double2& translate, double& scale)
+{
+  FeatureGuided::NormalizePara(this->source_curves, translate, scale);
 }
 
 double FeatureGuided::CurveLength(std::vector<double2>& curve)
@@ -470,4 +523,97 @@ double FeatureGuided::CurveLength(std::vector<double2>& curve)
       + pow(curve[j].y - curve[j - 1].y, 2));
   }
   return cur_length;
+}
+
+void FeatureGuided::BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDTree_data)
+{
+  // find curves
+  std::vector<std::vector<bool> > visited_table(source.rows, std::vector<bool>(source.cols, false));
+  CURVES edge_points;
+  std::vector<double2> edge;
+  size_t n_all_edge_points = 0;
+  for (int i = 0; i < source.rows; ++i)
+  {
+    for (int j = 0; j < source.cols; ++j)
+    {
+      if (source.at<uchar>(i, j) > 200 && visited_table[i][j] == false)
+      {
+        edge.clear();
+        FeatureGuided::SearchCurve(source, i, j, visited_table, edge);
+        edge_points.push_back(edge);
+        n_all_edge_points += edge.size();
+      }
+    }
+  }
+
+  //FeatureGuided::NormalizedCurves(edge_points);
+  KDTree_data.resize(boost::extents[n_all_edge_points][2]);
+  int cnt_edge_points = 0;
+  for (int i = 0; i < edge_points.size(); ++i)
+  {
+    for (int j = 0; j < edge_points[i].size(); ++j)
+    {
+      KDTree_data[cnt_edge_points][0] = float(edge_points[i][j].x);
+      KDTree_data[cnt_edge_points][1] = float(edge_points[i][j].y);
+      ++cnt_edge_points;
+    }
+  }
+}
+
+kdtree::KDTree* FeatureGuided::getSourceKDTree()
+{
+  return this->source_KDTree;
+}
+
+
+void FeatureGuided::GetFittedCurves(CURVES& curves)
+{ 
+  CURVES new_target_curves;
+  CURVES normalized_target_curves;
+  this->NormalizedTargetCurves(normalized_target_curves);
+
+  std::vector<float> query(2, 0.0);
+  kdtree::KDTreeResultVector result;
+  std::vector<double2> crsp_target;
+  std::vector<double2> crsp_source;
+
+  double2 target_translate;
+  double target_scale;
+  double2 source_translate;
+  double source_scale;
+  FeatureGuided::NormalizePara(this->target_curves, target_translate, target_scale);
+  FeatureGuided::NormalizePara(this->source_curves, source_translate, source_scale);
+
+  for (int i = 0; i < this->target_curves.size(); ++i)
+  {
+    if (this->MatchScoreToVectorField(normalized_target_curves[i]) >= 0.85)
+    {
+      curves.push_back(this->target_curves[i]);
+
+      for (int j = 0; j < this->target_curves[i].size(); ++j)
+      {
+        double2 target_pos_in_source =
+          (this->target_curves[i][j] + target_translate - double2(0.5, 0.5))
+          * target_scale / source_scale + double2(0.5, 0.5) - source_translate;
+        query[0] = target_pos_in_source.x;
+        query[1] = target_pos_in_source.y;
+        this->source_KDTree->n_nearest(query, 1, result);
+        crsp_target.push_back(this->target_curves[i][j]);
+        crsp_source.push_back(double2(
+          this->source_KDTree->the_data[result[0].idx][0],
+          this->source_KDTree->the_data[result[0].idx][1]));
+      }
+    }
+  }
+
+  FeatureGuided::NormalizedCurves(curves, target_translate, target_scale);
+  FeatureGuided::NormalizedCurve(crsp_target, target_translate, target_scale);
+  FeatureGuided::NormalizedCurve(crsp_source, source_translate, source_scale);
+  std::vector<double2> crsp_pair(2);
+  for (int i = 0; i < crsp_target.size(); ++i)
+  {
+    crsp_pair[0] = crsp_target[i];
+    crsp_pair[1] = crsp_source[i];
+    curves.push_back(crsp_pair);
+  }
 }

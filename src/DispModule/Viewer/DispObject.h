@@ -11,6 +11,7 @@ public:
   virtual ~DispObject();
 
   virtual bool display() = 0;
+  virtual void setGLProperty() = 0;
   virtual Bound* getBoundBox() = 0;
 
 
