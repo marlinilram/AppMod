@@ -1,6 +1,7 @@
 #include "FeatureGuided.h"
 #include "FeatureGuidedVis.h"
 #include "tele2d.h"
+#include "UtilityHeader.h"
 
 FeatureGuided::FeatureGuided()
 {
@@ -13,9 +14,13 @@ FeatureGuided::~FeatureGuided()
   {
     delete this->disp_obj;
   }
-  if (this->tele_register)
+  if (this->source_tele_register)
   {
-    delete this->tele_register;
+    delete this->source_tele_register;
+  }
+  if (this->target_tele_register)
+  {
+    delete this->target_tele_register;
   }
   if (this->source_KDTree)
   {
@@ -37,7 +42,8 @@ FeatureGuided::FeatureGuided(std::string sourceFile, std::string targetFile)
 void FeatureGuided::initAllPtr()
 {
   this->disp_obj = nullptr;
-  this->tele_register = nullptr;
+  this->source_tele_register = nullptr;
+  this->target_tele_register = nullptr;
   this->source_KDTree = nullptr;
   this->target_KDTree = nullptr;
 }
@@ -67,24 +73,40 @@ void FeatureGuided::initImages(std::string sourceFile, std::string targetFile)
 void FeatureGuided::initRegister()
 {
   // extract edges from souce image and target image
-  FeatureGuided::ExtractCurves(this->source_img, source_curves);
-  FeatureGuided::ExtractCurves(this->target_img, target_curves);
+  FeatureGuided::ExtractCurves(this->source_img, this->source_curves);
+  FeatureGuided::ExtractCurves(this->target_img, this->target_curves);
 
-  // init tele2d
+  // init source tele2d
   std::vector<std::vector<int>> group(1);
   std::vector<int2> endps;
-  for (int i = 0; i < source_curves.size(); ++i)
+  for (int i = 0; i < this->source_curves.size(); ++i)
   {
     group[0].push_back(i);
     endps.push_back(int2(1, 0));
   }
-  if (this->tele_register)
+  if (this->source_tele_register)
   {
-    delete this->tele_register;
+    delete this->source_tele_register;
   }
-  this->tele_register = new tele2d(100, 0.02, 1);
-  this->tele_register->init(source_curves, group, endps);
-  this->tele_register->setInputField();
+  this->source_tele_register = new tele2d(100, 0.02, 1);
+  this->source_tele_register->init(this->source_curves, group, endps);
+  this->source_tele_register->setInputField();
+
+  // init target tele2d
+  group[0].clear();
+  endps.clear();
+  for (int i = 0; i < this->target_curves.size(); ++i)
+  {
+    group[0].push_back(i);
+    endps.push_back(int2(1, 0));
+  }
+  if (this->target_tele_register)
+  {
+    delete this->target_tele_register;
+  }
+  this->target_tele_register = new tele2d(100, 0.02, 1);
+  this->target_tele_register->init(this->target_curves, group, endps);
+  this->target_tele_register->setInputField();
 
   // init source distance map
   this->BuildDispMap(source_img, source_KDTree_data);
@@ -96,6 +118,9 @@ void FeatureGuided::initRegister()
 
   // Optimize Connection
   //this->OptimizeConnection();
+
+  // Search correspondences
+
 }
 
 void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
@@ -170,7 +195,7 @@ std::vector<double2> FeatureGuided::SearchCurve(
 
 void FeatureGuided::initVisualization(BasicViewer* renderer)
 {
-  if (tele_register != NULL)
+  if (source_tele_register != NULL)
   {
     this->renderer = renderer;
     this->initDispObj();
@@ -432,8 +457,8 @@ void FeatureGuided::OptimizeConnection()
 double FeatureGuided::MatchScoreToVectorField(std::vector<double2>& curve)
 {
   // integrate
-  int resolution = this->tele_register->resolution;
-  std::vector<double2>& vector_field = this->tele_register->vector_field;
+  int resolution = this->source_tele_register->resolution;
+  std::vector<double2>& vector_field = this->source_tele_register->vector_field;
   double angle = 0;
   double curve_length = 0;
   for (int i = 1; i < curve.size(); ++i)
@@ -567,7 +592,8 @@ kdtree::KDTree* FeatureGuided::getSourceKDTree()
 
 
 void FeatureGuided::GetFittedCurves(CURVES& curves)
-{ 
+{
+  // find corresponding curves in source and target
   CURVES new_target_curves;
   CURVES normalized_target_curves;
   this->NormalizedTargetCurves(normalized_target_curves);
@@ -616,4 +642,161 @@ void FeatureGuided::GetFittedCurves(CURVES& curves)
     crsp_pair[1] = crsp_source[i];
     curves.push_back(crsp_pair);
   }
+}
+
+void FeatureGuided::CalculateHists(
+  HISTS& hists,
+  CURVES& curves, double radius, tele2d* tele)
+{
+  double2 translate;
+  double scale;
+  FeatureGuided::NormalizePara(curves, translate, scale);
+  int resolution = tele->resolution;
+  std::vector<double2>& vector_field = tele->vector_field;
+
+  // There are possible two ways to do hist match
+  // 1. pixel based: search possible pixel pair
+  // 2. curve points based: only search possible curve point pair
+
+  // Here is implementation for curve points based
+
+  for (int i = 0; i < curves.size(); ++i)
+  {
+    for (int j = 0; j < curves[i].size(); ++j)
+    {
+      // for each curve point, calculate its hist
+      double2 curve_pos = 
+        ((curves[i][j] + translate - double2(0.5, 0.5)) * scale
+        + double2(0.5, 0.5)) * resolution;
+      double search_rad = radius * resolution;
+      std::vector<int2> area;
+      area.push_back(
+        int2(curve_pos.x - search_rad, curve_pos.y - search_rad));
+      area.push_back(
+        int2(curve_pos.x + search_rad + 1, curve_pos.y + search_rad + 1));
+      std::vector<double> hist(8, 0.0);
+      // search around the center and build the histogram
+      this->SearchRadius(
+        hist,
+        curve_pos, search_rad, area,
+        vector_field, resolution);
+      // normalize the histogram
+      double sum_bins = 0.0;
+      for (int k = 0; k < hist.size(); ++k)
+      {
+        sum_bins += hist[k] * hist[k];
+      }
+      sum_bins = sqrt(sum_bins);
+      for (int k = 0; k < hist.size(); ++k)
+      {
+        hist[k] = hist[k] / sum_bins;
+      }
+      // cache the center coordinate into the last two elements of the hist
+      hist.push_back(curve_pos.x / resolution);
+      hist.push_back(curve_pos.y / resolution);
+      hists.push_back(hist);
+    }
+  }
+}
+
+
+void FeatureGuided::SearchRadius(
+  std::vector<double>& hist,
+  double2 center, double r, std::vector<int2>& area,
+  std::vector<double2>& vector_field, int resolution)
+{
+  // first compute the center's vector
+  int x = center.x + 0.5;
+  x = (x >= resolution) ? resolution : x;
+  int y = center.y + 0.5;
+  y = (y >= resolution) ? resolution : y;
+  double2 cter_vector = vector_field[x + y * resolution];
+  // record the vector in the circular area around the center with radius r
+  for (int xStep = area[0].x; xStep <= area[1].x; ++xStep)
+  {
+    for (int yStep = area[0].y; yStep <= area[1].y; ++yStep)
+    {
+      if (xStep >= 0 && xStep < resolution
+        && yStep >= 0 && yStep < resolution
+        && double2(center.x - xStep, center.y - yStep).norm() <= r)
+      {
+        // the histogram may store the relative variation but not the absolute angle
+        //hist[ProjectDirToBin2D(vector_field[xStep + yStep * resolution])] += 1.0;
+        hist[ProjectRelativeDirToBin2D(
+          vector_field[xStep + yStep * resolution],
+          cter_vector)] += 1.0;
+      }
+    }
+  }
+}
+
+void FeatureGuided::FindHistMatchCrsp(CURVES &curves)
+{
+  // calculate hists for each edge points
+  // 0.1 is the radius for neighborhood to build histogram
+  HISTS source_hists;
+  HISTS target_hists;
+  this->CalculateHists(source_hists, this->source_curves, 0.1, source_tele_register);
+  this->CalculateHists(target_hists, this->target_curves, 0.1, target_tele_register);
+
+  // find best matched points from source to target
+  // 0.05 is the radius for neighborhood to find correspondences
+  std::map<int, int> source_to_target;
+  std::map<int, int>::iterator map_iter;
+  for (int i = 0; i < source_hists.size(); ++i)
+  {
+    double cur_min_score = std::numeric_limits<double>::max();
+    std::pair<int, int> best_match;
+    for (int j = 0; j < target_hists.size(); ++j)
+    {
+      double cur_score = HistMatchScore(source_hists[i], target_hists[j], 0.05);
+      if (cur_score < cur_min_score)
+      {
+        cur_min_score = cur_score;
+        best_match.first = i;
+        best_match.second = j;
+      }
+    }
+    // do not store all the best match
+    // some of them are not resonable
+    if (cur_min_score < 0.5)
+    {
+      source_to_target[best_match.first] = best_match.second;
+    }
+  }
+  std::vector<std::pair<int, int> > target_to_source;
+  std::vector<double2> crsp_pair(2, double2(0.0, 0.0));
+  for (int i = 0; i < target_hists.size(); ++i)
+  {
+    double cur_min_score = std::numeric_limits<double>::max();
+    std::pair<int, int> best_match;
+    for (int j = 0; j < source_hists.size(); ++j)
+    {
+      double cur_score = HistMatchScore(target_hists[i], source_hists[j], 0.05);
+      if (cur_score < cur_min_score)
+      {
+        cur_min_score = cur_score;
+        best_match.first = i;
+        best_match.second = j;
+      }
+    }
+
+    // test if the best match from target to source
+    // is also the best match from source to target
+    map_iter = source_to_target.find(best_match.second);
+    if (map_iter != source_to_target.end())
+    {
+      if (map_iter->second == best_match.first)
+      {
+        crsp_pair[0] = double2(
+          source_hists[best_match.second][8],
+          source_hists[best_match.second][9]);
+        crsp_pair[1] = double2(
+          target_hists[best_match.first][8],
+          target_hists[best_match.first][9]);
+        curves.push_back(crsp_pair);
+      }
+    }
+  }
+  std::cout<<curves.size()<<"\n";
 }

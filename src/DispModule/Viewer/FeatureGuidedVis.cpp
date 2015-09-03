@@ -51,17 +51,19 @@ bool FeatureGuidedVis::display()
 {
   bool display_correct = true;
   //display_correct = display_correct && this->displayVectorField();
+  //display_correct = display_correct && this->displayTargetVectorField();
   display_correct = display_correct && this->displayTargetCurves();
   display_correct = display_correct && this->displaySourceCurves();
   display_correct = display_correct && this->displayFittedCurves();
+  display_correct = display_correct && this->displayHistMatchPts();
   //display_correct = display_correct && this->displayScalarField();
   return display_correct;
 }
 
 bool FeatureGuidedVis::displayVectorField()
 {
-  tele2d* teleRegister = data_ptr->GetTeleRegister();
-  display_step = teleRegister->resolution / 40;
+  tele2d* teleRegister = this->data_ptr->GetTeleRegister();
+  display_step = teleRegister->resolution / 20;
 
   // draw scalar field
   //if( teleRegister->osculatingCircles.size()){
@@ -88,7 +90,7 @@ bool FeatureGuidedVis::displayVectorField()
 
   // draw vector field
   glPointSize(1) ;
-  glLineWidth(2) ;		
+  glLineWidth(2) ;
   std::vector<double2>  vector_field = teleRegister->vector_field ;
   int resolution = teleRegister->resolution ;
   if(  vector_field.size() == resolution*resolution ){
@@ -99,7 +101,7 @@ bool FeatureGuidedVis::displayVectorField()
 
         glColor3f( 1.0, 1, 1 ) ;
 
-        double len = 4.0  * resolution / 200;
+        double len = 4.0  * resolution / 100;
 
         if( j%2 == 0){
 
@@ -301,6 +303,93 @@ bool FeatureGuidedVis::displayVectorField()
   return true;
 }
 
+bool FeatureGuidedVis::displayTargetVectorField()
+{
+  tele2d* teleRegister = this->data_ptr->GetTargetTeleRegister();
+  display_step = teleRegister->resolution / 20;
+
+  // draw vector field
+  glPointSize(1) ;
+  glLineWidth(2) ;
+  std::vector<double2>  vector_field = teleRegister->vector_field ;
+  int resolution = teleRegister->resolution ;
+  if(  vector_field.size() == resolution*resolution ){
+
+
+    for( int i=0; i<resolution;  i += display_step ){
+      for( int j=0; j<resolution; j += display_step ){
+
+        glColor3f( 0.5, 0.5, 0.5 ) ;
+
+        double len = 4.0  * resolution / 100;
+
+        if( j%2 == 0){
+
+          float x = ((double)i+0.5)/(double)resolution ;
+          float y = ((double)j+0.5)/(double)resolution ;
+
+
+          double2 direction = vector_field[i+j*resolution] ;
+
+
+
+          double2 p1 = double2( x-0.5*len*direction.x/resolution, y-0.5*len*direction.y/resolution) ;
+          double2 p2 = double2( x+0.5*len*direction.x/resolution, y+0.5*len*direction.y/resolution) ;
+
+          double2 dir = p2-p1 ;
+
+          double2 p3 = p1 + dir * 0.5 + double2(-dir.y*0.15, dir.x*0.15) ;
+          double2 p4 =  p1 + dir * 0.5 + double2(dir.y*0.15, -dir.x*0.15) ;
+
+          double2 base = p1 + dir * 0.7 ;
+          glBegin( GL_LINES );
+          glVertex3f( p1.x,p1.y, 0 ) ;
+          glVertex3f(base.x, base.y, 0 ) ;
+          glEnd() ;
+
+          glBegin(GL_TRIANGLES);
+          glVertex3f( p2.x,p2.y, 0 ) ;
+          glVertex3f( p3.x,p3.y, 0 ) ;
+          glVertex3f( p4.x,p4.y, 0 ) ;
+          glEnd();
+
+        }else{
+
+          if( i == resolution-1 )
+            continue ;
+
+          float x = ((double)i+1.0)/(double)resolution ;
+          float y = ((double)j+0.5)/(double)resolution ;
+          double2 direction = vector_field[i+j*resolution] ;
+          double2 p1 = double2( x-0.5*len*direction.x/resolution, y-0.5*len*direction.y/resolution) ;
+          double2 p2 = double2( x+0.5*len*direction.x/resolution, y+0.5*len*direction.y/resolution) ;
+
+          double2 dir = p2-p1 ;
+
+          double2 p3 = p1 + dir * 0.5 + double2(-dir.y*0.15, dir.x*0.15) ;
+          double2 p4 =  p1 + dir * 0.5 + double2(dir.y*0.15, -dir.x*0.15) ;
+
+          double2 base = p1 + dir * 0.7 ;
+          glBegin( GL_LINES );
+          glVertex3f( p1.x,p1.y, 0 ) ;
+          glVertex3f(base.x, base.y, 0 ) ;
+          glEnd() ;
+
+          glBegin(GL_TRIANGLES);
+          glVertex3f( p2.x,p2.y, 0 ) ;
+          glVertex3f( p3.x,p3.y, 0 ) ;
+          glVertex3f( p4.x,p4.y, 0 ) ;
+          glEnd();
+
+        }
+
+
+      }
+    }
+  }
+  return true;
+}
+
 bool FeatureGuidedVis::displayTargetCurves()
 {
   tele2d* teleRegister = this->data_ptr->GetTeleRegister();
@@ -361,6 +450,27 @@ bool FeatureGuidedVis::displayFittedCurves()
     for (int j = 0; j < fitted_curves[i].size(); ++j)
     {
       double2 pos = fitted_curves[i][j];
+      glVertex3f( pos.x,pos.y, 0 ) ;
+    }
+    glEnd();
+  }
+  return true;
+}
+
+bool FeatureGuidedVis::displayHistMatchPts()
+{
+  CURVES hist_curves;
+  this->data_ptr->FindHistMatchCrsp(hist_curves);
+  glPointSize(2) ;
+  glLineWidth(5);
+  //glClear(GL_DEPTH_BUFFER_BIT);
+  glColor4f( 0.75f, 1.0f, 0.0f, alpha ) ;
+  for (int i = 0; i < hist_curves.size(); ++i)
+  {
+    glBegin(GL_LINE_STRIP);
+    for (int j = 0; j < hist_curves[i].size(); ++j)
+    {
+      double2 pos = hist_curves[i][j];
       glVertex3f( pos.x,pos.y, 0 ) ;
     }
     glEnd();

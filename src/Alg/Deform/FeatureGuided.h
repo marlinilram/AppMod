@@ -11,7 +11,11 @@ class BasicViewer;
 class FeatureGuidedVis;
 class tele2d;
 typedef std::vector<std::vector<double2> > CURVES;
-typedef             std::vector<double2>  CURVE;
+typedef             std::vector<double2>   CURVE;
+// suppose the HIST contains 8 + 1 + 2 elements
+// 8 for directions, 1 for scalar and 2 for pos (x, y)
+typedef             std::vector<double>    HIST;
+typedef std::vector<std::vector<double> >  HISTS;
 
 class FeatureGuided
 {
@@ -28,7 +32,8 @@ public:
   void initVisualization(BasicViewer* renderer);
   kdtree::KDTree* getSourceKDTree();
 
-  inline tele2d* GetTeleRegister() { return tele_register; };
+  inline tele2d* GetTeleRegister() { return source_tele_register; };
+  inline tele2d* GetTargetTeleRegister() { return target_tele_register; };
   void NormalizedTargetCurves(CURVES& curves);
   void NormalizedSourceCurves(CURVES& curves);
   void OptimizeConnection();
@@ -36,6 +41,14 @@ public:
   void BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDTree_data);
   void GetSourceNormalizePara(double2& translate, double& scale);
   void GetFittedCurves(CURVES& curves);
+  void CalculateHists(
+    HISTS& hists,
+    CURVES& curves, double radius, tele2d* tele);
+  void SearchRadius(
+    std::vector<double>& hist,
+    double2 center, double r, std::vector<int2>& area,
+    std::vector<double2>& vector_field, int resolution);
+  void FindHistMatchCrsp(CURVES &curves);
 
   static void ExtractCurves(const cv::Mat& source, CURVES& curves);
   static std::vector<double2> SearchCurve(
@@ -69,7 +82,8 @@ private:
   kdtree::KDTree* target_KDTree;
   kdtree::KDTreeArray target_KDTree_data;
 
-  tele2d* tele_register;
+  tele2d* source_tele_register;
+  tele2d* target_tele_register;
 
   BasicViewer* renderer;
   FeatureGuidedVis* disp_obj;

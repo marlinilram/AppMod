@@ -19,10 +19,12 @@ public:
   void init(FeatureGuided* init_data_ptr);
 
   bool displayVectorField();
+  bool displayTargetVectorField();
   bool displayTargetCurves();
   bool displaySourceCurves();
   bool displayScalarField();
   bool displayFittedCurves();
+  bool displayHistMatchPts();
 
   void setScalarField();
 

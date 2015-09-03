@@ -39,7 +39,7 @@ Model::Model(const int id, const std::string path, const std::string name)
     //ray_cast->passModel(model_vertices, model_faces);
     ray_cast->passModel(model_vertices, model_faces);
 
-    computeLight();
+    //computeLight();
 
     rho_specular = Eigen::MatrixXf::Ones(4, 3);
     rho_specular(3,0)=1;

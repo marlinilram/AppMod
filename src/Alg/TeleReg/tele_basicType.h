@@ -103,6 +103,9 @@ public:
 			exit(1) ;
 		}
 	}
+  operator double2() const {
+    return double2(x, y);
+  }
 };
 
 class int3{
