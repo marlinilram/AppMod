@@ -1157,6 +1157,17 @@ int Model::getClosestVertexId(float world_pos[3], int x, int y)
   return result[0].idx;
 }
 
+int Model::getClosestVertexId(float world_pos[3])
+{
+  std::vector<float> query(3, 0.0);
+  kdtree::KDTreeResultVector result;
+  query[0] = world_pos[0];
+  query[1] = world_pos[1];
+  query[2] = world_pos[2];
+  model_kdTree->n_nearest(query, 1, result);
+  return result[0].idx;
+}
+
 void Model::getProjRay(float proj_ray[3], int x, int y)
 {
   Eigen::Vector4f in;

@@ -18,6 +18,7 @@ ProjOptimize::~ProjOptimize()
 
 void ProjOptimize::updateShape(FeatureGuided* feature_guided, Model* model)
 {
+#ifdef USE_AUTO
   CURVES crsp_pairs;
   feature_guided->GetCrspPair(crsp_pairs);
 
@@ -146,6 +147,38 @@ void ProjOptimize::updateShape(FeatureGuided* feature_guided, Model* model)
     debug_output.close();
   }
 #endif
+#endif // USE_AUTO
+
+#define USE_MANUL
+#ifdef USE_MANUL
+
+  std::vector<CvPoint3D32f>& pts3d = model->getRenderer()->pts3d;
+  std::vector<CvPoint2D32f>& pts2d = model->getRenderer()->pts2d;
+
+  std::vector<float> new_constrained_ray;
+  std::vector<int> new_constrained_vertex_id;
+  float camera_ori[3];
+  model->getCameraOri(camera_ori);
+
+  for (decltype(pts2d.size()) i = 0; i < pts2d.size(); ++i)
+  {
+    float proj_ray[3];
+    model->getProjRay(proj_ray, int(pts2d[i].x + 0.5), int(pts2d[i].y + 0.5));
+    new_constrained_ray.push_back(proj_ray[0]);
+    new_constrained_ray.push_back(proj_ray[1]);
+    new_constrained_ray.push_back(proj_ray[2]);
+    proj_ray[0] = camera_ori[0] + 10 * proj_ray[0];
+    proj_ray[1] = camera_ori[1] + 10 * proj_ray[1];
+    proj_ray[2] = camera_ori[2] + 10 * proj_ray[2];
+    float c[3] = {1.0f, 0.0f, 0.0f};
+    model->getRenderer()->addDrawableLine(camera_ori, proj_ray, c, c);
+
+    float world_pos[3] = { pts3d[i].x, pts3d[i].y, pts3d[i].z };
+    new_constrained_vertex_id.push_back(model->getClosestVertexId(world_pos));
+    model->getRenderer()->addDrawablePoint(world_pos[0], world_pos[1], world_pos[2], 1, 0, 0);
+  }
+
+#endif // USE_MANUL
 
 
   std::cout << "\nBegin update geometry...\n";
@@ -199,7 +232,7 @@ void ProjOptimize::updateShape(FeatureGuided* feature_guided, Model* model)
   delete proj_constraint;
   delete fsm;
   delete solver;
-  delete source_KDTree;
+//  delete source_KDTree;
   std::cout << "Update geometry finished...\n";
 }
 
@@ -242,8 +275,9 @@ void ProjOptimize::updateScreenShape(Model* model, Eigen::VectorXf& P_Opt)
   model->updateBSPtree();
 
   //model->computeLight();
-
+  std::cout << "test1";
   model->getRenderer()->getModel(model);
-
+  std::cout << "test2";
   model->getRenderer()->UpdateGLOutside();
+  std::cout << "test3";
 }
