@@ -55,6 +55,11 @@ public:
     inline void setShowBackground(bool status) { show_background_img = status; };
     inline void getViewDirection(float view[3]) { view[0] = -camera()->viewDirection().x; view[1] = -camera()->viewDirection().y; view[2] = -camera()->viewDirection().z; };
 
+public:
+	std::vector<CvPoint3D32f> objpts;
+	std::vector<CvPoint3D32f> pts3d;
+	std::vector<CvPoint2D32f> pts2d;
+
 protected:
     virtual void draw();
     virtual void drawBackground();
@@ -63,7 +68,9 @@ protected:
     virtual void keyPressEvent(QKeyEvent *e);
     virtual void mousePressEvent(QMouseEvent* e);
     virtual QString helpString() const;
-
+	virtual void postSelection(const QPoint& point);
+	virtual void drawWithNames();
+	void drawModel();
     void setBuffer();
     void setFBO();
     void setRealisticRenderBuffer();
@@ -121,6 +128,7 @@ private:
     bool render_with_texture;
     bool render_normal_img;
     int render_mode;
+	qglviewer::Vec orig, dir, selectedPoint;
 };
 
 #endif

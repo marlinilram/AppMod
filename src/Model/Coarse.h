@@ -56,6 +56,10 @@ public:
     inline void setGtModelPtr(Groundtruth *gtModel){gt_model = gtModel;};
     inline Groundtruth *getGtModelPtr(){return gt_model;};
 
+	void getSelectedPoints();
+	std::vector<CvPoint2D32f>* imgpts;
+	
+
 protected:
     Mat3F model_to_img_trans;
     Normallist model_new_normals;
