@@ -39,7 +39,16 @@
     <addaction name="action_Load_Model"/>
     <addaction name="action_Load_LightingBall"/>
    </widget>
+   <widget class="QMenu" name="menuCompute_Pose">
+    <property name="title">
+     <string>Camera_Pose</string>
+    </property>
+    <addaction name="action_Clear_Selected_Points"/>
+    <addaction name="action_Compute_3"/>
+    <addaction name="action_Load_2D_3D_points"/>
+   </widget>
    <addaction name="menuOpen"/>
+   <addaction name="menuCompute_Pose"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -525,6 +534,41 @@
   <action name="action_Compute_All">
    <property name="text">
     <string>Compute All</string>
+   </property>
+  </action>
+  <action name="action_Clear_Selected_Points">
+   <property name="text">
+    <string>Clear Selected_Points</string>
+   </property>
+  </action>
+  <action name="action_Compute_2">
+   <property name="text">
+    <string>Compute</string>
+   </property>
+  </action>
+  <action name="action_Compute">
+   <property name="text">
+    <string>Compute</string>
+   </property>
+  </action>
+  <action name="actionCompute">
+   <property name="text">
+    <string>Compute</string>
+   </property>
+  </action>
+  <action name="action_Compute_3">
+   <property name="text">
+    <string>Compute</string>
+   </property>
+  </action>
+  <action name="action_Set_Camera_Pose">
+   <property name="text">
+    <string>Set Camera_Pose</string>
+   </property>
+  </action>
+  <action name="action_Load_2D_3D_points">
+   <property name="text">
+    <string>Load 2D_3D points</string>
    </property>
   </action>
  </widget>

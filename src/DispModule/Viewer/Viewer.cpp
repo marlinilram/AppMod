@@ -7,6 +7,7 @@
 #include <QMap>
 #include <QCursor>
 #include <QGLViewer/manipulatedFrame.h>
+#include <qmessagebox.h>
 #include <cv.h>
 #include <highgui.h>
 
@@ -69,14 +70,8 @@ Viewer::~Viewer()
     }
 }
 
-void Viewer::draw()
+void Viewer::drawModel()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (show_background_img)
-    {
-        drawBackground();
-    }
-
     if (show_model)
     {
         if (!render_with_texture)
@@ -172,14 +167,6 @@ void Viewer::draw()
         }
     }
 
-    // draw actors
-    if (show_other_drawable)
-    {
-        for (decltype(actors.size()) i = 0; i < actors.size(); ++i)
-        {
-            actors[i].draw();
-        }
-    }
 }
 
 void Viewer::drawBackground()
@@ -275,7 +262,6 @@ void Viewer::init()
     // standard key or mouse bindings (as is done above). Custom bindings descriptions are added using
     // setKeyDescription() and setMouseBindingDescription().
     //help();
-
 
 
     doneCurrent();
@@ -975,7 +961,8 @@ void Viewer::getSnapShot(Model *model, bool save_to_file)
 
     glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
 
-    draw();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    drawModel();
 
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
@@ -1338,4 +1325,138 @@ void Viewer::UpdateGLOutside()
 
     doneCurrent();
 
+}
+
+void Viewer::postSelection(const QPoint& point)
+{
+  // Compute orig and dir, used to draw a representation of the intersecting line
+  camera()->convertClickToLine(point, orig, dir);
+  //bool found;
+  //selectedPoint = camera()->pointUnderPixel(point, found);
+  //camera()->setZClippingCoefficient(0.1);
+  //qreal src[3],res[3];
+  // Find the selectedPoint coordinates, using camera()->pointUnderPixel().
+  /*src[0] = qreal(point.x());
+  src[1] = qreal(point.y());
+  src[2] = 1;*/
+  //camera()->getUnprojectedCoordinatesOf(src,res);
+  //std::cout << "zNear is :" << camera()->zNear() << std::endl;
+  //std::cout << "zFar is :" << camera()->zFar() << std::endl;
+  /*selectedPoint.x = res[0];
+  selectedPoint.y = res[1];
+  selectedPoint.z = res[2];*/
+  //selectedPoint -= 0.01f*dir; // Small offset to make point clearly visible.
+  // Note that "found" is different from (selectedObjectId()>=0) because of the size of the select region.
+
+  if (selectedName() == -1)
+    QMessageBox::information(this, "No selection",
+			     "No object selected under pixel " + QString::number(point.x()) + "," + QString::number(point.y()));
+  else{
+
+	int height = QPaintDevice::height();
+    int width = QPaintDevice::width();
+	cv::Mat z_img;
+    z_img.create(height, width, CV_32FC1);
+	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+    draw();
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+	glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // get camera info, matrix is column major
+    GLfloat modelview[16];
+    GLfloat projection[16];
+    GLint viewport[4];
+    camera()->getModelViewMatrix(modelview);
+    camera()->getProjectionMatrix(projection);
+    camera()->getViewport(viewport);
+
+	Eigen::Matrix4f m_modelview,m_projection,m_inv_modelview_projection;
+	Eigen::Vector4i m_viewport;
+
+	m_modelview = Eigen::Map<Eigen::Matrix4f>(modelview, 4, 4);
+
+    m_projection = Eigen::Map<Eigen::Matrix4f>(projection, 4, 4);
+
+    m_inv_modelview_projection = (m_projection*m_modelview).inverse();
+
+    m_viewport = Eigen::Map<Eigen::Vector4i>(viewport, 4, 1);
+
+	//cv::imshow("z_img",255*z_img);
+
+	float winz = z_img.at<float>(point.y(),point.x());
+	
+	Eigen::Vector4f in(((float)point.x() - (float)m_viewport(0)) / (float)m_viewport(2) * 2.0 - 1.0,
+                    ((float)point.y() - (float)m_viewport(1)) / (float)m_viewport(3) * 2.0 - 1.0,
+                    2.0*winz - 1.0,
+                    (float)1.0);
+
+    //Objects coordinates
+    Eigen::Vector4f out = m_inv_modelview_projection*in;
+    if (out(3) == 0.0)
+        std::cout << " Select Point Error!" << std::endl;
+    out(3) = (float)1.0 / out(3);
+    selectedPoint.x = out(0) * out(3);
+    selectedPoint.y = out(1) * out(3);
+    selectedPoint.z = out(2) * out(3);
+
+    QMessageBox::information(this, "Selection",
+			     "Object point is selected under pixel " +
+			     QString::number(point.x()) + "," + QString::number(point.y()) + "." +
+				 "The 3D point coordinate is " + QString::number(selectedPoint.x) + "," + QString::number(selectedPoint.y) + "," + QString::number(selectedPoint.z));
+	objpts.push_back(cvPoint3D32f(selectedPoint.x,selectedPoint.y,selectedPoint.z));
+  }
+}
+
+void Viewer::drawWithNames()
+{
+ 
+      glPushName(1);
+		
+	  drawModel();
+
+      glPopName();
+
+}
+
+void Viewer::draw()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	if (show_background_img)
+    {
+        drawBackground();
+    }
+
+	drawModel();
+
+	// draw actors
+    if (show_other_drawable)
+    {
+        for (decltype(actors.size()) i = 0; i < actors.size(); ++i)
+        {
+            actors[i].draw();
+        }
+    }
+
+	// Draw the intersection line
+	glLineWidth(3.0);
+	glBegin(GL_LINES);
+	glVertex3fv(orig);
+	glVertex3fv(orig + 100.0*dir);
+	glEnd();
+
+  // Draw (approximated) intersection point on selected object
+	if (selectedName() >= 0)
+    {
+		glPointSize(10.0);
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glBegin(GL_POINTS);
+		glVertex3fv(selectedPoint);
+		glEnd();
+    }
 }

@@ -43,6 +43,9 @@ private slots:
     void renderTexture();
     void computeAll();
     void loadLightingBall();
+	void clearSelectedPoints();
+	void computeCameraPose();
+	void loadPoints();
 
 signals:
     void callComputeInitLight(Coarse *, Viewer *);
@@ -66,6 +69,10 @@ public:
     FeatureGuided* feature_guided;
 
     //QGridLayout *main_grid_layout;
+
+	//bool pointsSelect;
+	//bool isCompute;
+
 };
 
 #endif

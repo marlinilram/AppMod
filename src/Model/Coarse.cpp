@@ -5,6 +5,49 @@
 #include "MPara.h"
 #include "SIFTFlowWrapper.h"
 
+std::vector<CvPoint2D32f> imagePoints;
+
+void mouseHandler(int event, int x, int y, int flags, void* param)
+{
+    IplImage* img0, * img1;
+    CvFont    font;
+    //uchar*    ptr;
+    char      label[20];
+ 
+    img0 = (IplImage*) param;
+    img1 = cvCloneImage(img0);
+ 
+    cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, .8, .8, 0, 1, 8);
+ 
+    if (event == CV_EVENT_LBUTTONDOWN)
+    {
+		sprintf(label,"[%d , %d]",x,y);
+ 
+        cvRectangle(
+            img1,
+            cvPoint(x + 20, y - 12),
+            cvPoint(x + 100, y + 4),
+            CV_RGB(255, 0, 0),
+            CV_FILLED,
+            8, 0
+        );
+
+		cvCircle(img1,cvPoint(x,y), 2, CV_RGB(255, 0, 0), 2, 1, 0);
+ 
+        cvPutText(
+            img1,
+            label,
+            cvPoint(x + 20, y),
+            &font,
+            CV_RGB(255, 255, 0)
+        );
+ 
+        cvShowImage("photo", img1);
+
+		imagePoints.push_back(cvPoint2D32f(x ,y));
+    }
+}
+
 Coarse::Coarse(const int id, const std::string path, const std::string name)
     :Model(id, path, name)
 {
@@ -31,6 +74,11 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
 
     //cv::imshow("photo", photo);
     //cv::imshow("mask", mask);
+
+	cvNamedWindow("photo",1);
+	IplImage* img = cvLoadImage((path + std::to_string(id) + "/photo.png").c_str(),1);
+	cvSetMouseCallback("photo", mouseHandler, (void*)img);
+	cvShowImage("photo",img);
 
     light_rec = Eigen::MatrixX3f::Constant(getModelLightObj()->getNumSamples(), 3, 0);
     std::vector<cv::Mat> rho_img_split;
@@ -713,4 +761,11 @@ void Coarse::computeSIFTFlow()
     //}
 
     std::cout<<"finished...\n";
+}
+
+void Coarse::getSelectedPoints()
+{
+	imgpts = &imagePoints;
+	/*imgpts.resize(imagePoints.size());
+	std::copy(imagePoints.begin(),imagePoints.end(),imgpts.begin());*/
 }
