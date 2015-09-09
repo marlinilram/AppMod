@@ -52,6 +52,7 @@ void FeatureGuided::initDispObj()
 {
   if (this->disp_obj)
   {
+    this->renderer->deleteDispObj(this->disp_obj);
     delete this->disp_obj;
   }
   this->disp_obj = new FeatureGuidedVis;
@@ -73,6 +74,8 @@ void FeatureGuided::initImages(std::string sourceFile, std::string targetFile)
 void FeatureGuided::initRegister()
 {
   // extract edges from souce image and target image
+  this->source_curves.clear();
+  this->target_curves.clear();
   FeatureGuided::ExtractCurves(this->source_img, this->source_curves);
   FeatureGuided::ExtractCurves(this->target_img, this->target_curves);
 
@@ -508,11 +511,19 @@ void FeatureGuided::NormalizedCurves(CURVES& curves, double2 translate, double s
     }
 }
 
-void FeatureGuided::NormalizedCurve(std::vector<double2>& curve, double2 translate, double scale)
+void FeatureGuided::NormalizedCurve(CURVE& curve, double2 translate, double scale)
 {
   for (int i = 0; i < curve.size(); ++i)
   {
     curve[i] = ( curve[i] + translate - double2(0.5, 0.5 ) ) * scale + double2(0.5, 0.5 );
+  }
+}
+
+void FeatureGuided::DenormalizedCurve(CURVE& curve, double2 translate, double scale)
+{
+  for (int i = 0; i < curve.size(); ++i)
+  {
+    curve[i] = (curve[i] - double2(0.5, 0.5)) / scale + double2(0.5, 0.5) - translate;
   }
 }
 
@@ -614,7 +625,7 @@ void FeatureGuided::GetFittedCurves(CURVES& curves)
   {
     if (this->MatchScoreToVectorField(normalized_target_curves[i]) >= 0.85)
     {
-      curves.push_back(this->target_curves[i]);
+      //curves.push_back(this->target_curves[i]);
 
       for (int j = 0; j < this->target_curves[i].size(); ++j)
       {
@@ -638,8 +649,8 @@ void FeatureGuided::GetFittedCurves(CURVES& curves)
   std::vector<double2> crsp_pair(2);
   for (int i = 0; i < crsp_target.size(); ++i)
   {
-    crsp_pair[0] = crsp_target[i];
-    crsp_pair[1] = crsp_source[i];
+    crsp_pair[0] = crsp_source[i];
+    crsp_pair[1] = crsp_target[i];
     curves.push_back(crsp_pair);
   }
 }
@@ -799,4 +810,35 @@ void FeatureGuided::FindHistMatchCrsp(CURVES &curves)
     }
   }
   std::cout<<curves.size()<<"\n";
+}
+
+void FeatureGuided::GetCrspPair(CURVES& curves)
+{
+  // return denormalized correspondence pair for shape optimization
+  double2 target_translate;
+  double target_scale;
+  double2 source_translate;
+  double source_scale;
+  FeatureGuided::NormalizePara(this->target_curves, target_translate, target_scale);
+  FeatureGuided::NormalizePara(this->source_curves, source_translate, source_scale);
+
+  CURVES temp_curves;
+  this->GetFittedCurves(temp_curves);
+  CURVE source_crsp;
+  CURVE target_crsp;
+  for (size_t i = 0; i < temp_curves.size(); ++i)
+  {
+    source_crsp.push_back(temp_curves[i][0]);
+    target_crsp.push_back(temp_curves[i][1]);
+  }
+  FeatureGuided::DenormalizedCurve(source_crsp, source_translate, source_scale);
+  FeatureGuided::DenormalizedCurve(target_crsp, target_translate, target_scale);
+  
+  std::vector<double2> crsp_pair(2);
+  for (size_t i = 0; i < source_crsp.size(); ++i)
+  {
+    crsp_pair[0] = source_crsp[i];
+    crsp_pair[1] = target_crsp[i];
+    curves.push_back(crsp_pair);
+  }
 }

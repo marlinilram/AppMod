@@ -4,6 +4,7 @@
 #include "GroundTruth.h"
 #include "ModelLight.h"
 #include "I2SAlgorithms.h"
+#include "ProjOptimize.h"
 
 MainWin::MainWin()
 {
@@ -353,4 +354,7 @@ void MainWin::computeAll()
   feature_guided->initImages(fileSource, fileTarget);
   feature_guided->initRegister();
   feature_guided->initVisualization(viewer_img);
+
+  ProjOptimize proj_opt;
+  proj_opt.updateShape(feature_guided, coarse_model);
 }

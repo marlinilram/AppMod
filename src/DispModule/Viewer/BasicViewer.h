@@ -14,6 +14,7 @@ public:
   ~BasicViewer();
 
   void addDispObj(DispObject* disp_obj);
+  void deleteDispObj(DispObject* disp_obj);
 
 protected:
   virtual void draw();

@@ -29,8 +29,8 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::cvtColor(mask_temp, mask, CV_BGR2GRAY);
     cv::threshold(mask, mask, 100, 255, cv::THRESH_BINARY);
 
-    cv::imshow("photo", photo);
-    cv::imshow("mask", mask);
+    //cv::imshow("photo", photo);
+    //cv::imshow("mask", mask);
 
     light_rec = Eigen::MatrixX3f::Constant(getModelLightObj()->getNumSamples(), 3, 0);
     std::vector<cv::Mat> rho_img_split;

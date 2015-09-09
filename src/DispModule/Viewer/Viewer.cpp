@@ -43,7 +43,7 @@ Viewer::Viewer(QWidget *widget) : QGLViewer(widget), wireframe_(false), flatShad
     render_with_texture = false;
     render_normal_img = false;
 
-    render_mode = 1;
+    render_mode = 2;
 }
 
 Viewer::Viewer()
@@ -72,7 +72,6 @@ Viewer::~Viewer()
 void Viewer::draw()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     if (show_background_img)
     {
         drawBackground();
@@ -108,10 +107,17 @@ void Viewer::draw()
             //glDrawElements(GL_TRIANGLES, 3 * num_faces, GL_UNSIGNED_INT, faces);
 
             //glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+            if (render_mode == 2)
+            {
+              glEnable(GL_BLEND);
+              glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
 
             faces_buffer->bind();
             glDrawElements(GL_TRIANGLES, num_faces * 3, GL_UNSIGNED_INT, (void*)0);
             faces_buffer->release();
+
+            glDisable(GL_BLEND);
 
             shaderProgram->disableAttributeArray("vertex");
             shaderProgram->disableAttributeArray("color");
@@ -260,7 +266,7 @@ void Viewer::init()
     setSceneCenter(qglviewer::Vec(0, 0, 0));
     setSceneRadius(50);
     camera()->fitSphere(qglviewer::Vec(0, 0, 0), 5);
-    //camera()->setType(qglviewer::Camera::Type::ORTHOGRAPHIC);
+    camera()->setType(qglviewer::Camera::Type::PERSPECTIVE);
 
     setKeyShortcut();
     setWheelandMouse();
@@ -961,6 +967,12 @@ void Viewer::getSnapShot(Model *model, bool save_to_file)
     z_img.create(height, width, CV_32FC1);
     cv::Mat &mask_rimg = model->getRMask();
 
+    int render_mode_cache = render_mode;
+    render_mode = 1;
+
+    bool show_background_img_cache = show_background_img;
+    show_background_img = false;
+
     glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
 
     draw();
@@ -972,6 +984,9 @@ void Viewer::getSnapShot(Model *model, bool save_to_file)
     glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    render_mode = render_mode_cache;
+    show_background_img = show_background_img_cache;
 
     // get camera info, matrix is column major
     GLfloat modelview[16];

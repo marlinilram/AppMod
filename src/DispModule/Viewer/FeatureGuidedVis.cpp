@@ -50,8 +50,8 @@ void FeatureGuidedVis::init(FeatureGuided* init_data_ptr)
 bool FeatureGuidedVis::display()
 {
   bool display_correct = true;
-  //display_correct = display_correct && this->displayVectorField();
-  //display_correct = display_correct && this->displayTargetVectorField();
+  display_correct = display_correct && this->displayVectorField();
+  display_correct = display_correct && this->displayTargetVectorField();
   display_correct = display_correct && this->displayTargetCurves();
   display_correct = display_correct && this->displaySourceCurves();
   display_correct = display_correct && this->displayFittedCurves();

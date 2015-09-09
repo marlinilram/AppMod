@@ -13,11 +13,12 @@ Model::Model()
   ray_cast = NULL;
   model_bounds = NULL;
   model_light = NULL;
+  model_kdTree = NULL;
 }
 
 Model::Model(const int id, const std::string path, const std::string name) 
     : ID(id), data_path(path), output_path(path), file_name(name), ray_cast(NULL),
-      model_bounds(NULL), model_light(NULL)
+      model_bounds(NULL), model_light(NULL), model_kdTree(NULL)
 {
     if (!loadOBJ(file_name, path + std::to_string(id)))
     {
@@ -37,7 +38,8 @@ Model::Model(const int id, const std::string path, const std::string name)
 
 	  ray_cast = new Ray;
     //ray_cast->passModel(model_vertices, model_faces);
-    ray_cast->passModel(model_vertices, model_faces);
+    //ray_cast->passModel(model_vertices, model_faces);
+    this->updateBSPtree();
 
     //computeLight();
 
@@ -62,6 +64,10 @@ Model::~Model()
   if (model_bounds)
   {
     delete model_bounds;
+  }
+  if (model_kdTree)
+  {
+    delete model_kdTree;
   }
 }
 
@@ -1111,4 +1117,71 @@ void Model::drawFaceNormal()
 void Model::updateBSPtree()
 {
   ray_cast->passModel(model_vertices, model_faces);
+
+  if (model_kdTree)
+  {
+    delete model_kdTree;
+  }
+
+  std::cout << "Init model kd tree.\n";
+  model_kdTree_data.resize(boost::extents[model_vertices.size() / 3][3]);
+  for (size_t i = 0; i < model_vertices.size() / 3; ++i)
+  {
+    model_kdTree_data[i][0] = model_vertices[3 * i + 0];
+    model_kdTree_data[i][1] = model_vertices[3 * i + 1];
+    model_kdTree_data[i][2] = model_vertices[3 * i + 2];
+  }
+  model_kdTree = new kdtree::KDTree(model_kdTree_data);
+  std::cout << "Updated model kd tree.\n";
+}
+
+int Model::getClosestVertexId(float world_pos[3], int x, int y)
+{
+  // given x, y in rendered image return the closest vertex id
+  
+  // compute world coordinate
+  Eigen::Vector3f xy_img((float)x, (float)y, 1.0);
+  Eigen::Vector3f xyz_model;
+  this->getWorldCoord(xy_img, xyz_model);
+
+  // find closest id
+  std::vector<float> query(3, 0.0);
+  kdtree::KDTreeResultVector result;
+  query[0] = xyz_model[0];
+  query[1] = xyz_model[1];
+  query[2] = xyz_model[2];
+  model_kdTree->n_nearest(query, 1, result);
+  world_pos[0] = model_kdTree->the_data[result[0].idx][0];
+  world_pos[1] = model_kdTree->the_data[result[0].idx][1];
+  world_pos[2] = model_kdTree->the_data[result[0].idx][2];
+  return result[0].idx;
+}
+
+void Model::getProjRay(float proj_ray[3], int x, int y)
+{
+  Eigen::Vector4f in;
+  in << (x - (float)m_viewport(0)) / (float)m_viewport(2) * 2.0 - 1.0,
+        (y - (float)m_viewport(1)) / (float)m_viewport(3) * 2.0 - 1.0,
+        1.0f,
+        1.0f;
+
+  // get the ray direction in camera coordinate
+  Eigen::Vector4f out = m_projection.inverse() * in;
+  Eigen::Vector4f cam_ori(0.0f, 0.0f, 0.0f, 1.0f);
+  cam_ori = m_modelview.inverse() * cam_ori;
+  out = m_modelview.inverse() * out;
+
+  proj_ray[0] = out[0] / out[3] - cam_ori[0] / cam_ori[3];
+  proj_ray[1] = out[1] / out[3] - cam_ori[1] / cam_ori[3];
+  proj_ray[2] = out[2] / out[3] - cam_ori[2] / cam_ori[3];
+}
+
+void Model::getCameraOri(float camera_ori[3])
+{
+  Eigen::Vector4f cam_ori(0.0f, 0.0f, 0.0f, 1.0f);
+  cam_ori = m_modelview.inverse() * cam_ori;
+
+  camera_ori[0] = cam_ori[0] / cam_ori[3];
+  camera_ori[1] = cam_ori[1] / cam_ori[3];
+  camera_ori[2] = cam_ori[2] / cam_ori[3];
 }

@@ -13,6 +13,8 @@
 #include <cv.h>
 #include <highgui.h>
 
+#include "kdtree.h" // to make life easier...
+
 class Viewer;
 class ModelLight;
 class Bound;
@@ -64,6 +66,9 @@ public:
     void passVerticesVisbleStatus(std::vector<bool> &visble);
     bool getWorldCoord(Eigen::Vector3f rimg_coord, Eigen::Vector3f &w_coord);
     void getPtNormalInFace(Eigen::Vector3f &pt, int face_id, Eigen::Vector3f &normal);
+    int getClosestVertexId(float world_pos[3], int x, int y);
+    void getProjRay(float proj_ray[3], int x, int y);
+    void getCameraOri(float camera_ori[3]);
     inline void setRenderer(Viewer *viewer){ renderer = viewer; };
     inline Viewer* getRenderer() { return renderer; };
 
@@ -148,6 +153,8 @@ protected:
     ModelLight *model_light;
     std::vector<std::vector<bool>> model_visbs;
 	  Ray* ray_cast;
+    kdtree::KDTree* model_kdTree;
+    kdtree::KDTreeArray model_kdTree_data;
     bool shadow_on;
 
     // information from renderer

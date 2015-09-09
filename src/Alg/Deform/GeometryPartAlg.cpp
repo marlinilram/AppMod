@@ -41,7 +41,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
     // init solver info
     solver->problem_size = (*vertex_list).size();
-    solver->P_Opt = Eigen::Map<VectorX>(&(*vertex_list)[0], (*vertex_list).size());
+    solver->P_Opt = Eigen::Map<VectorXf>(&(*vertex_list)[0], (*vertex_list).size());
 
     // init fast mass spring
     fsm->setSolver(solver);
@@ -81,10 +81,9 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
 
     //// build edge graph
     //std::cout << "Building edge graph...\n";
-
+    //
     //std::vector<Edge> edges;
     //edges.clear();
-
     //{
     //    for (decltype((*face_list).size()) i = 0; i < (*face_list).size() / 3; ++i)
     //    {
@@ -98,16 +97,13 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //    std::vector<Edge>::iterator iter = std::unique(edges.begin(), edges.end());
     //    edges.erase(iter, edges.end());
     //}
-
     //std::cout << "Edge number: " << edges.size() << "\n";
-
-
+    //
     //// add bend edge to edge graph
     //std::cout << "Building bending edge graph...\n";
-
+    //
     //std::vector<Edge> bending_edges;
     //bending_edges.clear();
-
     //for (auto &i : edges) 
     //{
     //    int cross_pi = -1;
@@ -118,79 +114,78 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //    }
     //    //else std::cout << "Error: can not find a cross edge...\n";
     //}
-
     //std::cout << "Bending edge number: " << bending_edges.size() << "\n";
-
+    //
     //// build L matrix
-
+    //
     //std::cout << "Building L matrix...\n";
-
+    //
     //float lambd_k_strech = (float)m_para->lambd_k_strech; //10.0f;
     //float lambd_k_bend = (float)m_para->lambd_k_bend; //15.0f;
     //float k = lambd_k_strech;
     //int P_Num = (*vertex_list).size() / 3;
-
+    //
     //std::cout << "Vertex number: " << P_Num << "\n";
-
+    //
     //std::vector<Eigen::Triplet<float>> L_triplets;
     //L_triplets.clear();
-
+    //
     //for (auto &i : edges) 
     //{
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 0, 3 * i.first + 0, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 1, 3 * i.first + 1, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 2, 3 * i.first + 2, k));
-
+    //
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 0, 3 * i.second + 0, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 1, 3 * i.second + 1, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 2, 3 * i.second + 2, -k));
-
+    //
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 0, 3 * i.first + 0, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 1, 3 * i.first + 1, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 2, 3 * i.first + 2, -k));
-
+    //
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 0, 3 * i.second + 0, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 1, 3 * i.second + 1, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 2, 3 * i.second + 2, k));
     //}
-
+    //
     //k = lambd_k_bend;
-
+    //
     //for (auto &i : bending_edges)
     //{
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 0, 3 * i.first + 0, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 1, 3 * i.first + 1, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 2, 3 * i.first + 2, k));
-
+    //
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 0, 3 * i.second + 0, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 1, 3 * i.second + 1, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.first + 2, 3 * i.second + 2, -k));
-
+    //
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 0, 3 * i.first + 0, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 1, 3 * i.first + 1, -k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 2, 3 * i.first + 2, -k));
-
+    //
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 0, 3 * i.second + 0, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 1, 3 * i.second + 1, k));
     //    L_triplets.push_back(Eigen::Triplet<float>(3 * i.second + 2, 3 * i.second + 2, k));
     //}
-
+    //
     //Eigen::SparseMatrix<float> L_matrix(3 * P_Num, 3 * P_Num);
     //L_matrix.setFromTriplets(L_triplets.begin(), L_triplets.end());
-
+    //
     //// build normal constrains and vertical move constrains
-
+    //
     //std::cout << "Building normal constrains and vertical movement constrains...\n";
-
+    //
     //float lambd_normal = (float)m_para->lambd_deform_normal; //25.0f;
     //float lambd_vertical_move = (float)m_para->lambd_vertical_move; //10.0f;
-
+    //
     //std::vector<Eigen::Triplet<float>> normal_triplets;
     //normal_triplets.clear();
     //std::vector<Eigen::Triplet<float>> vertical_move_triplets;
     //vertical_move_triplets.clear();
     //Eigen::VectorXf vertical_move = Eigen::VectorXf::Zero(3 * P_Num);
-
+    //
     //for (int i = 0; i < P_Num; ++i)
     //{
     //    std::vector<int> *point_share_faces = model->getVertexShareFaces(i);
@@ -201,14 +196,14 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //        float n[3] = { (*new_normals)[3 * (*point_share_faces)[j] + 0],
     //                       (*new_normals)[3 * (*point_share_faces)[j] + 1],
     //                       (*new_normals)[3 * (*point_share_faces)[j] + 2] };
-
+    //
     //        int points_in_face[3] = { (*face_list)[3 * (*point_share_faces)[j] + 0],
     //                                  (*face_list)[3 * (*point_share_faces)[j] + 1],
     //                                  (*face_list)[3 * (*point_share_faces)[j] + 2] };
-
+    //
     //        int connect[2];
     //        getConnectedPtID(i, points_in_face, connect);
-
+    //
     //        // 2 edges first dimension
     //        normal_triplets.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambd_normal*n[0] * n[0] * 2));
     //        normal_triplets.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 1, lambd_normal*n[0] * n[1] * 2));
@@ -240,16 +235,16 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //        normal_triplets.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * connect[1] + 1, -lambd_normal*n[2] * n[1]));
     //        normal_triplets.push_back(Eigen::Triplet<float>(3 * i + 2, 3 * connect[1] + 2, -lambd_normal*n[2] * n[2]));
     //    }
-
+    //
     //    // vertical move towards original normal direction
     //    float n[3] = { (*normal_list)[3 * i + 0],
     //                   (*normal_list)[3 * i + 1],
     //                   (*normal_list)[3 * i + 2] };
-
+    //
     //    float pt[3] = { (*vertex_list)[3 * i + 0],
     //                    (*vertex_list)[3 * i + 1],
     //                    (*vertex_list)[3 * i + 2] };
-
+    //
     //    vertical_move_triplets.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 0, lambd_vertical_move*(n[1] * n[1] + n[2] * n[2])));
     //    vertical_move_triplets.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 1, lambd_vertical_move*(-n[0] * n[1])));
     //    vertical_move_triplets.push_back(Eigen::Triplet<float>(3 * i + 0, 3 * i + 2, lambd_vertical_move*(-n[0] * n[2])));
@@ -267,18 +262,18 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //normal_matrix.setFromTriplets(normal_triplets.begin(), normal_triplets.end());
     //Eigen::SparseMatrix<float> vertical_move_matrix(3 * P_Num, 3 * P_Num);
     //vertical_move_matrix.setFromTriplets(vertical_move_triplets.begin(), vertical_move_triplets.end());
-
+    //
     //// build linear system
     //std::cout << "Building linear system...\n";
-
+    //
     //Eigen::SparseMatrix<float> linear_sys_matrix = L_matrix + normal_matrix + vertical_move_matrix;
     //Eigen::SimplicialCholesky<Eigen::SparseMatrix<float>> chol;
     //chol.analyzePattern(linear_sys_matrix);
     //chol.factorize(linear_sys_matrix);
-
+    //
     //// build J matrix
     //std::cout << "Building J matrix...\n";
-
+    //
     //std::vector<Eigen::Triplet<float>> J_triplets;
     //J_triplets.clear();
     //k = lambd_k_strech;
@@ -286,7 +281,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * edges[i].first + 0, 3 * i + 0, k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * edges[i].first + 1, 3 * i + 1, k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * edges[i].first + 2, 3 * i + 2, k));
-
+    //
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * edges[i].second + 0, 3 * i + 0, -k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * edges[i].second + 1, 3 * i + 1, -k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * edges[i].second + 2, 3 * i + 2, -k));
@@ -296,28 +291,28 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * bending_edges[i].first + 0, 3 * (i + edges.size()) + 0, k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * bending_edges[i].first + 1, 3 * (i + edges.size()) + 1, k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * bending_edges[i].first + 2, 3 * (i + edges.size()) + 2, k));
-
+    //
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * bending_edges[i].second + 0, 3 * (i + edges.size()) + 0, -k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * bending_edges[i].second + 1, 3 * (i + edges.size()) + 1, -k));
     //    J_triplets.push_back(Eigen::Triplet<float>(3 * bending_edges[i].second + 2, 3 * (i + edges.size()) + 2, -k));
     //}
     //Eigen::SparseMatrix<float> J_matrix(3 * P_Num, 3 * (edges.size() + bending_edges.size()));
     //J_matrix.setFromTriplets(J_triplets.begin(), J_triplets.end());
-
+    //
     //// build d
     ////edges.insert(edges.end(), bendingEdges.begin(), bendingEdges.end());
     //std::cout << "Building d vector...\n";
-
+    //
     //Eigen::VectorXf d = Eigen::VectorXf::Zero(3 * (edges.size() + bending_edges.size()));
     //for (decltype(edges.size()) i = 0; i != edges.size(); ++i) {
     //    float pt1[3] = { (*vertex_list)[3 * edges[i].first + 0],
     //                     (*vertex_list)[3 * edges[i].first + 1],
     //                     (*vertex_list)[3 * edges[i].first + 2] };
-
+    //
     //    float pt2[3] = { (*vertex_list)[3 * edges[i].second + 0],
     //                     (*vertex_list)[3 * edges[i].second + 1],
     //                     (*vertex_list)[3 * edges[i].second + 2] };
-
+    //
     //    d(3 * i + 0) = pt1[0] - pt2[0];
     //    d(3 * i + 1) = pt1[1] - pt2[1];
     //    d(3 * i + 2) = pt1[2] - pt2[2];
@@ -330,25 +325,25 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //    float pt2[3] = { (*vertex_list)[3 * bending_edges[i].second + 0],
     //                     (*vertex_list)[3 * bending_edges[i].second + 1],
     //                     (*vertex_list)[3 * bending_edges[i].second + 2] };
-
+    //
     //    d(3 * (i + edges.size()) + 0) = pt1[0] - pt2[0];
     //    d(3 * (i + edges.size()) + 1) = pt1[1] - pt2[1];
     //    d(3 * (i + edges.size()) + 2) = pt1[2] - pt2[2];
     //}
-
+    //
     //// alternative solve vertex and d iteratively
     //std::cout << "Iterative alternative optimization...\n";
-
+    //
     //int max_iter = model->getParaObjPtr()->deform_max_iter; //20;
     //int cur_iter = 0;
     //Eigen::VectorXf P_Opt;
-
+    //
     //do {
     //    // solve sparse matrix
     //    //chol.factorize(L_matrix);
     //    Eigen::VectorXf right_hand = J_matrix*d;
     //    P_Opt = chol.solve(right_hand + vertical_move);
-
+    //
     //    // update d
     //    for (decltype(edges.size()) i = 0; i != edges.size(); ++i) {
     //        double r = std::sqrt(d(3 * i + 0)*d(3 * i + 0) + d(3 * i + 1)*d(3 * i + 1) + d(3 * i + 2)*d(3 * i + 2));
@@ -361,7 +356,7 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //        d(3 * i + 1) = r*p12(1);
     //        d(3 * i + 2) = r*p12(2);
     //    }
-
+    //
     //    for (decltype(bending_edges.size()) i = 0; i != bending_edges.size(); ++i) {
     //        double r = std::sqrt(d(3 * (i + edges.size()) + 0)*d(3 * (i + edges.size()) + 0) + d(3 * (i + edges.size()) + 1)*d(3 * (i + edges.size()) + 1) + d(3 * (i + edges.size()) + 2)*d(3 * (i + edges.size()) + 2));
     //        //if (i == 0) cout << r << endl;
@@ -373,21 +368,21 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //        d(3 * (i + edges.size()) + 1) = r*p12(1);
     //        d(3 * (i + edges.size()) + 2) = r*p12(2);
     //    }
-
+    //
     //    ++cur_iter;
-
+    //
     //    std::cout << "The " << cur_iter << "th iteration finished" << std::endl;
-
+    //
     //    updateScreenShape(model, P_Opt);
-
+    //
     //} while (cur_iter < max_iter);
-
+    //
     //model->computeModelVisbs();
-
+    //
     //model->updateVertexRho();
-
+    //
     //model->updateVertexBrightnessAndColor();
-
+    //
     //std::ofstream f_P_Opt(model->getOutputPath() + "/P_Opt.mat");
     //if (f_P_Opt)
     //{
@@ -395,7 +390,11 @@ void GeometryPartAlg::updateGeometry(Coarse *model)
     //    f_P_Opt.close();
     //}
 
+    delete normal_guided;
+    delete fsm;
+    delete solver;
     std::cout << "Update geometry finished...\n";
+
 }
 
 

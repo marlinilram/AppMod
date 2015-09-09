@@ -49,6 +49,7 @@ public:
     double2 center, double r, std::vector<int2>& area,
     std::vector<double2>& vector_field, int resolution);
   void FindHistMatchCrsp(CURVES &curves);
+  void GetCrspPair(CURVES& curves);
 
   static void ExtractCurves(const cv::Mat& source, CURVES& curves);
   static std::vector<double2> SearchCurve(
@@ -67,7 +68,8 @@ public:
   static void EliminateRedundancy(CURVES& curves);
   static void NormalizedCurves(CURVES& curves);
   static void NormalizedCurves(CURVES& curves, double2 translate, double scale);
-  static void NormalizedCurve(std::vector<double2>& curve, double2 translate, double scale);
+  static void NormalizedCurve(CURVE& curve, double2 translate, double scale);
+  static void DenormalizedCurve(CURVE& curve, double2 translate, double scale);
   static void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
 private:
