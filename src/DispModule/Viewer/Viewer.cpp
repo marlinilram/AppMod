@@ -106,6 +106,8 @@ void Viewer::drawModel()
             {
               glEnable(GL_BLEND);
               glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+              //glEnable(GL_CULL_FACE);
+              //glCullFace(GL_FRONT);
             }
 
             faces_buffer->bind();
@@ -113,6 +115,7 @@ void Viewer::drawModel()
             faces_buffer->release();
 
             glDisable(GL_BLEND);
+            glDisable(GL_CULL_FACE);
 
             shaderProgram->disableAttributeArray("vertex");
             shaderProgram->disableAttributeArray("color");
@@ -1444,19 +1447,19 @@ void Viewer::draw()
     }
 
 	// Draw the intersection line
-	glLineWidth(3.0);
-	glBegin(GL_LINES);
-	glVertex3fv(orig);
-	glVertex3fv(orig + 100.0*dir);
-	glEnd();
+	//glLineWidth(3.0);
+	//glBegin(GL_LINES);
+	//glVertex3fv(orig);
+	//glVertex3fv(orig + 100.0*dir);
+	//glEnd();
 
-  // Draw (approximated) intersection point on selected object
-	if (selectedName() >= 0)
-    {
-		glPointSize(10.0);
-		glColor3f(1.0f, 0.0f, 0.0f);
-		glBegin(GL_POINTS);
-		glVertex3fv(selectedPoint);
-		glEnd();
-    }
+ // // Draw (approximated) intersection point on selected object
+	//if (selectedName() >= 0)
+ //   {
+	//	glPointSize(10.0);
+	//	glColor3f(1.0f, 0.0f, 0.0f);
+	//	glBegin(GL_POINTS);
+	//	glVertex3fv(selectedPoint);
+	//	glEnd();
+ //   }
 }

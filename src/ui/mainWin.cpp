@@ -118,6 +118,8 @@ void MainWin::loadModel()
 
     setOptParatoModel();
 
+    this->snapShot();
+
     //coarse_model->exportPtRenderInfo(233);
     //coarse_model->drawFaceNormal();
 
@@ -478,4 +480,7 @@ void MainWin::loadPoints()
 		viewer->pts2d.push_back(*it);
 	for(std::vector<CvPoint3D32f>::iterator it = viewer->objpts.begin();it != viewer->objpts.end();it ++)
 		viewer->pts3d.push_back(*it);
+
+  ProjOptimize proj_opt;
+  proj_opt.updateShape(feature_guided, coarse_model);
 }
