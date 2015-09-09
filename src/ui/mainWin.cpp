@@ -5,7 +5,7 @@
 #include "ModelLight.h"
 #include "I2SAlgorithms.h"
 #include "ProjOptimize.h"
-#include "camera_pose.h"
+//#include "camera_pose.h"
 
 MainWin::MainWin()
 {
@@ -367,95 +367,95 @@ void MainWin::computeAll()
   proj_opt.updateShape(feature_guided, coarse_model);
 }
 
-void MainWin::computeCameraPose()
-{
-	coarse_model->getSelectedPoints();
-	if(coarse_model->imgpts->size() != viewer->objpts.size())
-		cout << "The number of selected image points is not equal to the number of corresponding 3D points." << endl;
-	else if(coarse_model->imgpts->size() != 8 || viewer->objpts.size() != 8)
-		cout << "The number of selected points is not equal to 8." << endl;
-	else
-	{
-		CameraPose cp;
-		cp.getCameraPose(*(coarse_model->imgpts),viewer->objpts);
-
-		//GLdouble mvm[16];
-		//Eigen::Matrix4d camera_pose;
-		//camera_pose << cp.rotation.at<double>(0,0), cp.rotation.at<double>(0,1), cp.rotation.at<double>(0,2), cp.translation.at<double>(0,0),
-		//	           cp.rotation.at<double>(1,0), cp.rotation.at<double>(1,1), cp.rotation.at<double>(1,2), cp.translation.at<double>(1,0),
-		//			   cp.rotation.at<double>(2,0), cp.rotation.at<double>(2,1), cp.rotation.at<double>(2,2), cp.translation.at<double>(2,0),
-		//			   0, 0, 0, 1;
-		//Eigen::Matrix4d camera_pose_inv = camera_pose.inverse();
-
-		//mvm[0] = camera_pose_inv(0, 0);
-		//mvm[1] = camera_pose_inv(0, 1);
-		//mvm[2] = camera_pose_inv(0, 2);
-		//mvm[3] = camera_pose_inv(0, 3);
-		//mvm[4] = camera_pose_inv(1, 0);
-		//mvm[5] = camera_pose_inv(1, 1);
-		//mvm[6] = camera_pose_inv(1, 2);
-		//mvm[7] = camera_pose_inv(1, 3);
-		//mvm[8] = camera_pose_inv(2, 0);
-		//mvm[9] = camera_pose_inv(2, 1);
-		//mvm[10] = camera_pose_inv(2, 2);
-		//mvm[11] = camera_pose_inv(2, 3);
-		//mvm[12] = camera_pose_inv(3, 0);
-		//mvm[13] = camera_pose_inv(3, 1);
-		//mvm[14] = camera_pose_inv(3, 2);
-		//mvm[15] = camera_pose_inv(3, 3);
-		//viewer->camera()->setFromModelViewMatrix(mvm);
-		/*mvm[0] = 0;
-		mvm[1] = 0;
-		mvm[2] = -1;
-		mvm[3] = 10;
-		mvm[4] = 0;
-		mvm[5] = 1;
-		mvm[6] = 0;
-		mvm[7] = 0;
-		mvm[8] = 1;
-		mvm[9] = 0;
-		mvm[10] = 0;
-		mvm[11] = 0;
-		mvm[12] = 0;
-		mvm[13] = 0;
-		mvm[14] = 0;
-		mvm[15] = 1;
-		viewer->camera()->setFromModelViewMatrix(mvm);*/
-		/*GLint viewport[4];
-		viewer->camera()->getViewport(viewport);
-		Mat vp = Mat_<double>::zeros(4,1);
-		vp.at<double>(0,0) = viewport[0];
-		vp.at<double>(1,0) = viewport[1];
-		vp.at<double>(2,0) = viewport[2];
-		vp.at<double>(3,0) = viewport[3];
-		std::cout << " The viewport is " << vp << std::endl;*/
-		
-		qreal pm[12];
-		pm[0] = cp.projectionMatrix.at<double>(0,0);
-		pm[1] = cp.projectionMatrix.at<double>(0,1);
-		pm[2] = cp.projectionMatrix.at<double>(0,2);
-		pm[3] = cp.projectionMatrix.at<double>(0,3);
-		pm[4] = cp.projectionMatrix.at<double>(1,0);
-		pm[5] = cp.projectionMatrix.at<double>(1,1);
-		pm[6] = cp.projectionMatrix.at<double>(1,2);
-		pm[7] = cp.projectionMatrix.at<double>(1,3);
-		pm[8] = cp.projectionMatrix.at<double>(2,0);
-		pm[9] = cp.projectionMatrix.at<double>(2,1);
-		pm[10] = cp.projectionMatrix.at<double>(2,2);
-		pm[11] = cp.projectionMatrix.at<double>(2,3);
-
-		viewer->camera()->setFromProjectionMatrix(pm);
-
-
-		//viewer->camera()->position();
-		//std::cout<<"camera orie: "<<viewer->camera()->orientation()<<"\n";
-		//std::cout<<"clipping: " << viewer->camera()->zNear()<<"\t"<<viewer->camera()->zFar()<<"\n";
-
-		cout << "The rotation matrix is " << endl << cp.rotation << endl;
-		cout << "The translation vector is " << endl << cp.translation << endl;
-		cout << "The projection Matrix is " << endl << cp.projectionMatrix << endl;
-	}
-}
+//void MainWin::computeCameraPose()
+//{
+//	coarse_model->getSelectedPoints();
+//	if(coarse_model->imgpts->size() != viewer->objpts.size())
+//		cout << "The number of selected image points is not equal to the number of corresponding 3D points." << endl;
+//	else if(coarse_model->imgpts->size() != 8 || viewer->objpts.size() != 8)
+//		cout << "The number of selected points is not equal to 8." << endl;
+//	else
+//	{
+//		CameraPose cp;
+//		cp.getCameraPose(*(coarse_model->imgpts),viewer->objpts);
+//
+//		//GLdouble mvm[16];
+//		//Eigen::Matrix4d camera_pose;
+//		//camera_pose << cp.rotation.at<double>(0,0), cp.rotation.at<double>(0,1), cp.rotation.at<double>(0,2), cp.translation.at<double>(0,0),
+//		//	           cp.rotation.at<double>(1,0), cp.rotation.at<double>(1,1), cp.rotation.at<double>(1,2), cp.translation.at<double>(1,0),
+//		//			   cp.rotation.at<double>(2,0), cp.rotation.at<double>(2,1), cp.rotation.at<double>(2,2), cp.translation.at<double>(2,0),
+//		//			   0, 0, 0, 1;
+//		//Eigen::Matrix4d camera_pose_inv = camera_pose.inverse();
+//
+//		//mvm[0] = camera_pose_inv(0, 0);
+//		//mvm[1] = camera_pose_inv(0, 1);
+//		//mvm[2] = camera_pose_inv(0, 2);
+//		//mvm[3] = camera_pose_inv(0, 3);
+//		//mvm[4] = camera_pose_inv(1, 0);
+//		//mvm[5] = camera_pose_inv(1, 1);
+//		//mvm[6] = camera_pose_inv(1, 2);
+//		//mvm[7] = camera_pose_inv(1, 3);
+//		//mvm[8] = camera_pose_inv(2, 0);
+//		//mvm[9] = camera_pose_inv(2, 1);
+//		//mvm[10] = camera_pose_inv(2, 2);
+//		//mvm[11] = camera_pose_inv(2, 3);
+//		//mvm[12] = camera_pose_inv(3, 0);
+//		//mvm[13] = camera_pose_inv(3, 1);
+//		//mvm[14] = camera_pose_inv(3, 2);
+//		//mvm[15] = camera_pose_inv(3, 3);
+//		//viewer->camera()->setFromModelViewMatrix(mvm);
+//		/*mvm[0] = 0;
+//		mvm[1] = 0;
+//		mvm[2] = -1;
+//		mvm[3] = 10;
+//		mvm[4] = 0;
+//		mvm[5] = 1;
+//		mvm[6] = 0;
+//		mvm[7] = 0;
+//		mvm[8] = 1;
+//		mvm[9] = 0;
+//		mvm[10] = 0;
+//		mvm[11] = 0;
+//		mvm[12] = 0;
+//		mvm[13] = 0;
+//		mvm[14] = 0;
+//		mvm[15] = 1;
+//		viewer->camera()->setFromModelViewMatrix(mvm);*/
+//		/*GLint viewport[4];
+//		viewer->camera()->getViewport(viewport);
+//		Mat vp = Mat_<double>::zeros(4,1);
+//		vp.at<double>(0,0) = viewport[0];
+//		vp.at<double>(1,0) = viewport[1];
+//		vp.at<double>(2,0) = viewport[2];
+//		vp.at<double>(3,0) = viewport[3];
+//		std::cout << " The viewport is " << vp << std::endl;*/
+//		
+//		qreal pm[12];
+//		pm[0] = cp.projectionMatrix.at<double>(0,0);
+//		pm[1] = cp.projectionMatrix.at<double>(0,1);
+//		pm[2] = cp.projectionMatrix.at<double>(0,2);
+//		pm[3] = cp.projectionMatrix.at<double>(0,3);
+//		pm[4] = cp.projectionMatrix.at<double>(1,0);
+//		pm[5] = cp.projectionMatrix.at<double>(1,1);
+//		pm[6] = cp.projectionMatrix.at<double>(1,2);
+//		pm[7] = cp.projectionMatrix.at<double>(1,3);
+//		pm[8] = cp.projectionMatrix.at<double>(2,0);
+//		pm[9] = cp.projectionMatrix.at<double>(2,1);
+//		pm[10] = cp.projectionMatrix.at<double>(2,2);
+//		pm[11] = cp.projectionMatrix.at<double>(2,3);
+//
+//		viewer->camera()->setFromProjectionMatrix(pm);
+//
+//
+//		//viewer->camera()->position();
+//		//std::cout<<"camera orie: "<<viewer->camera()->orientation()<<"\n";
+//		//std::cout<<"clipping: " << viewer->camera()->zNear()<<"\t"<<viewer->camera()->zFar()<<"\n";
+//
+//		cout << "The rotation matrix is " << endl << cp.rotation << endl;
+//		cout << "The translation vector is " << endl << cp.translation << endl;
+//		cout << "The projection Matrix is " << endl << cp.projectionMatrix << endl;
+//	}
+//}
 
 void MainWin::clearSelectedPoints()
 {
@@ -474,8 +474,8 @@ void MainWin::loadPoints()
 	while(!(viewer->pts3d.empty()))
 		viewer->pts3d.pop_back();
 	coarse_model->getSelectedPoints();
-	for(vector<CvPoint2D32f>::iterator it = coarse_model->imgpts->begin();it != coarse_model->imgpts->end();it ++)
+	for(std::vector<CvPoint2D32f>::iterator it = coarse_model->imgpts->begin();it != coarse_model->imgpts->end();it ++)
 		viewer->pts2d.push_back(*it);
-	for(vector<CvPoint3D32f>::iterator it = viewer->objpts.begin();it != viewer->objpts.end();it ++)
+	for(std::vector<CvPoint3D32f>::iterator it = viewer->objpts.begin();it != viewer->objpts.end();it ++)
 		viewer->pts3d.push_back(*it);
 }
