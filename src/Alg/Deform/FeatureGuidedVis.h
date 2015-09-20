@@ -1,8 +1,11 @@
 #ifndef FeatureGuidedVis_H
 #define FeatureGuidedVis_H
 
-#include "BasicViewer.h"
+#include <glew-1.11.0/include/GL/glew.h>
 #include "DispObject.h"
+
+#include <memory>
+#include <vector>
 
 class FeatureGuided;
 
@@ -17,6 +20,7 @@ public:
   virtual void setGLProperty();
 
   void init(FeatureGuided* init_data_ptr);
+  void setVisualizationParas(std::vector<bool>& paras);
 
   bool displayVectorField();
   bool displayTargetVectorField();
@@ -38,6 +42,10 @@ protected:
   float u_max;
   float v_max;
   float ratio;
+
+  std::unique_ptr<Bound> bound;
+
+  std::vector<bool> vis_paras;
 
 private:
   FeatureGuidedVis(const FeatureGuidedVis&);

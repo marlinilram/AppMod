@@ -2,7 +2,7 @@
 #define DispObject_H
 
 // this is interface for all object which can be displayed in BasicViewer
-#include "Bound.h"
+class Bound;
 
 class DispObject
 {
@@ -13,10 +13,6 @@ public:
   virtual bool display() = 0;
   virtual void setGLProperty() = 0;
   virtual Bound* getBoundBox() = 0;
-
-
-protected:
-  Bound bound;
 
 private:
   DispObject(const DispObject&);

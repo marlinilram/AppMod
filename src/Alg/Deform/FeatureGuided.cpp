@@ -1,3 +1,4 @@
+#include "BasicViewer.h"
 #include "FeatureGuided.h"
 #include "FeatureGuidedVis.h"
 #include "tele2d.h"
@@ -135,7 +136,7 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
   {
     for (int j = 0; j < source.cols; ++j)
     {
-      if (source.at<uchar>(i, j) > 200 && visited_table[i][j] == false)
+      if (source.at<uchar>(i, j) > 50 && visited_table[i][j] == false)
       {
         curve.clear();
         FeatureGuided::SearchCurve(source, i, j, visited_table, curve);
@@ -155,8 +156,8 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
     for (int j = 0; j < curves[i].size(); ++j)
     {
       contour.at<uchar>(source.rows - 1 - curves[i][j].y, curves[i][j].x) = 255;
+      cv::imwrite(std::to_string(i) + "_" + std::to_string(j) + ".png", contour);
     }
-    cv::imwrite(std::to_string(i) + ".png", contour);
   }
 #endif
 }
@@ -212,7 +213,7 @@ void FeatureGuided::SearchCurve(const cv::Mat& source,
   std::vector<double2>& curve)
 {
   // if the current pos isn't a edge or is visited before or out of boundary, return
-  if (source.at<uchar>(cur_row, cur_col) < 200 || visited_table[cur_row][cur_col] == true
+  if (source.at<uchar>(cur_row, cur_col) < 50 || visited_table[cur_row][cur_col] == true
     || cur_row < 0 || cur_row >= source.rows || cur_col < 0 || cur_col >= source.cols)
   {
     return;
@@ -282,6 +283,43 @@ CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
     }
   }
 
+  // reconnect possible curves
+  int tag = 0;
+  size_t i = 0;
+  while (i < curves.size())
+  {
+    // only need to test the start point
+    int x_cur = int(curves[i][0].x + 0.5);
+    int y_cur = int(curves[i][0].y + 0.5);
+
+    for (size_t j = i + 1; j < curves.size(); ++j)
+    {
+      int x_temp = int(curves[j][0].x + 0.5);
+      int y_temp = int(curves[j][0].y + 0.5);
+
+      if (abs(x_cur - x_temp) <= 1 && abs(y_cur - y_temp) <= 1)
+      {
+        // find a curve which should connect with the current curve
+        // to keep the order of current curve
+        // we insert the found curve backward into the head of current
+        // curve
+        std::reverse(curves[j].begin(), curves[j].end());
+        curves[i].insert(curves[i].begin(), curves[j].begin(), curves[j].end());
+        curves.erase(curves.begin() + j);
+        tag = 1;
+        break;
+      }
+    }
+    if (tag == 1)
+    {
+      tag = 0;
+    }
+    else
+    {
+      ++i;
+    }
+  }
+
   // sample curve
   // don't save whole pixel position for the contour
   // lead to error in tele-reg
@@ -290,9 +328,9 @@ CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
   {
     double cur_length = FeatureGuided::CurveLength(curves[i]);
 
-    if (cur_length > 50)
+    if (cur_length > 0)
     {
-      if (curves[i].size() > 50)
+      if (curves[i].size() > 10)
       {
         int step = 1 + curves[i].size() / 50;
         int tail = 0;
@@ -841,4 +879,10 @@ void FeatureGuided::GetCrspPair(CURVES& curves)
     crsp_pair[1] = target_crsp[i];
     curves.push_back(crsp_pair);
   }
+}
+
+void FeatureGuided::setVissualizationPara(std::vector<bool>& paras)
+{
+  this->disp_obj->setVisualizationParas(paras); 
+  this->renderer->updateGL();
 }

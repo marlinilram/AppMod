@@ -57,4 +57,25 @@ void BasicViewer::deleteDispObj(DispObject* disp_obj)
 void BasicViewer::init()
 {
   // Restore previous viewer state.
+  glewExperimental = TRUE;
+  GLenum err = glewInit();
+  if (err != GLEW_OK)
+  {
+    std::cout << "glewInit failed, aborting." << std::endl;
+  }
+
+  GLint major = 0;
+  GLint minor = 0;
+  glGetIntegerv(GL_MAJOR_VERSION, &major);
+  glGetIntegerv(GL_MINOR_VERSION, &minor);
+  std::cout << major << "." << minor << std::endl;
+}
+
+void BasicViewer::updateGLOutside()
+{
+  makeCurrent();
+
+  updateGL();
+
+  doneCurrent();
 }

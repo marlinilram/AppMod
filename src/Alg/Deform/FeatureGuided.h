@@ -30,6 +30,7 @@ public:
   void initRegister();
   void initDispObj();
   void initVisualization(BasicViewer* renderer);
+  void setVissualizationPara(std::vector<bool>& paras);
   kdtree::KDTree* getSourceKDTree();
 
   inline tele2d* GetTeleRegister() { return source_tele_register; };
@@ -78,6 +79,7 @@ private:
 
   CURVES source_curves;
   CURVES target_curves;
+  int edge_th; // threshold for edge detection
 
   kdtree::KDTree* source_KDTree;
   kdtree::KDTreeArray source_KDTree_data;

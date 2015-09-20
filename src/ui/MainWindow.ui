@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1201</width>
+    <height>781</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>I2S</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_3">
+    <item row="0" column="0">
+     <widget class="MainCanvasViewer" name="main_canvas_viewer" native="true"/>
+    </item>
+    <item row="0" column="1">
+     <widget class="TrackballViewer" name="trackball_viewer" native="true"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1201</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuOpen">
+    <property name="title">
+     <string>Open</string>
+    </property>
+    <addaction name="action_Load_Model"/>
+   </widget>
+   <widget class="QMenu" name="menuCompute_Pose">
+    <property name="title">
+     <string>Camera_Pose</string>
+    </property>
+    <addaction name="action_Load_2D_3D_points"/>
+   </widget>
+   <addaction name="menuOpen"/>
+   <addaction name="menuCompute_Pose"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_Snap_Shot"/>
+   <addaction name="action_Fix_Camera"/>
+   <addaction name="action_Reset_Screen"/>
+   <addaction name="action_Export_OBJ"/>
+   <addaction name="action_Render"/>
+   <addaction name="action_Update_Geometry"/>
+   <addaction name="action_Vector_Field"/>
+   <addaction name="action_Tool_Box"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0">
+      <widget class="QToolBox" name="toolBox">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="page">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>232</width>
+          <height>622</height>
+         </rect>
+        </property>
+        <attribute name="label">
+         <string>Page 1</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <widget class="QGroupBox" name="groupBox_2">
+           <property name="title">
+            <string>Feature View</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="checkBox">
+              <property name="text">
+               <string>Show Source Vector Field</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="checkBox_2">
+              <property name="text">
+               <string>Show Target Vector Field</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="checkBox_3">
+              <property name="text">
+               <string>Show Source Curve</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QCheckBox" name="checkBox_4">
+              <property name="text">
+               <string>Show Target Curve</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="checkBox_5">
+              <property name="text">
+               <string>Show Scalar Field</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QCheckBox" name="checkBox_6">
+              <property name="text">
+               <string>Show Fitted Curve Crsp</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QCheckBox" name="checkBox_7">
+              <property name="text">
+               <string>Show Hist Matched Crsp</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>415</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="page_2">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>205</width>
+          <height>622</height>
+         </rect>
+        </property>
+        <attribute name="label">
+         <string>Page 2</string>
+        </attribute>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="action_Load_Model">
+   <property name="text">
+    <string>Load Model</string>
+   </property>
+  </action>
+  <action name="action_Fix_Camera">
+   <property name="text">
+    <string>Fix Camera</string>
+   </property>
+  </action>
+  <action name="action_Reset_Screen">
+   <property name="text">
+    <string>Reset Screen</string>
+   </property>
+  </action>
+  <action name="action_Update_Geometry">
+   <property name="text">
+    <string>Update Geometry</string>
+   </property>
+  </action>
+  <action name="action_Export_OBJ">
+   <property name="text">
+    <string>Export OBJ</string>
+   </property>
+  </action>
+  <action name="action_Render">
+   <property name="text">
+    <string>Render</string>
+   </property>
+  </action>
+  <action name="action_Vector_Field">
+   <property name="text">
+    <string>Vector Field</string>
+   </property>
+  </action>
+  <action name="action_Set_Camera_Pose">
+   <property name="text">
+    <string>Set Camera_Pose</string>
+   </property>
+  </action>
+  <action name="action_Load_2D_3D_points">
+   <property name="text">
+    <string>Load 2D_3D points</string>
+   </property>
+  </action>
+  <action name="action_Snap_Shot">
+   <property name="text">
+    <string>SnapShot</string>
+   </property>
+  </action>
+  <action name="action_Tool_Box">
+   <property name="text">
+    <string>Tool Box</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MainCanvasViewer</class>
+   <extends>QWidget</extends>
+   <header>MainCanvasViewer.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TrackballViewer</class>
+   <extends>QWidget</extends>
+   <header>TrackballViewer.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
