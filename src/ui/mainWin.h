@@ -10,6 +10,8 @@
 #include <QThread>
 #include "ui_mainWin.h"
 
+#include "../Image-2-Shape/src/CameraPose/FocalLength.h"
+
 class Viewer;
 class Model;
 class Coarse;
@@ -46,6 +48,9 @@ private slots:
 	void clearSelectedPoints();
 	void computeCameraPose();
 	void loadPoints();
+	void lineMode();
+	void computeFocalLength();
+	void getPose();
 
 signals:
     void callComputeInitLight(Coarse *, Viewer *);
@@ -67,6 +72,7 @@ public:
     QThread *img_part_alg_thread;
 
     FeatureGuided* feature_guided;
+	FocalLength fl;
 
     //QGridLayout *main_grid_layout;
 

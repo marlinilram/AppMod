@@ -16,9 +16,12 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_3">
     <item row="0" column="0">
-     <widget class="Viewer" name="viewer" native="true"/>
+     <widget class="Viewer" name="otherViewer" native="true"/>
     </item>
     <item row="0" column="1">
+     <widget class="Viewer" name="viewer" native="true"/>
+    </item>
+    <item row="0" column="2">
      <widget class="BasicViewer" name="viewer_img" native="true"/>
     </item>
    </layout>
@@ -46,6 +49,9 @@
     <addaction name="action_Clear_Selected_Points"/>
     <addaction name="action_Compute_3"/>
     <addaction name="action_Load_2D_3D_points"/>
+    <addaction name="action_Line_Mode_On_Off"/>
+    <addaction name="action_Compute_Focal_Length"/>
+    <addaction name="action_Compute_Camera_Pose"/>
    </widget>
    <addaction name="menuOpen"/>
    <addaction name="menuCompute_Pose"/>
@@ -569,6 +575,21 @@
   <action name="action_Load_2D_3D_points">
    <property name="text">
     <string>Load 2D_3D points</string>
+   </property>
+  </action>
+  <action name="action_Line_Mode_On_Off">
+   <property name="text">
+    <string>Line_Mode On/Off</string>
+   </property>
+  </action>
+  <action name="action_Compute_Focal_Length">
+   <property name="text">
+    <string>Compute Focal_Length</string>
+   </property>
+  </action>
+  <action name="action_Compute_Camera_Pose">
+   <property name="text">
+    <string>Compute Camera_Pose</string>
    </property>
   </action>
  </widget>

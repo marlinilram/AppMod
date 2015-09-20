@@ -5,7 +5,9 @@
 #include "ModelLight.h"
 #include "I2SAlgorithms.h"
 #include "ProjOptimize.h"
-//#include "camera_pose.h"
+#include <QGLViewer/manipulatedFrame.h>
+#include "../Image-2-Shape/src/CameraPose/CameraPose.h"
+#include "../Image-2-Shape/src/CameraPose/FocalLength.h"
 
 MainWin::MainWin()
 {
@@ -49,6 +51,10 @@ MainWin::MainWin()
 	connect(action_Clear_Selected_Points, SIGNAL(triggered()), this, SLOT(clearSelectedPoints()));
 	connect(action_Compute_3, SIGNAL(triggered()), this, SLOT(computeCameraPose()));
 	connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
+	connect(action_Line_Mode_On_Off, SIGNAL(triggered()), this, SLOT(lineMode()));
+	connect(action_Compute_Focal_Length, SIGNAL(triggered()), this, SLOT(computeFocalLength()));
+	connect(action_Compute_Camera_Pose, SIGNAL(triggered()), this, SLOT(getPose()));
+
 
     this->show();
 
@@ -107,6 +113,13 @@ void MainWin::loadModel()
     coarse_model->setRenderer(viewer);
     viewer->setBackGroundImage(QString::fromStdString(
       model_file_path + std::to_string(model_id) + "/photo.png"));
+
+	otherViewer->getModel(coarse_model);
+	otherViewer->resetCamera(coarse_model);
+	otherViewer->setBackGroundImage(QString::fromStdString(
+      model_file_path + std::to_string(model_id) + "/photo.png"));
+
+	viewer->viewer2 = otherViewer;
 
     // make an output dir
     char time_postfix[50];
@@ -371,18 +384,18 @@ void MainWin::computeAll()
 
 void MainWin::computeCameraPose()
 {
-	//coarse_model->getSelectedPoints();
-	//if(coarse_model->imgpts->size() != viewer->objpts.size())
-	//	cout << "The number of selected image points is not equal to the number of corresponding 3D points." << endl;
-	//else if(coarse_model->imgpts->size() != 8 || viewer->objpts.size() != 8)
-	//	cout << "The number of selected points is not equal to 8." << endl;
-	//else
-	//{
-	//	CameraPose cp;
-	//	cp.getCameraPose(*(coarse_model->imgpts),viewer->objpts);
+	coarse_model->getSelectedPoints();
+	if(coarse_model->imgpts->size() != viewer->objpts.size())
+		cout << "The number of selected image points is not equal to the number of corresponding 3D points." << endl;
+	else if(coarse_model->imgpts->size() != 6 || viewer->objpts.size() != 6)
+		cout << "The number of selected points is not equal to 6." << endl;
+	else
+	{
+		CameraPose cp;
+		cp.getCameraPose(*(coarse_model->imgpts),viewer->objpts);
 
 	//	//GLdouble mvm[16];
-	//	//Eigen::Matrix4d camera_pose;
+	//  //Eigen::Matrix4d camera_pose;
 	//	//camera_pose << cp.rotation.at<double>(0,0), cp.rotation.at<double>(0,1), cp.rotation.at<double>(0,2), cp.translation.at<double>(0,0),
 	//	//	           cp.rotation.at<double>(1,0), cp.rotation.at<double>(1,1), cp.rotation.at<double>(1,2), cp.translation.at<double>(1,0),
 	//	//			   cp.rotation.at<double>(2,0), cp.rotation.at<double>(2,1), cp.rotation.at<double>(2,2), cp.translation.at<double>(2,0),
@@ -453,10 +466,10 @@ void MainWin::computeCameraPose()
 	//	//std::cout<<"camera orie: "<<viewer->camera()->orientation()<<"\n";
 	//	//std::cout<<"clipping: " << viewer->camera()->zNear()<<"\t"<<viewer->camera()->zFar()<<"\n";
 
-	//	cout << "The rotation matrix is " << endl << cp.rotation << endl;
-	//	cout << "The translation vector is " << endl << cp.translation << endl;
-	//	cout << "The projection Matrix is " << endl << cp.projectionMatrix << endl;
-	//}
+		cout << "The rotation matrix is " << endl << cp.rotation << endl;
+		cout << "The translation vector is " << endl << cp.translation << endl;
+		cout << "The projection Matrix is " << endl << cp.projectionMatrix << endl;
+	}
 }
 
 void MainWin::clearSelectedPoints()
@@ -483,4 +496,132 @@ void MainWin::loadPoints()
 
   ProjOptimize proj_opt;
   proj_opt.updateShape(feature_guided, coarse_model);
+}
+
+void MainWin::lineMode()
+{
+	if(select_mode == 1)
+		select_mode = 2;
+	else
+		select_mode = 1;
+	std::cout << "Points select mode is changed." << std::endl;
+}
+
+void MainWin::computeFocalLength()
+{
+	coarse_model->getSelectedPoints();
+	if(coarse_model->imgpts->size() != 8)
+		cout << "The number of selected image points is not equal to 8." << endl;
+	else
+	{
+		fl.computeFocalLength(*(coarse_model->imgpts));
+		std::cout << "The Focal Length is " << fl.focalLength << std::endl;
+		GLfloat m[16];
+		std::cout << "Current Projection matrix is: \n";
+		viewer->camera()->getProjectionMatrix(m);
+		for (int i = 0; i < 16; i++)
+		{
+			std::cout << m[i] << "\t";
+		}
+		std::cout << "\n";
+		viewer->camera()->setSceneRadius(fl.focalLength);
+		viewer->camera()->setFieldOfView(2 * atan(coarse_model->photo_height / 2 / fl.focalLength));
+		viewer->camera()->setFlySpeed(0.5);
+		std::cout << "Current Projection matrix is: \n";
+		viewer->camera()->getProjectionMatrix(m);
+		for (int i = 0; i < 16; i++)
+		{
+			std::cout << m[i] << "\t";
+		}
+		std::cout << "\n";
+		//viewer->camera()->setPosition(qglviewer::Vec(0,0,-fl.focalLength));
+		//viewer->camera()->setViewDirection(qglviewer::Vec(0,0,-1));
+		//viewer->camera()->setUpVector(qglviewer::Vec(0,1,0));
+		//viewer->camera()->setZClippingCoefficient(1.7);
+		//viewer->camera()->setZNearCoefficient(1e-4);
+		//viewer->camera()->setSceneCenter(qglviewer::Vec(0,0,0));
+		//viewer->camera()->setSceneRadius(fl.focalLength);
+	}
+	
+}
+
+void MainWin::getPose()
+{
+	if(fl.focalLength == 0)
+		std::cout << "The focal length has not been computed!" << std::endl;
+	else
+	{
+		coarse_model->getSelectedPoints();
+		Mat cameraMatrix = Mat_<double>::zeros(3,3);
+		vector<double> distCoeffs;
+		Mat rvec,tvec;
+		cameraMatrix.at<double>(0,0) = fl.focalLength;
+		cameraMatrix.at<double>(0,2) = (coarse_model->photo_width) / 2;
+		cameraMatrix.at<double>(1,1) = fl.focalLength;
+		cameraMatrix.at<double>(1,2) = (coarse_model->photo_height) / 2;
+		cameraMatrix.at<double>(2,2) = 1;
+		
+		vector<Point3f> inputObjpts;
+		vector<Point2f> inputImgpts;
+		for(int i = 0;i < viewer->objpts.size();i ++)
+			inputObjpts.push_back(Point3f((viewer->objpts)[i].x,(viewer->objpts)[i].y,(viewer->objpts)[i].z));
+		for(int j = 0;j < coarse_model->imgpts->size();j ++)
+			inputImgpts.push_back(Point2f((*(coarse_model->imgpts))[j].x,(*(coarse_model->imgpts))[j].y));
+		bool status = solvePnP(inputObjpts,inputImgpts,
+			cameraMatrix,distCoeffs,rvec,tvec,false,CV_ITERATIVE);
+		Mat rmat;
+		Rodrigues(rvec,rmat);
+		std::cout << "The rotation matrix is " << rmat << std::endl;
+		std::cout << "The translation vector is " << tvec << std::endl;
+		std::cout << "The default focal length is " << viewer->camera()->focusDistance() << std::endl;
+
+		Eigen::Matrix4d modelView;
+		modelView << rmat.at<double>(0,0),rmat.at<double>(0,1),rmat.at<double>(0,2),tvec.at<double>(0,0),
+			rmat.at<double>(1,0),rmat.at<double>(1,1),rmat.at<double>(1,2),tvec.at<double>(1,0),
+			rmat.at<double>(2,0),rmat.at<double>(2,1),rmat.at<double>(2,2),tvec.at<double>(2,0),
+			0,0,0,1;
+		Eigen::Matrix4d inv_modeView = modelView.inverse();
+		GLdouble mvm[16];
+		mvm[0] = modelView(0,0);
+		mvm[1] = modelView(0,1);
+		mvm[2] = modelView(0,2);
+		mvm[3] = modelView(0,3);
+		mvm[4] = modelView(1,0);
+		mvm[5] = modelView(1,1);
+		mvm[6] = modelView(1,2);
+		mvm[7] = modelView(1,3);
+		mvm[8] = modelView(2,0);
+		mvm[9] = modelView(2,1);
+		mvm[10] = modelView(2,2);
+		mvm[11] = modelView(2,3);
+		mvm[12] = modelView(3,0);
+		mvm[13] = modelView(3,1);
+		mvm[14] = modelView(3,2);
+		mvm[15] = modelView(3,3);
+		/*mvm[0] = inv_modeView(0,0);
+		mvm[1] = inv_modeView(0,1);
+		mvm[2] = inv_modeView(0,2);
+		mvm[3] = inv_modeView(0,3);
+		mvm[4] = inv_modeView(1,0);
+		mvm[5] = inv_modeView(1,1);
+		mvm[6] = inv_modeView(1,2);
+		mvm[7] = inv_modeView(1,3);
+		mvm[8] = inv_modeView(2,0);
+		mvm[9] = inv_modeView(2,1);
+		mvm[10] = inv_modeView(2,2);
+		mvm[11] = inv_modeView(2,3);
+		mvm[12] = inv_modeView(3,0);
+		mvm[13] = inv_modeView(3,1);
+		mvm[14] = inv_modeView(3,2);
+		mvm[15] = inv_modeView(3,3);*/
+		//viewer->camera()->setFromModelViewMatrix(mvm);
+		viewer->camera()->setFocusDistance(fl.focalLength);
+		viewer->camera()->setPosition(qglviewer::Vec(0,0,-fl.focalLength));
+		viewer->camera()->setViewDirection(qglviewer::Vec(0,0,-1));
+		viewer->camera()->setUpVector(qglviewer::Vec(0,1,0));
+		viewer->camera()->setZClippingCoefficient(1.7);
+		viewer->camera()->setZNearCoefficient(0.0);
+		viewer->camera()->setSceneCenter(qglviewer::Vec(0,0,0));
+		viewer->camera()->setSceneRadius(fl.focalLength);
+ 	}
 }

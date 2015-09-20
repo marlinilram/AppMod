@@ -966,12 +966,15 @@ void Model::computeBounds()
     model_bounds->minZ = std::numeric_limits<float>::max();
     model_bounds->maxZ = std::numeric_limits<float>::min();
 
+	float sum_x = 0,sum_y = 0,sum_z = 0;
     for (decltype(model_vertices.size()) i = 0; i < model_vertices.size() / 3; ++i)
     {
         float x = model_vertices[3 * i + 0];
         float y = model_vertices[3 * i + 1];
         float z = model_vertices[3 * i + 2];
-
+		sum_x += x;
+		sum_y += y;
+		sum_z += z;
         if (x < model_bounds->minX) model_bounds->minX = x;
         if (x > model_bounds->maxX) model_bounds->maxX = x;
         if (y < model_bounds->minY) model_bounds->minY = y;
@@ -979,6 +982,10 @@ void Model::computeBounds()
         if (z < model_bounds->minZ) model_bounds->minZ = z;
         if (z > model_bounds->maxZ) model_bounds->maxZ = z;
     }
+	modelCentroid.x = sum_x / (model_vertices.size() / 3);
+	modelCentroid.y = sum_y / (model_vertices.size() / 3);
+	modelCentroid.z = sum_z / (model_vertices.size() / 3);
+	modelRadius = sqrt(pow((model_bounds->maxX - model_bounds->minX) / 2,2) + pow((model_bounds->maxY - model_bounds->minY) / 2,2) +pow((model_bounds->maxZ - model_bounds->minZ) / 2,2));
 }
 
 void Model::computeFaceNormal()

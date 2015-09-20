@@ -6,6 +6,8 @@
 #include "SIFTFlowWrapper.h"
 
 std::vector<CvPoint2D32f> imagePoints;
+int k = 1;
+int select_mode = 1;
 
 void mouseHandler(int event, int x, int y, int flags, void* param)
 {
@@ -18,10 +20,12 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
     img1 = cvCloneImage(img0);
  
     cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, .8, .8, 0, 1, 8);
- 
+	int x0 = (img1->width) / 2;
+	int y0 = (img1->height) / 2;
+
     if (event == CV_EVENT_LBUTTONDOWN)
     {
-		sprintf(label,"[%d , %d]",x,y);
+		sprintf(label,"[%d , %d]",x - x0,y - y0);
  
         cvRectangle(
             img1,
@@ -42,9 +46,22 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
             CV_RGB(255, 255, 0)
         );
  
-        cvShowImage("photo", img1);
+		if(select_mode == 2)
+		{
+			if(k == 2)
+			{
+				int count = (int)imagePoints.size();
+				int prev_x = imagePoints[count - 1].x + x0;
+				int prev_y = imagePoints[count - 1].y + y0;
+				cvLine(img1,cvPoint(prev_x,prev_y),cvPoint(x,y),CV_RGB(255,0,0),2,8,0);
+				k = 1;
+			}
+			else
+				k ++;
+		}
+		cvShowImage("photo", img1);
 
-		imagePoints.push_back(cvPoint2D32f(x ,y));
+		imagePoints.push_back(cvPoint2D32f(x - x0,y - y0));
     }
 }
 
@@ -57,7 +74,8 @@ Coarse::Coarse(const int id, const std::string path, const std::string name)
     cv::Mat photo_temp = cv::imread((path + std::to_string(id) + "/photo.png").c_str());
     cv::Mat mask_temp = cv::imread(path + std::to_string(id) + "/mask.png");
     cv::Mat ref_temp = cv::imread(path + std::to_string(id) + "/reflectance.png");
-
+	photo_width = photo_temp.size().width;
+	photo_height = photo_temp.size().height;
     //cv::cvtColor(photo_temp, photo_temp, CV_BGR2RGB);
     photo_temp.convertTo(photo, CV_32FC3);
     

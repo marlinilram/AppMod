@@ -3,6 +3,8 @@
 
 #include "Model.h"
 
+extern int select_mode;
+
 class Groundtruth;
 class MPara;
 
@@ -58,7 +60,7 @@ public:
 
 	void getSelectedPoints();
 	std::vector<CvPoint2D32f>* imgpts;
-	
+	int photo_width,photo_height;
 
 protected:
     Mat3F model_to_img_trans;

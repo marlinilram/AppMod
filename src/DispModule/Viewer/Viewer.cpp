@@ -45,6 +45,10 @@ Viewer::Viewer(QWidget *widget) : QGLViewer(widget), wireframe_(false), flatShad
     render_normal_img = false;
 
     render_mode = 2;
+
+	viewer2 = NULL;
+
+	sycncamera = false;
 }
 
 Viewer::Viewer()
@@ -68,6 +72,39 @@ Viewer::~Viewer()
     {
       delete scene_bounds;
     }
+}
+
+void Viewer::drawTrackBall()
+{
+	//double radius = 1.5;
+	double v1,v2;
+	glBegin(GL_LINE_STRIP);
+	for(double i = 0;i <= 2 * M_PI;i += (M_PI / 180))
+	{
+		v1 = objectCentroid.x + objectRadius * cos(i);
+		v2 = objectCentroid.y + objectRadius * sin(i);
+		glColor3f(0.8,0.6,0.6);
+		glVertex3f(v1,v2,objectCentroid.z);
+	}
+	glEnd();
+	glBegin(GL_LINE_STRIP);
+	for(double i = 0;i <= 2 * M_PI;i += (M_PI / 180))
+	{
+		v1 = objectCentroid.y + objectRadius * cos(i);
+		v2 = objectCentroid.z + objectRadius * sin(i);
+		glColor3f(0.6,0.8,0.6);
+		glVertex3f(objectCentroid.x,v1,v2);
+	}
+	glEnd();
+	glBegin(GL_LINE_STRIP);
+	for(double i = 0;i <= 2 * M_PI;i += (M_PI / 180))
+	{
+		v1 = objectCentroid.x + objectRadius * cos(i);
+		v2 = objectCentroid.z + objectRadius * sin(i);
+		glColor3f(0.6,0.6,0.8);
+		glVertex3f(v1,objectCentroid.y,v2);
+	}
+	glEnd();
 }
 
 void Viewer::drawModel()
@@ -123,6 +160,7 @@ void Viewer::drawModel()
         }
         else
         {
+
             glDisable(GL_LIGHTING);
             glEnable(GL_TEXTURE_2D);
 
@@ -171,6 +209,8 @@ void Viewer::drawModel()
     }
 
 }
+
+
 
 void Viewer::drawBackground()
 {
@@ -395,7 +435,28 @@ void Viewer::mousePressEvent(QMouseEvent* e)
                 camera()->playPath(menuMap[action]);
     }
     else
+	{
         QGLViewer::mousePressEvent(e);
+		sycncamera = true;
+	}
+}
+
+void Viewer::mouseMoveEvent(QMouseEvent *e)
+{
+	QGLViewer::mouseMoveEvent(e);
+	if(viewer2 != NULL && sycncamera)
+	{
+		GLdouble m[16];
+		camera()->getModelViewMatrix(m);
+		viewer2->camera()->setFromModelViewMatrix(m);
+		viewer2->UpdateGLOutside();
+	}
+}
+
+void Viewer::mouseReleaseEvent(QMouseEvent* e)
+{
+	QGLViewer::mouseReleaseEvent(e);
+	sycncamera = false;
 }
 
 QString Viewer::helpString() const
@@ -422,6 +483,9 @@ void Viewer::getModel(Model *model)
     std::vector<float> *model_normals = model->getNormalList();
     std::vector<unsigned int> *model_faces = model->getFaceList();
     std::vector<float> *model_colors = model->getColors();
+
+	objectCentroid = model->modelCentroid;
+	objectRadius = model->modelRadius;
     //model->passData(model_vertices, model_faces, model_colors);
 
     num_vertices = (GLenum)(*model_vertices).size() / 3;
@@ -577,7 +641,6 @@ void Viewer::resetCamera(Model *model)
 
     setSceneRadius(scene_radius);
     camera()->fitSphere(scene_center, scene_radius);
-
 
 
     setStateFileName(QString((model->getDataPath()+"/camera_info.xml").c_str()));
@@ -1429,10 +1492,10 @@ void Viewer::drawWithNames()
 void Viewer::draw()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
 	if (show_background_img)
     {
-        drawBackground();
+       drawBackground();
     }
 
 	drawModel();
@@ -1445,7 +1508,7 @@ void Viewer::draw()
             actors[i].draw();
         }
     }
-
+	drawTrackBall();
 	// Draw the intersection line
 	//glLineWidth(3.0);
 	//glBegin(GL_LINES);
@@ -1454,12 +1517,13 @@ void Viewer::draw()
 	//glEnd();
 
  // // Draw (approximated) intersection point on selected object
-	//if (selectedName() >= 0)
- //   {
-	//	glPointSize(10.0);
-	//	glColor3f(1.0f, 0.0f, 0.0f);
-	//	glBegin(GL_POINTS);
-	//	glVertex3fv(selectedPoint);
-	//	glEnd();
- //   }
+	if (selectedName() >= 0)
+    {
+		glPointSize(10.0);
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glBegin(GL_POINTS);
+		glVertex3fv(selectedPoint);
+		glEnd();
+    }
 }
+

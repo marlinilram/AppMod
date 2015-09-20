@@ -35,6 +35,7 @@ public:
     typedef std::vector<Vector3i> VectorVec3i;
     typedef std::vector<Vector3f> VectorVec3f;
     typedef std::pair<int, int> UDEdge;
+
     
 
 public:
@@ -105,6 +106,10 @@ public:
     inline std::string getFileName() { return file_name; };
 
     inline Eigen::Matrix4f& getProjectInvMat() { return m_inv_modelview_projection; };
+
+public:
+	CvPoint3D32f modelCentroid;
+	double modelRadius;
 
 protected:
     bool loadOBJ(const std::string name, const std::string base_path);

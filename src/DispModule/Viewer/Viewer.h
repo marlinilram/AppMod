@@ -55,10 +55,16 @@ public:
     inline void setShowBackground(bool status) { show_background_img = status; };
     inline void getViewDirection(float view[3]) { view[0] = -camera()->viewDirection().x; view[1] = -camera()->viewDirection().y; view[2] = -camera()->viewDirection().z; };
 
+	void drawTrackBall();
+
 public:
 	std::vector<CvPoint3D32f> objpts;
 	std::vector<CvPoint3D32f> pts3d;
 	std::vector<CvPoint2D32f> pts2d;
+	CvPoint3D32f objectCentroid;
+	double objectRadius;
+	Viewer* viewer2;
+	
 
 protected:
     virtual void draw();
@@ -70,6 +76,8 @@ protected:
     virtual QString helpString() const;
 	virtual void postSelection(const QPoint& point);
 	virtual void drawWithNames();
+	virtual void mouseMoveEvent(QMouseEvent *e);
+	virtual void mouseReleaseEvent(QMouseEvent* e);
 	void drawModel();
     void setBuffer();
     void setFBO();
@@ -129,6 +137,8 @@ private:
     bool render_normal_img;
     int render_mode;
 	qglviewer::Vec orig, dir, selectedPoint;
+
+	bool sycncamera;
 };
 
 #endif
