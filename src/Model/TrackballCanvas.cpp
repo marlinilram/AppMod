@@ -40,8 +40,8 @@ void TrackballCanvas::setModel(std::shared_ptr<Model> shared_model)
 void TrackballCanvas::setShaderProgram()
 {
   basic_shader.reset(new QGLShaderProgram);
-  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.fsh");
-  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/vertexShader.vsh");
+  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.frag");
+  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/vertexShader.vert");
   basic_shader->link();
 }
 

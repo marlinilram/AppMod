@@ -18,9 +18,9 @@ void MainCanvasViewer::draw()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   for (int i = 0; i < dispObjects.size(); ++i)
   {
-    startScreenCoordinatesSystem(true);
-    dynamic_cast<MainCanvas*>(dispObjects[i])->drawBackground(height(), width());
-    stopScreenCoordinatesSystem();
+    //startScreenCoordinatesSystem(true);
+    dynamic_cast<MainCanvas*>(dispObjects[i])->drawBackground();
+    //stopScreenCoordinatesSystem();
 
     if (!dispObjects[i]->display())
     {
@@ -92,7 +92,7 @@ void MainCanvasViewer::getSnapShot()
     MainCanvas* main_canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
     if (main_canvas)
     {
-      main_canvas->drawInfo(QPaintDevice::height(), QPaintDevice::width());
+      main_canvas->drawInfo();
     }
   }
   

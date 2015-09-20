@@ -1,6 +1,8 @@
 #include "Shape.h"
 #include "Bound.h"
 
+#include <set>
+
 Shape::Shape()
   : bound(new Bound())
 {

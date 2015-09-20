@@ -19,7 +19,7 @@ MainCanvas::~MainCanvas()
 
 bool MainCanvas::display()
 {
-  drawModel();
+  sketchShader();
   return true;
 }
 
@@ -37,14 +37,19 @@ Bound* MainCanvas::getBoundBox()
 void MainCanvas::setShaderProgram()
 {
   basic_shader.reset(new QGLShaderProgram);
-  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.fsh");
-  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/vertexShader.vsh");
+  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.frag");
+  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/vertexShader.vert");
   basic_shader->link();
 
   edge_detect_shader.reset(new QGLShaderProgram);
-  edge_detect_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/edge.fsh");
-  edge_detect_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/edge.vsh");
+  edge_detect_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/edge.frag");
+  edge_detect_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/edge.vert");
   edge_detect_shader->link();
+
+  sketch_shader.reset(new QGLShaderProgram);
+  sketch_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/sketch.frag");
+  sketch_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/sketch.vert");
+  sketch_shader->link();
 }
 
 void MainCanvas::setModel(std::shared_ptr<Model> model)
@@ -114,8 +119,8 @@ void MainCanvas::setBackgroundImage(QString fname)
   qWarning("Load %s, %dx%d pixels", fname.toLatin1().constData(), img.width(), img.height());
 
   // 1E-3 needed. Just try with width=128 and see !
-  int newWidth  = 1<<(int)(1+log(img.width() -1+1E-3) / log(2.0));
-  int newHeight = 1<<(int)(1+log(img.height()-1+1E-3) / log(2.0));
+  int newWidth  = img.width(); //1<<(int)(1+log(img.width() -1+1E-3) / log(2.0));
+  int newHeight = img.height(); //1<<(int)(1+log(img.height()-1+1E-3) / log(2.0));
 
   u_max = img.width()  / (float)newWidth;
   v_max = img.height() / (float)newHeight;
@@ -131,14 +136,21 @@ void MainCanvas::setBackgroundImage(QString fname)
   QImage glImg = QGLWidget::convertToGLFormat(img);  // flipped 32bit RGBA
 
   // Bind the img texture...
-  // Enable GL textures
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  // Enable GL textures  
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glGenTextures(1, &background_texture);
+  glBindTexture(GL_TEXTURE_2D, background_texture);
+
+  if(glIsTexture(background_texture)) std::cout<<"gen background texture ok..\n";
+  else std::cout << "gen background texture failed...\n";
 
   // Nice texture coordinate interpolation
   glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
   glTexImage2D(GL_TEXTURE_2D, 0, 4, glImg.width(), glImg.height(), 0,
     GL_RGBA, GL_UNSIGNED_BYTE, glImg.bits());
+
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
   if (glGetError() != 0)
   {
@@ -148,9 +160,15 @@ void MainCanvas::setBackgroundImage(QString fname)
   show_background_img = true;
 
   // set FBO based on the screen (backgraound image) size
-  int height = img.height();
-  int width = img.width();
+  height = img.height();
+  width = img.width();
 
+  setFBO();
+  setSketchFBO();
+}
+
+void MainCanvas::setFBO()
+{
   glGenFramebuffers(1, &offscr_fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
 
@@ -172,7 +190,56 @@ void MainCanvas::setBackgroundImage(QString fname)
   GLenum framebuffer_status;
   framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE)
-    std::cout << "set frame buffer object failed\n";
+    std::cout << "set offscreen frame buffer object failed\n";
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void MainCanvas::setSketchFBO()
+{
+  glGenFramebuffers(1, &sketch_fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, sketch_fbo);
+
+  glGenTextures(1, &sketch_texture);
+  glBindTexture(GL_TEXTURE_2D, sketch_texture);
+
+  glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+  glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
+    GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+
+  glGenRenderbuffers(1, &sketch_depth);
+  glBindRenderbuffer(GL_RENDERBUFFER, sketch_depth);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, sketch_depth);
+
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, sketch_texture, 0);
+
+  // Set the list of draw buffers.
+  GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+  glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+  // Always check that our framebuffer is ok
+  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    std::cout << "set sketch frame buffer object failed\n";
+
+  static const GLfloat g_quad_vertex_buffer_data[] = { 
+    -1.0f, -1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    1.0f,  1.0f, 0.0f,
+  };
+
+  sketch_vertex_buffer.reset(new QGLBuffer);
+  sketch_vertex_buffer->create();
+  sketch_vertex_buffer->bind();
+  sketch_vertex_buffer->allocate(18 * sizeof(GLfloat));
+  sketch_vertex_buffer->write(0, g_quad_vertex_buffer_data, 18 * sizeof(GLfloat));
+  sketch_vertex_buffer->release();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -226,35 +293,178 @@ void MainCanvas::drawModel()
 
   basic_shader->disableAttributeArray("vertex");
   basic_shader->disableAttributeArray("color");
+  basic_shader->disableAttributeArray("normal");
   basic_shader->release();
 }
 
-void MainCanvas::drawBackground(int height, int width)
+void MainCanvas::drawModelEdge()
+{
+  if (!show_model)
+  {
+    return;
+  }
+
+  edge_detect_shader->bind();
+
+  edge_detect_shader->setUniformValue("fMeshSize", GLfloat(num_face));
+  edge_detect_shader->setUniformValue("L", QVector3D(-0.4082, -0.4082, 0.8165));
+  edge_detect_shader->setUniformValue("renderMode", GLint(render_mode));
+
+  color_buffer->bind();
+  edge_detect_shader->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
+  edge_detect_shader->enableAttributeArray("color");
+  color_buffer->release();
+
+  vertex_buffer->bind();
+  //shaderProgram->setAttributeArray("vertex", vertices.constData());
+  edge_detect_shader->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+  edge_detect_shader->enableAttributeArray("vertex");
+  vertex_buffer->release();
+
+  normal_buffer->bind();
+  edge_detect_shader->setAttributeBuffer("normal", GL_FLOAT, 0, 3, 0);
+  edge_detect_shader->enableAttributeArray("normal");
+  normal_buffer->release();
+
+  //glDrawElements(GL_TRIANGLES, 3 * num_faces, GL_UNSIGNED_INT, faces);
+
+  //glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+  //if (render_mode == 2)
+  //{
+  //  glEnable(GL_BLEND);
+  //  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  //  //glEnable(GL_CULL_FACE);
+  //  //glCullFace(GL_FRONT);
+  //}
+
+  face_buffer->bind();
+  glDrawElements(GL_TRIANGLES, num_face * 3, GL_UNSIGNED_INT, (void*)0);
+  face_buffer->release();
+
+  glDisable(GL_BLEND);
+  glDisable(GL_CULL_FACE);
+
+  edge_detect_shader->disableAttributeArray("vertex");
+  edge_detect_shader->disableAttributeArray("color");
+  edge_detect_shader->disableAttributeArray("normal");
+  edge_detect_shader->release();
+}
+
+void MainCanvas::sketchShader()
+{
+  glBindFramebuffer(GL_FRAMEBUFFER, sketch_fbo);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  drawModelEdge();
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  sketch_shader->bind();
+
+  // Bind our texture in Texture Unit 0
+  sketch_shader->setUniformValue("sketch_texture", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, sketch_texture);
+  glActiveTexture(0);
+
+  sketch_shader->setUniformValue("width", GLfloat(width));
+  sketch_shader->setUniformValue("height", GLfloat(height));
+  sketch_shader->setUniformValue("isBackground", GLint(0));
+  sketch_shader->setUniformValue("threshold", GLfloat(0.75));
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  // 1rst attribute buffer : vertices
+  sketch_vertex_buffer->bind();
+  sketch_shader->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+  sketch_shader->enableAttributeArray("vertex");
+  // Draw the triangles !
+  glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
+  sketch_vertex_buffer->release();
+
+  glDisable(GL_BLEND);
+  glDisable(GL_CULL_FACE);
+
+  sketch_shader->disableAttributeArray("vertex");
+  sketch_shader->release();
+  // Set our "renderedTexture" sampler to user Texture Unit 0
+  ////std::cout << glGetError()<<"\n";
+  //glBindTexture(GL_TEXTURE_2D, 0);
+  //glGenTextures(1, &text_ogl);
+  ////std::cout << glGetError()<<"\n";
+
+  //glBindTexture(GL_TEXTURE_2D, text_ogl);
+
+  //if(glIsTexture(text_ogl)) std::cout<<"gen texture ok..\n";
+  //else std::cout << "gen texture failed...\n";
+
+  ////std::vector<float> data(3*rho_img.rows*rho_img.cols);
+  //std::vector<float> data;
+  //for (int i = 0; i < rho_img.rows; ++i)
+  //{
+  //  for (int j = 0; j < rho_img.cols; ++j)
+  //  {
+  //    data.push_back(rho_img.at<cv::Vec3f>(rho_img.rows-1-i, j)[2]);
+  //    data.push_back(rho_img.at<cv::Vec3f>(rho_img.rows-1-i, j)[1]);
+  //    data.push_back(rho_img.at<cv::Vec3f>(rho_img.rows-1-i, j)[0]);
+  //  }
+  //}
+  ////std::cout << "test";
+  ////glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, rho_img.cols, rho_img.rows);
+  //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, rho_img.cols, rho_img.rows, 0, GL_RGB, GL_FLOAT, &data[0]);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+}
+
+void MainCanvas::drawBackground()
 {
   if (!show_background_img)
   {
     return;
   }
 
+  sketch_shader->bind();
+
+  // Bind our texture in Texture Unit 0
+  sketch_shader->setUniformValue("sketch_texture", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, background_texture);
+  glActiveTexture(0);
+
+  sketch_shader->setUniformValue("isBackground", GLint(1));
+
+  // 1rst attribute buffer : vertices
+  sketch_vertex_buffer->bind();
+  sketch_shader->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+  sketch_shader->enableAttributeArray("vertex");
+  // Draw the triangles !
+  glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
+  sketch_vertex_buffer->release();
+
+
+  sketch_shader->disableAttributeArray("vertex");
+  sketch_shader->release();
+
   //glDisable(GL_LIGHTING);
-  glEnable(GL_TEXTURE_2D);
-  glColor3f(1,1,1);
+  //glEnable(GL_TEXTURE_2D);
+  //glColor3f(1,1,1);
 
 
-  // Draws the background quad
-  glNormal3f(0.0, 0.0, 1.0);
-  glBegin(GL_QUADS);
-  glTexCoord2f(0.0,   1.0-v_max);	glVertex2i(0,0);
-  glTexCoord2f(0.0,   1.0);		glVertex2i(0,height);
-  glTexCoord2f(u_max, 1.0);		glVertex2i(width,height);
-  glTexCoord2f(u_max, 1.0-v_max);	glVertex2i(width,0);
-  glEnd();
+  //// Draws the background quad
+  //glNormal3f(0.0, 0.0, 1.0);
+  //glBegin(GL_QUADS);
+  //glTexCoord2f(0.0,   1.0-v_max);	glVertex2i(0,0);
+  //glTexCoord2f(0.0,   1.0);		glVertex2i(0,height);
+  //glTexCoord2f(u_max, 1.0);		glVertex2i(width,height);
+  //glTexCoord2f(u_max, 1.0-v_max);	glVertex2i(width,0);
+  //glEnd();
 
 
-  // Depth clear is not absolutely needed. An other option would have been to draw the
-  // QUAD with a 0.999 z value (z ranges in [0, 1[ with startScreenCoordinatesSystem()).
+  //// Depth clear is not absolutely needed. An other option would have been to draw the
+  //// QUAD with a 0.999 z value (z ranges in [0, 1[ with startScreenCoordinatesSystem()).
+  //glDisable(GL_TEXTURE_2D);
   glClear(GL_DEPTH_BUFFER_BIT);
-  glDisable(GL_TEXTURE_2D);
   //glEnable(GL_LIGHTING);
 
   //std::cout<<"u_max: "<<u_max<<"\tv_max: "<<v_max<<"\theight: "<<height()<<"\twidth: "<<width()<<"\n";
@@ -265,7 +475,7 @@ std::string MainCanvas::getFilePath()
   return model->getDataPath();
 }
 
-void MainCanvas::drawInfo(int height, int width)
+void MainCanvas::drawInfo()
 {
   float *primitive_buffer = new float[height*width];
   cv::Mat &r_img = model->getRImg();

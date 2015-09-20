@@ -47,7 +47,6 @@ public:
     std::shared_ptr<MainCanvas> main_canvas;
     std::shared_ptr<TrackballCanvas> trackball_canvas;
 
-
     //ImagePartAlg *img_part_alg;
     //QThread *img_part_alg_thread;
 

@@ -31,6 +31,9 @@ MainWindow::MainWindow()
       connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
     }
 
+
+
+
     main_canvas.reset(new MainCanvas);
     trackball_canvas.reset(new TrackballCanvas);
     trackball_viewer->setMainCanvasViewer(std::shared_ptr<MainCanvasViewer>(main_canvas_viewer));

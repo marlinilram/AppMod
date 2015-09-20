@@ -23,8 +23,8 @@ public:
   ~MainCanvas();
 
   virtual bool display();
-  void drawBackground(int height, int width);
-  void drawInfo(int height, int width);
+  void drawBackground();
+  void drawInfo();
   virtual void setGLProperty();
   virtual Bound* getBoundBox();
 
@@ -33,6 +33,10 @@ public:
   void updateModelBuffer();
   void setShaderProgram();
   void drawModel();
+  void drawModelEdge();
+  void sketchShader();
+  void setFBO();
+  void setSketchFBO();
 
   void setBackgroundImage(QString fname);
 
@@ -43,19 +47,28 @@ private:
 
   std::unique_ptr<QGLShaderProgram> basic_shader;
   std::unique_ptr<QGLShaderProgram> edge_detect_shader;
+  std::unique_ptr<QGLShaderProgram> sketch_shader;
 
   std::unique_ptr<QGLBuffer> vertex_buffer;
   std::unique_ptr<QGLBuffer> face_buffer;
   std::unique_ptr<QGLBuffer> normal_buffer;
   std::unique_ptr<QGLBuffer> color_buffer;
+  std::unique_ptr<QGLBuffer> sketch_vertex_buffer;
 
   GLuint offscr_color;
   GLuint offscr_depth;
   GLuint offscr_fbo;
 
+  GLuint sketch_fbo;
+  GLuint sketch_texture;
+  GLuint sketch_depth;
+
+  GLuint background_texture;
+
   GLenum num_vertex;
   GLenum num_face;
 
+  int width, height;
   float ratio, u_max, v_max;
   bool show_background_img;
 
