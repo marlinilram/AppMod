@@ -15,6 +15,7 @@ public:
 
   void addDispObj(DispObject* disp_obj);
   void deleteDispObj(DispObject* disp_obj);
+  void updateGLOutside();
 
 protected:
   virtual void draw();

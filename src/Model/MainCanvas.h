@@ -1,0 +1,72 @@
+#ifndef MainCanvas_H
+#define MainCanvas_H
+
+#include <glew-1.11.0/include/GL/glew.h>
+#include "DispObject.h"
+
+#include <string>
+#include <memory>
+#include <QString>
+
+class Model;
+class QGLShaderProgram;
+class QGLBuffer;
+
+// need to deal with background image
+// and edge detection shader
+// only deal with drawing and rendering here
+// interaction will be processed in the Viewer class
+class MainCanvas : public DispObject
+{
+public:
+  MainCanvas();
+  ~MainCanvas();
+
+  virtual bool display();
+  void drawBackground(int height, int width);
+  void drawInfo(int height, int width);
+  virtual void setGLProperty();
+  virtual Bound* getBoundBox();
+
+  void setModel(std::shared_ptr<Model> model);
+  void setModel(std::string path, std::string name);
+  void updateModelBuffer();
+  void setShaderProgram();
+  void drawModel();
+
+  void setBackgroundImage(QString fname);
+
+  std::string getFilePath();
+
+private:
+  std::shared_ptr<Model> model;
+
+  std::unique_ptr<QGLShaderProgram> basic_shader;
+  std::unique_ptr<QGLShaderProgram> edge_detect_shader;
+
+  std::unique_ptr<QGLBuffer> vertex_buffer;
+  std::unique_ptr<QGLBuffer> face_buffer;
+  std::unique_ptr<QGLBuffer> normal_buffer;
+  std::unique_ptr<QGLBuffer> color_buffer;
+
+  GLuint offscr_color;
+  GLuint offscr_depth;
+  GLuint offscr_fbo;
+
+  GLenum num_vertex;
+  GLenum num_face;
+
+  float ratio, u_max, v_max;
+  bool show_background_img;
+
+  bool save_to_file;
+  bool wireframe_, flatShading_;
+  bool show_model;
+  int render_mode;
+
+private:
+  MainCanvas(const MainCanvas&);
+  void operator = (const MainCanvas&);
+};
+
+#endif

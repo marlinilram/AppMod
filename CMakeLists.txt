@@ -48,9 +48,8 @@ SET( Project_INCLUDE_DIR src/
 						 extern/nlopt/api 
 						 extern/eigen )
 
-SET( MainWin_UIS src/ui/mainWin.ui )
-SET( MainWin_MOC_HDRS src/ui/mainWin.h 
-					  src/Alg/SIRFS/ImagePartAlg.h )
+SET( MainWin_UIS src/ui/MainWindow.ui )
+SET( MainWin_MOC_HDRS src/ui/MainWindow.h)
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)

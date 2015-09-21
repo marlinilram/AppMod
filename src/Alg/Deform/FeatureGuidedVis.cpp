@@ -2,6 +2,7 @@
 #include "FeatureGuided.h"
 #include "tele2d.h"
 #include "Colormap.h"
+#include "Bound.h"
 
 #include "opencv2/contrib/contrib.hpp"
 
@@ -35,6 +36,8 @@ FeatureGuidedVis::FeatureGuidedVis()
   u_max = 1.0;
   v_max = 1.0;
   ratio = 1.0;
+
+  vis_paras.resize(7, false);
 }
 
 FeatureGuidedVis::~FeatureGuidedVis()
@@ -50,13 +53,34 @@ void FeatureGuidedVis::init(FeatureGuided* init_data_ptr)
 bool FeatureGuidedVis::display()
 {
   bool display_correct = true;
-  display_correct = display_correct && this->displayVectorField();
-  display_correct = display_correct && this->displayTargetVectorField();
-  display_correct = display_correct && this->displayTargetCurves();
-  display_correct = display_correct && this->displaySourceCurves();
-  display_correct = display_correct && this->displayFittedCurves();
-  display_correct = display_correct && this->displayHistMatchPts();
-  //display_correct = display_correct && this->displayScalarField();
+  if (vis_paras[0])
+  {
+    display_correct = display_correct && this->displayVectorField();
+  }
+  if (vis_paras[1])
+  {
+    display_correct = display_correct && this->displayTargetVectorField();
+  }
+  if (vis_paras[2])
+  {
+    display_correct = display_correct && this->displaySourceCurves();
+  }
+  if (vis_paras[3])
+  {
+    display_correct = display_correct && this->displayTargetCurves();
+  }
+  if (vis_paras[4])
+  {
+    display_correct = display_correct && this->displayScalarField();
+  }
+  if (vis_paras[5])
+  {
+    display_correct = display_correct && this->displayFittedCurves();
+  }
+  if (vis_paras[6])
+  {
+    display_correct = display_correct && this->displayHistMatchPts();
+  }
   return display_correct;
 }
 
@@ -99,7 +123,7 @@ bool FeatureGuidedVis::displayVectorField()
     for( int i=0; i<resolution;  i += display_step ){
       for( int j=0; j<resolution; j += display_step ){
 
-        glColor3f( 1.0, 1, 1 ) ;
+        glColor3f( 0.5, 0.5, 0.5 ) ;
 
         double len = 4.0  * resolution / 100;
 
@@ -482,13 +506,13 @@ Bound* FeatureGuidedVis::getBoundBox()
 {
   int resolution = this->data_ptr->GetTeleRegister()->resolution;
 
-  this->bound.minX = 0;
-  this->bound.maxX = resolution;
-  this->bound.minY = 0;
-  this->bound.maxY = resolution;
-  this->bound.minZ = 0.0;
-  this->bound.maxZ = 0.1;
-  return &this->bound;
+  this->bound->minX = 0;
+  this->bound->maxX = resolution;
+  this->bound->minY = 0;
+  this->bound->maxY = resolution;
+  this->bound->minZ = 0.0;
+  this->bound->maxZ = 0.1;
+  return this->bound.get();
 }
 
 bool FeatureGuidedVis::displayScalarField()
@@ -589,4 +613,9 @@ void FeatureGuidedVis::setScalarField()
 void FeatureGuidedVis::setGLProperty()
 {
   this->setScalarField();
+}
+
+void FeatureGuidedVis::setVisualizationParas(std::vector<bool>& paras)
+{
+  this->vis_paras = paras;
 }
