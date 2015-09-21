@@ -22,8 +22,10 @@ void TrackballViewer::setMainCanvasViewer(std::shared_ptr<MainCanvasViewer> view
 void TrackballViewer::draw()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
   for (int i = 0; i < dispObjects.size(); ++i)
   {
+    drawTrackBall();
     if (!dispObjects[i]->display())
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
@@ -57,6 +59,39 @@ void TrackballViewer::init()
   camera()->setType(qglviewer::Camera::Type::PERSPECTIVE);
 
   setWheelandMouse();
+}
+
+void TrackballViewer::drawTrackBall()
+{
+	//double radius = 1.5;
+	double v1,v2;
+	glBegin(GL_LINE_STRIP);
+	for(double i = 0;i <= 2 * M_PI;i += (M_PI / 180))
+	{
+    v1 = ((dispObjects[0]->getBoundBox())->centroid).x + ((dispObjects[0]->getBoundBox())->getRadius()) * cos(i);
+		v2 = ((dispObjects[0]->getBoundBox())->centroid).y + ((dispObjects[0]->getBoundBox())->getRadius()) * sin(i);
+		glColor3f(0.8,0.6,0.6);
+		glVertex3f(v1,v2,((dispObjects[0]->getBoundBox())->centroid).z);
+	}
+	glEnd();
+	glBegin(GL_LINE_STRIP);
+	for(double i = 0;i <= 2 * M_PI;i += (M_PI / 180))
+	{
+		v1 = ((dispObjects[0]->getBoundBox())->centroid).y + ((dispObjects[0]->getBoundBox())->getRadius()) * cos(i);
+		v2 = ((dispObjects[0]->getBoundBox())->centroid).z + ((dispObjects[0]->getBoundBox())->getRadius()) * sin(i);
+		glColor3f(0.6,0.8,0.6);
+		glVertex3f(((dispObjects[0]->getBoundBox())->centroid).x,v1,v2);
+	}
+	glEnd();
+	glBegin(GL_LINE_STRIP);
+	for(double i = 0;i <= 2 * M_PI;i += (M_PI / 180))
+	{
+		v1 = ((dispObjects[0]->getBoundBox())->centroid).x + ((dispObjects[0]->getBoundBox())->getRadius()) * cos(i);
+		v2 = ((dispObjects[0]->getBoundBox())->centroid).z + ((dispObjects[0]->getBoundBox())->getRadius()) * sin(i);
+		glColor3f(0.6,0.6,0.8);
+		glVertex3f(v1,((dispObjects[0]->getBoundBox())->centroid).y,v2);
+	}
+	glEnd();
 }
 
 void TrackballViewer::setWheelandMouse()

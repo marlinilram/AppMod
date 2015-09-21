@@ -17,10 +17,11 @@ public:
   void setMainCanvasViewer(std::shared_ptr<MainCanvasViewer> viewer);
   void updateBuffer();
   void resetCamera();
-
+  
 protected:
   virtual void draw();
   virtual void init();
+  void drawTrackBall();
 
 private:
   void drawCornerAxis();

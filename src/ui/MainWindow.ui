@@ -10,18 +10,23 @@
     <height>781</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>100</width>
+    <height>714</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>I2S</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_3">
-    <item row="0" column="0">
-     <widget class="MainCanvasViewer" name="main_canvas_viewer" native="true"/>
-    </item>
-    <item row="0" column="1">
-     <widget class="TrackballViewer" name="trackball_viewer" native="true"/>
-    </item>
-   </layout>
+   <layout class="QGridLayout" name="gridLayout_3"/>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -68,6 +73,18 @@
    <addaction name="action_Tool_Box"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>223</width>
+     <height>714</height>
+    </size>
+   </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
@@ -83,7 +100,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>232</width>
+          <width>205</width>
           <height>622</height>
          </rect>
         </property>
@@ -169,8 +186,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>205</width>
-          <height>622</height>
+          <width>98</width>
+          <height>28</height>
          </rect>
         </property>
         <attribute name="label">
@@ -238,20 +255,6 @@
    </property>
   </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>MainCanvasViewer</class>
-   <extends>QWidget</extends>
-   <header>MainCanvasViewer.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>TrackballViewer</class>
-   <extends>QWidget</extends>
-   <header>TrackballViewer.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

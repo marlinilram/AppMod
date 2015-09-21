@@ -10,6 +10,10 @@
 #include <QThread>
 #include "ui_MainWindow.h"
 
+#include "BasicViewer.h"
+#include "MainCanvasViewer.h"
+#include "TrackballViewer.h"
+
 #include <memory>
 
 class MainCanvas;
@@ -44,8 +48,12 @@ private slots:
 public:
     //Viewer *viewer;
     //Viewer *viewer_img;
+	
     std::shared_ptr<MainCanvas> main_canvas;
     std::shared_ptr<TrackballCanvas> trackball_canvas;
+	std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
+    std::shared_ptr<TrackballViewer> trackball_viewer;
+	std::shared_ptr<BasicViewer> src_vec_field_viewer,trg_vec_field_viewer;
 
 
     //ImagePartAlg *img_part_alg;

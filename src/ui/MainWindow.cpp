@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "MainCanvasViewer.h"
+#include "TrackballViewer.h"
 #include "I2SAlgorithms.h"
 #include "ProjOptimize.h"
 #include "MainCanvas.h"
@@ -30,6 +31,23 @@ MainWindow::MainWindow()
     {
       connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
     }
+
+	QGridLayout *gridLayout_3;
+	gridLayout_3 = new QGridLayout(centralwidget);
+    gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
+    main_canvas_viewer = std::shared_ptr<MainCanvasViewer>(new MainCanvasViewer(centralwidget));
+    main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
+    gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
+    trackball_viewer = std::shared_ptr<TrackballViewer>(new TrackballViewer(centralwidget));
+    trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
+    gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 2);
+	src_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
+	src_vec_field_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
+	gridLayout_3->addWidget(src_vec_field_viewer.get(),1,2,1,1);
+	trg_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
+	trg_vec_field_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
+	gridLayout_3->addWidget(trg_vec_field_viewer.get(),1,3,1,1);
+    this->setCentralWidget(centralwidget);
 
     main_canvas.reset(new MainCanvas);
     trackball_canvas.reset(new TrackballCanvas);
