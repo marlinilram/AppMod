@@ -79,3 +79,4 @@ void BasicViewer::updateGLOutside()
 
   doneCurrent();
 }
+

@@ -218,13 +218,15 @@ void Shape::computeBounds()
   bound->maxY = std::numeric_limits<float>::min();
   bound->minZ = std::numeric_limits<float>::max();
   bound->maxZ = std::numeric_limits<float>::min();
-
+  float sum_x = 0,sum_y = 0,sum_z = 0;
   for (decltype(vertex_list.size()) i = 0; i < vertex_list.size() / 3; ++i)
   {
     float x = vertex_list[3 * i + 0];
     float y = vertex_list[3 * i + 1];
     float z = vertex_list[3 * i + 2];
-
+    sum_x += x;
+		sum_y += y;
+		sum_z += z;
     if (x < bound->minX) bound->minX = x;
     if (x > bound->maxX) bound->maxX = x;
     if (y < bound->minY) bound->minY = y;
@@ -232,6 +234,9 @@ void Shape::computeBounds()
     if (z < bound->minZ) bound->minZ = z;
     if (z > bound->maxZ) bound->maxZ = z;
   }
+  bound->centroid.x = sum_x / (vertex_list.size() / 3);
+	bound->centroid.y = sum_y / (vertex_list.size() / 3);
+	bound->centroid.z = sum_z / (vertex_list.size() / 3);
 }
 
 void Shape::computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float v2[3], float lambd[3])
