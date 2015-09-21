@@ -64,7 +64,7 @@ void tele2d::init( CURVES curves_, std::vector<std::vector<int>> group, std::vec
 	endpoints = endps ;
 
 	scalar_field_4cc = false ;
-	findCorres_byScalarField() ;
+	//findCorres_byScalarField() ;
 
 	//correctDirs() ;
 

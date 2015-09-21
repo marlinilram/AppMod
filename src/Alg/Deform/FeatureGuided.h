@@ -3,12 +3,12 @@
 
 #include <cv.h>
 #include <highgui.h>
+#include <memory>
 
 #include "tele_basicType.h"
 #include "kdtree.h" // to make life easier...
 
-class BasicViewer;
-class FeatureGuidedVis;
+class Model;
 class tele2d;
 typedef std::vector<std::vector<double2> > CURVES;
 typedef             std::vector<double2>   CURVE;
@@ -20,21 +20,17 @@ typedef std::vector<std::vector<double> >  HISTS;
 class FeatureGuided
 {
 public:
-  FeatureGuided(std::string sourceFile, std::string targetFile);
+  FeatureGuided(std::shared_ptr<Model> source_model, std::string targetFile);
   FeatureGuided();
   virtual ~FeatureGuided();
 
-  void initAllPtr();
-  void initImages(const cv::Mat& source, const cv::Mat& target);
-  void initImages(std::string sourceFile, std::string targetFile);
+  void initTargetImage(std::string targetFile);
   void initRegister();
-  void initDispObj();
-  void initVisualization(BasicViewer* renderer);
-  void setVissualizationPara(std::vector<bool>& paras);
-  kdtree::KDTree* getSourceKDTree();
+  void updateSourceVectorField();
+  std::shared_ptr<kdtree::KDTree> getSourceKDTree();
 
-  inline tele2d* GetTeleRegister() { return source_tele_register; };
-  inline tele2d* GetTargetTeleRegister() { return target_tele_register; };
+  inline std::shared_ptr<tele2d> GetTeleRegister() { return source_tele_register; };
+  inline std::shared_ptr<tele2d> GetTargetTeleRegister() { return target_tele_register; };
   void NormalizedTargetCurves(CURVES& curves);
   void NormalizedSourceCurves(CURVES& curves);
   void OptimizeConnection();
@@ -52,11 +48,8 @@ public:
   void FindHistMatchCrsp(CURVES &curves);
   void GetCrspPair(CURVES& curves);
 
-  static void ExtractCurves(const cv::Mat& source, CURVES& curves);
-  static std::vector<double2> SearchCurve(
-    const cv::Mat& source, int r, int c, 
-    std::vector<std::vector<bool>>& visited_table);
-  static void SearchCurve(const cv::Mat& source,
+  void ExtractCurves(const cv::Mat& source, CURVES& curves);
+  void SearchCurve(const cv::Mat& source,
     int cur_row, int cur_col,
     std::vector<std::vector<bool>>& visited_table,
     std::vector<double2>& curve);
@@ -74,23 +67,20 @@ public:
   static void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
 private:
-  cv::Mat source_img;
+  std::shared_ptr<Model> source_model;
   cv::Mat target_img;
 
   CURVES source_curves;
   CURVES target_curves;
-  int edge_th; // threshold for edge detection
+  float edge_threshold; // threshold for edge detection
 
-  kdtree::KDTree* source_KDTree;
+  std::shared_ptr<kdtree::KDTree> source_KDTree;
   kdtree::KDTreeArray source_KDTree_data;
-  kdtree::KDTree* target_KDTree;
+  std::shared_ptr<kdtree::KDTree> target_KDTree;
   kdtree::KDTreeArray target_KDTree_data;
 
-  tele2d* source_tele_register;
-  tele2d* target_tele_register;
-
-  BasicViewer* renderer;
-  FeatureGuidedVis* disp_obj;
+  std::shared_ptr<tele2d> source_tele_register;
+  std::shared_ptr<tele2d> target_tele_register;
 private:
   FeatureGuided(const FeatureGuided&);
   void operator = (const FeatureGuided&);

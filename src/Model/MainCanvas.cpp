@@ -10,7 +10,7 @@ MainCanvas::MainCanvas()
   : show_background_img(false), show_model(true), wireframe_(false), flatShading_(true), save_to_file(true)
 {
   render_mode = 2;
-  edge_threshold = 0.5;
+  edge_threshold = 1.5;
   use_flat = 1;
 }
 
@@ -376,6 +376,13 @@ void MainCanvas::sketchShader()
     }
   }
 
+  std:: cout << "mindepth: " << min_depth << "\tmaxdepth: " << max_depth << "\n";
+
+  cv::Mat r_img;
+  r_img.create(height, width, CV_32FC3);
+  glReadPixels(0, 0, width, height, GL_BGR, GL_FLOAT, (float*)r_img.data);
+  cv::flip(r_img, r_img, 0);
+
   // if we can the smallest z and largest z
   // rescale in the shader
 
@@ -406,6 +413,12 @@ void MainCanvas::sketchShader()
   // Draw the triangles !
   glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
   sketch_vertex_buffer->release();
+
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  cv::Mat &edge_image = model->getEdgeImg();
+  edge_image.create(height, width, CV_32FC1);
+  glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, (float*)edge_image.data);
+  cv::flip(edge_image, edge_image, 0);
 
   glDisable(GL_BLEND);
   glDisable(GL_CULL_FACE);

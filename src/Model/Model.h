@@ -30,6 +30,7 @@ public:
   inline cv::Mat &getPrimitiveIDImg(){ return primitive_ID; };
   inline cv::Mat &getZImg() { return z_img; };
   inline cv::Mat &getRMask() { return mask_rimg; };
+  inline cv::Mat &getEdgeImg() { return edge_image; };
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
@@ -45,6 +46,7 @@ private:
   cv::Mat rBGRA_img;
   cv::Mat r_img;
   cv::Mat mask_rimg;
+  cv::Mat edge_image;
 
 private:
   Model(const Model&);

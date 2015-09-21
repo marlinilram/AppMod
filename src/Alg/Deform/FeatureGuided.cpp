@@ -1,75 +1,27 @@
-#include "BasicViewer.h"
 #include "FeatureGuided.h"
-#include "FeatureGuidedVis.h"
+#include "Model.h"
 #include "tele2d.h"
 #include "UtilityHeader.h"
 
 FeatureGuided::FeatureGuided()
 {
-  this->initAllPtr();
 }
 
 FeatureGuided::~FeatureGuided()
 {
-  if (this->disp_obj)
-  {
-    delete this->disp_obj;
-  }
-  if (this->source_tele_register)
-  {
-    delete this->source_tele_register;
-  }
-  if (this->target_tele_register)
-  {
-    delete this->target_tele_register;
-  }
-  if (this->source_KDTree)
-  {
-    delete this->source_KDTree;
-  }
-  if (this->target_KDTree)
-  {
-    delete this->target_KDTree;
-  }
 }
 
-FeatureGuided::FeatureGuided(std::string sourceFile, std::string targetFile)
+FeatureGuided::FeatureGuided(std::shared_ptr<Model> source_model, std::string targetFile)
 {
-  this->initAllPtr();
-  this->initImages(sourceFile, targetFile);
+  this->initTargetImage(targetFile);
+  this->source_model = source_model;
   this->initRegister();
 }
 
-void FeatureGuided::initAllPtr()
+void FeatureGuided::initTargetImage(std::string targetFile)
 {
-  this->disp_obj = nullptr;
-  this->source_tele_register = nullptr;
-  this->target_tele_register = nullptr;
-  this->source_KDTree = nullptr;
-  this->target_KDTree = nullptr;
-}
-
-void FeatureGuided::initDispObj()
-{
-  if (this->disp_obj)
-  {
-    this->renderer->deleteDispObj(this->disp_obj);
-    delete this->disp_obj;
-  }
-  this->disp_obj = new FeatureGuidedVis;
-  this->disp_obj->init(this);
-}
-
-void FeatureGuided::initImages(const cv::Mat& source, const cv::Mat& target)
-{
-  this->source_img = source.clone();
-  this->target_img = target.clone();
-}
-
-void FeatureGuided::initImages(std::string sourceFile, std::string targetFile)
-{
-  this->source_img = cv::imread(sourceFile, CV_LOAD_IMAGE_GRAYSCALE);
-  this->target_img = cv::imread(targetFile, CV_LOAD_IMAGE_GRAYSCALE);
+  cv::imread(targetFile, CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_img, CV_32FC1);
+  this->target_img = this->target_img / 255.0;
 }
 
 void FeatureGuided::initRegister()
@@ -77,8 +29,10 @@ void FeatureGuided::initRegister()
   // extract edges from souce image and target image
   this->source_curves.clear();
   this->target_curves.clear();
-  FeatureGuided::ExtractCurves(this->source_img, this->source_curves);
-  FeatureGuided::ExtractCurves(this->target_img, this->target_curves);
+  this->edge_threshold = 0.9;
+  this->ExtractCurves(source_model->getEdgeImg(), this->source_curves);
+  this->edge_threshold = 0.2;
+  this->ExtractCurves(this->target_img, this->target_curves);
 
   // init source tele2d
   std::vector<std::vector<int>> group(1);
@@ -88,11 +42,7 @@ void FeatureGuided::initRegister()
     group[0].push_back(i);
     endps.push_back(int2(1, 0));
   }
-  if (this->source_tele_register)
-  {
-    delete this->source_tele_register;
-  }
-  this->source_tele_register = new tele2d(100, 0.02, 1);
+  this->source_tele_register.reset(new tele2d(100, 0.02, 1));
   this->source_tele_register->init(this->source_curves, group, endps);
   this->source_tele_register->setInputField();
 
@@ -104,27 +54,36 @@ void FeatureGuided::initRegister()
     group[0].push_back(i);
     endps.push_back(int2(1, 0));
   }
-  if (this->target_tele_register)
-  {
-    delete this->target_tele_register;
-  }
-  this->target_tele_register = new tele2d(100, 0.02, 1);
+  this->target_tele_register.reset(new tele2d(100, 0.02, 1));
   this->target_tele_register->init(this->target_curves, group, endps);
   this->target_tele_register->setInputField();
 
   // init source distance map
-  this->BuildDispMap(source_img, source_KDTree_data);
-  if (this->source_KDTree)
-  {
-    delete this->source_KDTree;
-  }
-  this->source_KDTree = new kdtree::KDTree(source_KDTree_data);
+  //this->BuildDispMap(source_img, source_KDTree_data);
+  //this->source_KDTree.reset(new kdtree::KDTree(source_KDTree_data));
 
   // Optimize Connection
   //this->OptimizeConnection();
 
   // Search correspondences
 
+}
+
+void FeatureGuided::updateSourceVectorField()
+{
+  this->source_curves.clear();
+  this->edge_threshold = 0.9;
+  this->ExtractCurves(source_model->getEdgeImg(), this->source_curves);
+
+  std::vector<std::vector<int>> group(1);
+  std::vector<int2> endps;
+  for (int i = 0; i < this->source_curves.size(); ++i)
+  {
+    group[0].push_back(i);
+    endps.push_back(int2(1, 0));
+  }
+  this->source_tele_register->init(this->source_curves, group, endps);
+  this->source_tele_register->setInputField();
 }
 
 void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
@@ -136,10 +95,10 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
   {
     for (int j = 0; j < source.cols; ++j)
     {
-      if (source.at<uchar>(i, j) > 50 && visited_table[i][j] == false)
+      if (source.at<float>(i, j) > edge_threshold && visited_table[i][j] == false)
       {
         curve.clear();
-        FeatureGuided::SearchCurve(source, i, j, visited_table, curve);
+        this->SearchCurve(source, i, j, visited_table, curve);
         CURVES cur_curves = FeatureGuided::ReorganizeCurves(FeatureGuided::SplitCurve(curve));
         curves.insert(curves.end(), cur_curves.begin(), cur_curves.end());
       }
@@ -162,50 +121,40 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
 #endif
 }
 
-std::vector<double2> FeatureGuided::SearchCurve(
-  const cv::Mat& source, int r, int c, 
-  std::vector<std::vector<bool>>& visited_table)
-{
-  // search a curve recursively
-  // seems to go out of memory...
-  // use cv::findContours instead
-  std::vector<double2> result;
-  if (source.at<uchar>(r, c) < 200 || visited_table[r][c] == true)
-  {
-    return result;
-  }
-
-  visited_table[r][c] = true;
-  result.push_back(double2(r, c));
-
-  std::vector<int2> pos;
-  std::vector<double2> temp_result;
-
-  pos.push_back(int2((r - 1) < 0 ? 0 : r - 1, c));
-  pos.push_back(int2(r, (c + 1) >= source.cols ? c : c + 1));
-  pos.push_back(int2((r + 1) >= source.rows ? r : r + 1, c));
-  pos.push_back(int2(r, (c - 1) < 0 ? 0 : c - 1));
-  pos.push_back(int2((r - 1) < 0 ? 0 : r - 1, (c - 1) < 0 ? 0 : c - 1));
-  pos.push_back(int2((r - 1) < 0 ? 0 : r - 1, (c + 1) >= source.cols ? c : c + 1));
-  pos.push_back(int2((r + 1) >= source.rows ? r : r + 1, (c - 1) < 0 ? 0 : c - 1));
-  pos.push_back(int2((r + 1) >= source.rows ? r : r + 1, (c + 1) >= source.cols ? c : c + 1));
-  for (int i = 0; i < 8; ++i)
-  {
-    temp_result = FeatureGuided::SearchCurve(source, pos[i].first, pos[i].second, visited_table);
-    result.insert(result.end(), temp_result.begin(), temp_result.end());
-  }
-  return result;
-}
-
-void FeatureGuided::initVisualization(BasicViewer* renderer)
-{
-  if (source_tele_register != NULL)
-  {
-    this->renderer = renderer;
-    this->initDispObj();
-    this->renderer->addDispObj(this->disp_obj);
-  }
-}
+//std::vector<double2> FeatureGuided::SearchCurve(
+//  const cv::Mat& source, int r, int c, 
+//  std::vector<std::vector<bool>>& visited_table)
+//{
+//  // search a curve recursively
+//  // seems to go out of memory...
+//  // use cv::findContours instead
+//  std::vector<double2> result;
+//  if (source.at<uchar>(r, c) < 200 || visited_table[r][c] == true)
+//  {
+//    return result;
+//  }
+//
+//  visited_table[r][c] = true;
+//  result.push_back(double2(r, c));
+//
+//  std::vector<int2> pos;
+//  std::vector<double2> temp_result;
+//
+//  pos.push_back(int2((r - 1) < 0 ? 0 : r - 1, c));
+//  pos.push_back(int2(r, (c + 1) >= source.cols ? c : c + 1));
+//  pos.push_back(int2((r + 1) >= source.rows ? r : r + 1, c));
+//  pos.push_back(int2(r, (c - 1) < 0 ? 0 : c - 1));
+//  pos.push_back(int2((r - 1) < 0 ? 0 : r - 1, (c - 1) < 0 ? 0 : c - 1));
+//  pos.push_back(int2((r - 1) < 0 ? 0 : r - 1, (c + 1) >= source.cols ? c : c + 1));
+//  pos.push_back(int2((r + 1) >= source.rows ? r : r + 1, (c - 1) < 0 ? 0 : c - 1));
+//  pos.push_back(int2((r + 1) >= source.rows ? r : r + 1, (c + 1) >= source.cols ? c : c + 1));
+//  for (int i = 0; i < 8; ++i)
+//  {
+//    temp_result = FeatureGuided::SearchCurve(source, pos[i].first, pos[i].second, visited_table);
+//    result.insert(result.end(), temp_result.begin(), temp_result.end());
+//  }
+//  return result;
+//}
 
 void FeatureGuided::SearchCurve(const cv::Mat& source,
   int cur_row, int cur_col,
@@ -213,7 +162,7 @@ void FeatureGuided::SearchCurve(const cv::Mat& source,
   std::vector<double2>& curve)
 {
   // if the current pos isn't a edge or is visited before or out of boundary, return
-  if (source.at<uchar>(cur_row, cur_col) < 50 || visited_table[cur_row][cur_col] == true
+  if (source.at<float>(cur_row, cur_col) < edge_threshold || visited_table[cur_row][cur_col] == true
     || cur_row < 0 || cur_row >= source.rows || cur_col < 0 || cur_col >= source.cols)
   {
     return;
@@ -634,7 +583,7 @@ void FeatureGuided::BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDT
   }
 }
 
-kdtree::KDTree* FeatureGuided::getSourceKDTree()
+std::shared_ptr<kdtree::KDTree> FeatureGuided::getSourceKDTree()
 {
   return this->source_KDTree;
 }
@@ -785,8 +734,8 @@ void FeatureGuided::FindHistMatchCrsp(CURVES &curves)
   // 0.1 is the radius for neighborhood to build histogram
   HISTS source_hists;
   HISTS target_hists;
-  this->CalculateHists(source_hists, this->source_curves, 0.1, source_tele_register);
-  this->CalculateHists(target_hists, this->target_curves, 0.1, target_tele_register);
+  this->CalculateHists(source_hists, this->source_curves, 0.1, source_tele_register.get());
+  this->CalculateHists(target_hists, this->target_curves, 0.1, target_tele_register.get());
 
   // find best matched points from source to target
   // 0.05 is the radius for neighborhood to find correspondences
@@ -879,10 +828,4 @@ void FeatureGuided::GetCrspPair(CURVES& curves)
     crsp_pair[1] = target_crsp[i];
     curves.push_back(crsp_pair);
   }
-}
-
-void FeatureGuided::setVissualizationPara(std::vector<bool>& paras)
-{
-  this->disp_obj->setVisualizationParas(paras); 
-  this->renderer->updateGL();
 }

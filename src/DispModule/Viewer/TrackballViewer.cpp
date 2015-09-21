@@ -1,5 +1,6 @@
 #include "MainCanvasViewer.h"
 #include "TrackballViewer.h"
+#include "VectorFieldViewer.h"
 #include "TrackballCanvas.h"
 #include "Bound.h"
 
@@ -17,6 +18,11 @@ TrackballViewer::~TrackballViewer()
 void TrackballViewer::setMainCanvasViewer(std::shared_ptr<MainCanvasViewer> viewer)
 {
   main_canvas_viewer = viewer;
+}
+
+void TrackballViewer::setSourceVectorViewer(std::shared_ptr<VectorFieldViewer> viewer)
+{
+  source_vector_viewer = viewer;
 }
 
 void TrackballViewer::draw()
@@ -157,6 +163,10 @@ void TrackballViewer::resetCamera()
   setStateFileName(QString((dynamic_cast<TrackballCanvas*>(dispObjects[0])->getFilePath()+"/camera_info.xml").c_str()));
   if (restoreStateFromFile())
     std::cout << "Load camera info successes...\n";
+  else
+    std::cout << "Load camera info failed...\n";
+
+  syncCamera();
 }
 
 void TrackballViewer::drawCornerAxis()
@@ -258,30 +268,40 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
   {
     QGLViewer::mousePressEvent(e);
     sync_camera = true;
-    if(main_canvas_viewer && sync_camera)
+    if(sync_camera)
     {
-      GLdouble m[16];
-      camera()->getModelViewMatrix(m);
-      main_canvas_viewer->camera()->setFromModelViewMatrix(m);
-      main_canvas_viewer->updateGLOutside();
+      syncCamera();
     }
   }
 }
 
-  void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
+void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 {
   QGLViewer::mouseMoveEvent(e);
-  if(main_canvas_viewer && sync_camera)
+  if(sync_camera)
+  {
+    syncCamera();
+  }
+}
+
+void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
+{
+  QGLViewer::mouseReleaseEvent(e);
+  sync_camera = false;
+}
+
+void TrackballViewer::syncCamera()
+{
+  if(main_canvas_viewer)
   {
     GLdouble m[16];
     camera()->getModelViewMatrix(m);
     main_canvas_viewer->camera()->setFromModelViewMatrix(m);
     main_canvas_viewer->updateGLOutside();
   }
-}
 
-  void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
-{
-  QGLViewer::mouseReleaseEvent(e);
-  sync_camera = false;
+  if (source_vector_viewer)
+  {
+    source_vector_viewer->updateSourceVectorField();
+  }
 }

@@ -94,9 +94,9 @@ public:
 		std::vector<std::vector<double2>> curves_backup = curves ;
 		curves = initialCurves ;
 		computeVectorField() ;
-		interpolateBetweenPairedCurves() ;
-		computeOsculatingCircle(  ) ;
-		getDis() ;
+		//interpolateBetweenPairedCurves() ;
+		//computeOsculatingCircle(  ) ;
+		//getDis() ;
 		curves = curves_backup ;
 	}
 

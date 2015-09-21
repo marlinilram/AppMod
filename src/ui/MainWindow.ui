@@ -178,6 +178,9 @@
            </item>
            <item>
             <widget class="QSlider" name="edgeThresholdSlider">
+             <property name="value">
+              <number>75</number>
+             </property>
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>

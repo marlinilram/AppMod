@@ -10,7 +10,6 @@ public:
   MainCanvasViewer(QWidget *widget);
   ~MainCanvasViewer();
 
-  void resetCamera();
   void getSnapShot();
   void setBackgroundImage(QString fname);
   void updateBuffer();

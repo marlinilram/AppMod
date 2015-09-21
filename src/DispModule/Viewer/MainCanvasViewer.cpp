@@ -55,34 +55,6 @@ void MainCanvasViewer::init()
   clearMouseBindings();
 }
 
-void MainCanvasViewer::resetCamera()
-{
-  // assume only one dispObjects MainCanvas exist here
-  Bound* scene_bounds = dynamic_cast<MainCanvas*>(dispObjects[0])->getBoundBox();
-
-  qglviewer::Vec scene_center;
-  scene_center = qglviewer::Vec((scene_bounds->minX + scene_bounds->maxX) / 2,
-    (scene_bounds->minY + scene_bounds->maxY) / 2,
-    (scene_bounds->minZ + scene_bounds->maxZ) / 2);
-
-  setSceneCenter(scene_center);
-
-  float x_span = (scene_bounds->maxX - scene_bounds->minX) / 2;
-  float y_span = (scene_bounds->maxY - scene_bounds->minY) / 2;
-  float z_span = (scene_bounds->maxZ - scene_bounds->minZ) / 2;
-  float scene_radius = x_span>y_span ? (x_span > z_span ? x_span : z_span) : (y_span > z_span ? y_span : z_span);
-  scene_radius *= 1.5;
-
-  setSceneRadius(scene_radius);
-  camera()->fitSphere(scene_center, scene_radius);
-
-
-
-  setStateFileName(QString((dynamic_cast<MainCanvas*>(dispObjects[0])->getFilePath()+"/camera_info.xml").c_str()));
-  if (restoreStateFromFile())
-    std::cout << "Load camera info successes...\n";
-}
-
 void MainCanvasViewer::getSnapShot()
 {
   makeCurrent();

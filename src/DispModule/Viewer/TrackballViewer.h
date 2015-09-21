@@ -6,6 +6,7 @@
 #include <memory>
 
 class MainCanvasViewer;
+class VectorFieldViewer;
 class QMouseEvent;
 
 class TrackballViewer : public BasicViewer
@@ -15,6 +16,7 @@ public:
   ~TrackballViewer();
 
   void setMainCanvasViewer(std::shared_ptr<MainCanvasViewer> viewer);
+  void setSourceVectorViewer(std::shared_ptr<VectorFieldViewer> viewer);
   void updateBuffer();
   void resetCamera();
   
@@ -29,12 +31,14 @@ private:
   void mousePressEvent(QMouseEvent *e);
   void mouseMoveEvent(QMouseEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
+  void syncCamera();
 
 private:
   bool sync_camera;
 
 private:
   std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
+  std::shared_ptr<VectorFieldViewer> source_vector_viewer;
 };
 
 #endif

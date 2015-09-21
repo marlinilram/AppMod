@@ -10,15 +10,14 @@
 #include <QThread>
 #include "ui_MainWindow.h"
 
-#include "BasicViewer.h"
-#include "MainCanvasViewer.h"
-#include "TrackballViewer.h"
-
 #include <memory>
 
 class MainCanvas;
+class MainCanvasViewer;
 class TrackballCanvas;
-class FeatureGuided;
+class TrackballViewer;
+class VectorFieldCanvas;
+class VectorFieldViewer;
 
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -52,10 +51,13 @@ public:
     //Viewer *viewer_img;
 	
     std::shared_ptr<MainCanvas> main_canvas;
+    std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
+    
     std::shared_ptr<TrackballCanvas> trackball_canvas;
-	std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
     std::shared_ptr<TrackballViewer> trackball_viewer;
-	std::shared_ptr<BasicViewer> src_vec_field_viewer,trg_vec_field_viewer;
+	  
+    std::shared_ptr<VectorFieldCanvas> source_vector_canvas, target_vector_canvas;
+    std::shared_ptr<VectorFieldViewer> source_vector_viewer, target_vector_viewer;
 
 
     //ImagePartAlg *img_part_alg;

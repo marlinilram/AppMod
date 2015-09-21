@@ -1,11 +1,14 @@
 #include "MainWindow.h"
 #include "MainCanvasViewer.h"
 #include "TrackballViewer.h"
+#include "VectorFieldViewer.h"
 #include "I2SAlgorithms.h"
 #include "ProjOptimize.h"
 #include "MainCanvas.h"
 #include "TrackballCanvas.h"
+#include "VectorFieldCanvas.h"
 #include "Model.h"
+#include "FeatureGuided.h"
 //#include "camera_pose.h"
 
 MainWindow::MainWindow()
@@ -43,17 +46,24 @@ MainWindow::MainWindow()
     trackball_viewer = std::shared_ptr<TrackballViewer>(new TrackballViewer(centralwidget));
     trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
     gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 2);
-    src_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
-    src_vec_field_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
-    gridLayout_3->addWidget(src_vec_field_viewer.get(),1,2,1,1);
-    trg_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
-    trg_vec_field_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
-    gridLayout_3->addWidget(trg_vec_field_viewer.get(),1,3,1,1);
+    source_vector_viewer = std::shared_ptr<VectorFieldViewer>(new VectorFieldViewer(centralwidget));
+    source_vector_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
+    gridLayout_3->addWidget(source_vector_viewer.get(),1,2,1,1);
+    target_vector_viewer = std::shared_ptr<VectorFieldViewer>(new VectorFieldViewer(centralwidget));
+    target_vector_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
+    gridLayout_3->addWidget(target_vector_viewer.get(),1,3,1,1);
     this->setCentralWidget(centralwidget);
 
     main_canvas.reset(new MainCanvas);
     trackball_canvas.reset(new TrackballCanvas);
-    trackball_viewer->setMainCanvasViewer(std::shared_ptr<MainCanvasViewer>(main_canvas_viewer));
+    trackball_viewer->setMainCanvasViewer(main_canvas_viewer);
+    trackball_viewer->setSourceVectorViewer(source_vector_viewer);
+
+    source_vector_canvas.reset(new VectorFieldCanvas);
+    target_vector_canvas.reset(new VectorFieldCanvas);
+
+    source_vector_canvas->setRenderMode(VectorField::SOURCE_MODE);
+    target_vector_canvas->setRenderMode(VectorField::TARGET_MODE);
 
 	//pointsSelect = false;
 	//isCompute = false;
@@ -82,12 +92,21 @@ void MainWindow::loadModel()
     main_canvas_viewer->deleteDispObj(main_canvas.get());
     main_canvas_viewer->addDispObj(main_canvas.get());
     main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
-    main_canvas_viewer->resetCamera();
 
     trackball_canvas->setModel(share_model);
     trackball_viewer->deleteDispObj(trackball_canvas.get());
     trackball_viewer->addDispObj(trackball_canvas.get());
     trackball_viewer->resetCamera();
+
+    std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(share_model, model_file_path + "/featurePP.png"));
+
+    source_vector_canvas->setFeatureModel(share_feature_model);
+    source_vector_viewer->deleteDispObj(source_vector_canvas.get());
+    source_vector_viewer->addDispObj(source_vector_canvas.get());
+
+    target_vector_canvas->setFeatureModel(share_feature_model);
+    target_vector_viewer->deleteDispObj(target_vector_canvas.get());
+    target_vector_viewer->addDispObj(target_vector_canvas.get());
 
     setOptParatoModel();
 
