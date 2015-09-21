@@ -37,13 +37,9 @@ MainWindow::MainWindow()
       connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
     }
 
-<<<<<<< HEAD
+
     QGridLayout *gridLayout_3;
     gridLayout_3 = new QGridLayout(centralwidget);
-=======
-	QGridLayout *gridLayout_3;
-	gridLayout_3 = new QGridLayout(centralwidget);
->>>>>>> 4d19a98207ecfcb4a40fd242b07c2289036458b4
     gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
     main_canvas_viewer = std::shared_ptr<MainCanvasViewer>(new MainCanvasViewer(centralwidget));
     main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));

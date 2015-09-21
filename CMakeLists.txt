@@ -50,6 +50,7 @@ SET( Project_INCLUDE_DIR src/
 
 SET( MainWin_UIS src/ui/MainWindow.ui )
 SET( MainWin_MOC_HDRS src/ui/MainWindow.h)
+SET( MainWin_RCC src/ui/UI.qrc )
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)
@@ -57,6 +58,7 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 QT5_WRAP_UI( MainWin_UIS_H ${MainWin_UIS} )
 QT5_WRAP_CPP( MainWin_MOC_SRCS ${MainWin_MOC_HDRS} )
+QT5_ADD_RESOURCES( MainWin_RCC_SRCS ${MainWin_RCC} )
 
 INCLUDE_DIRECTORIES( ${Project_INCLUDE_DIR} 
                      ${CMAKE_CURRENT_BINARY_DIR} 
@@ -76,6 +78,7 @@ FILE( GLOB Cholmod_lib 		"${CMAKE_CURRENT_SOURCE_DIR}/extern/cholmod/lib/*.lib" 
 ADD_EXECUTABLE( ${PROJECT_NAME} 
 				${Project_SRCS}  
 				${MainWin_UIS_H} 
+				${MainWin_RCC_SRCS}
 				${MainWin_MOC_SRCS} )
 				
 				
