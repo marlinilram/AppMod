@@ -34,8 +34,13 @@ MainWindow::MainWindow()
       connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
     }
 
+<<<<<<< HEAD
     QGridLayout *gridLayout_3;
     gridLayout_3 = new QGridLayout(centralwidget);
+=======
+	QGridLayout *gridLayout_3;
+	gridLayout_3 = new QGridLayout(centralwidget);
+>>>>>>> 4d19a98207ecfcb4a40fd242b07c2289036458b4
     gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
     main_canvas_viewer = std::shared_ptr<MainCanvasViewer>(new MainCanvasViewer(centralwidget));
     main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
@@ -43,12 +48,21 @@ MainWindow::MainWindow()
     trackball_viewer = std::shared_ptr<TrackballViewer>(new TrackballViewer(centralwidget));
     trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
     gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 2);
+<<<<<<< HEAD
     src_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
     src_vec_field_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
     gridLayout_3->addWidget(src_vec_field_viewer.get(),1,2,1,1);
     trg_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
     trg_vec_field_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
     gridLayout_3->addWidget(trg_vec_field_viewer.get(),1,3,1,1);
+=======
+	src_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
+	src_vec_field_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
+	gridLayout_3->addWidget(src_vec_field_viewer.get(),1,2,1,1);
+	trg_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
+	trg_vec_field_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
+	gridLayout_3->addWidget(trg_vec_field_viewer.get(),1,3,1,1);
+>>>>>>> 4d19a98207ecfcb4a40fd242b07c2289036458b4
     this->setCentralWidget(centralwidget);
 
     main_canvas.reset(new MainCanvas);
