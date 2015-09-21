@@ -223,6 +223,13 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
   {
     QGLViewer::mousePressEvent(e);
     sync_camera = true;
+    if(main_canvas_viewer && sync_camera)
+    {
+      GLdouble m[16];
+      camera()->getModelViewMatrix(m);
+      main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+      main_canvas_viewer->updateGLOutside();
+    }
   }
 }
 

@@ -42,6 +42,9 @@ public:
 
   std::string getFilePath();
 
+  inline void setEdgeThreshold(float value) { edge_threshold = value * 2.0; };
+  inline void setUseFlat(int state) { use_flat = (state == 0) ? 0 : 1; };
+
 private:
   std::shared_ptr<Model> model;
 
@@ -76,6 +79,9 @@ private:
   bool wireframe_, flatShading_;
   bool show_model;
   int render_mode;
+
+  float edge_threshold;
+  int use_flat;
 
 private:
   MainCanvas(const MainCanvas&);

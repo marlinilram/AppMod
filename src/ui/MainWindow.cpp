@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "MainCanvasViewer.h"
+#include "TrackballViewer.h"
 #include "I2SAlgorithms.h"
 #include "ProjOptimize.h"
 #include "MainCanvas.h"
@@ -16,11 +17,13 @@ MainWindow::MainWindow()
     connect(action_Fix_Camera, SIGNAL(triggered()), this, SLOT(fixCamera()));
     connect(action_Reset_Screen, SIGNAL(triggered()), this, SLOT(resetScreen()));
     connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
-	  connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
+    connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
     connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
     connect(action_Vector_Field, SIGNAL(triggered()), this, SLOT(setVectorField()));
 
-	  connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
+    connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
+    connect(edgeThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(setEdgeThreshold(int)));
+    connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
 
     this->show();
     
@@ -31,8 +34,22 @@ MainWindow::MainWindow()
       connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
     }
 
-
-
+    QGridLayout *gridLayout_3;
+    gridLayout_3 = new QGridLayout(centralwidget);
+    gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
+    main_canvas_viewer = std::shared_ptr<MainCanvasViewer>(new MainCanvasViewer(centralwidget));
+    main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
+    gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
+    trackball_viewer = std::shared_ptr<TrackballViewer>(new TrackballViewer(centralwidget));
+    trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
+    gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 2);
+    src_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
+    src_vec_field_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
+    gridLayout_3->addWidget(src_vec_field_viewer.get(),1,2,1,1);
+    trg_vec_field_viewer = std::shared_ptr<BasicViewer>(new BasicViewer(centralwidget));
+    trg_vec_field_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
+    gridLayout_3->addWidget(trg_vec_field_viewer.get(),1,3,1,1);
+    this->setCentralWidget(centralwidget);
 
     main_canvas.reset(new MainCanvas);
     trackball_canvas.reset(new TrackballCanvas);
@@ -65,10 +82,12 @@ void MainWindow::loadModel()
     main_canvas_viewer->deleteDispObj(main_canvas.get());
     main_canvas_viewer->addDispObj(main_canvas.get());
     main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
+    main_canvas_viewer->resetCamera();
 
     trackball_canvas->setModel(share_model);
     trackball_viewer->deleteDispObj(trackball_canvas.get());
     trackball_viewer->addDispObj(trackball_canvas.get());
+    trackball_viewer->resetCamera();
 
     setOptParatoModel();
 
@@ -360,4 +379,16 @@ void MainWindow::setFeatureRender(int state)
   //  checkStates.push_back(checkBox_FeatureRenderMode.at(i)->checkState());
   //}
   //feature_guided->setVissualizationPara(checkStates);
+}
+
+void MainWindow::setEdgeThreshold(int val)
+{
+  main_canvas->setEdgeThreshold(float(val) / 100.0);
+  main_canvas_viewer->updateGLOutside();
+}
+
+void MainWindow::setUseFlat(int state)
+{
+  main_canvas->setUseFlat(state);
+  main_canvas_viewer->updateGLOutside();
 }

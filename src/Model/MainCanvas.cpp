@@ -10,6 +10,8 @@ MainCanvas::MainCanvas()
   : show_background_img(false), show_model(true), wireframe_(false), flatShading_(true), save_to_file(true)
 {
   render_mode = 2;
+  edge_threshold = 0.5;
+  use_flat = 1;
 }
 
 MainCanvas::~MainCanvas()
@@ -204,8 +206,8 @@ void MainCanvas::setSketchFBO()
   glBindTexture(GL_TEXTURE_2D, sketch_texture);
 
   glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
-  glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
-    GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0,
+    GL_RGBA, GL_FLOAT, 0);
 
   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
@@ -309,6 +311,7 @@ void MainCanvas::drawModelEdge()
   edge_detect_shader->setUniformValue("fMeshSize", GLfloat(num_face));
   edge_detect_shader->setUniformValue("L", QVector3D(-0.4082, -0.4082, 0.8165));
   edge_detect_shader->setUniformValue("renderMode", GLint(render_mode));
+  edge_detect_shader->setUniformValue("use_flat", GLint(use_flat));
 
   color_buffer->bind();
   edge_detect_shader->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
@@ -357,6 +360,25 @@ void MainCanvas::sketchShader()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   drawModelEdge();
 
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  cv::Mat z_img;
+  z_img.create(height, width, CV_32FC1);
+  glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
+  float min_depth = std::numeric_limits<float>::max();
+  float max_depth = std::numeric_limits<float>::min();
+  float *ptr = (float*)(z_img.data);
+  for(int j = 0;j < z_img.rows;j++){
+    for(int i = 0;i < z_img.cols;i++){
+      float value = *ptr;
+      if (value > max_depth && value < 1.0) max_depth = value;
+      if (value < min_depth && value > 0.0) min_depth = value;
+      ++ptr;
+    }
+  }
+
+  // if we can the smallest z and largest z
+  // rescale in the shader
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   sketch_shader->bind();
@@ -370,7 +392,9 @@ void MainCanvas::sketchShader()
   sketch_shader->setUniformValue("width", GLfloat(width));
   sketch_shader->setUniformValue("height", GLfloat(height));
   sketch_shader->setUniformValue("isBackground", GLint(0));
-  sketch_shader->setUniformValue("threshold", GLfloat(0.75));
+  sketch_shader->setUniformValue("threshold", GLfloat(edge_threshold));
+  sketch_shader->setUniformValue("minDepth", GLfloat(min_depth));
+  sketch_shader->setUniformValue("maxDepth", GLfloat(max_depth));
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
