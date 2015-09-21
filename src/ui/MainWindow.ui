@@ -222,36 +222,64 @@
    </widget>
   </widget>
   <action name="action_Load_Model">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/load_model.png</normaloff>icons/load_model.png</iconset>
+   </property>
    <property name="text">
     <string>Load Model</string>
    </property>
   </action>
   <action name="action_Fix_Camera">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/fix_camera.png</normaloff>icons/fix_camera.png</iconset>
+   </property>
    <property name="text">
     <string>Fix Camera</string>
    </property>
   </action>
   <action name="action_Reset_Screen">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/reset_screen.jpg</normaloff>icons/reset_screen.jpg</iconset>
+   </property>
    <property name="text">
     <string>Reset Screen</string>
    </property>
   </action>
   <action name="action_Update_Geometry">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/update.png</normaloff>icons/update.png</iconset>
+   </property>
    <property name="text">
     <string>Update Geometry</string>
    </property>
   </action>
   <action name="action_Export_OBJ">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/export.png</normaloff>icons/export.png</iconset>
+   </property>
    <property name="text">
     <string>Export OBJ</string>
    </property>
   </action>
   <action name="action_Render">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/render.png</normaloff>icons/render.png</iconset>
+   </property>
    <property name="text">
     <string>Render</string>
    </property>
   </action>
   <action name="action_Vector_Field">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/vector_field.png</normaloff>icons/vector_field.png</iconset>
+   </property>
    <property name="text">
     <string>Vector Field</string>
    </property>
@@ -262,16 +290,28 @@
    </property>
   </action>
   <action name="action_Load_2D_3D_points">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/load_points.png</normaloff>icons/load_points.png</iconset>
+   </property>
    <property name="text">
     <string>Load 2D_3D points</string>
    </property>
   </action>
   <action name="action_Snap_Shot">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/camera.png</normaloff>icons/camera.png</iconset>
+   </property>
    <property name="text">
     <string>SnapShot</string>
    </property>
   </action>
   <action name="action_Tool_Box">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/toolbox.png</normaloff>icons/toolbox.png</iconset>
+   </property>
    <property name="text">
     <string>Tool Box</string>
    </property>

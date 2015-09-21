@@ -32,6 +32,7 @@ private:
   void mouseMoveEvent(QMouseEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
   void syncCamera();
+  void wheelEvent(QWheelEvent* e);
 
 private:
   bool sync_camera;

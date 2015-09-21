@@ -31,6 +31,7 @@ void TrackballViewer::draw()
   
   for (int i = 0; i < dispObjects.size(); ++i)
   {
+    glDisable(GL_LIGHTING);
     drawTrackBall();
     if (!dispObjects[i]->display())
     {
@@ -63,7 +64,7 @@ void TrackballViewer::init()
   setSceneRadius(50);
   camera()->fitSphere(qglviewer::Vec(0, 0, 0), 5);
   camera()->setType(qglviewer::Camera::Type::PERSPECTIVE);
-
+  camera()->setFlySpeed(0.5);
   setWheelandMouse();
 }
 
@@ -290,18 +291,12 @@ void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
   sync_camera = false;
 }
 
-void TrackballViewer::syncCamera()
+void TrackballViewer::wheelEvent(QWheelEvent* e)
 {
-  if(main_canvas_viewer)
-  {
-    GLdouble m[16];
-    camera()->getModelViewMatrix(m);
-    main_canvas_viewer->camera()->setFromModelViewMatrix(m);
-    main_canvas_viewer->updateGLOutside();
-  }
-
-  if (source_vector_viewer)
-  {
-    source_vector_viewer->updateSourceVectorField();
-  }
+  QGLViewer::wheelEvent(e);
+  
+  GLdouble m[16];
+  camera()->getModelViewMatrix(m);
+  main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+  main_canvas_viewer->updateGLOutside();
 }
