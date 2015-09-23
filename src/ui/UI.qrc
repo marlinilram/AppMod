@@ -1,16 +1,14 @@
-<RCC>
-    <qresource prefix="/">
-        <file>icons/camera.png</file>
-        <file>icons/fix_camera.png</file>
-        <file>icons/load_model.png</file>
-        <file>icons/render.png</file>
-        <file>icons/export.png</file>
-        <file>icons/load_points.png</file>
-        <file>icons/toolbox.png</file>
-        <file>icons/update.png</file>
-        <file>icons/vector_field.png</file>
-        <file>icons/I2S.png</file>
-        <file>icons/delete.png</file>
-        <file>icons/reset_screen.png</file>
-    </qresource>
-</RCC>
+<!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+     <file>icons/camera.png</file>
+     <file>icons/fix_camera.png</file>
+     <file>icons/load_model.png</file>
+     <file>icons/render.png</file>
+     <file>icons/export.png</file>
+     <file>icons/load_points.png</file>
+     <file>icons/reset_screen.jpg</file>
+     <file>icons/toolbox.png</file>
+     <file>icons/update.png</file>
+     <file>icons/vector_field.png</file>
+ </qresource>
+ </RCC>

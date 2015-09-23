@@ -45,8 +45,6 @@ private slots:
     void setFeatureRender(int state);
     void setEdgeThreshold(int val);
     void setUseFlat(int state);
-    void deleteLastLine_Source();
-    void deleteLastLine_Target();
 
 public:
     //Viewer *viewer;

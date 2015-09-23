@@ -25,10 +25,6 @@
   <property name="windowTitle">
    <string>I2S</string>
   </property>
-  <property name="windowIcon">
-   <iconset>
-    <normaloff>icons/I2S.png</normaloff>icons/I2S.png</iconset>
-  </property>
   <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -51,16 +47,8 @@
     </property>
     <addaction name="action_Load_2D_3D_points"/>
    </widget>
-   <widget class="QMenu" name="menuCorrespondence">
-    <property name="title">
-     <string>Correspondence</string>
-    </property>
-    <addaction name="action_Delete_Last_Line_Of_Source"/>
-    <addaction name="action_Delete_Last_Line_Of_Target"/>
-   </widget>
    <addaction name="menuOpen"/>
    <addaction name="menuCompute_Pose"/>
-   <addaction name="menuCorrespondence"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -220,8 +208,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>205</width>
-          <height>622</height>
+          <width>98</width>
+          <height>28</height>
          </rect>
         </property>
         <attribute name="label">
@@ -254,7 +242,7 @@
   <action name="action_Reset_Screen">
    <property name="icon">
     <iconset>
-     <normaloff>icons/reset_screen.png</normaloff>icons/reset_screen.png</iconset>
+     <normaloff>icons/reset_screen.jpg</normaloff>icons/reset_screen.jpg</iconset>
    </property>
    <property name="text">
     <string>Reset Screen</string>
@@ -326,24 +314,6 @@
    </property>
    <property name="text">
     <string>Tool Box</string>
-   </property>
-  </action>
-  <action name="action_Delete_Last_Line_Of_Source">
-   <property name="icon">
-    <iconset>
-     <normaloff>icons/delete.png</normaloff>icons/delete.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete Last_Line Of Source</string>
-   </property>
-  </action>
-  <action name="action_Delete_Last_Line_Of_Target">
-   <property name="icon">
-    <iconset>
-     <normaloff>icons/delete.png</normaloff>icons/delete.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete Last_Line Of Target</string>
    </property>
   </action>
  </widget>

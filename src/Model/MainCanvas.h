@@ -45,7 +45,7 @@ public:
 
   std::string getFilePath();
 
-  inline void setEdgeThreshold(float value) { edge_threshold = value * 2.0; };
+  inline void setEdgeThreshold(float value) { edge_threshold = value; };
   inline void setUseFlat(int state) { use_flat = (state == 0) ? 0 : 1; };
 
 private:
@@ -68,6 +68,10 @@ private:
   GLuint sketch_fbo;
   GLuint sketch_texture;
   GLuint sketch_depth;
+
+  GLuint nms_fbo;
+  GLuint nms_texture;
+  GLuint nms_depth;
 
   GLuint background_texture;
 

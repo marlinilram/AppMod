@@ -10,7 +10,7 @@ MainCanvas::MainCanvas()
   : show_background_img(false), show_model(true), wireframe_(false), flatShading_(true), save_to_file(true)
 {
   render_mode = 2;
-  edge_threshold = 1.5;
+  edge_threshold = 0.75;
   use_flat = 1;
 }
 
@@ -199,6 +199,7 @@ void MainCanvas::setFBO()
 
 void MainCanvas::setSketchFBO()
 {
+  // set sketch fbo
   glGenFramebuffers(1, &sketch_fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, sketch_fbo);
 
@@ -227,6 +228,39 @@ void MainCanvas::setSketchFBO()
   if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     std::cout << "set sketch frame buffer object failed\n";
 
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // set non maximum surpression fbo
+  glGenFramebuffers(1, &nms_fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, nms_fbo);
+
+  glGenTextures(1, &nms_texture);
+  glBindTexture(GL_TEXTURE_2D, nms_texture);
+
+  glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0,
+    GL_RGBA, GL_FLOAT, 0);
+
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+
+  glGenRenderbuffers(1, &nms_depth);
+  glBindRenderbuffer(GL_RENDERBUFFER, nms_depth);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, nms_depth);
+
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, nms_texture, 0);
+
+  // Set the list of draw buffers.
+  GLenum DrawBufferss[1] = {GL_COLOR_ATTACHMENT0};
+  glDrawBuffers(1, DrawBufferss); // "1" is the size of DrawBuffers
+
+  // Always check that our framebuffer is ok
+  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    std::cout << "set sketch frame buffer object failed\n";
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
   static const GLfloat g_quad_vertex_buffer_data[] = { 
     -1.0f, -1.0f, 0.0f,
     1.0f, -1.0f, 0.0f,
@@ -242,8 +276,6 @@ void MainCanvas::setSketchFBO()
   sketch_vertex_buffer->allocate(18 * sizeof(GLfloat));
   sketch_vertex_buffer->write(0, g_quad_vertex_buffer_data, 18 * sizeof(GLfloat));
   sketch_vertex_buffer->release();
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void MainCanvas::drawModel()
@@ -386,11 +418,13 @@ void MainCanvas::sketchShader()
   // if we can the smallest z and largest z
   // rescale in the shader
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, nms_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   sketch_shader->bind();
 
-  // Bind our texture in Texture Unit 0
+  // step 1 for edge detection
+  // compute gradient in x, y direction, magnitute and direction
   sketch_shader->setUniformValue("sketch_texture", 0);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, sketch_texture);
@@ -402,6 +436,40 @@ void MainCanvas::sketchShader()
   sketch_shader->setUniformValue("threshold", GLfloat(edge_threshold));
   sketch_shader->setUniformValue("minDepth", GLfloat(min_depth));
   sketch_shader->setUniformValue("maxDepth", GLfloat(max_depth));
+
+  // 1rst attribute buffer : vertices
+  sketch_vertex_buffer->bind();
+  sketch_shader->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+  sketch_shader->enableAttributeArray("vertex");
+  // Draw the triangles !
+  glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
+  sketch_vertex_buffer->release();
+
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  cv::Mat mag_img;
+  mag_img.create(height, width, CV_32FC3);
+  glReadPixels(0, 0, width, height, GL_RGB, GL_FLOAT, (float*)mag_img.data);
+  cv::flip(mag_img, mag_img, 0);
+
+  // step 2 for edge detection
+  // non maximum surpression
+  sketch_shader->disableAttributeArray("vertex");
+  sketch_shader->release();
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  sketch_shader->bind();
+
+  // Bind our texture in Texture Unit 0
+  sketch_shader->setUniformValue("sketch_texture", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, nms_texture);
+  glActiveTexture(0);
+
+  sketch_shader->setUniformValue("isBackground", GLint(2));
+  sketch_shader->setUniformValue("width", GLfloat(width));
+  sketch_shader->setUniformValue("height", GLfloat(height));
+  sketch_shader->setUniformValue("threshold", GLfloat(edge_threshold));
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -419,6 +487,14 @@ void MainCanvas::sketchShader()
   edge_image.create(height, width, CV_32FC1);
   glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, (float*)edge_image.data);
   cv::flip(edge_image, edge_image, 0);
+
+  cv::Mat pre_edge_image;
+  pre_edge_image.create(height, width, CV_32FC3);
+  glReadPixels(0, 0, width, height, GL_BGR, GL_FLOAT, (float*)pre_edge_image.data);
+  cv::flip(pre_edge_image, pre_edge_image, 0);
+
+  std::string data_path = model->getOutputPath();
+  cv::imwrite(data_path + "/pre_edge_image.png", pre_edge_image*255);
 
   glDisable(GL_BLEND);
   glDisable(GL_CULL_FACE);

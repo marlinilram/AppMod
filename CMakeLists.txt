@@ -78,7 +78,7 @@ FILE( GLOB Cholmod_lib 		"${CMAKE_CURRENT_SOURCE_DIR}/extern/cholmod/lib/*.lib" 
 ADD_EXECUTABLE( ${PROJECT_NAME} 
 				${Project_SRCS}  
 				${MainWin_UIS_H} 
-				${MainWin_RCC_SRCS}
+        ${MainWin_RCC_SRCS}
 				${MainWin_MOC_SRCS} )
 				
 				

@@ -27,8 +27,6 @@ MainWindow::MainWindow()
     connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
     connect(edgeThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(setEdgeThreshold(int)));
     connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
-    connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
-    connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
 
     this->show();
     
@@ -38,7 +36,6 @@ MainWindow::MainWindow()
     {
       connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
     }
-
 
     QGridLayout *gridLayout_3;
     gridLayout_3 = new QGridLayout(centralwidget);
@@ -102,18 +99,7 @@ void MainWindow::loadModel()
     trackball_viewer->addDispObj(trackball_canvas.get());
     trackball_viewer->resetCamera();
 
-    std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(share_model, model_file_path + "/featurePP.png"));
 
-    source_vector_canvas->setFeatureModel(share_feature_model);
-    source_vector_viewer->deleteDispObj(source_vector_canvas.get());
-    source_vector_viewer->addDispObj(source_vector_canvas.get());
-
-    target_vector_canvas->setFeatureModel(share_feature_model);
-    target_vector_viewer->deleteDispObj(target_vector_canvas.get());
-    target_vector_viewer->addDispObj(target_vector_canvas.get());
-
-    source_vector_viewer->setConstrainedPoints();
-    target_vector_viewer->setConstrainedPoints();
 
     setOptParatoModel();
 
@@ -262,13 +248,22 @@ void MainWindow::setVectorField()
 
   //teleRegister->setInputField() ; // only for visualization
 
-  QString filter;
-  filter = "image file (*.png)";
+  //QString filter;
+  //filter = "image file (*.png)";
 
-  QDir dir;
-  QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
-  if (fileName.isEmpty() == true) return;
+  //QDir dir;
+  //QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
+  //if (fileName.isEmpty() == true) return;
 
+  std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(trackball_canvas->getModel(), trackball_canvas->getModel()->getDataPath() + "/featurePP.png"));
+
+  source_vector_canvas->setFeatureModel(share_feature_model);
+  source_vector_viewer->deleteDispObj(source_vector_canvas.get());
+  source_vector_viewer->addDispObj(source_vector_canvas.get());
+
+  target_vector_canvas->setFeatureModel(share_feature_model);
+  target_vector_viewer->deleteDispObj(target_vector_canvas.get());
+  target_vector_viewer->addDispObj(target_vector_canvas.get());
 
   //std::string fileSource = fileName.toStdString();
   //std::string fileTarget = fileSource.substr(0, fileSource.find_last_of('/') + 1) + "featurePP.png";
@@ -417,14 +412,4 @@ void MainWindow::setUseFlat(int state)
 {
   main_canvas->setUseFlat(state);
   main_canvas_viewer->updateGLOutside();
-}
-
-void MainWindow::deleteLastLine_Source()
-{
-  source_vector_viewer->deleteLastLine();
-}
-
-void MainWindow::deleteLastLine_Target()
-{
-  target_vector_viewer->deleteLastLine();
 }
