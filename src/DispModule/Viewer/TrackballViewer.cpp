@@ -167,11 +167,7 @@ void TrackballViewer::resetCamera()
   else
     std::cout << "Load camera info failed...\n";
 
-  // set the scene in MainCanvasViewer
   syncCamera();
-  main_canvas_viewer->setSceneCenter(sceneCenter());
-  main_canvas_viewer->setSceneRadius(sceneRadius());
-  main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
 }
 
 void TrackballViewer::drawCornerAxis()
@@ -299,7 +295,10 @@ void TrackballViewer::wheelEvent(QWheelEvent* e)
 {
   QGLViewer::wheelEvent(e);
   
-  syncCamera();
+  GLdouble m[16];
+  camera()->getModelViewMatrix(m);
+  main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+  main_canvas_viewer->updateGLOutside();
 }
 
 void TrackballViewer::syncCamera()
@@ -310,11 +309,6 @@ void TrackballViewer::syncCamera()
     camera()->getModelViewMatrix(m);
     main_canvas_viewer->camera()->setFromModelViewMatrix(m);
     main_canvas_viewer->updateGLOutside();
-
-    std::cout << "Trackball: znear " << camera()->zNear() << "\tzfar " << camera()->zFar() << "\tfocal " << camera()->focusDistance() << "\tradius " << camera()->sceneRadius() << "\n";
-    std::cout << "Trackball scene center: " << camera()->sceneCenter().x << " " << camera()->sceneCenter().y << " " << camera()->sceneCenter().z <<"\n";
-    std::cout << "Maincanvas: znear " << main_canvas_viewer->camera()->zNear() << "\tzfar " << main_canvas_viewer->camera()->zFar() << "\tfocal " << main_canvas_viewer->camera()->focusDistance() << "\tradius " << main_canvas_viewer->camera()->sceneRadius()  << "\n";
-    std::cout << "Maincanvas scene center: " << main_canvas_viewer->camera()->sceneCenter().x << " " << main_canvas_viewer->camera()->sceneCenter().y << " " << main_canvas_viewer->camera()->sceneCenter().z <<"\n";
   }
 
   if (source_vector_viewer)
@@ -322,3 +316,4 @@ void TrackballViewer::syncCamera()
     source_vector_viewer->updateSourceVectorField();
   }
 }
+
