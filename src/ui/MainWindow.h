@@ -46,6 +46,7 @@ private slots:
     void setEdgeThreshold(int val);
     void setUseFlat(int state);
 
+
 public:
     //Viewer *viewer;
     //Viewer *viewer_img;
