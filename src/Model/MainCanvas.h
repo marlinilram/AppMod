@@ -35,9 +35,11 @@ public:
   void drawModel();
   void drawModelEdge();
   void sketchShader();
+  void renderNImage();
   void nmsShader();
   void setFBO();
   void setSketchFBO();
+  float getModelAvgEdgeLength();
 
   void setBackgroundImage(QString fname);
 

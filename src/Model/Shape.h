@@ -26,6 +26,7 @@ public:
   const NormalList& getNormalList();
   const STLVectorf& getColorList();
   Bound* getBoundbox();
+  float avgEdgeLength();
 
 private:
   void computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float v2[3], float lambd[3]);
