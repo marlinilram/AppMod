@@ -242,11 +242,6 @@ bool VectorFieldCanvas::displayTargetVectorField()
           glVertex3f(base.x, base.y, 0 ) ;
           glEnd() ;
 
-          if (i == 0 && j == 90)
-          {
-            std::cout << "x: " << p1.x << " y: " << p1.y << "\n";
-          }
-
           glBegin(GL_TRIANGLES);
           glVertex3f( p2.x,p2.y, 0 ) ;
           glVertex3f( p3.x,p3.y, 0 ) ;
@@ -499,4 +494,12 @@ void VectorFieldCanvas::setVisualizationParas(std::vector<bool>& paras)
 void VectorFieldCanvas::updateSourceVectorField()
 {
   feature_model->updateSourceVectorField();
+}
+
+void VectorFieldCanvas::setConstrainedPoints()
+{
+  if(render_mode == VectorField::SOURCE_MODE)
+    feature_model->source_vector_field_lines = constrainedLines;
+  else
+    feature_model->target_vector_field_lines = constrainedLines;
 }

@@ -18,7 +18,6 @@ public:
   ~TrackballCanvas();
 
   void setModel(std::shared_ptr<Model> shared_model);
-  std::shared_ptr<Model> getModel() { return model; };
 
   virtual bool display();
   virtual void setGLProperty();

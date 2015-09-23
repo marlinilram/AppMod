@@ -3,6 +3,7 @@
 
 #include <glew-1.11.0/include/GL/glew.h>
 #include "DispObject.h"
+#include "BasicHeader.h"
 
 #include <memory>
 #include <vector>
@@ -44,6 +45,11 @@ public:
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
 
+  void setConstrainedPoints();
+
+public:
+  std::shared_ptr<std::vector<std::vector<Vector2f>>> constrainedLines;
+
 protected:
   std::shared_ptr<FeatureGuided> feature_model;
   GLubyte bgmap[800][800][3];
@@ -58,7 +64,7 @@ protected:
   std::unique_ptr<Bound> bound;
 
   std::vector<bool> vis_paras;
-
+  
   VectorField::RENDERMODE render_mode;
 
 private:
