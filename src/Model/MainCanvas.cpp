@@ -671,3 +671,35 @@ void MainCanvas::drawInfo()
 
   delete primitive_buffer;
 }
+
+
+void MainCanvas::renderNImage()
+{
+  // draw eye normal to offscreen buffer for intrinsic image decomposition
+  int render_mode_cache = render_mode;
+  render_mode = 1;
+
+  bool show_background_img_cache = show_background_img;
+  show_background_img = false;
+
+  glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  drawModel();
+
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+  //glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
+  //glReadPixels(0, 0, width, height, GL_BGR, GL_FLOAT, (float*)r_img.data);
+  //glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  render_mode = render_mode_cache;
+  show_background_img = show_background_img_cache;
+}
+
+float MainCanvas::getModelAvgEdgeLength()
+{
+  return model->getModelAvgEdgeLength();
+}
