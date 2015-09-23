@@ -325,17 +325,3 @@ Bound* Shape::getBoundbox()
 {
   return bound.get();
 }
-
-float Shape::avgEdgeLength()
-{
-  float total_length = 0.0;
-  for (int i = 0; i < face_list.size(); ++i)
-  {
-    int v[3] = { face_list[3 * i + 0], face_list[3 * i + 1], face_list[3 * i + 2] };
-    Vector3f v_0(vertex_list[3 * v[0] + 0], vertex_list[3 * v[0] + 1], vertex_list[3 * v[0] + 2]);
-    Vector3f v_1(vertex_list[3 * v[1] + 0], vertex_list[3 * v[1] + 1], vertex_list[3 * v[1] + 2]);
-    Vector3f v_2(vertex_list[3 * v[2] + 0], vertex_list[3 * v[2] + 1], vertex_list[3 * v[2] + 2]);
-    total_length += (v_0 - v_1).norm() + (v_1 - v_2).norm() + (v_2 - v_0).norm();
-  }
-  return total_length / face_list.size();
-}

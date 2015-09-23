@@ -94,8 +94,3 @@ std::string Model::getOutputPath()
 {
   return output_path;
 }
-
-float Model::getModelAvgEdgeLength()
-{
-  return shape->avgEdgeLength();
-}

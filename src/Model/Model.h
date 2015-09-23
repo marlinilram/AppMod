@@ -32,8 +32,6 @@ public:
   inline cv::Mat &getRMask() { return mask_rimg; };
   inline cv::Mat &getEdgeImg() { return edge_image; };
 
-  float getModelAvgEdgeLength();
-
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
 

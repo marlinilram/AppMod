@@ -13,7 +13,6 @@ public:
   void getSnapShot();
   void setBackgroundImage(QString fname);
   void updateBuffer();
-  float sampleDensity();
 
 protected:
   virtual void draw();
