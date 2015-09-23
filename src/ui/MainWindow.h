@@ -48,7 +48,6 @@ private slots:
     void deleteLastLine_Source();
     void deleteLastLine_Target();
 
-
 public:
     //Viewer *viewer;
     //Viewer *viewer_img;
