@@ -99,15 +99,7 @@ void MainWindow::loadModel()
     trackball_viewer->addDispObj(trackball_canvas.get());
     trackball_viewer->resetCamera();
 
-    std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(share_model, model_file_path + "/featurePP.png"));
 
-    source_vector_canvas->setFeatureModel(share_feature_model);
-    source_vector_viewer->deleteDispObj(source_vector_canvas.get());
-    source_vector_viewer->addDispObj(source_vector_canvas.get());
-
-    target_vector_canvas->setFeatureModel(share_feature_model);
-    target_vector_viewer->deleteDispObj(target_vector_canvas.get());
-    target_vector_viewer->addDispObj(target_vector_canvas.get());
 
     setOptParatoModel();
 
@@ -256,13 +248,22 @@ void MainWindow::setVectorField()
 
   //teleRegister->setInputField() ; // only for visualization
 
-  QString filter;
-  filter = "image file (*.png)";
+  //QString filter;
+  //filter = "image file (*.png)";
 
-  QDir dir;
-  QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
-  if (fileName.isEmpty() == true) return;
+  //QDir dir;
+  //QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
+  //if (fileName.isEmpty() == true) return;
 
+  std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(trackball_canvas->getModel(), trackball_canvas->getModel()->getDataPath() + "/featurePP.png"));
+
+  source_vector_canvas->setFeatureModel(share_feature_model);
+  source_vector_viewer->deleteDispObj(source_vector_canvas.get());
+  source_vector_viewer->addDispObj(source_vector_canvas.get());
+
+  target_vector_canvas->setFeatureModel(share_feature_model);
+  target_vector_viewer->deleteDispObj(target_vector_canvas.get());
+  target_vector_viewer->addDispObj(target_vector_canvas.get());
 
   //std::string fileSource = fileName.toStdString();
   //std::string fileTarget = fileSource.substr(0, fileSource.find_last_of('/') + 1) + "featurePP.png";
