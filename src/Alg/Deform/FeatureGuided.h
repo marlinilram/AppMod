@@ -5,7 +5,7 @@
 #include <highgui.h>
 #include <memory>
 
-#include "tele_basicType.h"
+#include "BasicDataType.h"
 #include "kdtree.h" // to make life easier...
 #include "BasicHeader.h"
 
@@ -49,6 +49,7 @@ public:
     std::vector<double2>& vector_field, int resolution);
   void FindHistMatchCrsp(CURVES &curves);
   void GetCrspPair(CURVES& curves);
+  void GetUserCrspPair(CURVES& curves, float sample_density);
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
   void SearchCurve(const cv::Mat& source,

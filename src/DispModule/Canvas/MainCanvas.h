@@ -25,6 +25,7 @@ public:
   virtual bool display();
   void drawBackground();
   void drawInfo();
+  void passCameraInfo(GLfloat modelview[16], GLfloat projection[16], GLint viewport[4]);
   virtual void setGLProperty();
   virtual Bound* getBoundBox();
 
@@ -39,7 +40,6 @@ public:
   void nmsShader();
   void setFBO();
   void setSketchFBO();
-  float getModelAvgEdgeLength();
 
   void setBackgroundImage(QString fname);
 

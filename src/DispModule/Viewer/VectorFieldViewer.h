@@ -3,6 +3,7 @@
 
 #include "BasicViewer.h"
 #include "BasicHeader.h"
+#include "BasicDataType.h"
 #include <memory>
 
 class VectorFieldViewer : public BasicViewer
@@ -26,6 +27,6 @@ private:
   void mouseReleaseEvent(QMouseEvent *e);
   
   bool drawLine;
-  std::vector<Vector2f> line;
+  std::vector<double2> line;
 };
 #endif // !VectorFieldViewer_H

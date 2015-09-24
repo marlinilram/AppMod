@@ -16,41 +16,45 @@ ProjOptimize::~ProjOptimize()
 
 }
 
-void ProjOptimize::updateShape(FeatureGuided* feature_guided, Model* model)
+void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, std::shared_ptr<Model> model)
 {
 //#define USE_AUTO
 //#ifdef USE_AUTO
-//  CURVES crsp_pairs;
-//  feature_guided->GetCrspPair(crsp_pairs);
+  CURVES crsp_pairs;
+  feature_guided->GetUserCrspPair(crsp_pairs, model->getModelAvgEdgeLength());
 //
-//  cv::Mat r_img_syn = cv::Mat::ones(model->getRImg().size(), CV_32FC3);
-//  cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
-//  std::vector<std::pair<int, int> > boundary_pts;
-//  for (int i = 0; i < primitive_id_img.rows; ++i)
-//  {
-//    for (int j = 0; j < primitive_id_img.cols; ++j)
-//    {
-//      if (primitive_id_img.at<int>(i, j) >= 0)
-//      {
-//        if (this->isBoundary(primitive_id_img, j, i))
-//        {
-//        // store as x, y
-//          boundary_pts.push_back(std::pair<int, int>(j, i));
-//          r_img_syn.at<cv::Vec3f>(i, j) = cv::Vec3f(0.5, 0.5, 0.5);
-//        }
-//      }
-//    }
-//  }
-//  //cv::imwrite(model->getDataPath() + "/boundary.png", r_img_syn * 255);
-//  kdtree::KDTree* source_KDTree;
-//  kdtree::KDTreeArray kdTree_data;
-//  kdTree_data.resize(boost::extents[boundary_pts.size()][2]);
-//  for (size_t i = 0; i < boundary_pts.size(); ++i)
-//  {
-//    kdTree_data[i][0] = boundary_pts[i].first;
-//    kdTree_data[i][1] = boundary_pts[i].second;
-//  }
-//  source_KDTree = new kdtree::KDTree(kdTree_data);
+  cv::Mat r_img_syn = cv::Mat::ones(model->getRImg().size(), CV_32FC3);
+  cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
+  std::vector<std::pair<int, int> > boundary_pts;
+  for (int i = 0; i < primitive_id_img.rows; ++i)
+  {
+    for (int j = 0; j < primitive_id_img.cols; ++j)
+    {
+      if (primitive_id_img.at<int>(i, j) >= 0)
+      {
+        if (this->isBoundary(primitive_id_img, j, i))
+        {
+        // store as x, y
+          boundary_pts.push_back(std::pair<int, int>(j, i));
+          r_img_syn.at<cv::Vec3f>(i, j) = cv::Vec3f(0.5, 0.5, 0.5);
+        }
+      }
+    }
+  }
+  //cv::imwrite(model->getDataPath() + "/boundary.png", r_img_syn * 255);
+  std::shared_ptr<kdtree::KDTree> source_KDTree;
+  kdtree::KDTreeArray kdTree_data;
+  kdTree_data.resize(boost::extents[boundary_pts.size()][2]);
+  for (size_t i = 0; i < boundary_pts.size(); ++i)
+  {
+    kdTree_data[i][0] = boundary_pts[i].first;
+    kdTree_data[i][1] = boundary_pts[i].second;
+  }
+  source_KDTree. reset(new kdtree::KDTree(kdTree_data));
+
+  // prepare curve on model
+  // the feature line defined by user need to be resampled
+
 //
 //  std::vector<int> constrained_vertex_id;
 //  std::vector<float> constrained_ray;

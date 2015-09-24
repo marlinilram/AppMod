@@ -8,6 +8,7 @@ public:
     Bound();
     ~Bound();
 	  double getRadius();
+    void getCenter(float center[3]);
     float minX;
     float maxX;
     float minY;

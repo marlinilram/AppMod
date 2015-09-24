@@ -3,6 +3,7 @@
 
 #include <cv.h>
 #include <Eigen\Eigen>
+#include <memory>
 
 class FeatureGuided;
 class Model;
@@ -13,7 +14,7 @@ public:
   ProjOptimize();
   ~ProjOptimize();
 
-  void updateShape(FeatureGuided* feature_guided, Model* model);
+  void updateShape(std::shared_ptr<FeatureGuided> feature_guided, std::shared_ptr<Model> model);
   bool isBoundary(cv::Mat& primitive_img, int x, int y);
   void updateScreenShape(Model* model, Eigen::VectorXf& P_Opt);
 

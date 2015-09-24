@@ -699,7 +699,7 @@ void MainCanvas::renderNImage()
   show_background_img = show_background_img_cache;
 }
 
-float MainCanvas::getModelAvgEdgeLength()
+void MainCanvas::passCameraInfo(GLfloat modelview[16], GLfloat projection[16], GLint viewport[4])
 {
-  return model->getModelAvgEdgeLength();
+  model->passCameraPara(modelview, projection, viewport);
 }

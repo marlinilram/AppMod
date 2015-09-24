@@ -832,3 +832,77 @@ void FeatureGuided::GetCrspPair(CURVES& curves)
     curves.push_back(crsp_pair);
   }
 }
+
+void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
+{
+  double2 target_translate;
+  double target_scale;
+  double2 source_translate;
+  double source_scale;
+  FeatureGuided::NormalizePara(this->target_curves, target_translate, target_scale);
+  FeatureGuided::NormalizePara(this->source_curves, source_translate, source_scale);
+
+  CURVES source_user_lines = source_vector_field_lines->lines;
+  CURVES target_user_lines = target_vector_field_lines->lines;
+
+  size_t num_line_pair = source_user_lines.size();
+  if (source_user_lines.size() != target_user_lines.size())
+  {
+    std::cout << "Number of User defined line-pair doesn't match.\n";
+    num_line_pair = source_user_lines.size() < target_user_lines.size() ? source_user_lines.size() : target_user_lines.size();
+  }
+
+  for (size_t i = 0; i < num_line_pair; ++i)
+  {
+    FeatureGuided::DenormalizedCurve(source_user_lines[i], source_translate, source_scale);
+    FeatureGuided::DenormalizedCurve(target_user_lines[i], target_translate, target_scale);
+
+    // resample source curve based on sample density
+    CURVE sampled_curve;
+    sampled_curve.push_back(source_user_lines[i][0]);
+    for (size_t j = 1; j < source_user_lines[i].size(); ++j)
+    {
+      double2 previousPoint = sampled_curve[sampled_curve.size() - 1];
+      double2 currentPoint = source_user_lines[i][j];
+      if (sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > sample_density)
+      {
+        sampled_curve.push_back(currentPoint);
+      }
+    }
+    source_user_lines[i] = sampled_curve;
+
+    // resample target curve based on the number of sampled source curve
+    // in this way, correspondences are built automatically
+    size_t num_desired = sampled_curve.size();
+    size_t sample_rate = (target_user_lines[i].size() - target_user_lines[i].size() % num_desired) / num_desired;
+    sampled_curve.clear();
+    for (size_t j = 0; j < target_user_lines[i].size(); ++j)
+    {
+      if (j % sample_rate == 0)
+      {
+        sampled_curve.push_back(target_user_lines[i][j]);
+      }
+    }
+    target_user_lines[i] = sampled_curve;
+
+    if (source_user_lines[i].size() != target_user_lines[i].size())
+    {
+      std::cout << "Error: number of points in sampled user defined source and target curves doesn't match.\n";
+    }
+    else
+    {
+      std::cout << "Number of points in sampled user defined curve " << i << " : " << num_desired << "\n";
+    }
+  }
+
+  std::vector<double2> crsp_pair(2);
+  for (size_t i = 0; i < num_line_pair; ++i)
+  {
+    for (size_t j = 0; j < source_user_lines[i].size(); ++j)
+    {
+      crsp_pair[0] = source_user_lines[i][j];
+      crsp_pair[1] = source_user_lines[i][j];
+      curves.push_back(crsp_pair); 
+    }
+  }
+}

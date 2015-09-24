@@ -7,6 +7,8 @@
 #include <cv.h>
 #include <highgui.h>
 
+#include "BasicHeader.h"
+
 class Shape;
 class Bound;
 
@@ -33,6 +35,7 @@ public:
   inline cv::Mat &getEdgeImg() { return edge_image; };
 
   float getModelAvgEdgeLength();
+  void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
@@ -49,6 +52,12 @@ private:
   cv::Mat r_img;
   cv::Mat mask_rimg;
   cv::Mat edge_image;
+
+  // camera info
+  Matrix4f m_modelview;
+  Matrix4f m_projection;
+  Matrix4f m_inv_modelview_projection;
+  Vector4i m_viewport;
 
 private:
   Model(const Model&);

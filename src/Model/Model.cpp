@@ -97,5 +97,47 @@ std::string Model::getOutputPath()
 
 float Model::getModelAvgEdgeLength()
 {
-  return shape->avgEdgeLength();
+  // return the pixel length of average edge length of the model
+  float avg_edge_length = shape->avgEdgeLength();
+
+  float center[3];
+  shape->getBoundbox()->getCenter(center);
+
+  Vector4f v(center[0], center[1], center[2], 1.0);
+  v = m_modelview * v;
+  Vector4f vo = v;
+  v[0] = v[0] + avg_edge_length;
+  Vector4f vs = m_projection * v;
+  Vector4f vso = m_projection * vo;
+  vs[0] /= vs[3];
+  vs[1] /= vs[3];
+  vs[2] /= vs[3];
+  vs[0] = vs[0] * 0.5 + 0.5;
+  vs[1] = vs[1] * 0.5 + 0.5;
+  vs[2] = vs[2] * 0.5 + 0.5;
+  vs[0] = vs[0] * m_viewport[2] + m_viewport[0];
+  vs[1] = vs[1] * m_viewport[3] + m_viewport[1];
+  vso[0] /= vso[3];
+  vso[1] /= vso[3];
+  vso[2] /= vso[3];
+  vso[0] = vso[0] * 0.5 + 0.5;
+  vso[1] = vso[1] * 0.5 + 0.5;
+  vso[2] = vso[2] * 0.5 + 0.5;
+  vso[0] = vso[0] * m_viewport[2] + m_viewport[0];
+  vso[1] = vso[1] * m_viewport[3] + m_viewport[1];
+
+  return sqrt((vs[0] - vso[0]) * (vs[0] - vso[0]) + (vs[1] - vso[1]) * (vs[1] - vso[1]));
+}
+
+void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4])
+{
+
+  m_modelview = Eigen::Map<Eigen::Matrix4f>(c_modelview, 4, 4);
+
+  m_projection = Eigen::Map<Eigen::Matrix4f>(c_projection, 4, 4);
+
+  m_inv_modelview_projection = (m_projection*m_modelview).inverse();
+
+  m_viewport = Eigen::Map<Eigen::Vector4i>(c_viewport, 4, 1);
+
 }

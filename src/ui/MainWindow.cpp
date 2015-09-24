@@ -9,6 +9,7 @@
 #include "VectorFieldCanvas.h"
 #include "Model.h"
 #include "FeatureGuided.h"
+#include "AlgHandler.h"
 //#include "camera_pose.h"
 
 MainWindow::MainWindow()
@@ -42,16 +43,16 @@ MainWindow::MainWindow()
     QGridLayout *gridLayout_3;
     gridLayout_3 = new QGridLayout(centralwidget);
     gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
-    main_canvas_viewer = std::shared_ptr<MainCanvasViewer>(new MainCanvasViewer(centralwidget));
+    main_canvas_viewer.reset(new MainCanvasViewer(centralwidget));
     main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
     gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
-    trackball_viewer = std::shared_ptr<TrackballViewer>(new TrackballViewer(centralwidget));
+    trackball_viewer.reset(new TrackballViewer(centralwidget));
     trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
     gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 2);
-    source_vector_viewer = std::shared_ptr<VectorFieldViewer>(new VectorFieldViewer(centralwidget));
+    source_vector_viewer.reset(new VectorFieldViewer(centralwidget));
     source_vector_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
     gridLayout_3->addWidget(source_vector_viewer.get(),1,2,1,1);
-    target_vector_viewer = std::shared_ptr<VectorFieldViewer>(new VectorFieldViewer(centralwidget));
+    target_vector_viewer.reset(new VectorFieldViewer(centralwidget));
     target_vector_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
     gridLayout_3->addWidget(target_vector_viewer.get(),1,3,1,1);
 
@@ -67,6 +68,8 @@ MainWindow::MainWindow()
 
     source_vector_canvas->setRenderMode(VectorField::SOURCE_MODE);
     target_vector_canvas->setRenderMode(VectorField::TARGET_MODE);
+
+    alg_handler.reset(new AlgHandler);
 
 	//pointsSelect = false;
 	//isCompute = false;
@@ -91,17 +94,18 @@ void MainWindow::loadModel()
 
     std::shared_ptr<Model> share_model(new Model(model_file_path, model_file_name));
 
-    main_canvas->setModel(share_model);
-    main_canvas_viewer->deleteDispObj(main_canvas.get());
-    main_canvas_viewer->addDispObj(main_canvas.get());
-    main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
-
     trackball_canvas->setModel(share_model);
     trackball_viewer->deleteDispObj(trackball_canvas.get());
     trackball_viewer->addDispObj(trackball_canvas.get());
     trackball_viewer->resetCamera();
 
+    main_canvas->setModel(share_model);
+    main_canvas_viewer->deleteDispObj(main_canvas.get());
+    main_canvas_viewer->addDispObj(main_canvas.get());
+    main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
+    main_canvas_viewer->updateGLOutside();
 
+    alg_handler->setShapeModel(share_model);
 
     setOptParatoModel();
 
@@ -158,6 +162,7 @@ void MainWindow::updateGeometry()
     //    viewer->getModel(coarse_model);
     //    this->refreshScreen();
     //}
+    alg_handler->doProjOptimize();
 }
 
 void MainWindow::refreshScreen()
@@ -257,17 +262,22 @@ void MainWindow::setVectorField()
   //QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
   //if (fileName.isEmpty() == true) return;
 
-  std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(trackball_canvas->getModel(), trackball_canvas->getModel()->getDataPath() + "/featurePP.png"));
+  if (trackball_canvas->getModel())
+  {
+    std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(trackball_canvas->getModel(), trackball_canvas->getModel()->getDataPath() + "/featurePP.png"));
 
-  source_vector_canvas->setFeatureModel(share_feature_model);
-  source_vector_viewer->deleteDispObj(source_vector_canvas.get());
-  source_vector_viewer->addDispObj(source_vector_canvas.get());
-  source_vector_viewer->updateGLOutside();
+    source_vector_canvas->setFeatureModel(share_feature_model);
+    source_vector_viewer->deleteDispObj(source_vector_canvas.get());
+    source_vector_viewer->addDispObj(source_vector_canvas.get());
+    source_vector_viewer->updateGLOutside();
 
-  target_vector_canvas->setFeatureModel(share_feature_model);
-  target_vector_viewer->deleteDispObj(target_vector_canvas.get());
-  target_vector_viewer->addDispObj(target_vector_canvas.get());
-  target_vector_viewer->updateGLOutside();
+    target_vector_canvas->setFeatureModel(share_feature_model);
+    target_vector_viewer->deleteDispObj(target_vector_canvas.get());
+    target_vector_viewer->addDispObj(target_vector_canvas.get());
+    target_vector_viewer->updateGLOutside();
+
+    alg_handler->setFeatureModel(share_feature_model);
+  }
 
   //std::string fileSource = fileName.toStdString();
   //std::string fileTarget = fileSource.substr(0, fileSource.find_last_of('/') + 1) + "featurePP.png";
@@ -275,7 +285,6 @@ void MainWindow::setVectorField()
   //feature_guided->initRegister();
   //feature_guided->initVisualization(viewer_img);
 
-  ProjOptimize proj_opt;
   //proj_opt.updateShape(feature_guided, coarse_model);
 }
 

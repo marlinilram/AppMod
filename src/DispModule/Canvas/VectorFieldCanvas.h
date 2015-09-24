@@ -4,6 +4,8 @@
 #include <glew-1.11.0/include/GL/glew.h>
 #include "DispObject.h"
 #include "BasicHeader.h"
+#include "BasicDataType.h"
+
 
 #include <memory>
 #include <vector>
@@ -46,7 +48,7 @@ public:
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
 
-  void addConstrainedLines(std::vector<Vector2f>& line);
+  void addConstrainedLines(std::vector<double2>& line);
   void deleteLastLine();
 
 protected:
