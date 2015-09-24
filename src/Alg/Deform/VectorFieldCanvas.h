@@ -3,6 +3,7 @@
 
 #include <glew-1.11.0/include/GL/glew.h>
 #include "DispObject.h"
+#include "BasicHeader.h"
 
 #include <memory>
 #include <vector>
@@ -43,6 +44,11 @@ public:
   void updateSourceVectorField();
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
+
+  void setConstrainedPoints();
+
+public:
+  std::shared_ptr<std::vector<std::vector<Vector2f>>> constrainedLines;
 
 protected:
   std::shared_ptr<FeatureGuided> feature_model;

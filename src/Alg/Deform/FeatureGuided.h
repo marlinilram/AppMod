@@ -7,6 +7,7 @@
 
 #include "tele_basicType.h"
 #include "kdtree.h" // to make life easier...
+#include "BasicHeader.h"
 
 class Model;
 class tele2d;
@@ -65,6 +66,10 @@ public:
   static void NormalizedCurve(CURVE& curve, double2 translate, double scale);
   static void DenormalizedCurve(CURVE& curve, double2 translate, double scale);
   static void NormalizePara(CURVES& curves, double2& translate, double& scale);
+
+public:
+  std::shared_ptr<std::vector<std::vector<Vector2f>>> source_vector_field_lines;
+  std::shared_ptr<std::vector<std::vector<Vector2f>>> target_vector_field_lines;
 
 private:
   std::shared_ptr<Model> source_model;

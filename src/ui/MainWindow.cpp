@@ -27,6 +27,8 @@ MainWindow::MainWindow()
     connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
     connect(edgeThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(setEdgeThreshold(int)));
     connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
+    connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
+    connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
 
     this->show();
     
@@ -412,4 +414,14 @@ void MainWindow::setUseFlat(int state)
 {
   main_canvas->setUseFlat(state);
   main_canvas_viewer->updateGLOutside();
+}
+
+void MainWindow::deleteLastLine_Source()
+{
+  source_vector_viewer->deleteLastLine();
+}
+
+void MainWindow::deleteLastLine_Target()
+{
+  target_vector_viewer->deleteLastLine();
 }

@@ -500,3 +500,11 @@ void VectorFieldCanvas::updateSourceVectorField()
 {
   feature_model->updateSourceVectorField();
 }
+
+void VectorFieldCanvas::setConstrainedPoints()
+{
+  if(render_mode == VectorField::SOURCE_MODE)
+    feature_model->source_vector_field_lines = constrainedLines;
+  else
+    feature_model->target_vector_field_lines = constrainedLines;
+}
