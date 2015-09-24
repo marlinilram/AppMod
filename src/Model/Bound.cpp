@@ -17,3 +17,10 @@ double Bound::getRadius()
 	double radius = sqrt(pow((maxX - minX) / 2,2) + pow((maxY - minY) / 2,2) +pow((maxZ - minZ) / 2,2));
 	return radius;
 }
+
+void Bound::getCenter(float center[3])
+{
+  center[0] = (minX + maxX) / 2;
+  center[1] = (minY + maxY) / 2;
+  center[2] = (minZ + maxZ) / 2;
+}

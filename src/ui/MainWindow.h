@@ -18,6 +18,7 @@ class TrackballCanvas;
 class TrackballViewer;
 class VectorFieldCanvas;
 class VectorFieldViewer;
+class AlgHandler;
 
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -61,6 +62,8 @@ public:
 	  
     std::shared_ptr<VectorFieldCanvas> source_vector_canvas, target_vector_canvas;
     std::shared_ptr<VectorFieldViewer> source_vector_viewer, target_vector_viewer;
+
+    std::shared_ptr<AlgHandler> alg_handler;
 
 
     //ImagePartAlg *img_part_alg;

@@ -1,7 +1,6 @@
 #include "VectorFieldViewer.h"
 #include "VectorFieldCanvas.h"
 #include <qevent.h>
-#include "BasicHeader.h"
 #include "FeatureGuided.h"
 //#include <cv.h>
 //#include <eigen\dense>
@@ -86,14 +85,14 @@ void VectorFieldViewer::updateSourceVectorField()
 void VectorFieldViewer::mousePressEvent(QMouseEvent *e)
 {
   drawLine = true;
-  Vector2f point;
+  double2 point;
   qreal src[3],res[3];
   src[0] = e->x();
   src[1] = e->y();
   src[2] = 0.5;
   camera()->getUnprojectedCoordinatesOf(src,res);
-  point[0] = res[0];
-  point[1] = res[1];
+  point.x = res[0];
+  point.y = res[1];
   line.push_back(point);
   //std::cout << "The UnprojectedCoordinates of the selected point is :" << point[0] << "," << point[1] << std::endl;
 }
@@ -104,16 +103,16 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
   {
     if(!line.empty())
     {
-      Vector2f previousPoint = line[line.size() - 1];
-      Vector2f currentPoint;
+      double2 previousPoint = line[line.size() - 1];
+      double2 currentPoint;
       qreal src[3],res[3];
       src[0] = e->x();
       src[1] = e->y();
       src[2] = 0.5;
       camera()->getUnprojectedCoordinatesOf(src,res);
-      currentPoint[0] = res[0];
-      currentPoint[1] = res[1];
-      if(sqrt(pow(currentPoint[0] - previousPoint[0],2) + pow(currentPoint[1] - previousPoint[1],2)) > 0.01)
+      currentPoint.x = res[0];
+      currentPoint.y = res[1];
+      if(sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > 0.01)
         line.push_back(currentPoint);
       updateGLOutside();
     }
@@ -124,7 +123,7 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
 {
   std::cout << "The points of the drawline are :" << std::endl;
   for(int i = 0;i < line.size();i ++)
-    std::cout << line[i][0] << "," << line[i][1] << std::endl;
+    std::cout << line[i].x << "," << line[i].y << std::endl;
   drawLine = false;
 
   // pass the new line into feature guided model
@@ -147,7 +146,7 @@ void VectorFieldViewer::drawLines()
     for(int i = 0;i  < line.size();i ++)
     {
       glColor3f(1,1,1);
-      glVertex3f(line[i][0],line[i][1],0);
+      glVertex3f(line[i].x,line[i].y,0);
     }
     glEnd();
   } 

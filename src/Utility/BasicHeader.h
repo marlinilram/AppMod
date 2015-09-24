@@ -20,10 +20,12 @@ typedef Eigen::Triplet<float> Triplet;
 typedef std::vector<Eigen::Triplet<float> > TripletList;
 typedef Eigen::VectorXf VectorXf;
 typedef Eigen::Vector3f Vector3f;
+typedef Eigen::Vector4f Vector4f;
+typedef Eigen::Vector4i Vector4i;
+typedef Eigen::Vector2f Vector2f;
 typedef Eigen::Matrix3f Matrix3f;
 typedef Eigen::Matrix4f Matrix4f;
 typedef Eigen::MatrixXf MatrixXf;
-typedef Eigen::Vector2f Vector2f;
 typedef Eigen::SimplicialCholesky<Eigen::SparseMatrix<float> > SimplicialCholesky;
 
 #endif

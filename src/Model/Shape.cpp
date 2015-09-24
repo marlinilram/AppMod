@@ -329,7 +329,7 @@ Bound* Shape::getBoundbox()
 float Shape::avgEdgeLength()
 {
   float total_length = 0.0;
-  for (int i = 0; i < face_list.size(); ++i)
+  for (int i = 0; i < face_list.size() / 3; ++i)
   {
     int v[3] = { face_list[3 * i + 0], face_list[3 * i + 1], face_list[3 * i + 2] };
     Vector3f v_0(vertex_list[3 * v[0] + 0], vertex_list[3 * v[0] + 1], vertex_list[3 * v[0] + 2]);

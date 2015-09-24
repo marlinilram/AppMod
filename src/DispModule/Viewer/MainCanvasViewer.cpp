@@ -65,6 +65,15 @@ void MainCanvasViewer::getSnapShot()
     if (main_canvas)
     {
       main_canvas->drawInfo();
+
+      // get camera info, matrix is column major
+      GLfloat modelview[16];
+      GLfloat projection[16];
+      GLint viewport[4];
+      camera()->getModelViewMatrix(modelview);
+      camera()->getProjectionMatrix(projection);
+      camera()->getViewport(viewport);
+      main_canvas->passCameraInfo(modelview, projection, viewport);
     }
   }
   
@@ -114,47 +123,4 @@ void MainCanvasViewer::updateBuffer()
   }
 
   doneCurrent();
-}
-
-float MainCanvasViewer::sampleDensity()
-{
-// return the pixel length of average edge length of the model
-  makeCurrent();
-
-  MainCanvas* main_canvas = dynamic_cast<MainCanvas*>(dispObjects[0]);
-  if (!main_canvas)
-  {
-    std::cout << "Dynamic cast to MainCanvas failed.\n";
-
-    doneCurrent();
-    return 0.0;
-  }
-
-  float avg_edge_length = main_canvas->getModelAvgEdgeLength();
-
-  GLint Viewport[4];
-  GLdouble Projection[16];
-  // Precomputation begin
-  glGetIntegerv(GL_VIEWPORT , Viewport);
-  glGetDoublev (GL_PROJECTION_MATRIX, Projection);
-  // Precomputation end
-  GLdouble v[4], vs[4];
-  v[0]=avg_edge_length; v[1]=0.0; v[2]=0.0; v[3]=1.0;
-  vs[0]=Projection[0 ]*v[0] + Projection[4 ]*v[1] + Projection[8 ]*v[2] + Projection[12 ]*v[3];
-  vs[1]=Projection[1 ]*v[0] + Projection[5 ]*v[1] + Projection[9 ]*v[2] + Projection[13 ]*v[3];
-  vs[2]=Projection[2 ]*v[0] + Projection[6 ]*v[1] + Projection[10]*v[2] + Projection[14 ]*v[3];
-  vs[3]=Projection[3 ]*v[0] + Projection[7 ]*v[1] + Projection[11]*v[2] + Projection[15 ]*v[3];
-  vs[0] /= vs[3];
-  vs[1] /= vs[3];
-  vs[2] /= vs[3];
-  vs[0] = vs[0] * 0.5 + 0.5;
-  vs[1] = vs[1] * 0.5 + 0.5;
-  vs[2] = vs[2] * 0.5 + 0.5;
-  vs[0] = vs[0] * Viewport[2] + Viewport[0];
-  vs[1] = vs[1] * Viewport[3] + Viewport[1];
-
-  GLdouble ori[2] = { 0.5, 0.5 };
-
-  doneCurrent();
-  return sqrt((vs[0] - ori[0]) * (vs[0] - ori[0]) + (vs[1] - ori[1]) * (vs[1] - ori[1]));
 }

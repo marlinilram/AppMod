@@ -502,7 +502,7 @@ void VectorFieldCanvas::updateSourceVectorField()
   feature_model->updateSourceVectorField();
 }
 
-void VectorFieldCanvas::addConstrainedLines(std::vector<Vector2f>& line)
+void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line)
 {
   if (!feature_model)
   {
