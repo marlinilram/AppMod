@@ -262,10 +262,12 @@ void MainWindow::setVectorField()
   source_vector_canvas->setFeatureModel(share_feature_model);
   source_vector_viewer->deleteDispObj(source_vector_canvas.get());
   source_vector_viewer->addDispObj(source_vector_canvas.get());
+  source_vector_viewer->updateGLOutside();
 
   target_vector_canvas->setFeatureModel(share_feature_model);
   target_vector_viewer->deleteDispObj(target_vector_canvas.get());
   target_vector_viewer->addDispObj(target_vector_canvas.get());
+  target_vector_viewer->updateGLOutside();
 
   //std::string fileSource = fileName.toStdString();
   //std::string fileTarget = fileSource.substr(0, fileSource.find_last_of('/') + 1) + "featurePP.png";

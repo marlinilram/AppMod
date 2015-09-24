@@ -12,7 +12,6 @@ public:
   ~VectorFieldViewer();
 
   void updateSourceVectorField();
-  void setConstrainedPoints();
   void deleteLastLine();
 
 protected:
@@ -28,6 +27,5 @@ private:
   
   bool drawLine;
   std::vector<Vector2f> line;
-  std::vector<std::vector<Vector2f>> lines;
 };
 #endif // !VectorFieldViewer_H

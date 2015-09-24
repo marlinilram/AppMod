@@ -18,6 +18,7 @@ enum RENDERMODE
 };
 
 class FeatureGuided;
+class FeatureLine;
 
 class VectorFieldCanvas : public DispObject
 {
@@ -45,10 +46,8 @@ public:
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
 
-  void setConstrainedPoints();
-
-public:
-  std::shared_ptr<std::vector<std::vector<Vector2f>>> constrainedLines;
+  void addConstrainedLines(std::vector<Vector2f>& line);
+  void deleteLastLine();
 
 protected:
   std::shared_ptr<FeatureGuided> feature_model;

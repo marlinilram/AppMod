@@ -1,5 +1,6 @@
 #include "VectorFieldCanvas.h"
 #include "FeatureGuided.h"
+#include "FeatureLine.h"
 #include "tele2d.h"
 #include "Colormap.h"
 #include "Bound.h"
@@ -501,10 +502,44 @@ void VectorFieldCanvas::updateSourceVectorField()
   feature_model->updateSourceVectorField();
 }
 
-void VectorFieldCanvas::setConstrainedPoints()
+void VectorFieldCanvas::addConstrainedLines(std::vector<Vector2f>& line)
 {
+  if (!feature_model)
+  {
+    return;
+  }
+
   if(render_mode == VectorField::SOURCE_MODE)
-    feature_model->source_vector_field_lines = constrainedLines;
+  {
+    feature_model->source_vector_field_lines->lines.push_back(line);
+    std::cout << "Current number of constrained lines in source: "
+      << feature_model->source_vector_field_lines->lines.size() << std::endl;
+  }
   else
-    feature_model->target_vector_field_lines = constrainedLines;
+  {
+    feature_model->target_vector_field_lines->lines.push_back(line);
+    std::cout << "Current number of constrained lines in target: "
+      << feature_model->target_vector_field_lines->lines.size() << std::endl;
+  }
+}
+
+void VectorFieldCanvas::deleteLastLine()
+{
+  if (!feature_model)
+  {
+    return;
+  }
+
+  if(render_mode == VectorField::SOURCE_MODE)
+  {
+    feature_model->source_vector_field_lines->lines.pop_back();
+    std::cout << "Delete the last constrained line of source. Current number: "
+              << feature_model->source_vector_field_lines->lines.size() << std::endl;
+  }
+  else
+  {
+    feature_model->target_vector_field_lines->lines.pop_back();
+    std::cout << "Delete the last constrained line of target. Current number: "
+              << feature_model->target_vector_field_lines->lines.size() << std::endl;
+  }
 }
