@@ -20,6 +20,7 @@ VectorFieldViewer::~VectorFieldViewer()
 void VectorFieldViewer::draw()
 {
   BasicViewer::draw();
+  drawLines();
 }
 
 void VectorFieldViewer::init()
