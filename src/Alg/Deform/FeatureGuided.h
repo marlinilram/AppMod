@@ -10,6 +10,7 @@
 #include "BasicHeader.h"
 
 class Model;
+class FeatureLine;
 class tele2d;
 typedef std::vector<std::vector<double2> > CURVES;
 typedef             std::vector<double2>   CURVE;
@@ -68,8 +69,9 @@ public:
   static void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
 public:
-  std::shared_ptr<std::vector<std::vector<Vector2f>>> source_vector_field_lines;
-  std::shared_ptr<std::vector<std::vector<Vector2f>>> target_vector_field_lines;
+  // user defined feature line
+  std::shared_ptr<FeatureLine> source_vector_field_lines;
+  std::shared_ptr<FeatureLine> target_vector_field_lines;
 
 private:
   std::shared_ptr<Model> source_model;

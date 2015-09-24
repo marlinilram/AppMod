@@ -20,6 +20,7 @@ VectorFieldViewer::~VectorFieldViewer()
 void VectorFieldViewer::draw()
 {
   BasicViewer::draw();
+  drawLines();
 }
 
 void VectorFieldViewer::init()
@@ -125,9 +126,17 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
   for(int i = 0;i < line.size();i ++)
     std::cout << line[i][0] << "," << line[i][1] << std::endl;
   drawLine = false;
-  lines.push_back(line);
-  while(!line.empty())
-    line.pop_back();
+
+  // pass the new line into feature guided model
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->addConstrainedLines(line);
+    }
+  }
+  line.clear();
 }
 
 void VectorFieldViewer::drawLines()
@@ -144,25 +153,14 @@ void VectorFieldViewer::drawLines()
   } 
 }
 
-void VectorFieldViewer::setConstrainedPoints()
-{
-  VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[0]);
-  canvas->constrainedLines = std::shared_ptr<std::vector<std::vector<Vector2f>>>(&lines);
-  canvas->setConstrainedPoints();
-}
-
 void VectorFieldViewer::deleteLastLine()
 {
-  VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[0]);
-  if(!lines.empty())
+  for (size_t i = 0; i < dispObjects.size(); ++i)
   {
-    lines.pop_back();
-    std::cout << "Delete the last constrained line from vector field." << std::endl;
+    VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->deleteLastLine();
+    }
   }
-  else
-  {
-    std::cout << "There is no constrained line can be deleted!" << std::endl;
-  }
-  /*std::cout << "The number of constrained line of source_vector_field_lines is :" << ((canvas->feature_model->source_vector_field_lines).get())->size() << std::endl;
-  std::cout << "The number of constrained line of target_vector_field_lines is :" << ((canvas->feature_model->target_vector_field_lines).get())->size() << std::endl;*/
 }

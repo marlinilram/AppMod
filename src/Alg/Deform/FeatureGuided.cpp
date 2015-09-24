@@ -1,5 +1,6 @@
 #include "FeatureGuided.h"
 #include "Model.h"
+#include "FeatureLine.h"
 #include "tele2d.h"
 #include "UtilityHeader.h"
 
@@ -66,6 +67,8 @@ void FeatureGuided::initRegister()
   //this->OptimizeConnection();
 
   // Search correspondences
+  source_vector_field_lines.reset(new FeatureLine);
+  target_vector_field_lines.reset(new FeatureLine);
 
 }
 

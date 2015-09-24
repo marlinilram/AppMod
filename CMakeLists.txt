@@ -38,6 +38,7 @@ SET( Project_INCLUDE_DIR src/
 						 src/DispModule/Ray
 						 src/DispModule/Viewer
 						 src/DispModule/Camera
+             src/DispModule/Canvas
 						 src/Alg
 						 src/Alg/SIRFS
 						 src/Alg/Deform
@@ -87,19 +88,22 @@ FILE( GLOB Model 		"src/Model/*.*" )
 FILE( GLOB TinyOBJ 		"src/Utility/OBJ/*.*" )
 FILE( GLOB Utility 		"src/Utility/*.*" )
 FILE( GLOB Render 		"src/DispModule/Samples/*.*"
-						"src/DispModule/Light/*.*"
-						"src/DispModule/Ray/*.*" )
+                      "src/DispModule/Light/*.*"
+                      "src/DispModule/Ray/*.*" )
 FILE( GLOB GLViewer 	"src/DispModule/Viewer/*.*" 
-						"src/DispModule/Camera/*.*" )
+                      "src/DispModule/Camera/*.*"
+                      "src/DispModule/Canvas/*.*" )
 FILE( GLOB SIRDeform 	"src/Alg/*.*"
-						"src/Alg/SIRFS/*.*"
-						"src/Alg/Deform/*.*" )
+                      "src/Alg/SIRFS/*.*"
+                      "src/Alg/Deform/*.*" )
 FILE( GLOB SIFTFlow 	"src/Alg/SIFTFlow/*.*" )
-FILE( GLOB Solver		"src/Alg/Solver/*.*" )
+FILE( GLOB Solver		  "src/Alg/Solver/*.*" )
 FILE( GLOB TeleReg  	"src/Alg/TeleReg/*.*" )
-FILE( GLOB Shader		"src/DispModule/shader/*.*" )
+FILE( GLOB Shader		  "src/DispModule/shader/*.*" )
+FILE( GLOB Resource   "src/ui/icons/*.*" )
 					 
 source_group("UI" 					FILES ${UI} )
+source_group("Resources"		FILES ${Resource} )
 source_group("Model" 				FILES ${Model} )
 source_group("Utility" 				FILES ${Utility} )
 source_group("Utility\\TinyOBJ" 	FILES ${TinyOBJ} )
