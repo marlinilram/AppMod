@@ -14,19 +14,22 @@ public:
 
   void updateSourceVectorField();
   void deleteLastLine();
+  void isDrawAllLines(bool allLines);
 
 protected:
   virtual void draw();
   virtual void init();
-  void drawLines();
+  void drawLine();
+  void drawAllLines();
   //virtual void postSelection(const QPoint& point);
 
 private:
   void mousePressEvent(QMouseEvent *e);
   void mouseMoveEvent(QMouseEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
-  
-  bool drawLine;
+
+  bool is_drawLine;
+  bool is_drawAllLines;
   std::vector<double2> line;
 };
 #endif // !VectorFieldViewer_H

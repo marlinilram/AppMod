@@ -48,7 +48,7 @@ private slots:
     void setUseFlat(int state);
     void deleteLastLine_Source();
     void deleteLastLine_Target();
-
+    void showAllLines(int state);
 
 public:
     //Viewer *viewer;

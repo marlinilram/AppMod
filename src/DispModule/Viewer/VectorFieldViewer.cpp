@@ -2,13 +2,14 @@
 #include "VectorFieldCanvas.h"
 #include <qevent.h>
 #include "FeatureGuided.h"
+#include "FeatureLine.h"
 //#include <cv.h>
 //#include <eigen\dense>
 
 VectorFieldViewer::VectorFieldViewer(QWidget* widget)
   : BasicViewer(widget)
 {
-
+  is_drawAllLines = false;
 }
 
 VectorFieldViewer::~VectorFieldViewer()
@@ -19,7 +20,11 @@ VectorFieldViewer::~VectorFieldViewer()
 void VectorFieldViewer::draw()
 {
   BasicViewer::draw();
-  drawLines();
+  drawLine();
+  if(is_drawAllLines)
+  {
+    drawAllLines();
+  }
 }
 
 void VectorFieldViewer::init()
@@ -84,7 +89,7 @@ void VectorFieldViewer::updateSourceVectorField()
 
 void VectorFieldViewer::mousePressEvent(QMouseEvent *e)
 {
-  drawLine = true;
+  is_drawLine = true;
   double2 point;
   qreal src[3],res[3];
   src[0] = e->x();
@@ -94,12 +99,12 @@ void VectorFieldViewer::mousePressEvent(QMouseEvent *e)
   point.x = res[0];
   point.y = res[1];
   line.push_back(point);
-  //std::cout << "The UnprojectedCoordinates of the selected point is :" << point[0] << "," << point[1] << std::endl;
+  //std::cout << "The UnprojectedCoordinates of the selected point is :" << point.x << "," << point.y << std::endl;
 }
 
 void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
 {
-  if(drawLine)
+  if(is_drawLine)
   {
     if(!line.empty())
     {
@@ -124,7 +129,7 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
   std::cout << "The points of the drawline are :" << std::endl;
   for(int i = 0;i < line.size();i ++)
     std::cout << line[i].x << "," << line[i].y << std::endl;
-  drawLine = false;
+  is_drawLine = false;
 
   // pass the new line into feature guided model
   for (size_t i = 0; i < dispObjects.size(); ++i)
@@ -138,14 +143,14 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
   line.clear();
 }
 
-void VectorFieldViewer::drawLines()
+void VectorFieldViewer::drawLine()
 {
   if(line.size() > 1)
   {
     glBegin(GL_LINE_STRIP);
     for(int i = 0;i  < line.size();i ++)
     {
-      glColor3f(1,1,1);
+      glColor3f(0,1,0);
       glVertex3f(line[i].x,line[i].y,0);
     }
     glEnd();
@@ -160,6 +165,33 @@ void VectorFieldViewer::deleteLastLine()
     if (canvas)
     {
       canvas->deleteLastLine();
+    }
+  }
+}
+
+void VectorFieldViewer::isDrawAllLines(bool allLines)
+{
+  is_drawAllLines = allLines;
+}
+
+void VectorFieldViewer::drawAllLines()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      std::shared_ptr<FeatureLine> feature_lines = canvas->getFeatureLine();
+      for(size_t j = 0; j < feature_lines->lines.size(); j++)
+      {
+        glBegin(GL_LINE_STRIP);
+        for(size_t k = 0; k < (feature_lines->lines)[j].size(); k ++)
+        {
+          glColor3f(0, 1, 0);
+          glVertex3f((feature_lines->lines)[j][k].x, (feature_lines->lines)[j][k].y, 0);
+        }
+        glEnd();
+      }
     }
   }
 }
