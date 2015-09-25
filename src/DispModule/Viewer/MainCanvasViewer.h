@@ -2,6 +2,7 @@
 #define MainCanvasViewer_H
 
 #include "BasicViewer.h"
+#include "GLActor.h"
 #include <QString>
 
 class MainCanvasViewer : public BasicViewer
@@ -13,10 +14,15 @@ public:
   void getSnapShot();
   void setBackgroundImage(QString fname);
   void updateBuffer();
+  void setGLActors(std::vector<GLActor>& actors);
+
+private:
+  std::vector<GLActor> actors;
 
 protected:
   virtual void draw();
   virtual void init();
+  void drawActors();
 };
 
 #endif

@@ -27,6 +27,8 @@ void MainCanvasViewer::draw()
       std::cerr<<"Error when drawing object " << i << ".\n";
     }
   }
+  glClear(GL_DEPTH_BUFFER_BIT);
+  drawActors();
 }
 
 void MainCanvasViewer::init()
@@ -123,4 +125,17 @@ void MainCanvasViewer::updateBuffer()
   }
 
   doneCurrent();
+}
+
+void MainCanvasViewer::drawActors()
+{
+  for (decltype(actors.size()) i = 0; i < actors.size(); ++i)
+  {
+    actors[i].draw();
+  }
+}
+
+void MainCanvasViewer::setGLActors(std::vector<GLActor>& actors)
+{
+  this->actors = actors;
 }

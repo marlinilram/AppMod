@@ -128,6 +128,7 @@ void MainWindow::exportOBJ()
 	//coarse_model->exportOBJ();
 
     //coarse_model->setInit();
+    trackball_canvas->getModel()->exportOBJ(0);
 }
 
 void MainWindow::snapShot()
@@ -163,6 +164,8 @@ void MainWindow::updateGeometry()
     //    this->refreshScreen();
     //}
     alg_handler->doProjOptimize();
+    //main_canvas_viewer->setGLActors(alg_handler->getGLActors());
+    updateCanvas();
 }
 
 void MainWindow::refreshScreen()
@@ -435,4 +438,13 @@ void MainWindow::deleteLastLine_Source()
 void MainWindow::deleteLastLine_Target()
 {
   target_vector_viewer->deleteLastLine();
+}
+
+void MainWindow::updateCanvas()
+{
+  trackball_viewer->updateBuffer();
+  trackball_viewer->updateGLOutside();
+
+  main_canvas_viewer->updateBuffer();
+  main_canvas_viewer->updateGLOutside();
 }

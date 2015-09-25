@@ -2,6 +2,8 @@
 #define AlgHandler_H
 
 #include <memory>
+#include <vector>
+#include "GLActor.h"
 
 class ProjOptimize;
 class FeatureGuided;
@@ -16,6 +18,7 @@ public:
   void init();
   void setFeatureModel(std::shared_ptr<FeatureGuided> model);
   void setShapeModel(std::shared_ptr<Model> model);
+  std::vector<GLActor>& getGLActors() { return actors; };
 
   void doProjOptimize();
 
@@ -27,7 +30,7 @@ private:
 
   // parameters for algorithms
   //float sample_density;
-
+  std::vector<GLActor> actors;
 
 private:
   AlgHandler(const AlgHandler&);

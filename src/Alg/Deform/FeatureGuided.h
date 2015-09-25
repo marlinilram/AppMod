@@ -11,6 +11,7 @@
 
 class Model;
 class FeatureLine;
+class KDTreeWrapper;
 class tele2d;
 typedef std::vector<std::vector<double2> > CURVES;
 typedef             std::vector<double2>   CURVE;
@@ -29,7 +30,7 @@ public:
   void initTargetImage(std::string targetFile);
   void initRegister();
   void updateSourceVectorField();
-  std::shared_ptr<kdtree::KDTree> getSourceKDTree();
+  std::shared_ptr<KDTreeWrapper> getSourceKDTree();
 
   inline std::shared_ptr<tele2d> GetTeleRegister() { return source_tele_register; };
   inline std::shared_ptr<tele2d> GetTargetTeleRegister() { return target_tele_register; };
@@ -38,6 +39,9 @@ public:
   void OptimizeConnection();
   double MatchScoreToVectorField(std::vector<double2>& curve);
   void BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDTree_data);
+  void BuildSourceEdgeKDTree();
+  void BuildTargetEdgeKDTree();
+  void BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree);
   void GetSourceNormalizePara(double2& translate, double& scale);
   void GetFittedCurves(CURVES& curves);
   void CalculateHists(
@@ -82,10 +86,8 @@ private:
   CURVES target_curves;
   float edge_threshold; // threshold for edge detection
 
-  std::shared_ptr<kdtree::KDTree> source_KDTree;
-  kdtree::KDTreeArray source_KDTree_data;
-  std::shared_ptr<kdtree::KDTree> target_KDTree;
-  kdtree::KDTreeArray target_KDTree_data;
+  std::shared_ptr<KDTreeWrapper> source_KDTree;
+  std::shared_ptr<KDTreeWrapper> target_KDTree;
 
   std::shared_ptr<tele2d> source_tele_register;
   std::shared_ptr<tele2d> target_tele_register;

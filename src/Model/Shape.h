@@ -6,6 +6,7 @@
 #include <memory>
 
 class Bound;
+class KDTreeWrapper;
 
 // a triangle mesh class
 // if we need a more abstract shape base class in the future
@@ -25,8 +26,12 @@ public:
   const STLVectorf& getUVCoord();
   const NormalList& getNormalList();
   const STLVectorf& getColorList();
+  const AdjList& getVertexShareFaces();
   Bound* getBoundbox();
   float avgEdgeLength();
+  void buildKDTree();
+  std::shared_ptr<KDTreeWrapper> getKDTree();
+  void updateShape(VertexList& new_vertex_list);
 
 private:
   void computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float v2[3], float lambd[3]);
@@ -53,6 +58,7 @@ private:
   STLVectorf color_list;
 
   std::unique_ptr<Bound> bound; // Shape is the owner of bound
+  std::shared_ptr<KDTreeWrapper> kdTree;
 
 private:
   Shape(const Shape&);

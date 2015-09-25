@@ -36,6 +36,11 @@ public:
 
   float getModelAvgEdgeLength();
   void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
+  bool getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord);
+  bool getUnprojectPt(float winx, float winy, float winz, float object_coord[3]);
+  int getClosestVertexId(float world_pos[3], int x, int y);
+  void getCameraOri(float camera_ori[3]);
+  void getProjRay(float proj_ray[3], int x, int y);
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape

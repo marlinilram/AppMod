@@ -1,6 +1,7 @@
 #include "FeatureGuided.h"
 #include "Model.h"
 #include "FeatureLine.h"
+#include "KDTreeWrapper.h"
 #include "tele2d.h"
 #include "UtilityHeader.h"
 
@@ -69,7 +70,9 @@ void FeatureGuided::initRegister()
   // Search correspondences
   source_vector_field_lines.reset(new FeatureLine);
   target_vector_field_lines.reset(new FeatureLine);
-
+  source_KDTree.reset(new KDTreeWrapper);
+  target_KDTree.reset(new KDTreeWrapper);
+  BuildTargetEdgeKDTree();
 }
 
 void FeatureGuided::updateSourceVectorField()
@@ -284,7 +287,7 @@ CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
     {
       if (curves[i].size() > 10)
       {
-        int step = 1 + curves[i].size() / 50;
+        int step = 1;// + curves[i].size() / 50;
         int tail = 0;
         for (int j = 0; j < curves[i].size(); ++j)
         {
@@ -586,7 +589,7 @@ void FeatureGuided::BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDT
   }
 }
 
-std::shared_ptr<kdtree::KDTree> FeatureGuided::getSourceKDTree()
+std::shared_ptr<KDTreeWrapper> FeatureGuided::getSourceKDTree()
 {
   return this->source_KDTree;
 }
@@ -624,11 +627,9 @@ void FeatureGuided::GetFittedCurves(CURVES& curves)
           * target_scale / source_scale + double2(0.5, 0.5) - source_translate;
         query[0] = target_pos_in_source.x;
         query[1] = target_pos_in_source.y;
-        this->source_KDTree->n_nearest(query, 1, result);
+        this->source_KDTree->nearestPt(query);
         crsp_target.push_back(this->target_curves[i][j]);
-        crsp_source.push_back(double2(
-          this->source_KDTree->the_data[result[0].idx][0],
-          this->source_KDTree->the_data[result[0].idx][1]));
+        crsp_source.push_back(double2(query[0], query[1]));
       }
     }
   }
@@ -876,7 +877,7 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
     size_t num_desired = sampled_curve.size();
     size_t sample_rate = (target_user_lines[i].size() - target_user_lines[i].size() % num_desired) / num_desired;
     sampled_curve.clear();
-    for (size_t j = 0; j < target_user_lines[i].size(); ++j)
+    for (size_t j = 0; j < sample_rate * num_desired; ++j)
     {
       if (j % sample_rate == 0)
       {
@@ -896,13 +897,53 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
   }
 
   std::vector<double2> crsp_pair(2);
+  std::vector<float>   temp_pt(2, 0.0);
   for (size_t i = 0; i < num_line_pair; ++i)
   {
     for (size_t j = 0; j < source_user_lines[i].size(); ++j)
     {
       crsp_pair[0] = source_user_lines[i][j];
-      crsp_pair[1] = source_user_lines[i][j];
+      temp_pt[0] = (float)crsp_pair[0].x;
+      temp_pt[1] = (float)crsp_pair[0].y;
+      source_KDTree->nearestPt(temp_pt);
+      crsp_pair[0].x = temp_pt[0];
+      crsp_pair[0].y = temp_pt[1];
+
+      crsp_pair[1] = target_user_lines[i][j];
+      temp_pt[0] = (float)crsp_pair[1].x;
+      temp_pt[1] = (float)crsp_pair[1].y;
+      target_KDTree->nearestPt(temp_pt);
+      crsp_pair[1].x = temp_pt[0];
+      crsp_pair[1].y = temp_pt[1];
+
       curves.push_back(crsp_pair); 
     }
   }
+}
+
+void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree)
+{
+  std::vector<float> data;
+  size_t n_pts = 0;
+  for (size_t i = 0; i < curves.size(); ++i)
+  {
+    for (size_t j = 0; j < curves[i].size(); ++j)
+    {
+      data.push_back((float)curves[i][j].x);
+      data.push_back((float)curves[i][j].y);
+      ++ n_pts;
+    }
+  }
+
+  kdTree->initKDTree(data, n_pts, 2);
+}
+
+void FeatureGuided::BuildSourceEdgeKDTree()
+{
+  BuildEdgeKDTree(source_curves, source_KDTree);
+}
+
+void FeatureGuided::BuildTargetEdgeKDTree()
+{
+  BuildEdgeKDTree(target_curves, target_KDTree);
 }

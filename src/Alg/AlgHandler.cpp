@@ -39,5 +39,12 @@ void AlgHandler::doProjOptimize()
     return;
   }
 
+  actors.clear();
   proj_optimize->updateShape(feature_model, shape_model);
+  std::vector<GLActor> temp_actors;
+  proj_optimize->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
 }

@@ -19,6 +19,8 @@ VectorFieldViewer::~VectorFieldViewer()
 void VectorFieldViewer::draw()
 {
   BasicViewer::draw();
+
+  glClear(GL_DEPTH_BUFFER_BIT);
   drawLines();
 }
 
@@ -112,7 +114,7 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
       camera()->getUnprojectedCoordinatesOf(src,res);
       currentPoint.x = res[0];
       currentPoint.y = res[1];
-      if(sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > 0.01)
+      if(sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > 0.005)
         line.push_back(currentPoint);
       updateGLOutside();
     }

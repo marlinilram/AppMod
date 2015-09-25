@@ -1,5 +1,6 @@
 #include "Shape.h"
 #include "Bound.h"
+#include "KDTreeWrapper.h"
 
 #include <set>
 
@@ -36,6 +37,7 @@ void Shape::init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList)
   computeFaceNormal();
   computeVertexNormal();
 
+  buildKDTree();
 }
 
 void Shape::setVertexList(VertexList& vertexList)
@@ -76,6 +78,11 @@ const NormalList& Shape::getNormalList()
 const STLVectorf& Shape::getColorList()
 {
   return color_list;
+}
+
+const AdjList& Shape::getVertexShareFaces()
+{
+  return vertex_adj_faces;
 }
 
 void Shape::buildFaceAdj()
@@ -338,4 +345,26 @@ float Shape::avgEdgeLength()
     total_length += (v_0 - v_1).norm() + (v_1 - v_2).norm() + (v_2 - v_0).norm();
   }
   return total_length / face_list.size();
+}
+
+std::shared_ptr<KDTreeWrapper> Shape::getKDTree()
+{
+  return kdTree;
+}
+
+void Shape::buildKDTree()
+{
+  kdTree.reset(new KDTreeWrapper);
+  kdTree->initKDTree(vertex_list, vertex_list.size() / 3, 3);
+}
+
+void Shape::updateShape(VertexList& new_vertex_list)
+{
+  vertex_list = new_vertex_list;
+
+  computeFaceNormal();
+
+  computeVertexNormal();
+
+  buildKDTree();
 }

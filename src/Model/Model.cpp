@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "Shape.h"
+#include "KDTreeWrapper.h"
 #include "Bound.h"
 #include "tiny_obj_loader.h"
 #include "obj_writer.h"
@@ -140,4 +141,99 @@ void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_
 
   m_viewport = Eigen::Map<Eigen::Vector4i>(c_viewport, 4, 1);
 
+}
+
+bool Model::getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord)
+{
+  // passed in screen coordinates is homogeneous
+  rimg_coord(2) = (float)1.0 / rimg_coord(2);
+  float winx = rimg_coord(0)*rimg_coord(2);
+  float winy = rimg_coord(1)*rimg_coord(2);
+
+  float winz = z_img.at<float>((int)(winy + 0.5), (int)(winx + 0.5));
+
+  float obj_coord[3];
+
+  if(!getUnprojectPt(winx, winy, winz, obj_coord))
+    return false;
+
+  w_coord = Eigen::Map<Vector3f>(obj_coord, 3, 1);
+
+  return true;
+}
+
+bool Model::getUnprojectPt(float winx, float winy, float winz, float object_coord[3])
+{
+  // unproject visible point in render image back to world
+
+  //Transformation of normalized coordinates between -1 and 1
+
+  Vector4f in((winx - (float)m_viewport(0)) / (float)m_viewport(2) * 2.0 - 1.0,
+              (winy - (float)m_viewport(1)) / (float)m_viewport(3) * 2.0 - 1.0,
+              2.0*winz - 1.0,
+              (float)1.0);
+
+  //Objects coordinates
+  Vector4f out = m_inv_modelview_projection*in;
+  if (out(3) == 0.0)
+  {
+    return false;
+  }
+
+  out(3) = (float)1.0 / out(3);
+  object_coord[0] = out(0) * out(3);
+  object_coord[1] = out(1) * out(3);
+  object_coord[2] = out(2) * out(3);
+  return true;
+}
+
+int Model::getClosestVertexId(float world_pos[3], int x, int y)
+{
+  // given x, y in rendered image return the closest vertex id
+
+  // compute world coordinate
+  Eigen::Vector3f xy_img((float)x, (float)y, 1.0);
+  Eigen::Vector3f xyz_model;
+  this->getWorldCoord(xy_img, xyz_model);
+
+  // find closest id
+  std::vector<float> query(3, 0.0);
+  int v_id;
+  query[0] = xyz_model[0];
+  query[1] = xyz_model[1];
+  query[2] = xyz_model[2];
+  shape->getKDTree()->nearestPt(query, v_id);
+  world_pos[0] = query[0];
+  world_pos[1] = query[1];
+  world_pos[2] = query[2];
+  return v_id;
+}
+
+void Model::getCameraOri(float camera_ori[3])
+{
+  Vector4f cam_ori(0.0f, 0.0f, 0.0f, 1.0f);
+  cam_ori = m_modelview.inverse() * cam_ori;
+
+  camera_ori[0] = cam_ori[0] / cam_ori[3];
+  camera_ori[1] = cam_ori[1] / cam_ori[3];
+  camera_ori[2] = cam_ori[2] / cam_ori[3];
+}
+
+void Model::getProjRay(float proj_ray[3], int x, int y)
+{
+  Eigen::Vector4f in;
+  in << (x - (float)m_viewport(0)) / (float)m_viewport(2) * 2.0 - 1.0,
+    (y - (float)m_viewport(1)) / (float)m_viewport(3) * 2.0 - 1.0,
+    1.0f,
+    1.0f;
+
+  // get the ray direction in camera coordinate
+  Eigen::Vector4f out = m_projection.inverse() * in;
+  Eigen::Vector4f cam_ori(0.0f, 0.0f, 0.0f, 1.0f);
+  cam_ori = m_modelview.inverse() * cam_ori;
+  out = m_modelview.inverse() * out;
+
+  proj_ray[0] = out[0] / out[3] - cam_ori[0] / cam_ori[3];
+  proj_ray[1] = out[1] / out[3] - cam_ori[1] / cam_ori[3];
+  proj_ray[2] = out[2] / out[3] - cam_ori[2] / cam_ori[3];
 }

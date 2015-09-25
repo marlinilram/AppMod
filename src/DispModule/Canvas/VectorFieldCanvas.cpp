@@ -4,6 +4,7 @@
 #include "tele2d.h"
 #include "Colormap.h"
 #include "Bound.h"
+#include "KDTreeWrapper.h"
 
 #include "opencv2/contrib/contrib.hpp"
 
@@ -419,7 +420,7 @@ void VectorFieldCanvas::setScalarField()
 
   std::vector<float> query(2, 0.0);
   kdtree::KDTreeResultVector result;
-  std::shared_ptr<kdtree::KDTree> edge_KDTree = feature_model->getSourceKDTree();
+  std::shared_ptr<KDTreeWrapper> edge_KDTree = feature_model->getSourceKDTree();
   float max_dist = std::numeric_limits<float>::min();
   double2 normalized_translate(0.0, 0.0);
   double normalized_scale = 0.0;
@@ -431,8 +432,7 @@ void VectorFieldCanvas::setScalarField()
     {
       query[0] = ((j / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.x;
       query[1] = ((i / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.y;
-      edge_KDTree->n_nearest(query, 1, result);
-      dmap[j + i * 800] = result[0].dis;
+      dmap[j + i * 800] = edge_KDTree->nearestDis(query);
       if (result[0].dis > max_dist)
       {
         max_dist = result[0].dis;

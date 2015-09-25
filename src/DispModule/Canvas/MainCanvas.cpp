@@ -408,7 +408,7 @@ void MainCanvas::sketchShader()
     }
   }
 
-  std:: cout << "mindepth: " << min_depth << "\tmaxdepth: " << max_depth << "\n";
+//  std:: cout << "mindepth: " << min_depth << "\tmaxdepth: " << max_depth << "\n";
 
   cv::Mat r_img;
   r_img.create(height, width, CV_32FC3);
