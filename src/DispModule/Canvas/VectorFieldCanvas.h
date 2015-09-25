@@ -50,6 +50,7 @@ public:
 
   void addConstrainedLines(std::vector<double2>& line);
   void deleteLastLine();
+  std::shared_ptr<FeatureLine> getFeatureLine(); 
 
 protected:
   std::shared_ptr<FeatureGuided> feature_model;

@@ -543,3 +543,20 @@ void VectorFieldCanvas::deleteLastLine()
               << feature_model->target_vector_field_lines->lines.size() << std::endl;
   }
 }
+
+std::shared_ptr<FeatureLine> VectorFieldCanvas::getFeatureLine()
+{
+  if (!feature_model)
+  {
+    return nullptr;
+  }
+
+  if(render_mode == VectorField::SOURCE_MODE)
+  {
+    return feature_model->source_vector_field_lines;
+  }
+  else
+  {
+    return feature_model->target_vector_field_lines;
+  }
+}

@@ -48,8 +48,8 @@ private slots:
     void setUseFlat(int state);
     void deleteLastLine_Source();
     void deleteLastLine_Target();
+    void showAllLines(int state);
     void updateCanvas();
-
 
 public:
     //Viewer *viewer;

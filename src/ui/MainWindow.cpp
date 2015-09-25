@@ -30,6 +30,7 @@ MainWindow::MainWindow()
     connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
     connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
     connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
+    connect(Show_All_Lines_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showAllLines(int)));
 
     this->show();
     
@@ -438,6 +439,15 @@ void MainWindow::deleteLastLine_Source()
 void MainWindow::deleteLastLine_Target()
 {
   target_vector_viewer->deleteLastLine();
+}
+
+void MainWindow::showAllLines(int state)
+{
+  source_vector_viewer->isDrawAllLines(bool(state));
+  target_vector_viewer->isDrawAllLines(bool(state));
+
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
 }
 
 void MainWindow::updateCanvas()

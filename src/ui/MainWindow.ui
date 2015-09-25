@@ -110,8 +110,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>205</width>
-          <height>622</height>
+          <width>217</width>
+          <height>605</height>
          </rect>
         </property>
         <attribute name="label">
@@ -124,13 +124,6 @@
             <string>Feature View</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_5">
-            <item row="0" column="0">
-             <widget class="QCheckBox" name="checkBox">
-              <property name="text">
-               <string>Show Source Vector Field</string>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="0">
              <widget class="QCheckBox" name="checkBox_2">
               <property name="text">
@@ -159,10 +152,10 @@
               </property>
              </widget>
             </item>
-            <item row="5" column="0">
-             <widget class="QCheckBox" name="checkBox_6">
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="checkBox">
               <property name="text">
-               <string>Show Fitted Curve Crsp</string>
+               <string>Show Source Vector Field</string>
               </property>
              </widget>
             </item>
@@ -170,6 +163,20 @@
              <widget class="QCheckBox" name="checkBox_7">
               <property name="text">
                <string>Show Hist Matched Crsp</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QCheckBox" name="checkBox_6">
+              <property name="text">
+               <string>Show Fitted Curve Crsp</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QCheckBox" name="Show_All_Lines_CheckBox">
+              <property name="text">
+               <string>Show All Constrained Lines</string>
               </property>
              </widget>
             </item>
@@ -220,8 +227,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>98</width>
-          <height>28</height>
+          <width>205</width>
+          <height>622</height>
          </rect>
         </property>
         <attribute name="label">
