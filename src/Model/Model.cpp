@@ -127,7 +127,9 @@ float Model::getModelAvgEdgeLength()
   vso[0] = vso[0] * m_viewport[2] + m_viewport[0];
   vso[1] = vso[1] * m_viewport[3] + m_viewport[1];
 
-  return sqrt((vs[0] - vso[0]) * (vs[0] - vso[0]) + (vs[1] - vso[1]) * (vs[1] - vso[1]));
+  float avg_pix_length = sqrt((vs[0] - vso[0]) * (vs[0] - vso[0]) + (vs[1] - vso[1]) * (vs[1] - vso[1]));
+  std::cout << "Average Pixel Length: " << avg_pix_length << "\n";
+  return avg_pix_length;
 }
 
 void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4])

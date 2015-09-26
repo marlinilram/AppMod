@@ -5,5 +5,6 @@
 #include "LOG.h"
 #include "YMLHandler.h"
 #include "Histogram.h"
+#include "RandSample.h"
 
 #endif

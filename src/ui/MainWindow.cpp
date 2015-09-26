@@ -31,6 +31,7 @@ MainWindow::MainWindow()
     connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
     connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
     connect(Show_All_Lines_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showAllLines(int)));
+    connect(Show_ProjCrsp_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showProjCrsp(int)));
 
     this->show();
     
@@ -165,7 +166,7 @@ void MainWindow::updateGeometry()
     //    this->refreshScreen();
     //}
     alg_handler->doProjOptimize();
-    //main_canvas_viewer->setGLActors(alg_handler->getGLActors());
+    main_canvas_viewer->setGLActors(alg_handler->getGLActors());
     updateCanvas();
 }
 
@@ -448,6 +449,12 @@ void MainWindow::showAllLines(int state)
 
   source_vector_viewer->updateGLOutside();
   target_vector_viewer->updateGLOutside();
+}
+
+void MainWindow::showProjCrsp(int state)
+{
+  main_canvas_viewer->setIsDrawActors(bool(state));
+  main_canvas_viewer->updateGLOutside();
 }
 
 void MainWindow::updateCanvas()

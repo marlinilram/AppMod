@@ -859,40 +859,75 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
     FeatureGuided::DenormalizedCurve(target_user_lines[i], target_translate, target_scale);
 
     // resample source curve based on sample density
+    std::cout << "Number of points in user defined source curve: " << source_user_lines[i].size() << "\n";
+    std::cout << "Number of points in user defined target curve: " << target_user_lines[i].size() << "\n";
+
     CURVE sampled_curve;
     sampled_curve.push_back(source_user_lines[i][0]);
+    double accum_dist = 0.0;
     for (size_t j = 1; j < source_user_lines[i].size(); ++j)
     {
-      double2 previousPoint = sampled_curve[sampled_curve.size() - 1];
+      double2 previousPoint = source_user_lines[i][j - 1];
       double2 currentPoint = source_user_lines[i][j];
-      if (sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > sample_density)
+      accum_dist += sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2));
+      if (accum_dist > sample_density)
       {
         sampled_curve.push_back(currentPoint);
+        accum_dist = 0.0;
       }
     }
     source_user_lines[i] = sampled_curve;
 
     // resample target curve based on the number of sampled source curve
     // in this way, correspondences are built automatically
-    size_t num_desired = sampled_curve.size();
-    size_t sample_rate = (target_user_lines[i].size() - target_user_lines[i].size() % num_desired) / num_desired;
-    sampled_curve.clear();
-    for (size_t j = 0; j < sample_rate * num_desired; ++j)
+    double target_sample_density = (FeatureGuided::CurveLength(target_user_lines[i]) / (sampled_curve.size()) - 1);
+    size_t step = target_user_lines[i].size() / (sampled_curve.size()) + 1;
+    if (step * (sampled_curve.size()) != target_user_lines[i].size())
     {
-      if (j % sample_rate == 0)
+      int interp_num = step * (sampled_curve.size()) - target_user_lines[i].size();
+      std::vector<int> interp_v;
+      RandSample(1, target_user_lines[i].size() - 1, interp_num, interp_v);
+
+      CURVE interp_curve;
+      for (size_t j = 0; j < interp_v.size(); ++j)
+      {
+        double2 previousPoint = target_user_lines[i][interp_v[j] - 1 + j];
+        double2 currentPoint = target_user_lines[i][interp_v[j] + j];
+        double2 midPoint(0.5 * (previousPoint.x + currentPoint.x), 0.5 * (previousPoint.y + currentPoint.y));
+        target_user_lines[i].insert(target_user_lines[i].begin() + interp_v[j] + j, midPoint);
+      }
+    }
+    sampled_curve.clear();
+    for (size_t j = 0; j < target_user_lines[i].size(); ++j)
+    {
+      if (j % step == 0)
       {
         sampled_curve.push_back(target_user_lines[i][j]);
       }
+      //double2 previousPoint = target_user_lines[i][j - 1];
+      //double2 currentPoint = target_user_lines[i][j];
+      //accum_dist += sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2));
+      //if (accum_dist > target_sample_density)
+      //{
+      //  double interp = (accum_dist - target_sample_density)
+      //    / sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2));
+      //  double2 midPoint((1 - interp) * previousPoint.x + interp * currentPoint.x,
+      //    (1 - interp) * previousPoint.y + interp * currentPoint.y);
+      //  sampled_curve.push_back(currentPoint);
+      //  //accum_dist = sqrt(pow(currentPoint.x - midPoint.x,2) + pow(currentPoint.y - midPoint.y,2));
+      //  accum_dist = 0.0;
+      //}
     }
     target_user_lines[i] = sampled_curve;
 
     if (source_user_lines[i].size() != target_user_lines[i].size())
     {
       std::cout << "Error: number of points in sampled user defined source and target curves doesn't match.\n";
+      std::cout << "Points in source: " << source_user_lines[i].size() << " Points in target: " << target_user_lines[i].size() << std::endl;
     }
     else
     {
-      std::cout << "Number of points in sampled user defined curve " << i << " : " << num_desired << "\n";
+      std::cout << "Number of points in sampled user defined curve " << i << " : " << sampled_curve.size() << "\n";
     }
   }
 
@@ -900,7 +935,8 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
   std::vector<float>   temp_pt(2, 0.0);
   for (size_t i = 0; i < num_line_pair; ++i)
   {
-    for (size_t j = 0; j < source_user_lines[i].size(); ++j)
+    size_t num_pts = std::min(source_user_lines[i].size(), target_user_lines[i].size());
+    for (size_t j = 0; j < num_pts; ++j)
     {
       crsp_pair[0] = source_user_lines[i][j];
       temp_pt[0] = (float)crsp_pair[0].x;
@@ -919,6 +955,13 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
       curves.push_back(crsp_pair); 
     }
   }
+
+  // test if the line are correct
+  //for (size_t i = 0; i < target_user_lines.size(); ++i)
+  //{
+  //  FeatureGuided::NormalizedCurve(target_user_lines[i], target_translate, target_scale);
+  //  target_vector_field_lines->lines[i] = target_user_lines[i];
+  //}
 }
 
 void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree)

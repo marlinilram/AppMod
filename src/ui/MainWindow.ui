@@ -111,7 +111,7 @@
           <x>0</x>
           <y>0</y>
           <width>217</width>
-          <height>605</height>
+          <height>622</height>
          </rect>
         </property>
         <attribute name="label">
@@ -131,6 +131,20 @@
               </property>
              </widget>
             </item>
+            <item row="6" column="0">
+             <widget class="QCheckBox" name="checkBox_7">
+              <property name="text">
+               <string>Show Hist Matched Crsp</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="checkBox_5">
+              <property name="text">
+               <string>Show Scalar Field</string>
+              </property>
+             </widget>
+            </item>
             <item row="2" column="0">
              <widget class="QCheckBox" name="checkBox_3">
               <property name="text">
@@ -145,24 +159,10 @@
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
-             <widget class="QCheckBox" name="checkBox_5">
-              <property name="text">
-               <string>Show Scalar Field</string>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="0">
              <widget class="QCheckBox" name="checkBox">
               <property name="text">
                <string>Show Source Vector Field</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0">
-             <widget class="QCheckBox" name="checkBox_7">
-              <property name="text">
-               <string>Show Hist Matched Crsp</string>
               </property>
              </widget>
             </item>
@@ -177,6 +177,13 @@
              <widget class="QCheckBox" name="Show_All_Lines_CheckBox">
               <property name="text">
                <string>Show All Constrained Lines</string>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="0">
+             <widget class="QCheckBox" name="Show_ProjCrsp_CheckBox">
+              <property name="text">
+               <string>Show Projection Crsp</string>
               </property>
              </widget>
             </item>
@@ -227,8 +234,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>205</width>
-          <height>622</height>
+          <width>98</width>
+          <height>28</height>
          </rect>
         </property>
         <attribute name="label">

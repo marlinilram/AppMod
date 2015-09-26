@@ -49,6 +49,7 @@ private slots:
     void deleteLastLine_Source();
     void deleteLastLine_Target();
     void showAllLines(int state);
+    void showProjCrsp(int state);
     void updateCanvas();
 
 public:

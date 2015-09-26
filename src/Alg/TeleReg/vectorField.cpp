@@ -383,7 +383,7 @@ void tele2d::computeVectorField(){
 	//std::cout<<"time consumed by computing A and b: " << (double)(time2-time1)/CLOCKS_PER_SEC <<" s" <<std::endl ;
 	//std::cout<<"time consumed by solving the system: " << (double)(time3-time2)/CLOCKS_PER_SEC <<" s" <<std::endl ;
 
-	std::cout<<"vector field computing completed."<<std::endl; ;
+	//std::cout<<"vector field computing completed."<<std::endl; ;
 	int count = 0;
 	for( int i=0; i<L_add_P.data.size(); ++i)
 		count += L_add_P.data[i].size() ;

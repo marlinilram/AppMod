@@ -366,5 +366,7 @@ void Shape::updateShape(VertexList& new_vertex_list)
 
   computeVertexNormal();
 
+  computeBounds();
+
   buildKDTree();
 }

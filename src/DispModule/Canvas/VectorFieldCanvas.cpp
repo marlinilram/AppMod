@@ -244,11 +244,6 @@ bool VectorFieldCanvas::displayTargetVectorField()
           glVertex3f(base.x, base.y, 0 ) ;
           glEnd() ;
 
-          if (i == 0 && j == 90)
-          {
-            std::cout << "x: " << p1.x << " y: " << p1.y << "\n";
-          }
-
           glBegin(GL_TRIANGLES);
           glVertex3f( p2.x,p2.y, 0 ) ;
           glVertex3f( p3.x,p3.y, 0 ) ;
