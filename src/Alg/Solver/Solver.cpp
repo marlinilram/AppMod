@@ -10,7 +10,7 @@ Solver::~Solver()
 {
 }
 
-void Solver::addConstraint(Constraint* constraint)
+void Solver::addConstraint(std::shared_ptr<Constraint> constraint)
 {
   this->constraints.push_back(constraint);
 }

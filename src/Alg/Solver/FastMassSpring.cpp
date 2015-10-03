@@ -262,7 +262,7 @@ void FastMassSpring::getLinearSys(SparseMatrix& linear_sys)
              + this->k_bending * this->L_bending_matrix;
 }
 
-void FastMassSpring::setSolver(Solver* solver)
+void FastMassSpring::setSolver(std::shared_ptr<Solver> solver)
 {
   this->solver = solver;
 }

@@ -27,6 +27,7 @@ public:
   const NormalList& getNormalList();
   const STLVectorf& getColorList();
   const AdjList& getVertexShareFaces();
+  const AdjList& getVertexAdjList();
   Bound* getBoundbox();
   float avgEdgeLength();
   void buildKDTree();

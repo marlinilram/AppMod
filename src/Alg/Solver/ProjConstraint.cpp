@@ -96,7 +96,7 @@ void ProjConstraint::getLinearSys(SparseMatrix& linear_sys)
   linear_sys = this->lamd_proj * this->constraint_matrix;
 }
 
-void ProjConstraint::setSolver(Solver* solver)
+void ProjConstraint::setSolver(std::shared_ptr<Solver> solver)
 {
   this->solver = solver;
 }

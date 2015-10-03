@@ -85,6 +85,11 @@ const AdjList& Shape::getVertexShareFaces()
   return vertex_adj_faces;
 }
 
+const AdjList& Shape::getVertexAdjList()
+{
+  return vertex_adjlist;
+}
+
 void Shape::buildFaceAdj()
 {
   face_adjlist.clear();

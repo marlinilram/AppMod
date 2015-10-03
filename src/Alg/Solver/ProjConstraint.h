@@ -25,7 +25,7 @@ public:
   virtual void projection();
   virtual void getRightHand(VectorXf& right_hand);
   virtual void getLinearSys(SparseMatrix& linear_sys);
-  virtual void setSolver(Solver* solver);
+  virtual void setSolver(std::shared_ptr<Solver> solver);
 
 private:
   float lamd_proj;
@@ -34,7 +34,7 @@ private:
   SparseMatrix constraint_matrix;
   VectorXf right_hand;
 
-  Solver* solver;
+  std::shared_ptr<Solver> solver;
 
 private:
   ProjConstraint(const ProjConstraint&);

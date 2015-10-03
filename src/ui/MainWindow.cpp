@@ -167,6 +167,7 @@ void MainWindow::updateGeometry()
     //}
     alg_handler->doProjOptimize();
     main_canvas_viewer->setGLActors(alg_handler->getGLActors());
+    trackball_viewer->setGLActors(alg_handler->getGLActors());
     updateCanvas();
 }
 
@@ -455,6 +456,9 @@ void MainWindow::showProjCrsp(int state)
 {
   main_canvas_viewer->setIsDrawActors(bool(state));
   main_canvas_viewer->updateGLOutside();
+
+  trackball_viewer->setIsDrawActors(bool(state));
+  trackball_viewer->updateGLOutside();
 }
 
 void MainWindow::updateCanvas()

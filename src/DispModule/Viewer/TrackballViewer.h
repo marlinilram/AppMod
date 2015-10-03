@@ -8,6 +8,7 @@
 class MainCanvasViewer;
 class VectorFieldViewer;
 class QMouseEvent;
+class QKeyEvent;
 
 class TrackballViewer : public BasicViewer
 {
@@ -19,11 +20,15 @@ public:
   void setSourceVectorViewer(std::shared_ptr<VectorFieldViewer> viewer);
   void updateBuffer();
   void resetCamera();
+
+  void setGLActors(std::vector<GLActor>& actors);
+  inline void setIsDrawActors(bool state) { is_draw_actors = state; };
   
 protected:
   virtual void draw();
   virtual void init();
   void drawTrackBall();
+  void drawActors();
 
 private:
   void drawCornerAxis();
@@ -33,9 +38,14 @@ private:
   void mouseReleaseEvent(QMouseEvent *e);
   void syncCamera();
   void wheelEvent(QWheelEvent* e);
+  void keyPressEvent(QKeyEvent *e);
 
 private:
   bool sync_camera;
+  bool wireframe_;
+
+  std::vector<GLActor> actors;
+  bool is_draw_actors;
 
 private:
   std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
