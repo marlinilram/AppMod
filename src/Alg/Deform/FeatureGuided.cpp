@@ -453,7 +453,7 @@ void FeatureGuided::OptimizeConnection()
 double FeatureGuided::MatchScoreToVectorField(std::vector<double2>& curve)
 {
   // integrate
-  int resolution = this->source_tele_register->resolution;
+  int2 resolution = this->source_tele_register->resolution;
   std::vector<double2>& vector_field = this->source_tele_register->vector_field;
   double angle = 0;
   double curve_length = 0;
@@ -462,11 +462,11 @@ double FeatureGuided::MatchScoreToVectorField(std::vector<double2>& curve)
     double2 curve_angle = curve[i] - curve[i - 1];
     curve_angle.normalize();
     double2 vector_field_pos = (curve[i] + curve[i - 1]) / 2;
-    int x = (vector_field_pos.x * resolution + 0.5);
-    int y = (vector_field_pos.y * resolution + 0.5);
-    x = (x >= resolution ? resolution : x);
-    y = (y >= resolution ? resolution : y);
-    double2 vector_field_dir = vector_field[x + y * resolution];
+    int x = (vector_field_pos.x * resolution.x + 0.5);
+    int y = (vector_field_pos.y * resolution.y + 0.5);
+    x = (x >= resolution.x ? resolution.x : x);
+    y = (y >= resolution.y ? resolution.y : y);
+    double2 vector_field_dir = vector_field[x + y * resolution.x];
     vector_field_dir.normalize();
     angle += abs(curve_angle.x * vector_field_dir.x + curve_angle.y * vector_field_dir.y);
   }
@@ -653,7 +653,7 @@ void FeatureGuided::CalculateHists(
   double2 translate;
   double scale;
   FeatureGuided::NormalizePara(curves, translate, scale);
-  int resolution = tele->resolution;
+  int2 resolution = tele->resolution;
   std::vector<double2>& vector_field = tele->vector_field;
 
   // There are possible two ways to do hist match
@@ -669,8 +669,10 @@ void FeatureGuided::CalculateHists(
       // for each curve point, calculate its hist
       double2 curve_pos = 
         ((curves[i][j] + translate - double2(0.5, 0.5)) * scale
-        + double2(0.5, 0.5)) * resolution;
-      double search_rad = radius * resolution;
+        + double2(0.5, 0.5));
+      curve_pos.x *= resolution.x;
+      curve_pos.y *= resolution.y;
+      double search_rad = radius * std::min(resolution.x, resolution.y);
       std::vector<int2> area;
       area.push_back(
         int2(curve_pos.x - search_rad, curve_pos.y - search_rad));
@@ -694,8 +696,8 @@ void FeatureGuided::CalculateHists(
         hist[k] = hist[k] / sum_bins;
       }
       // cache the center coordinate into the last two elements of the hist
-      hist.push_back(curve_pos.x / resolution);
-      hist.push_back(curve_pos.y / resolution);
+      hist.push_back(curve_pos.x / resolution.x);
+      hist.push_back(curve_pos.y / resolution.y);
       hists.push_back(hist);
     }
   }
@@ -705,27 +707,27 @@ void FeatureGuided::CalculateHists(
 void FeatureGuided::SearchRadius(
   std::vector<double>& hist,
   double2 center, double r, std::vector<int2>& area,
-  std::vector<double2>& vector_field, int resolution)
+  std::vector<double2>& vector_field, int2 resolution)
 {
   // first compute the center's vector
   int x = center.x + 0.5;
-  x = (x >= resolution) ? resolution : x;
+  x = (x >= resolution.x) ? resolution.x : x;
   int y = center.y + 0.5;
-  y = (y >= resolution) ? resolution : y;
-  double2 cter_vector = vector_field[x + y * resolution];
+  y = (y >= resolution.y) ? resolution.y : y;
+  double2 cter_vector = vector_field[x + y * resolution.x];
   // record the vector in the circular area around the center with radius r
   for (int xStep = area[0].x; xStep <= area[1].x; ++xStep)
   {
     for (int yStep = area[0].y; yStep <= area[1].y; ++yStep)
     {
-      if (xStep >= 0 && xStep < resolution
-        && yStep >= 0 && yStep < resolution
+      if (xStep >= 0 && xStep < resolution.x
+        && yStep >= 0 && yStep < resolution.y
         && double2(center.x - xStep, center.y - yStep).norm() <= r)
       {
         // the histogram may store the relative variation but not the absolute angle
         //hist[ProjectDirToBin2D(vector_field[xStep + yStep * resolution])] += 1.0;
         hist[ProjectRelativeDirToBin2D(
-          vector_field[xStep + yStep * resolution],
+          vector_field[xStep + yStep * resolution.x],
           cter_vector)] += 1.0;
       }
     }

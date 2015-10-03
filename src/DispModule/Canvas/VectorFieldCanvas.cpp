@@ -92,58 +92,37 @@ bool VectorFieldCanvas::display()
 bool VectorFieldCanvas::displayVectorField()
 {
   std::shared_ptr<tele2d> teleRegister = this->feature_model->GetTeleRegister();
-  display_step = teleRegister->resolution / 20;
-
-  // draw scalar field
-  //if( teleRegister->osculatingCircles.size()){
-
-  //  for( int i =0; i<800 ; ++i ){
-  //    for( int j=0; j<800; ++j ){
-  //      double h = 0.1 ;
-  //      double3 field_color = dis2color( teleRegister->dis[i][j] ) ;
-  //      bgmap[j][i][0] = field_color.x ;
-  //      bgmap[j][i][1] = field_color.y ;
-  //      bgmap[j][i][2] = field_color.z ;
-  //    }
-  //  }
-  //  if( 1 ){
-  //    glPixelStorei( GL_UNPACK_ALIGNMENT, 1 ) ;
-  //    glRasterPos2i( 0, 0 ) ;
-  //    glDrawPixels( 800, 800, GL_RGB,  GL_UNSIGNED_BYTE, bgmap ) ;
-  //  }	
-
-  //}
-
-  //glLineWidth(3) ;
-
+  int2 display_step = teleRegister->resolution;
+  display_step.x /= 20;
+  display_step.y /= 20;
 
   // draw vector field
   glPointSize(1) ;
   glLineWidth(2) ;
   std::vector<double2>  vector_field = teleRegister->vector_field ;
-  int resolution = teleRegister->resolution ;
-  if(  vector_field.size() == resolution*resolution ){
+  int2 resolution = teleRegister->resolution ;
+  if(  vector_field.size() == resolution.x*resolution.y ){
 
 
-    for( int i=0; i<resolution;  i += display_step ){
-      for( int j=0; j<resolution; j += display_step ){
+    for( int i=0; i<resolution.x;  i += display_step.x ){
+      for( int j=0; j<resolution.y; j += display_step.y ){
 
         glColor3f( 0.5, 0.5, 0.5 ) ;
 
-        double len = 4.0  * resolution / 100;
+        double2 len(4.0  * resolution.x / 100, 4.0  * resolution.y / 100);
 
         if( j%2 == 0){
 
-          float x = ((double)i+0.5)/(double)resolution ;
-          float y = ((double)j+0.5)/(double)resolution ;
+          float x = ((double)i+0.5)/(double)resolution.x ;
+          float y = ((double)j+0.5)/(double)resolution.y ;
 
 
-          double2 direction = vector_field[i+j*resolution] ;
+          double2 direction = vector_field[i+j*resolution.x] ;
 
 
 
-          double2 p1 = double2( x-0.5*len*direction.x/resolution, y-0.5*len*direction.y/resolution) ;
-          double2 p2 = double2( x+0.5*len*direction.x/resolution, y+0.5*len*direction.y/resolution) ;
+          double2 p1 = double2( x-0.5*len.x*direction.x/resolution.x, y-0.5*len.y*direction.y/resolution.y) ;
+          double2 p2 = double2( x+0.5*len.x*direction.x/resolution.x, y+0.5*len.y*direction.y/resolution.y) ;
 
           double2 dir = p2-p1 ;
 
@@ -164,14 +143,14 @@ bool VectorFieldCanvas::displayVectorField()
 
         }else{
 
-          if( i == resolution-1 )
+          if( i == resolution.x-1 )
             continue ;
 
-          float x = ((double)i+1.0)/(double)resolution ;
-          float y = ((double)j+0.5)/(double)resolution ;
-          double2 direction = vector_field[i+j*resolution] ;
-          double2 p1 = double2( x-0.5*len*direction.x/resolution, y-0.5*len*direction.y/resolution) ;
-          double2 p2 = double2( x+0.5*len*direction.x/resolution, y+0.5*len*direction.y/resolution) ;
+          float x = ((double)i+1.0)/(double)resolution.x ;
+          float y = ((double)j+0.5)/(double)resolution.y ;
+          double2 direction = vector_field[i+j*resolution.x] ;
+          double2 p1 = double2( x-0.5*len.x*direction.x/resolution.x, y-0.5*len.y*direction.y/resolution.y) ;
+          double2 p2 = double2( x+0.5*len.x*direction.x/resolution.x, y+0.5*len.y*direction.y/resolution.y) ;
 
           double2 dir = p2-p1 ;
 
@@ -203,35 +182,37 @@ bool VectorFieldCanvas::displayVectorField()
 bool VectorFieldCanvas::displayTargetVectorField()
 {
   std::shared_ptr<tele2d> teleRegister = this->feature_model->GetTargetTeleRegister();
-  display_step = teleRegister->resolution / 20;
+  int2 display_step = teleRegister->resolution;
+  display_step.x /= 20;
+  display_step.y /= 20;
 
   // draw vector field
   glPointSize(1) ;
   glLineWidth(2) ;
   std::vector<double2>  vector_field = teleRegister->vector_field ;
-  int resolution = teleRegister->resolution ;
-  if(  vector_field.size() == resolution*resolution ){
+  int2 resolution = teleRegister->resolution ;
+  if(  vector_field.size() == resolution.x*resolution.y ){
 
 
-    for( int i=0; i<resolution;  i += display_step ){
-      for( int j=0; j<resolution; j += display_step ){
+    for( int i=0; i<resolution.x;  i += display_step.x ){
+      for( int j=0; j<resolution.y; j += display_step.y ){
 
         glColor3f( 0.5, 0.5, 0.5 ) ;
 
-        double len = 4.0  * resolution / 100;
+        double2 len(4.0  * resolution.x / 100, 4.0  * resolution.y / 100);
 
         if( j%2 == 0){
 
-          float x = ((double)i+0.5)/(double)resolution ;
-          float y = ((double)j+0.5)/(double)resolution ;
+          float x = ((double)i+0.5)/(double)resolution.x ;
+          float y = ((double)j+0.5)/(double)resolution.y ;
 
 
-          double2 direction = vector_field[i+j*resolution] ;
+          double2 direction = vector_field[i+j*resolution.x] ;
 
 
 
-          double2 p1 = double2( x-0.5*len*direction.x/resolution, y-0.5*len*direction.y/resolution) ;
-          double2 p2 = double2( x+0.5*len*direction.x/resolution, y+0.5*len*direction.y/resolution) ;
+          double2 p1 = double2( x-0.5*len.x*direction.x/resolution.x, y-0.5*len.y*direction.y/resolution.y) ;
+          double2 p2 = double2( x+0.5*len.x*direction.x/resolution.x, y+0.5*len.y*direction.y/resolution.y) ;
 
           double2 dir = p2-p1 ;
 
@@ -252,14 +233,14 @@ bool VectorFieldCanvas::displayTargetVectorField()
 
         }else{
 
-          if( i == resolution-1 )
+          if( i == resolution.x-1 )
             continue ;
 
-          float x = ((double)i+1.0)/(double)resolution ;
-          float y = ((double)j+0.5)/(double)resolution ;
-          double2 direction = vector_field[i+j*resolution] ;
-          double2 p1 = double2( x-0.5*len*direction.x/resolution, y-0.5*len*direction.y/resolution) ;
-          double2 p2 = double2( x+0.5*len*direction.x/resolution, y+0.5*len*direction.y/resolution) ;
+          float x = ((double)i+1.0)/(double)resolution.x ;
+          float y = ((double)j+0.5)/(double)resolution.y ;
+          double2 direction = vector_field[i+j*resolution.x] ;
+          double2 p1 = double2( x-0.5*len.x*direction.x/resolution.x, y-0.5*len.y*direction.y/resolution.y) ;
+          double2 p2 = double2( x+0.5*len.x*direction.x/resolution.x, y+0.5*len.y*direction.y/resolution.y) ;
 
           double2 dir = p2-p1 ;
 
@@ -290,7 +271,7 @@ bool VectorFieldCanvas::displayTargetVectorField()
 bool VectorFieldCanvas::displayTargetCurves()
 {
   std::shared_ptr<tele2d> teleRegister = this->feature_model->GetTeleRegister();
-  display_step = teleRegister->resolution / 40;
+  //display_step = teleRegister->resolution / 40;
 
   CURVES target_curves;
   feature_model->NormalizedTargetCurves(target_curves);
@@ -313,7 +294,7 @@ bool VectorFieldCanvas::displayTargetCurves()
 bool VectorFieldCanvas::displaySourceCurves()
 {
   std::shared_ptr<tele2d> teleRegister = this->feature_model->GetTeleRegister();
-  display_step = teleRegister->resolution / 40;
+  //display_step = teleRegister->resolution / 40;
 
   CURVES source_curves;
   this->feature_model->NormalizedSourceCurves(source_curves);
@@ -377,12 +358,12 @@ bool VectorFieldCanvas::displayHistMatchPts()
 
 Bound* VectorFieldCanvas::getBoundBox()
 {
-  int resolution = this->feature_model->GetTeleRegister()->resolution;
+  int2 resolution = this->feature_model->GetTeleRegister()->resolution;
 
   this->bound->minX = 0;
-  this->bound->maxX = resolution;
+  this->bound->maxX = resolution.x;
   this->bound->minY = 0;
-  this->bound->maxY = resolution;
+  this->bound->maxY = resolution.y;
   this->bound->minZ = 0.0;
   this->bound->maxZ = 0.1;
   return this->bound.get();
