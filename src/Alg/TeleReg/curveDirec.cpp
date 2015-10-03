@@ -217,20 +217,20 @@ void tele2d::correctDirs() {
 				for( int pid=0; pid<c1.size()-1; ++pid ){
 					double2 dir = c1[pid+1] - c1[pid] ;
 
-					double x = c1[pid+1].x * resolution.x - 0.5 ;
+					double x = c1[pid+1].x * resolution - 0.5 ;
 					int ix ;
 
 					if( x-floor(x) < 0.5 ) ix = floor(x) ;
 					else	ix = ceil( x ) ;
 
-					double y = c1[pid+1].y * resolution.y - 0.5 ;
+					double y = c1[pid+1].y * resolution - 0.5 ;
 
 					int iy ;
 					if( y-floor(y) < 0.5 ) iy = floor(y) ;
 					else	iy = ceil( y ) ;
 
 
-					double2 vec = vector_field[ ix + iy * resolution.x] ;
+					double2 vec = vector_field[ ix + iy * resolution] ;
 
 
 					// compute penalty of this segment

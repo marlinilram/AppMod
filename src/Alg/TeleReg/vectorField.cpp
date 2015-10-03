@@ -55,7 +55,7 @@ void tele2d::computeVectorField(){
 
 	std::vector<std::vector<double2>>  allcurves = curves ;
 	vector_field.clear() ;
-	vector_field.resize(resolution.x*resolution.y) ;
+	vector_field.resize(resolution*resolution) ;
 
 	// delete too short curves
 	for( int i=0; i<allcurves.size(); ++i ){
@@ -70,29 +70,29 @@ void tele2d::computeVectorField(){
 
 	// mark constrained vertices
 	constrained_vertices_mark.clear() ;
-	for( int i=0; i<resolution.x; ++i ) {
+	for( int i=0; i<resolution; ++i ) {
 		std::vector<int> a ;
-		for( int j=0;j<resolution.y; ++j )
+		for( int j=0;j<resolution; ++j )
 			a.push_back(0) ;
 		constrained_vertices_mark.push_back(a) ;
 	}
 	for( int i=0; i<allcurves.size(); ++ i){
 		for( int j =0; j<allcurves[i].size(); ++ j){
 			// get x index of closest vertices
-			float x = allcurves[i][j].x * resolution.x - 0.5 ;
+			float x = allcurves[i][j].x * resolution - 0.5 ;
 			int ix ;
 			if( x-floor(x) < 0.5 ) ix = floor(x) ;
 			else	ix = ceil( x ) ;
 			// get y index of closest vertices
-			float y = allcurves[i][j].y * resolution.y - 0.5 ;
+			float y = allcurves[i][j].y * resolution - 0.5 ;
 			int iy ;
 			if( y-floor(y) < 0.5 ) iy = floor(y) ;
 			else	iy = ceil( y ) ;
 
 			if( ix < 0 ) ix = 0;
-			if( ix > resolution.x-1) ix = resolution.x -1;
+			if( ix > resolution-1) ix = resolution -1;
 			if( iy < 0 ) iy = 0;
-			if( iy > resolution.y-1) iy = resolution.y -1;
+			if( iy > resolution-1) iy = resolution -1;
 
 			constrained_vertices_mark[ix][iy] = 1 ;
 
@@ -101,19 +101,19 @@ void tele2d::computeVectorField(){
 
 	// compute b
 	std::vector<double2> b ;
-	b.resize(resolution.x*resolution.y) ;
-	for( int i=0; i<resolution.x; ++i ){
-		for( int j=0; j<resolution.y; ++j){
+	b.resize(resolution*resolution) ;
+	for( int i=0; i<resolution; ++i ){
+		for( int j=0; j<resolution; ++j){
 			
 			if(constrained_vertices_mark[i][j] == 0 ){
-				b[i+j*resolution.x].x = 0; 
-				b[i+j*resolution.x].y = 0;
+				b[i+j*resolution].x = 0; 
+				b[i+j*resolution].y = 0;
 				continue ;
 			}
 
 			// otherwise, the vertex indexed by (i,j) is constrained
-			double vx = ((double)i+0.5)/(double)resolution.x ; 
-			double vy = ((double)j+0.5)/(double)resolution.y ; 
+			double vx = ((double)i+0.5)/(double)resolution ; 
+			double vy = ((double)j+0.5)/(double)resolution ; 
 			
 			// search for the closest points
 			int curveid_record = 0;
@@ -145,12 +145,12 @@ void tele2d::computeVectorField(){
 
       if (!(norm > 0 && norm < 1))
       {
-        b[i+j*resolution.x ].x = 0;
-        b[i+j*resolution.x ].y = 0;
+        b[i+j*resolution ].x = 0;
+        b[i+j*resolution ].y = 0;
       }
       else
       {
-        b[i+j*resolution.x ] = vector_of_vertex ;
+        b[i+j*resolution ] = vector_of_vertex ;
       }
 
 			//assert( norm > 0 && norm < 1) ;
@@ -172,24 +172,24 @@ void tele2d::computeVectorField(){
 	}
 
 	// compute L+P
-	int vnum =  resolution.x*resolution.y  ;
+	int vnum =  resolution*resolution  ;
 	sparse_matrix L_add_P(vnum) ;  // create a sparse matrix of vnum rows
 
 	// L_add_P <- D - W
-	for( int id_x =0; id_x<resolution.x; ++id_x ){
-		for( int id_y =0; id_y<resolution.y; ++id_y ){
-			int vid = id_x + id_y * resolution.x ;
-			if( id_x != 0 && id_x != resolution.x-1 && id_y != 0 && id_y != resolution.y-1 ){ // inner area
+	for( int id_x =0; id_x<resolution; ++id_x ){
+		for( int id_y =0; id_y<resolution; ++id_y ){
+			int vid = id_x + id_y * resolution ;
+			if( id_x != 0 && id_x != resolution-1 && id_y != 0 && id_y != resolution-1 ){ // inner area
 				//L_add_P[ vid + vid*vnum] += 6.8284 ;
 				L_add_P.pluse(vid,vid,6.8284 ) ;
-				int neibour_id_1 =  id_x + id_y * resolution.x - 1 ;
-				int neibour_id_2 =  id_x + id_y * resolution.x + 1 ;
-				int neibour_id_3 =  id_x + (id_y-1) * resolution.x ;
-				int neibour_id_4 =  id_x + (id_y+1) * resolution.x ;
-				int neibour_id_5 =  id_x + (id_y+1) * resolution.x - 1 ;
-				int neibour_id_6 =  id_x + (id_y+1) * resolution.x + 1 ;
-				int neibour_id_7 =  id_x + (id_y-1) * resolution.x - 1 ;
-				int neibour_id_8 =  id_x + (id_y-1) * resolution.x + 1 ;
+				int neibour_id_1 =  id_x + id_y * resolution - 1 ;
+				int neibour_id_2 =  id_x + id_y * resolution + 1 ;
+				int neibour_id_3 =  id_x + (id_y-1) * resolution ;
+				int neibour_id_4 =  id_x + (id_y+1) * resolution ;
+				int neibour_id_5 =  id_x + (id_y+1) * resolution - 1 ;
+				int neibour_id_6 =  id_x + (id_y+1) * resolution + 1 ;
+				int neibour_id_7 =  id_x + (id_y-1) * resolution - 1 ;
+				int neibour_id_8 =  id_x + (id_y-1) * resolution + 1 ;
 				//L_add_P[neibour_id_1+vid*vnum] -= 1 ;
 				L_add_P.pluse(vid,neibour_id_1, -1 ) ;
 				//L_add_P[neibour_id_2+vid*vnum] -= 1 ;
@@ -208,12 +208,12 @@ void tele2d::computeVectorField(){
 				L_add_P.pluse(vid,neibour_id_8, -0.7071 ) ;
 
 			}
-			else if((id_x == 0 || id_x==resolution.x-1) && (id_y == 0 || id_y==resolution.y-1)  ){  // coners
+			else if((id_x == 0 || id_x==resolution-1) && (id_y == 0 || id_y==resolution-1)  ){  // coners
 				//L_add_P[ vid + vid*vnum] += 2.7071 ;
 				L_add_P.pluse(vid,vid, 2.7071 ) ;
-				int neibour_id_1 =  ( id_x == 0 ? ( id_x+id_y * resolution.x+1) :  ( id_x+id_y * resolution.x - 1) );
-				int neibour_id_2 =  ( id_y == 0 ? ( id_x+ (id_y+1) * resolution.x) : ( id_x+ (id_y-1) * resolution.x )) ;
-				int neibour_id_3 =  ( id_x == 0 ? 1 : (resolution.x-2) ) + ( id_y == 0 ? 1 : (resolution.y - 2)) * resolution.x ;
+				int neibour_id_1 =  ( id_x == 0 ? ( id_x+id_y * resolution+1) :  ( id_x+id_y * resolution - 1) );
+				int neibour_id_2 =  ( id_y == 0 ? ( id_x+ (id_y+1) * resolution) : ( id_x+ (id_y-1) * resolution )) ;
+				int neibour_id_3 =  ( id_x == 0 ? 1 : (resolution-2) ) + ( id_y == 0 ? 1 : (resolution - 2)) * resolution ;
 
 				//L_add_P[neibour_id_1+vid*vnum] -= 1 ;
 				L_add_P.pluse(vid,neibour_id_1, -1 ) ;
@@ -229,32 +229,32 @@ void tele2d::computeVectorField(){
 
 				int neibour_id_1, neibour_id_2, neibour_id_3, neibour_id_4, neibour_id_5 ;
 				if( id_x == 0){
-					neibour_id_1 =  id_x + id_y * resolution.x + 1 ;
-					neibour_id_2 =  id_x + (id_y+1) * resolution.x ;
-					neibour_id_3 =  id_x + (id_y-1) * resolution.x ;
-					neibour_id_4 =  id_x + (id_y+1) * resolution.x + 1;
-					neibour_id_5 =  id_x + (id_y-1) * resolution.x + 1 ;
+					neibour_id_1 =  id_x + id_y * resolution + 1 ;
+					neibour_id_2 =  id_x + (id_y+1) * resolution ;
+					neibour_id_3 =  id_x + (id_y-1) * resolution ;
+					neibour_id_4 =  id_x + (id_y+1) * resolution + 1;
+					neibour_id_5 =  id_x + (id_y-1) * resolution + 1 ;
 				}
-				else if( id_x == resolution.x-1 ){
-					neibour_id_1 =  id_x + id_y * resolution.x - 1 ;
-					neibour_id_2 =  id_x + (id_y+1) * resolution.x ;
-					neibour_id_3 =  id_x + (id_y-1) * resolution.x ;
-					neibour_id_4 =  id_x + (id_y+1) * resolution.x - 1;
-					neibour_id_5 =  id_x + (id_y-1) * resolution.x - 1 ;
+				else if( id_x == resolution-1 ){
+					neibour_id_1 =  id_x + id_y * resolution - 1 ;
+					neibour_id_2 =  id_x + (id_y+1) * resolution ;
+					neibour_id_3 =  id_x + (id_y-1) * resolution ;
+					neibour_id_4 =  id_x + (id_y+1) * resolution - 1;
+					neibour_id_5 =  id_x + (id_y-1) * resolution - 1 ;
 				}
-				else if( id_y == resolution.y-1 ){
-					neibour_id_1 =  id_x + id_y * resolution.x + 1 ;
-					neibour_id_2 =  id_x + id_y * resolution.x - 1 ;
-					neibour_id_3 =  id_x + (id_y-1) * resolution.x ;
-					neibour_id_4 =  id_x + (id_y-1) * resolution.x + 1;
-					neibour_id_5 =  id_x + (id_y-1) * resolution.x - 1 ;
+				else if( id_y == resolution-1 ){
+					neibour_id_1 =  id_x + id_y * resolution + 1 ;
+					neibour_id_2 =  id_x + id_y * resolution - 1 ;
+					neibour_id_3 =  id_x + (id_y-1) * resolution ;
+					neibour_id_4 =  id_x + (id_y-1) * resolution + 1;
+					neibour_id_5 =  id_x + (id_y-1) * resolution - 1 ;
 				}
 				else {
-					neibour_id_1 =  id_x + id_y * resolution.x + 1 ;
-					neibour_id_2 =  id_x + id_y * resolution.x - 1 ;
-					neibour_id_3 =  id_x + (id_y+1) * resolution.x ;
-					neibour_id_4 =  id_x + (id_y+1) * resolution.x + 1;
-					neibour_id_5 =  id_x + (id_y+1) * resolution.x - 1 ;
+					neibour_id_1 =  id_x + id_y * resolution + 1 ;
+					neibour_id_2 =  id_x + id_y * resolution - 1 ;
+					neibour_id_3 =  id_x + (id_y+1) * resolution ;
+					neibour_id_4 =  id_x + (id_y+1) * resolution + 1;
+					neibour_id_5 =  id_x + (id_y+1) * resolution - 1 ;
 				}
 				//L_add_P[neibour_id_1+vid*vnum] -= 1 ;
 				L_add_P.pluse(vid,neibour_id_1, -1 ) ;
@@ -272,10 +272,10 @@ void tele2d::computeVectorField(){
 		}
 	}
 	// L_add_P <- D - W + P
-	for( int i=0; i<resolution.x; ++i ){
-		for( int j=0; j<resolution.y; ++j){
+	for( int i=0; i<resolution; ++i ){
+		for( int j=0; j<resolution; ++j){
 			if(constrained_vertices_mark[i][j] == 1  ){
-				int vid = i + j*resolution.x ;
+				int vid = i + j*resolution ;
 				//L_add_P[vid+vid*vnum]+=1e8 ; 
 				L_add_P.pluse(vid,vid, 1.0e8  ) ;
 

@@ -45,7 +45,7 @@ double efunc(const std::vector<double> &x, std::vector<double> &grad, void* regI
 	grad.resize(x.size()) ;
 	std::vector<double> cppX = X0 ;
 
-  int resolution = std::min(((tele2d*)regInst)->resolution.x, ((tele2d*)regInst)->resolution.y);
+
 
 	for( int i=0; i<x.size(); ++i ){
 		std::vector<double> cppX2 = cppX;
@@ -54,7 +54,7 @@ double efunc(const std::vector<double> &x, std::vector<double> &grad, void* regI
 		if( i%3 == 2 )
 			step = energyGraAngStep*3.14/180.0 ;
 		else
-			step = energyGraTranStep / resolution ;
+			step = energyGraTranStep / ((tele2d*)regInst)->resolution ;
 
 
 		cppX2[i] += step ;

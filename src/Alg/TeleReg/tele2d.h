@@ -53,22 +53,15 @@ class tele2d{
 public:
 	
 	tele2d ( ) {
-		resolution.x = 100 ;
-    resolution.y = 100 ;
+		resolution = 100 ;
 		gussian_h = 0.02 ;
 		scalar_weight = 1 ;
 	}
 	tele2d( int res, double h, double w ) {
-		resolution.x = res ;
-    resolution.y = res ;
+		resolution = res ;
 		gussian_h = h ;
 		scalar_weight = w ;
 	}
-  tele2d( int2 res, double h, double w ) {
-    resolution = res;
-    gussian_h = h;
-    scalar_weight = w;
-  }
 
  
 	void init( CURVES curves, std::vector<std::vector<int>> group, std::vector<int2> endps  );
@@ -128,7 +121,7 @@ public:
 	void getDis();           // only for visualization
 
 
-	int2 resolution; // resolution of vector field
+	int resolution; // resolution of vector field
 	std::vector<std::vector<double2>> initialCurves ;	// the input curves
 	std::vector<std::vector<double2>> curves ;			 // the input curves for operating
 	std::vector<std::vector<double2>> resCurves ;	    // curves after registration

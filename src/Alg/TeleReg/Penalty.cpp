@@ -47,7 +47,7 @@ double tele2d::get_penalty(std::vector<double2> samples, int endp1, int endp2 ){
 	double length = 0;
 	for( int id=1; id<samples.size(); ++id){
 		length += ( samples[id] - samples[id-1] ).norm() ;
-		if( length > 0.25 / std::min(resolution.x, resolution.y) ){
+		if( length > 0.25 / resolution ){
 			reduced_samples.push_back( samples[id] ) ;
 			length = 0;
 		}
@@ -58,12 +58,12 @@ double tele2d::get_penalty(std::vector<double2> samples, int endp1, int endp2 ){
 	double penalty  =  0;
 	for( int id=1; id<reduced_samples.size(); ++id){
 		// get x index of nearest vertex
-		double x = reduced_samples[id].x * resolution.x - 0.5 ;
+		double x = reduced_samples[id].x * resolution - 0.5 ;
 		int ix ;
 		if( x-floor(x) < 0.5 ) ix = floor(x) ;
 		else	ix = ceil( x ) ;
 		// get y index of nearest vertex
-		double y = reduced_samples[id].y * resolution.y - 0.5 ;
+		double y = reduced_samples[id].y * resolution - 0.5 ;
 		int iy ;
 		if( y-floor(y) < 0.5 ) iy = floor(y) ;
 		else	iy = ceil( y ) ;
@@ -76,7 +76,7 @@ double tele2d::get_penalty(std::vector<double2> samples, int endp1, int endp2 ){
 		if( iy < 0 ) return 2.0 ;
 		*/
 
-		if( ix>resolution.x-1 || iy > resolution.y-1 || ix < 0 || iy < 0){
+		if( ix>resolution-1 || iy > resolution-1 || ix < 0 || iy < 0){
 			penalty+=2 ;
 			continue;
 		}
@@ -87,7 +87,7 @@ double tele2d::get_penalty(std::vector<double2> samples, int endp1, int endp2 ){
 		}
 		else{
 			// get the direction vector of the nearest vertex
-			double2 vec = vector_field[ ix + iy * resolution.x] ;
+			double2 vec = vector_field[ ix + iy * resolution] ;
 
 			// compute the direction vector of current sample
 			double2 dir = reduced_samples[id] - reduced_samples[id-1] ;

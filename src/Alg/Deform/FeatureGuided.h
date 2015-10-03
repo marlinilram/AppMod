@@ -50,7 +50,7 @@ public:
   void SearchRadius(
     std::vector<double>& hist,
     double2 center, double r, std::vector<int2>& area,
-    std::vector<double2>& vector_field, int2 resolution);
+    std::vector<double2>& vector_field, int resolution);
   void FindHistMatchCrsp(CURVES &curves);
   void GetCrspPair(CURVES& curves);
   void GetUserCrspPair(CURVES& curves, float sample_density);
