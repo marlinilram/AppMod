@@ -18,6 +18,7 @@ public:
 
   void setMainCanvasViewer(std::shared_ptr<MainCanvasViewer> viewer);
   void setSourceVectorViewer(std::shared_ptr<VectorFieldViewer> viewer);
+  void setTargetVectorViewer(std::shared_ptr<VectorFieldViewer> viewer);
   void updateBuffer();
   void resetCamera();
 
@@ -50,6 +51,7 @@ private:
 private:
   std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
   std::shared_ptr<VectorFieldViewer> source_vector_viewer;
+  std::shared_ptr<VectorFieldViewer> target_vector_viewer;
 };
 
 #endif

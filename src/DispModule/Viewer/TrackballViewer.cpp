@@ -26,6 +26,11 @@ void TrackballViewer::setSourceVectorViewer(std::shared_ptr<VectorFieldViewer> v
   source_vector_viewer = viewer;
 }
 
+void TrackballViewer::setTargetVectorViewer(std::shared_ptr<VectorFieldViewer> viewer)
+{
+  target_vector_viewer = viewer;
+}
+
 void TrackballViewer::draw()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -326,6 +331,11 @@ void TrackballViewer::syncCamera()
   if (source_vector_viewer)
   {
     source_vector_viewer->updateSourceVectorField();
+    source_vector_viewer->updateScalarFieldTexture();
+  }
+  if (target_vector_viewer)
+  {
+    target_vector_viewer->updateScalarFieldTexture();
   }
 }
 

@@ -64,6 +64,7 @@ MainWindow::MainWindow()
     trackball_canvas.reset(new TrackballCanvas);
     trackball_viewer->setMainCanvasViewer(main_canvas_viewer);
     trackball_viewer->setSourceVectorViewer(source_vector_viewer);
+    trackball_viewer->setTargetVectorViewer(target_vector_viewer);
 
     source_vector_canvas.reset(new VectorFieldCanvas);
     target_vector_canvas.reset(new VectorFieldCanvas);

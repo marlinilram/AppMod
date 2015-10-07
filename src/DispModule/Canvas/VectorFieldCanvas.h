@@ -46,6 +46,7 @@ public:
   void setScalarField();
   void updateSourceVectorField();
 
+
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
 
   void addConstrainedLines(std::vector<double2>& line);

@@ -86,8 +86,23 @@ void VectorFieldViewer::updateSourceVectorField()
       canvas->updateSourceVectorField();
     }
   }
+}
 
-  updateGLOutside();
+void VectorFieldViewer::updateScalarFieldTexture()
+{
+  makeCurrent();
+
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->setScalarField();
+    }
+  }
+
+  updateGL();
+  doneCurrent();
 }
 
 
