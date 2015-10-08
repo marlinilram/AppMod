@@ -10,6 +10,7 @@
 #include "BasicHeader.h"
 
 class Shape;
+class ShapeCrest;
 class Bound;
 
 class Model
@@ -24,6 +25,7 @@ public:
 
   Bound* getBoundBox();
   std::shared_ptr<Shape> getShape();
+  std::shared_ptr<ShapeCrest> getShapeCrest();
   std::string getDataPath();
   std::string getOutputPath();
 
@@ -44,6 +46,7 @@ public:
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
+  std::shared_ptr<ShapeCrest> shape_crest;
 
   // file system data
   std::string data_path;

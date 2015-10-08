@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "Shape.h"
+#include "ShapeCrest.h"
 #include "KDTreeWrapper.h"
 #include "Bound.h"
 #include "tiny_obj_loader.h"
@@ -14,7 +15,7 @@ Model::Model()
 
 Model::~Model()
 {
-
+  std::cout << "Deleted a Model.\n";
 }
 
 Model::Model(const std::string path, const std::string name)
@@ -25,6 +26,9 @@ Model::Model(const std::string path, const std::string name)
     std:: cerr << "Init model failed\n";
     return;
   }
+
+  shape_crest.reset(new ShapeCrest());
+  shape_crest->setShape(shape);
 
   // make an output path
   char time_postfix[50];
@@ -84,6 +88,11 @@ Bound* Model::getBoundBox()
 std::shared_ptr<Shape> Model::getShape()
 {
   return shape;
+}
+
+std::shared_ptr<ShapeCrest> Model::getShapeCrest()
+{
+  return shape_crest;
 }
 
 std::string Model::getDataPath()

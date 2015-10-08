@@ -12,6 +12,7 @@ FeatureGuided::FeatureGuided()
 
 FeatureGuided::~FeatureGuided()
 {
+  std::cout << "Deleted a FeatureGuided.\n";
 }
 
 FeatureGuided::FeatureGuided(std::shared_ptr<Model> source_model, std::string targetFile)

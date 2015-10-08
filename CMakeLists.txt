@@ -50,8 +50,11 @@ SET( Project_INCLUDE_DIR src/
 						 extern/eigen )
 
 SET( MainWin_UIS src/ui/MainWindow.ui )
-SET( MainWin_MOC_HDRS src/ui/MainWindow.h)
+SET( MainWin_MOC_HDRS src/ui/MainWindow.h )
 SET( MainWin_RCC src/ui/UI.qrc )
+
+SET( ParaDock_UIS src/ui/ParameterDock.ui )
+SET( ParaDock_MOC_HDRS src/ui/ParameterDock.h )
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)
@@ -59,6 +62,8 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 QT5_WRAP_UI( MainWin_UIS_H ${MainWin_UIS} )
 QT5_WRAP_CPP( MainWin_MOC_SRCS ${MainWin_MOC_HDRS} )
+QT5_WRAP_UI( ParaDock_UIS_H ${ParaDock_UIS} )
+QT5_WRAP_CPP( ParaDock_MOC_SRCS ${ParaDock_MOC_HDRS} )
 QT5_ADD_RESOURCES( MainWin_RCC_SRCS ${MainWin_RCC} )
 
 INCLUDE_DIRECTORIES( ${Project_INCLUDE_DIR} 
@@ -80,7 +85,9 @@ ADD_EXECUTABLE( ${PROJECT_NAME}
 				${Project_SRCS}  
 				${MainWin_UIS_H} 
 				${MainWin_RCC_SRCS}
-				${MainWin_MOC_SRCS} )
+				${MainWin_MOC_SRCS} 
+        ${ParaDock_RCC_SRCS}
+				${ParaDock_MOC_SRCS} )
 				
 				
 FILE( GLOB UI 			"src/ui/*.*" ) 

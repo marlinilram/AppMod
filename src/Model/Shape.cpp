@@ -11,6 +11,7 @@ Shape::Shape()
 
 Shape::~Shape()
 {
+  std::cout << "Deleted a Shape.\n";
 }
 
 void Shape::init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList)
@@ -29,6 +30,9 @@ void Shape::init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList)
 
   std::cout<<"Building vertex adjacent list...\n";
   buildVertexAdj();
+
+  std::cout << "Building edge connectivity...\n";
+  computeEdgeConnectivity();
 
   std::cout<<"Computing bounding box...\n";
   computeBounds();
@@ -75,6 +79,11 @@ const NormalList& Shape::getNormalList()
   return vertex_normal;
 }
 
+const NormalList& Shape::getFaceNormal()
+{
+  return face_normal;
+}
+
 const STLVectorf& Shape::getColorList()
 {
   return color_list;
@@ -88,6 +97,11 @@ const AdjList& Shape::getVertexShareFaces()
 const AdjList& Shape::getVertexAdjList()
 {
   return vertex_adjlist;
+}
+
+const STLVectori& Shape::getEdgeConnectivity()
+{
+  return edge_connectivity;
 }
 
 void Shape::buildFaceAdj()
@@ -330,6 +344,44 @@ void Shape::computeVertexNormal()
     vertex_normal.push_back(cur_v_normal(0));
     vertex_normal.push_back(cur_v_normal(1));
     vertex_normal.push_back(cur_v_normal(2));
+  }
+}
+
+void Shape::computeEdgeConnectivity()
+{
+  edge_connectivity.clear();
+  edge_connectivity.resize(face_list.size(), -1);
+
+  // for each edge in each face
+  int start;
+  int end;
+  int edge_id = 0;
+  int inner_index[6] = {0, 1, 1, 2, 2, 0};
+  // the edge map stores edges occurred before in the "key" and the edgeIdx in the value
+  std::map<std::pair<int, int>, int> edge_map;
+  std::map<std::pair<int, int>, int>::iterator iter;
+  for (size_t i = 0; i < face_list.size() / 3; ++i)
+  {
+    // iterate 3 edges in a face
+    for (int j = 0; j < 3; ++j)
+    {
+      start = face_list[3 * i + inner_index[2 * j + 0]];
+      end = face_list[3 * i + inner_index[2 * j + 1]];
+      iter = edge_map.find(std::pair<int, int>(end, start));
+      if (iter == edge_map.end())
+      {
+        // if not occurred before, store it
+        edge_map[std::pair<int, int>(start, end)] = edge_id;
+      }
+      else
+      {
+        // found an opposite edge
+        // set the two into the connectivityOut
+        edge_connectivity[iter->second] = edge_id;
+        edge_connectivity[edge_id] = iter->second;
+      }
+      ++edge_id;
+    }
   }
 }
 
