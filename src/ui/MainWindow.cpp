@@ -15,7 +15,7 @@
 MainWindow::MainWindow()
 {
     setupUi(this); 
-
+    setIcons();
     connect(action_Load_Model, SIGNAL(triggered()), this, SLOT(loadModel()));
     connect(action_Snap_Shot, SIGNAL(triggered()), this, SLOT(snapShot()));
     connect(action_Fix_Camera, SIGNAL(triggered()), this, SLOT(fixCamera()));
@@ -457,4 +457,45 @@ void MainWindow::updateCanvas()
 
   main_canvas_viewer->updateBuffer();
   main_canvas_viewer->updateGLOutside();
+}
+
+void MainWindow::setIcons()
+{
+  QIcon icon;
+  icon.addFile(QStringLiteral(":/icons/I2S.png"), QSize(), QIcon::Normal, QIcon::Off);
+  this->setWindowIcon(icon);
+  QIcon icon1;
+  icon1.addFile(QStringLiteral(":/icons/load_model.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Load_Model->setIcon(icon1);
+  QIcon icon2;
+  icon2.addFile(QStringLiteral(":/icons/fix_camera.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Fix_Camera->setIcon(icon2);
+  QIcon icon3;
+  icon3.addFile(QStringLiteral(":/icons/reset_screen.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Reset_Screen->setIcon(icon3);
+  QIcon icon4;
+  icon4.addFile(QStringLiteral(":/icons/update.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Update_Geometry->setIcon(icon4);
+  QIcon icon5;
+  icon5.addFile(QStringLiteral(":/icons/export.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Export_OBJ->setIcon(icon5);
+  QIcon icon6;
+  icon6.addFile(QStringLiteral(":/icons/render.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Render->setIcon(icon6);
+  QIcon icon7;
+  icon7.addFile(QStringLiteral(":/icons/vector_field.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Vector_Field->setIcon(icon7);
+  QIcon icon8;
+  icon8.addFile(QStringLiteral(":/icons/load_points.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Load_2D_3D_points->setIcon(icon8);
+  QIcon icon9;
+  icon9.addFile(QStringLiteral(":/icons/camera.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Snap_Shot->setIcon(icon9);
+  QIcon icon10;
+  icon10.addFile(QStringLiteral(":/icons/toolbox.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Tool_Box->setIcon(icon10);
+  QIcon icon11;
+  icon11.addFile(QStringLiteral(":/icons/delete.png"), QSize(), QIcon::Normal, QIcon::Off);
+  action_Delete_Last_Line_Of_Source->setIcon(icon11);
+  action_Delete_Last_Line_Of_Target->setIcon(icon11);
 }

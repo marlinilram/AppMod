@@ -50,7 +50,7 @@ private slots:
     void deleteLastLine_Target();
     void showAllLines(int state);
     void updateCanvas();
-
+    void setIcons();
 public:
     //Viewer *viewer;
     //Viewer *viewer_img;
