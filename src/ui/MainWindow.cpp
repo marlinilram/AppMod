@@ -346,7 +346,6 @@ void MainWindow::deleteLastLine_Source()
 
 void MainWindow::deleteLastLine_Target()
 {
-<<<<<<< HEAD
   target_vector_viewer->deleteLastLine();
 }
 
@@ -407,7 +406,7 @@ void MainWindow::setIcons()
   icon11.addFile(QStringLiteral(":/icons/delete.png"), QSize(), QIcon::Normal, QIcon::Off);
   action_Delete_Last_Line_Of_Source->setIcon(icon11);
   action_Delete_Last_Line_Of_Target->setIcon(icon11);
-=======
+
   disp_modules->deleteLastCrspLine_Target();
->>>>>>> upstream/master
+
 }

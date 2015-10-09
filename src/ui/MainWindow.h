@@ -40,15 +40,13 @@ private slots:
 	  void loadPoints();
     void deleteLastLine_Source();
     void deleteLastLine_Target();
-<<<<<<< HEAD
     void showAllLines(int state);
     void updateCanvas();
     void setIcons();
 public:
-=======
 
 private:
->>>>>>> upstream/master
+
     //Viewer *viewer;
     //Viewer *viewer_img;
     std::shared_ptr<ParameterDock> parameter_dock;
