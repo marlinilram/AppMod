@@ -26,19 +26,19 @@
 
 =========================================================================*/
 
-#ifndef NormalGuided_H
-#define NormalGuided_H
+#ifndef NormalConstraint_H
+#define NormalConstraint_H
 
 #include "Constraint.h"
 #include "BasicHeader.h"
 
 class Solver;
 
-class NormalGuided : public Constraint
+class NormalConstraint : public Constraint
 {
 public:
-  NormalGuided();
-  virtual ~NormalGuided();
+  NormalConstraint();
+  virtual ~NormalConstraint();
 
   void initMatrix(
     FaceList& face_list,
@@ -61,7 +61,7 @@ public:
   virtual void projection();
   virtual void getRightHand(VectorXf& right_hand);
   virtual void getLinearSys(SparseMatrix& linear_sys);
-  virtual void setSolver(Solver* solver);
+  virtual void setSolver(std::shared_ptr<Solver> solver);
 
 private:
   void getConnectedPtID(int i_pt, int points_in_face[3], int connect_pt[2]);
@@ -75,8 +75,8 @@ private:
   VectorXf vertical_move;
 
 private:
-  NormalGuided(const NormalGuided&);
-  void operator = (const NormalGuided&);
+  NormalConstraint(const NormalConstraint&);
+  void operator = (const NormalConstraint&);
 };
 
 #endif

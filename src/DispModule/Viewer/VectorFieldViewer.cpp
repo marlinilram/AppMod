@@ -86,8 +86,23 @@ void VectorFieldViewer::updateSourceVectorField()
       canvas->updateSourceVectorField();
     }
   }
+}
 
-  updateGLOutside();
+void VectorFieldViewer::updateScalarFieldTexture()
+{
+  makeCurrent();
+
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->setScalarField();
+    }
+  }
+
+  updateGL();
+  doneCurrent();
 }
 
 
@@ -121,7 +136,7 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
       camera()->getUnprojectedCoordinatesOf(src,res);
       currentPoint.x = res[0];
       currentPoint.y = res[1];
-      if(sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > 0.005)
+      if(sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > 0.001)
         line.push_back(currentPoint);
       updateGLOutside();
     }
@@ -130,9 +145,9 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
 
 void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
 {
-  std::cout << "The points of the drawline are :" << std::endl;
-  for(int i = 0;i < line.size();i ++)
-    std::cout << line[i].x << "," << line[i].y << std::endl;
+  //std::cout << "The points of the drawline are :" << std::endl;
+  //for(int i = 0;i < line.size();i ++)
+  //  std::cout << line[i].x << "," << line[i].y << std::endl;
   is_drawLine = false;
 
   // pass the new line into feature guided model

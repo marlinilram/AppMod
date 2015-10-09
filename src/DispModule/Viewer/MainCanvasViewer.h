@@ -15,9 +15,12 @@ public:
   void setBackgroundImage(QString fname);
   void updateBuffer();
   void setGLActors(std::vector<GLActor>& actors);
+  inline void setIsDrawActors(bool state) { is_draw_actors = state; };
 
 private:
   std::vector<GLActor> actors;
+
+  bool is_draw_actors;
 
 protected:
   virtual void draw();

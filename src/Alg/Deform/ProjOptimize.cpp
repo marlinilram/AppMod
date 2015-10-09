@@ -6,6 +6,7 @@
 #include "Solver.h"
 #include "FastMassSpring.h"
 #include "ProjConstraint.h"
+#include "ARAP.h"
 
 ProjOptimize::ProjOptimize()
 {
@@ -203,30 +204,37 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
   std::vector<float> vertex_list = model->getShape()->getVertexList();
   std::vector<float> normal_list = model->getShape()->getNormalList();
   std::vector<std::vector<int> > vertices_share_faces = model->getShape()->getVertexShareFaces();
+  std::vector<std::vector<int> > adj_list = model->getShape()->getVertexAdjList();
 
   std::shared_ptr<Solver> solver(new Solver);
   std::shared_ptr<FastMassSpring> fsm(new FastMassSpring);
   std::shared_ptr<ProjConstraint> proj_constraint(new ProjConstraint);
+  std::shared_ptr<ARAP> arap(new ARAP);
 
   // init solver info
   solver->problem_size = (vertex_list).size();
   solver->P_Opt = Eigen::Map<VectorXf>(&(vertex_list)[0], (vertex_list).size());
 
   // init fast mass spring
-  fsm->setSolver(solver.get());
+  fsm->setSolver(solver);
   fsm->initEdgeGraph((face_list), (vertex_list), (vertices_share_faces));
   fsm->buildMatrix();
   fsm->setkStrech(10.0f); //10.0f;
   fsm->setkBending(15.0f); //15.0f;
 
+  // init arap
+  arap->setSolver(solver);
+  arap->initConstraint(vertex_list, face_list, adj_list);
+  arap->setLamdARAP(10.0f);
+
   // init projection constraint
-  proj_constraint->setSolver(solver.get());
+  proj_constraint->setSolver(solver);
   proj_constraint->initMatrix(new_constrained_ray, new_constrained_vertex_id, camera_ori);
   proj_constraint->setLamdProj(30.0f);
 
   // add constraints to solver
-  solver->addConstraint(fsm.get());
-  solver->addConstraint(proj_constraint.get());
+  solver->addConstraint(arap);
+  solver->addConstraint(proj_constraint);
 
   // solve
   solver->initCholesky();

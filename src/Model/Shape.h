@@ -25,8 +25,11 @@ public:
   const FaceList& getFaceList();
   const STLVectorf& getUVCoord();
   const NormalList& getNormalList();
+  const NormalList& getFaceNormal();
   const STLVectorf& getColorList();
   const AdjList& getVertexShareFaces();
+  const AdjList& getVertexAdjList();
+  const STLVectori& getEdgeConnectivity();
   Bound* getBoundbox();
   float avgEdgeLength();
   void buildKDTree();
@@ -41,6 +44,7 @@ private:
   void computeBounds();
   void computeFaceNormal();
   void computeVertexNormal();
+  void computeEdgeConnectivity();
 
 private:
   VertexList vertex_list;
@@ -49,9 +53,11 @@ private:
   NormalList vertex_normal;
   NormalList face_normal;
 
+  // connectivity information
   AdjList    face_adjlist;
   AdjList    vertex_adjlist;
   AdjList    vertex_adj_faces; // vertex one-ring faces
+  STLVectori edge_connectivity; // edge id is stored implicitly in the array index, the value stores edge id of the other half edge to it
 
   // attribute
   STLVectorf UV_list;

@@ -13,6 +13,7 @@ public:
   ~VectorFieldViewer();
 
   void updateSourceVectorField();
+  void updateScalarFieldTexture();
   void deleteLastLine();
   void isDrawAllLines(bool allLines);
 

@@ -1,15 +1,8 @@
 #include "MainWindow.h"
-#include "MainCanvasViewer.h"
-#include "TrackballViewer.h"
-#include "VectorFieldViewer.h"
-#include "I2SAlgorithms.h"
-#include "ProjOptimize.h"
-#include "MainCanvas.h"
-#include "TrackballCanvas.h"
-#include "VectorFieldCanvas.h"
+#include "ParameterDock.h"
+#include "DispModuleHandler.h"
 #include "Model.h"
-#include "FeatureGuided.h"
-#include "AlgHandler.h"
+
 //#include "camera_pose.h"
 
 MainWindow::MainWindow()
@@ -24,53 +17,19 @@ MainWindow::MainWindow()
     connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
     connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
     connect(action_Vector_Field, SIGNAL(triggered()), this, SLOT(setVectorField()));
-
     connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
-    connect(edgeThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(setEdgeThreshold(int)));
-    connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
     connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
     connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
-    connect(Show_All_Lines_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showAllLines(int)));
 
-    this->show();
-    
-    // set feature render mode
-    QList<QCheckBox*> checkBox_FeatureRenderMode = groupBox_2->findChildren<QCheckBox*>();
-    for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
-    {
-      connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
-    }
-
-    QGridLayout *gridLayout_3;
-    gridLayout_3 = new QGridLayout(centralwidget);
-    gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
-    main_canvas_viewer.reset(new MainCanvasViewer(centralwidget));
-    main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
-    gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
-    trackball_viewer.reset(new TrackballViewer(centralwidget));
-    trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
-    gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 2);
-    source_vector_viewer.reset(new VectorFieldViewer(centralwidget));
-    source_vector_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
-    gridLayout_3->addWidget(source_vector_viewer.get(),1,2,1,1);
-    target_vector_viewer.reset(new VectorFieldViewer(centralwidget));
-    target_vector_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
-    gridLayout_3->addWidget(target_vector_viewer.get(),1,3,1,1);
-
+    disp_modules.reset(new DispModuleHandler(centralwidget));
     this->setCentralWidget(centralwidget);
 
-    main_canvas.reset(new MainCanvas);
-    trackball_canvas.reset(new TrackballCanvas);
-    trackball_viewer->setMainCanvasViewer(main_canvas_viewer);
-    trackball_viewer->setSourceVectorViewer(source_vector_viewer);
+    parameter_dock.reset(new ParameterDock);
+    parameter_dock->setFixedWidth(250);
+    this->addDockWidget(Qt::LeftDockWidgetArea, parameter_dock.get());
+    parameter_dock->setDispModules(disp_modules);
 
-    source_vector_canvas.reset(new VectorFieldCanvas);
-    target_vector_canvas.reset(new VectorFieldCanvas);
-
-    source_vector_canvas->setRenderMode(VectorField::SOURCE_MODE);
-    target_vector_canvas->setRenderMode(VectorField::TARGET_MODE);
-
-    alg_handler.reset(new AlgHandler);
+    this->show();
 
 	//pointsSelect = false;
 	//isCompute = false;
@@ -95,18 +54,7 @@ void MainWindow::loadModel()
 
     std::shared_ptr<Model> share_model(new Model(model_file_path, model_file_name));
 
-    trackball_canvas->setModel(share_model);
-    trackball_viewer->deleteDispObj(trackball_canvas.get());
-    trackball_viewer->addDispObj(trackball_canvas.get());
-    trackball_viewer->resetCamera();
-
-    main_canvas->setModel(share_model);
-    main_canvas_viewer->deleteDispObj(main_canvas.get());
-    main_canvas_viewer->addDispObj(main_canvas.get());
-    main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
-    main_canvas_viewer->updateGLOutside();
-
-    alg_handler->setShapeModel(share_model);
+    disp_modules->loadModel(share_model, model_file_path);
 
     setOptParatoModel();
 
@@ -129,14 +77,14 @@ void MainWindow::exportOBJ()
 	//coarse_model->exportOBJ();
 
     //coarse_model->setInit();
-    trackball_canvas->getModel()->exportOBJ(0);
+  disp_modules->exportOBJ();
 }
 
 void MainWindow::snapShot()
 {
     //if (coarse_model)
     //    viewer->getSnapShot(coarse_model, true);
-    main_canvas_viewer->getSnapShot();
+  disp_modules->snapShot();
 }
 
 void MainWindow::fixCamera()
@@ -164,9 +112,7 @@ void MainWindow::updateGeometry()
     //    viewer->getModel(coarse_model);
     //    this->refreshScreen();
     //}
-    alg_handler->doProjOptimize();
-    //main_canvas_viewer->setGLActors(alg_handler->getGLActors());
-    updateCanvas();
+  disp_modules->updateGeometry();
 }
 
 void MainWindow::refreshScreen()
@@ -266,22 +212,7 @@ void MainWindow::setVectorField()
   //QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
   //if (fileName.isEmpty() == true) return;
 
-  if (trackball_canvas->getModel())
-  {
-    std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(trackball_canvas->getModel(), trackball_canvas->getModel()->getDataPath() + "/featurePP.png"));
-
-    source_vector_canvas->setFeatureModel(share_feature_model);
-    source_vector_viewer->deleteDispObj(source_vector_canvas.get());
-    source_vector_viewer->addDispObj(source_vector_canvas.get());
-    source_vector_viewer->updateGLOutside();
-
-    target_vector_canvas->setFeatureModel(share_feature_model);
-    target_vector_viewer->deleteDispObj(target_vector_canvas.get());
-    target_vector_viewer->addDispObj(target_vector_canvas.get());
-    target_vector_viewer->updateGLOutside();
-
-    alg_handler->setFeatureModel(share_feature_model);
-  }
+  disp_modules->initFeatureModel();
 
   //std::string fileSource = fileName.toStdString();
   //std::string fileTarget = fileSource.substr(0, fileSource.find_last_of('/') + 1) + "featurePP.png";
@@ -408,36 +339,14 @@ void MainWindow::loadPoints()
  // proj_opt.updateShape(feature_guided, coarse_model);
 }
 
-void MainWindow::setFeatureRender(int state)
-{
-  //QList<QCheckBox*> checkBox_FeatureRenderMode = groupBox_2->findChildren<QCheckBox*>();
-  //std::vector<bool> checkStates;
-  //for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
-  //{
-  //  checkStates.push_back(checkBox_FeatureRenderMode.at(i)->checkState());
-  //}
-  //feature_guided->setVissualizationPara(checkStates);
-}
-
-void MainWindow::setEdgeThreshold(int val)
-{
-  main_canvas->setEdgeThreshold(float(val) / 100.0);
-  main_canvas_viewer->updateGLOutside();
-}
-
-void MainWindow::setUseFlat(int state)
-{
-  main_canvas->setUseFlat(state);
-  main_canvas_viewer->updateGLOutside();
-}
-
 void MainWindow::deleteLastLine_Source()
 {
-  source_vector_viewer->deleteLastLine();
+  disp_modules->deleteLastCrspLine_Source();
 }
 
 void MainWindow::deleteLastLine_Target()
 {
+<<<<<<< HEAD
   target_vector_viewer->deleteLastLine();
 }
 
@@ -498,4 +407,7 @@ void MainWindow::setIcons()
   icon11.addFile(QStringLiteral(":/icons/delete.png"), QSize(), QIcon::Normal, QIcon::Off);
   action_Delete_Last_Line_Of_Source->setIcon(icon11);
   action_Delete_Last_Line_Of_Target->setIcon(icon11);
+=======
+  disp_modules->deleteLastCrspLine_Target();
+>>>>>>> upstream/master
 }

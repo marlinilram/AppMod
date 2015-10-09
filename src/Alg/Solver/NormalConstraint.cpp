@@ -1,25 +1,25 @@
-#include "NormalGuided.h"
+#include "NormalConstraint.h"
 #include "Solver.h"
 
-NormalGuided::NormalGuided()
+NormalConstraint::NormalConstraint()
 {
   this->init();
   std::cout << "create a set of normal constraint.\n";
 }
 
-NormalGuided::~NormalGuided()
+NormalConstraint::~NormalConstraint()
 {
 
 }
 
-void NormalGuided::init()
+void NormalConstraint::init()
 {
   this->lamd_normal = 0.0;
   this->lamd_vertical_move = 0.0;
   this->P_Num = 0;
 }
 
-void NormalGuided::initMatrix(
+void NormalConstraint::initMatrix(
   FaceList& face_list,
   VertexList& vertex_list,
   AdjList& vertex_share_faces,
@@ -33,7 +33,7 @@ void NormalGuided::initMatrix(
   this->fillVMoveMatrix(vertex_list, normal_list);
 }
 
-void NormalGuided::fillNormalMatrix(
+void NormalConstraint::fillNormalMatrix(
   FaceList& face_list,
   AdjList& vertex_share_faces,
   NormalList& new_face_normal)
@@ -73,7 +73,7 @@ void NormalGuided::fillNormalMatrix(
   normal_matrix.setFromTriplets(normal_triplets.begin(), normal_triplets.end());
 }
 
-void NormalGuided::fillVMoveMatrix(
+void NormalConstraint::fillVMoveMatrix(
   VertexList& vertex_list,
   NormalList& normal_list)
 {
@@ -110,7 +110,7 @@ void NormalGuided::fillVMoveMatrix(
   vertical_move_matrix.setFromTriplets(vertical_move_triplets.begin(), vertical_move_triplets.end());
 }
 
-void NormalGuided::getConnectedPtID(int i_pt, int points_in_face[3], int connect_pt[2])
+void NormalConstraint::getConnectedPtID(int i_pt, int points_in_face[3], int connect_pt[2])
 {
   if (points_in_face[0] == i_pt) {
     connect_pt[0] = points_in_face[1];
@@ -132,28 +132,28 @@ void NormalGuided::getConnectedPtID(int i_pt, int points_in_face[3], int connect
   }
 }
 
-void NormalGuided::projection()
+void NormalConstraint::projection()
 {
   // no need to do projection
 }
 
-void NormalGuided::update()
+void NormalConstraint::update()
 {
   // no need to update
 }
 
-void NormalGuided::getRightHand(VectorXf& right_hand)
+void NormalConstraint::getRightHand(VectorXf& right_hand)
 {
   right_hand = this->lamd_vertical_move * this->vertical_move;
 }
 
-void NormalGuided::getLinearSys(SparseMatrix& linear_sys)
+void NormalConstraint::getLinearSys(SparseMatrix& linear_sys)
 {
   linear_sys = this->lamd_normal * this->normal_matrix
              + this->lamd_vertical_move * this->vertical_move_matrix;
 }
 
-void NormalGuided::setSolver(Solver* solver)
+void NormalConstraint::setSolver(std::shared_ptr<Solver> solver)
 {
   // do nothing, this constraints doesn't update through solver
 }

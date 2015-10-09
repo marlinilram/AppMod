@@ -71,7 +71,7 @@ public:
   virtual void projection();
   virtual void getRightHand(VectorXf& right_hand);
   virtual void getLinearSys(SparseMatrix& linear_sys);
-  virtual void setSolver(Solver* solver);
+  virtual void setSolver(std::shared_ptr<Solver> solver);
 
 private:
   bool findShareVertex(
@@ -91,7 +91,7 @@ private:
   VectorXf d_vector;
   VectorXf right_hand;
 
-  Solver* solver;
+  std::shared_ptr<Solver> solver;
 
   float k_strech;
   float k_bending;

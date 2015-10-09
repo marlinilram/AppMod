@@ -1,6 +1,7 @@
 #include "MainCanvas.h"
 #include "Model.h"
 #include "Shape.h"
+#include "ShapeCrest.h"
 #include "BasicHeader.h"
 #include "YMLHandler.h"
 #include <QGLShader>
@@ -22,6 +23,7 @@ MainCanvas::~MainCanvas()
 bool MainCanvas::display()
 {
   sketchShader();
+  drawShapeCrest();
   return true;
 }
 
@@ -329,6 +331,36 @@ void MainCanvas::drawModel()
   basic_shader->disableAttributeArray("color");
   basic_shader->disableAttributeArray("normal");
   basic_shader->release();
+}
+
+void MainCanvas::drawShapeCrest()
+{
+  const VertexList& vertex_list = model->getShape()->getVertexList();
+  const std::vector<Edge>& crest_edge = model->getShapeCrest()->getCrestEdge();
+
+  glClear(GL_DEPTH_BUFFER_BIT);
+  glLineWidth(2);
+  glColor3f( 0.0f, 0.0f, 1.0f );
+
+  glBegin(GL_LINES);
+
+  for (size_t i = 0; i < crest_edge.size(); ++i)
+  {
+    GLfloat v_0[3];
+    v_0[0] = vertex_list[3 * crest_edge[i].first + 0];
+    v_0[1] = vertex_list[3 * crest_edge[i].first + 1];
+    v_0[2] = vertex_list[3 * crest_edge[i].first + 2];
+
+    GLfloat v_1[3];
+    v_1[0] = vertex_list[3 * crest_edge[i].second + 0];
+    v_1[1] = vertex_list[3 * crest_edge[i].second + 1];
+    v_1[2] = vertex_list[3 * crest_edge[i].second + 2];
+
+    glVertex3f(v_0[0], v_0[1], v_0[2]);
+    glVertex3f(v_1[0], v_1[1], v_1[2]);
+  }
+
+  glEnd();
 }
 
 void MainCanvas::drawModelEdge()

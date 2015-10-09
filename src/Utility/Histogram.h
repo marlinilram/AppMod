@@ -1,7 +1,7 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H
 
-#include "tele_basicType.h"
+#include "BasicDataType.h"
 
 int ProjectDirToBin2D(double2 dir)
 {

@@ -35,6 +35,7 @@ public:
   void setShaderProgram();
   void drawModel();
   void drawModelEdge();
+  void drawShapeCrest();
   void sketchShader();
   void renderNImage();
   void nmsShader();

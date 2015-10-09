@@ -39,6 +39,7 @@
 #define Solver_H
 
 #include "BasicHeader.h"
+#include <memory>
 
 class Constraint;
 
@@ -48,7 +49,7 @@ public:
   Solver();
   ~Solver();
 
-  void addConstraint(Constraint* constraint);
+  void addConstraint(std::shared_ptr<Constraint> constraint);
   void initCholesky();
   void solve();
   void runOneStep();
@@ -65,7 +66,7 @@ public:
   int max_iter;
 
 private:
-  std::vector<Constraint* > constraints;
+  std::vector<std::shared_ptr<Constraint> > constraints;
 
 private:
   Solver(const Solver&); // not implemented

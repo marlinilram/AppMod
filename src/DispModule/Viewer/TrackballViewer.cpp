@@ -3,11 +3,12 @@
 #include "VectorFieldViewer.h"
 #include "TrackballCanvas.h"
 #include "Bound.h"
+#include <QKeyEvent>
 
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {
-
+  wireframe_ = false;
 }
 
 TrackballViewer::~TrackballViewer()
@@ -25,6 +26,11 @@ void TrackballViewer::setSourceVectorViewer(std::shared_ptr<VectorFieldViewer> v
   source_vector_viewer = viewer;
 }
 
+void TrackballViewer::setTargetVectorViewer(std::shared_ptr<VectorFieldViewer> viewer)
+{
+  target_vector_viewer = viewer;
+}
+
 void TrackballViewer::draw()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -40,6 +46,11 @@ void TrackballViewer::draw()
   }
 
   drawCornerAxis();
+  if (is_draw_actors)
+  {
+    glClear(GL_DEPTH_BUFFER_BIT);
+    drawActors();
+  }
 }
 
 void TrackballViewer::init()
@@ -320,5 +331,56 @@ void TrackballViewer::syncCamera()
   if (source_vector_viewer)
   {
     source_vector_viewer->updateSourceVectorField();
+    source_vector_viewer->updateScalarFieldTexture();
   }
+  if (target_vector_viewer)
+  {
+    target_vector_viewer->updateScalarFieldTexture();
+  }
+}
+
+void TrackballViewer::keyPressEvent(QKeyEvent *e)
+{
+  // Get event modifiers key
+  const Qt::KeyboardModifiers modifiers = e->modifiers();
+
+  // A simple switch on e->key() is not sufficient if we want to take state key into account.
+  // With a switch, it would have been impossible to separate 'F' from 'CTRL+F'.
+  // That's why we use imbricated if...else and a "handled" boolean.
+  bool handled = false;
+  if ((e->key()==Qt::Key_W) && (modifiers==Qt::NoButton))
+  {
+    wireframe_ = !wireframe_;
+    if (wireframe_)
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    handled = true;
+    updateGL();
+  }
+  else if ((e->key()==Qt::Key_R) && (modifiers==Qt::NoButton))
+  {
+    resetCamera();
+    handled = true;
+    updateGL();
+  }
+
+  if (!handled)
+  {
+    QGLViewer::keyPressEvent(e);
+  }
+}
+
+void TrackballViewer::drawActors()
+{
+  for (decltype(actors.size()) i = 0; i < actors.size(); ++i)
+  {
+    actors[i].draw();
+  }
+}
+
+void TrackballViewer::setGLActors(std::vector<GLActor>& actors)
+{
+  this->actors.push_back(actors[0]);
+  // don't show the line only show points
 }

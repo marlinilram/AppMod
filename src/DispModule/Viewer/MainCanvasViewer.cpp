@@ -5,7 +5,7 @@
 MainCanvasViewer::MainCanvasViewer(QWidget *widget)
   : BasicViewer(widget)
 {
-
+  is_draw_actors = false;
 }
 
 MainCanvasViewer::~MainCanvasViewer()
@@ -27,8 +27,12 @@ void MainCanvasViewer::draw()
       std::cerr<<"Error when drawing object " << i << ".\n";
     }
   }
-  glClear(GL_DEPTH_BUFFER_BIT);
-  drawActors();
+
+  if (is_draw_actors)
+  {
+    glClear(GL_DEPTH_BUFFER_BIT);
+    drawActors();
+  }
 }
 
 void MainCanvasViewer::init()

@@ -1,6 +1,7 @@
 #include "VectorFieldCanvas.h"
 #include "FeatureGuided.h"
 #include "FeatureLine.h"
+#include "ScalarField.h"
 #include "tele2d.h"
 #include "Colormap.h"
 #include "Bound.h"
@@ -64,6 +65,8 @@ bool VectorFieldCanvas::display()
     {
       this->displaySourceCurves();
     }
+
+    this->displayScalarField();
   }
   else if (render_mode == VectorField::TARGET_MODE)
   {
@@ -76,6 +79,8 @@ bool VectorFieldCanvas::display()
     {
       this->displayTargetCurves();
     }
+    
+    this->displayScalarField();
   }
 
   //if (vis_paras[5])
@@ -244,11 +249,6 @@ bool VectorFieldCanvas::displayTargetVectorField()
           glVertex3f(base.x, base.y, 0 ) ;
           glEnd() ;
 
-          if (i == 0 && j == 90)
-          {
-            std::cout << "x: " << p1.x << " y: " << p1.y << "\n";
-          }
-
           glBegin(GL_TRIANGLES);
           glVertex3f( p2.x,p2.y, 0 ) ;
           glVertex3f( p3.x,p3.y, 0 ) ;
@@ -415,30 +415,44 @@ bool VectorFieldCanvas::displayScalarField()
 
 void VectorFieldCanvas::setScalarField()
 {
-  GLubyte* bgmap = new GLubyte[800*800*3];
-  float* dmap = new float[800 * 800];
-
-  std::vector<float> query(2, 0.0);
-  kdtree::KDTreeResultVector result;
-  std::shared_ptr<KDTreeWrapper> edge_KDTree = feature_model->getSourceKDTree();
-  float max_dist = std::numeric_limits<float>::min();
-  double2 normalized_translate(0.0, 0.0);
-  double normalized_scale = 0.0;
-  this->feature_model->GetSourceNormalizePara(normalized_translate, normalized_scale);
-
-  for (int i = 0; i < 800; ++i)
+  std::shared_ptr<ScalarField> scalar_field;
+  std::vector<float>* dmap = nullptr;
+  if (render_mode == VectorField::SOURCE_MODE)
   {
-    for (int j = 0; j < 800; ++j)
-    {
-      query[0] = ((j / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.x;
-      query[1] = ((i / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.y;
-      dmap[j + i * 800] = edge_KDTree->nearestDis(query);
-      if (result[0].dis > max_dist)
-      {
-        max_dist = result[0].dis;
-      }
-    }
+    scalar_field = feature_model->getSourceScalarField();
+    dmap = &scalar_field->variation_map;
   }
+  else if (render_mode == VectorField::TARGET_MODE)
+  {
+    scalar_field = feature_model->getTargetScalarField();
+    dmap = &scalar_field->matching_map;
+  }
+
+  int resolution = scalar_field->resolution;
+  std::vector<GLubyte> bgmap(resolution * resolution * 3, 0);
+
+
+  //std::vector<float> query(2, 0.0);
+  //kdtree::KDTreeResultVector result;
+  //std::shared_ptr<KDTreeWrapper> edge_KDTree = feature_model->getSourceKDTree();
+  //float max_dist = std::numeric_limits<float>::min();
+  //double2 normalized_translate(0.0, 0.0);
+  //double normalized_scale = 0.0;
+  //this->feature_model->GetSourceNormalizePara(normalized_translate, normalized_scale);
+
+  //for (int i = 0; i < 800; ++i)
+  //{
+  //  for (int j = 0; j < 800; ++j)
+  //  {
+  //    query[0] = ((j / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.x;
+  //    query[1] = ((i / 800.0) - 0.5) / normalized_scale + 0.5 - normalized_translate.y;
+  //    dmap[j + i * 800] = edge_KDTree->nearestDis(query);
+  //    if (result[0].dis > max_dist)
+  //    {
+  //      max_dist = result[0].dis;
+  //    }
+  //  }
+  //}
 
   //cv::Mat dimg = cv::Mat(800, 800, CV_32FC1, dmap);
   //cv::Mat mappedDimg;
@@ -448,22 +462,24 @@ void VectorFieldCanvas::setScalarField()
   //cv::imshow("dimg", mappedDimg);
   QVector<QColor> color_map = makeColorMap();
 
-  for (int i = 0; i < 800; ++i)
+  for (int i = 0; i < resolution; ++i)
   {
-    for (int j = 0; j < 800; ++j)
+    for (int j = 0; j < resolution; ++j)
     {
+      //QColor color = 
+      //  qtJetColor(dmap[j + i * 800] / max_dist, 0, 0.01);
       QColor color = 
-        qtJetColor(dmap[j + i * 800] / max_dist, 0, 0.01);
-      bgmap[(j + i * 800) * 3 + 0] = color.red();
-      bgmap[(j + i * 800) * 3 + 1] = color.green();
-      bgmap[(j + i * 800) * 3 + 2] = color.blue();
+          qtJetColor((*dmap)[j + i * resolution]);
+      bgmap[(j + i * resolution) * 3 + 0] = color.red();
+      bgmap[(j + i * resolution) * 3 + 1] = color.green();
+      bgmap[(j + i * resolution) * 3 + 2] = color.blue();
     }
   }
 
 
 
-  int newWidth = 1 << (int)(1 + log(800 - 1 + 1E-3) / log(2.0));
-  int newHeight = 1 << (int)(1 + log(800 - 1 + 1E-3) / log(2.0));
+  int newWidth = 1 << (int)(1 + log(resolution - 1 + 1E-3) / log(2.0));
+  int newHeight = 1 << (int)(1 + log(resolution - 1 + 1E-3) / log(2.0));
 
   u_max = 1.0;//800 / (float)newWidth;
   v_max = 1.0;//800 / (float)newHeight;
@@ -473,7 +489,7 @@ void VectorFieldCanvas::setScalarField()
   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
   glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
-  glTexImage2D( GL_TEXTURE_2D, 0, 3, 800, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, bgmap);
+  glTexImage2D( GL_TEXTURE_2D, 0, 3, resolution, resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, &bgmap[0]);
 
 #define GL_DEBUG
 #ifdef GL_DEBUG
@@ -482,14 +498,11 @@ void VectorFieldCanvas::setScalarField()
     std::cout<<"GL Error when set texture image.\n";
   }
 #endif
-
-  delete[] dmap;
-  delete[] bgmap;
 }
 
 void VectorFieldCanvas::setGLProperty()
 {
-  //this->setScalarField();
+  this->setScalarField();
 }
 
 void VectorFieldCanvas::setVisualizationParas(std::vector<bool>& paras)

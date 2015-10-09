@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "Shape.h"
+#include "ShapeCrest.h"
 #include "KDTreeWrapper.h"
 #include "Bound.h"
 #include "tiny_obj_loader.h"
@@ -14,7 +15,7 @@ Model::Model()
 
 Model::~Model()
 {
-
+  std::cout << "Deleted a Model.\n";
 }
 
 Model::Model(const std::string path, const std::string name)
@@ -25,6 +26,9 @@ Model::Model(const std::string path, const std::string name)
     std:: cerr << "Init model failed\n";
     return;
   }
+
+  shape_crest.reset(new ShapeCrest());
+  shape_crest->setShape(shape);
 
   // make an output path
   char time_postfix[50];
@@ -86,6 +90,11 @@ std::shared_ptr<Shape> Model::getShape()
   return shape;
 }
 
+std::shared_ptr<ShapeCrest> Model::getShapeCrest()
+{
+  return shape_crest;
+}
+
 std::string Model::getDataPath()
 {
   return data_path;
@@ -127,7 +136,9 @@ float Model::getModelAvgEdgeLength()
   vso[0] = vso[0] * m_viewport[2] + m_viewport[0];
   vso[1] = vso[1] * m_viewport[3] + m_viewport[1];
 
-  return sqrt((vs[0] - vso[0]) * (vs[0] - vso[0]) + (vs[1] - vso[1]) * (vs[1] - vso[1]));
+  float avg_pix_length = sqrt((vs[0] - vso[0]) * (vs[0] - vso[0]) + (vs[1] - vso[1]) * (vs[1] - vso[1]));
+  std::cout << "Average Pixel Length: " << avg_pix_length << "\n";
+  return avg_pix_length;
 }
 
 void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4])

@@ -11,6 +11,7 @@
 
 class Model;
 class FeatureLine;
+class ScalarField;
 class KDTreeWrapper;
 class tele2d;
 typedef std::vector<std::vector<double2> > CURVES;
@@ -30,12 +31,16 @@ public:
   void initTargetImage(std::string targetFile);
   void initRegister();
   void updateSourceVectorField();
+  void updateScalarField();
   std::shared_ptr<KDTreeWrapper> getSourceKDTree();
 
   inline std::shared_ptr<tele2d> GetTeleRegister() { return source_tele_register; };
   inline std::shared_ptr<tele2d> GetTargetTeleRegister() { return target_tele_register; };
+  inline std::shared_ptr<ScalarField> getSourceScalarField() { return source_scalar_field; };
+  inline std::shared_ptr<ScalarField> getTargetScalarField() { return target_scalar_field; };
   void NormalizedTargetCurves(CURVES& curves);
   void NormalizedSourceCurves(CURVES& curves);
+  void setNormalizePara();
   void OptimizeConnection();
   double MatchScoreToVectorField(std::vector<double2>& curve);
   void BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDTree_data);
@@ -84,6 +89,8 @@ private:
 
   CURVES source_curves;
   CURVES target_curves;
+  double2 curve_translate;
+  double curve_scale;
   float edge_threshold; // threshold for edge detection
 
   std::shared_ptr<KDTreeWrapper> source_KDTree;
@@ -91,6 +98,9 @@ private:
 
   std::shared_ptr<tele2d> source_tele_register;
   std::shared_ptr<tele2d> target_tele_register;
+
+  std::shared_ptr<ScalarField> source_scalar_field;
+  std::shared_ptr<ScalarField> target_scalar_field;
 private:
   FeatureGuided(const FeatureGuided&);
   void operator = (const FeatureGuided&);

@@ -1,6 +1,7 @@
 #include "FeatureGuided.h"
 #include "Model.h"
 #include "FeatureLine.h"
+#include "ScalarField.h"
 #include "KDTreeWrapper.h"
 #include "tele2d.h"
 #include "UtilityHeader.h"
@@ -11,6 +12,7 @@ FeatureGuided::FeatureGuided()
 
 FeatureGuided::~FeatureGuided()
 {
+  std::cout << "Deleted a FeatureGuided.\n";
 }
 
 FeatureGuided::FeatureGuided(std::shared_ptr<Model> source_model, std::string targetFile)
@@ -36,6 +38,12 @@ void FeatureGuided::initRegister()
   this->edge_threshold = 0.2;
   this->ExtractCurves(this->target_img, this->target_curves);
 
+  this->setNormalizePara();
+  CURVES temp_source_curves;
+  CURVES temp_target_curves;
+  this->NormalizedSourceCurves(temp_source_curves);
+  this->NormalizedTargetCurves(temp_target_curves);
+
   // init source tele2d
   std::vector<std::vector<int>> group(1);
   std::vector<int2> endps;
@@ -45,7 +53,7 @@ void FeatureGuided::initRegister()
     endps.push_back(int2(1, 0));
   }
   this->source_tele_register.reset(new tele2d(100, 0.02, 1));
-  this->source_tele_register->init(this->source_curves, group, endps);
+  this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
 
   // init target tele2d
@@ -57,7 +65,7 @@ void FeatureGuided::initRegister()
     endps.push_back(int2(1, 0));
   }
   this->target_tele_register.reset(new tele2d(100, 0.02, 1));
-  this->target_tele_register->init(this->target_curves, group, endps);
+  this->target_tele_register->init(temp_target_curves, group, endps);
   this->target_tele_register->setInputField();
 
   // init source distance map
@@ -73,6 +81,14 @@ void FeatureGuided::initRegister()
   source_KDTree.reset(new KDTreeWrapper);
   target_KDTree.reset(new KDTreeWrapper);
   BuildTargetEdgeKDTree();
+
+  source_scalar_field.reset(new ScalarField(100, 3));
+  target_scalar_field.reset(new ScalarField(100, 3));
+  source_scalar_field->setTeleRegister(source_tele_register);
+  target_scalar_field->setTeleRegister(target_tele_register);
+  source_scalar_field->computeVariationMap();
+  target_scalar_field->computeVariationMap();
+  target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
 }
 
 void FeatureGuided::updateSourceVectorField()
@@ -80,6 +96,8 @@ void FeatureGuided::updateSourceVectorField()
   this->source_curves.clear();
   this->edge_threshold = 0.9;
   this->ExtractCurves(source_model->getEdgeImg(), this->source_curves);
+  CURVES temp_source_curves;
+  this->NormalizedSourceCurves(temp_source_curves);
 
   std::vector<std::vector<int>> group(1);
   std::vector<int2> endps;
@@ -88,8 +106,15 @@ void FeatureGuided::updateSourceVectorField()
     group[0].push_back(i);
     endps.push_back(int2(1, 0));
   }
-  this->source_tele_register->init(this->source_curves, group, endps);
+  this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
+  this->updateScalarField();
+}
+
+void FeatureGuided::updateScalarField()
+{
+  this->source_scalar_field->computeVariationMap();
+  this->target_scalar_field->computeMatchingMap(this->source_tele_register->vector_field);
 }
 
 void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
@@ -390,7 +415,7 @@ void FeatureGuided::OptimizeConnection()
 
   CURVES best_connections;
   normalized_target_curves = new_target_curves;
-  FeatureGuided::NormalizedCurves(normalized_target_curves);
+  FeatureGuided::NormalizedCurves(normalized_target_curves, curve_translate, curve_scale);
 
   for (int i = 0; i < normalized_target_curves.size(); ++i)
   {
@@ -477,13 +502,13 @@ double FeatureGuided::MatchScoreToVectorField(std::vector<double2>& curve)
 void FeatureGuided::NormalizedTargetCurves(CURVES& curves)
 {
   curves = this->target_curves;
-  FeatureGuided::NormalizedCurves(curves);
+  FeatureGuided::NormalizedCurves(curves, curve_translate, curve_scale);
 }
 
 void FeatureGuided::NormalizedSourceCurves(CURVES& curves)
 {
   curves = this->source_curves;
-  FeatureGuided::NormalizedCurves(curves);
+  FeatureGuided::NormalizedCurves(curves, curve_translate, curve_scale);
 }
 
 void FeatureGuided::NormalizedCurves(CURVES& curves)
@@ -539,7 +564,9 @@ void FeatureGuided::NormalizePara(CURVES& curves, double2& translate, double& sc
 
 void FeatureGuided::GetSourceNormalizePara(double2& translate, double& scale)
 {
-  FeatureGuided::NormalizePara(this->source_curves, translate, scale);
+  translate = curve_translate;
+  scale = curve_scale;
+  //FeatureGuided::NormalizePara(this->source_curves, translate, scale);
 }
 
 double FeatureGuided::CurveLength(std::vector<double2>& curve)
@@ -607,12 +634,12 @@ void FeatureGuided::GetFittedCurves(CURVES& curves)
   std::vector<double2> crsp_target;
   std::vector<double2> crsp_source;
 
-  double2 target_translate;
-  double target_scale;
-  double2 source_translate;
-  double source_scale;
-  FeatureGuided::NormalizePara(this->target_curves, target_translate, target_scale);
-  FeatureGuided::NormalizePara(this->source_curves, source_translate, source_scale);
+  double2 target_translate = curve_translate;
+  double target_scale = curve_scale;
+  double2 source_translate = curve_translate;
+  double source_scale = curve_scale;
+  //FeatureGuided::NormalizePara(this->target_curves, target_translate, target_scale);
+  //FeatureGuided::NormalizePara(this->source_curves, source_translate, source_scale);
 
   for (int i = 0; i < this->target_curves.size(); ++i)
   {
@@ -650,9 +677,9 @@ void FeatureGuided::CalculateHists(
   HISTS& hists,
   CURVES& curves, double radius, tele2d* tele)
 {
-  double2 translate;
-  double scale;
-  FeatureGuided::NormalizePara(curves, translate, scale);
+  double2 translate = curve_translate;
+  double scale = curve_scale;
+  //FeatureGuided::NormalizePara(curves, translate, scale);
   int resolution = tele->resolution;
   std::vector<double2>& vector_field = tele->vector_field;
 
@@ -806,12 +833,10 @@ void FeatureGuided::FindHistMatchCrsp(CURVES &curves)
 void FeatureGuided::GetCrspPair(CURVES& curves)
 {
   // return denormalized correspondence pair for shape optimization
-  double2 target_translate;
-  double target_scale;
-  double2 source_translate;
-  double source_scale;
-  FeatureGuided::NormalizePara(this->target_curves, target_translate, target_scale);
-  FeatureGuided::NormalizePara(this->source_curves, source_translate, source_scale);
+  double2 target_translate = curve_translate;
+  double target_scale = curve_scale;
+  double2 source_translate = curve_translate;
+  double source_scale = curve_scale;
 
   CURVES temp_curves;
   this->GetFittedCurves(temp_curves);
@@ -836,12 +861,10 @@ void FeatureGuided::GetCrspPair(CURVES& curves)
 
 void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
 {
-  double2 target_translate;
-  double target_scale;
-  double2 source_translate;
-  double source_scale;
-  FeatureGuided::NormalizePara(this->target_curves, target_translate, target_scale);
-  FeatureGuided::NormalizePara(this->source_curves, source_translate, source_scale);
+  double2 target_translate = curve_translate;
+  double target_scale = curve_scale;
+  double2 source_translate = curve_translate;
+  double source_scale = curve_scale;
 
   CURVES source_user_lines = source_vector_field_lines->lines;
   CURVES target_user_lines = target_vector_field_lines->lines;
@@ -859,40 +882,75 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
     FeatureGuided::DenormalizedCurve(target_user_lines[i], target_translate, target_scale);
 
     // resample source curve based on sample density
+    std::cout << "Number of points in user defined source curve: " << source_user_lines[i].size() << "\n";
+    std::cout << "Number of points in user defined target curve: " << target_user_lines[i].size() << "\n";
+
     CURVE sampled_curve;
     sampled_curve.push_back(source_user_lines[i][0]);
+    double accum_dist = 0.0;
     for (size_t j = 1; j < source_user_lines[i].size(); ++j)
     {
-      double2 previousPoint = sampled_curve[sampled_curve.size() - 1];
+      double2 previousPoint = source_user_lines[i][j - 1];
       double2 currentPoint = source_user_lines[i][j];
-      if (sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > sample_density)
+      accum_dist += sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2));
+      if (accum_dist > sample_density)
       {
         sampled_curve.push_back(currentPoint);
+        accum_dist = 0.0;
       }
     }
     source_user_lines[i] = sampled_curve;
 
     // resample target curve based on the number of sampled source curve
     // in this way, correspondences are built automatically
-    size_t num_desired = sampled_curve.size();
-    size_t sample_rate = (target_user_lines[i].size() - target_user_lines[i].size() % num_desired) / num_desired;
-    sampled_curve.clear();
-    for (size_t j = 0; j < sample_rate * num_desired; ++j)
+    double target_sample_density = (FeatureGuided::CurveLength(target_user_lines[i]) / (sampled_curve.size()) - 1);
+    size_t step = target_user_lines[i].size() / (sampled_curve.size()) + 1;
+    if (step * (sampled_curve.size()) != target_user_lines[i].size())
     {
-      if (j % sample_rate == 0)
+      int interp_num = step * (sampled_curve.size()) - target_user_lines[i].size();
+      std::vector<int> interp_v;
+      RandSample(1, target_user_lines[i].size() - 1, interp_num, interp_v);
+
+      CURVE interp_curve;
+      for (size_t j = 0; j < interp_v.size(); ++j)
+      {
+        double2 previousPoint = target_user_lines[i][interp_v[j] - 1 + j];
+        double2 currentPoint = target_user_lines[i][interp_v[j] + j];
+        double2 midPoint(0.5 * (previousPoint.x + currentPoint.x), 0.5 * (previousPoint.y + currentPoint.y));
+        target_user_lines[i].insert(target_user_lines[i].begin() + interp_v[j] + j, midPoint);
+      }
+    }
+    sampled_curve.clear();
+    for (size_t j = 0; j < target_user_lines[i].size(); ++j)
+    {
+      if (j % step == 0)
       {
         sampled_curve.push_back(target_user_lines[i][j]);
       }
+      //double2 previousPoint = target_user_lines[i][j - 1];
+      //double2 currentPoint = target_user_lines[i][j];
+      //accum_dist += sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2));
+      //if (accum_dist > target_sample_density)
+      //{
+      //  double interp = (accum_dist - target_sample_density)
+      //    / sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2));
+      //  double2 midPoint((1 - interp) * previousPoint.x + interp * currentPoint.x,
+      //    (1 - interp) * previousPoint.y + interp * currentPoint.y);
+      //  sampled_curve.push_back(currentPoint);
+      //  //accum_dist = sqrt(pow(currentPoint.x - midPoint.x,2) + pow(currentPoint.y - midPoint.y,2));
+      //  accum_dist = 0.0;
+      //}
     }
     target_user_lines[i] = sampled_curve;
 
     if (source_user_lines[i].size() != target_user_lines[i].size())
     {
       std::cout << "Error: number of points in sampled user defined source and target curves doesn't match.\n";
+      std::cout << "Points in source: " << source_user_lines[i].size() << " Points in target: " << target_user_lines[i].size() << std::endl;
     }
     else
     {
-      std::cout << "Number of points in sampled user defined curve " << i << " : " << num_desired << "\n";
+      std::cout << "Number of points in sampled user defined curve " << i << " : " << sampled_curve.size() << "\n";
     }
   }
 
@@ -900,7 +958,8 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
   std::vector<float>   temp_pt(2, 0.0);
   for (size_t i = 0; i < num_line_pair; ++i)
   {
-    for (size_t j = 0; j < source_user_lines[i].size(); ++j)
+    size_t num_pts = std::min(source_user_lines[i].size(), target_user_lines[i].size());
+    for (size_t j = 0; j < num_pts; ++j)
     {
       crsp_pair[0] = source_user_lines[i][j];
       temp_pt[0] = (float)crsp_pair[0].x;
@@ -919,6 +978,13 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
       curves.push_back(crsp_pair); 
     }
   }
+
+  // test if the line are correct
+  //for (size_t i = 0; i < target_user_lines.size(); ++i)
+  //{
+  //  FeatureGuided::NormalizedCurve(target_user_lines[i], target_translate, target_scale);
+  //  target_vector_field_lines->lines[i] = target_user_lines[i];
+  //}
 }
 
 void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree)
@@ -935,6 +1001,7 @@ void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrappe
     }
   }
 
+
   kdTree->initKDTree(data, n_pts, 2);
 }
 
@@ -946,4 +1013,9 @@ void FeatureGuided::BuildSourceEdgeKDTree()
 void FeatureGuided::BuildTargetEdgeKDTree()
 {
   BuildEdgeKDTree(target_curves, target_KDTree);
+}
+
+void FeatureGuided::setNormalizePara()
+{
+  FeatureGuided::NormalizePara(target_curves, curve_translate, curve_scale);
 }

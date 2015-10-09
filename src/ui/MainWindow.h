@@ -12,13 +12,8 @@
 
 #include <memory>
 
-class MainCanvas;
-class MainCanvasViewer;
-class TrackballCanvas;
-class TrackballViewer;
-class VectorFieldCanvas;
-class VectorFieldViewer;
-class AlgHandler;
+class ParameterDock;
+class DispModuleHandler;
 
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -43,28 +38,22 @@ private slots:
 	  void clearSelectedPoints();
 	  void computeCameraPose();
 	  void loadPoints();
-    void setFeatureRender(int state);
-    void setEdgeThreshold(int val);
-    void setUseFlat(int state);
     void deleteLastLine_Source();
     void deleteLastLine_Target();
+<<<<<<< HEAD
     void showAllLines(int state);
     void updateCanvas();
     void setIcons();
 public:
+=======
+
+private:
+>>>>>>> upstream/master
     //Viewer *viewer;
     //Viewer *viewer_img;
-	
-    std::shared_ptr<MainCanvas> main_canvas;
-    std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
-    
-    std::shared_ptr<TrackballCanvas> trackball_canvas;
-    std::shared_ptr<TrackballViewer> trackball_viewer;
-	  
-    std::shared_ptr<VectorFieldCanvas> source_vector_canvas, target_vector_canvas;
-    std::shared_ptr<VectorFieldViewer> source_vector_viewer, target_vector_viewer;
+    std::shared_ptr<ParameterDock> parameter_dock;
 
-    std::shared_ptr<AlgHandler> alg_handler;
+    std::shared_ptr<DispModuleHandler> disp_modules;
 
 
     //ImagePartAlg *img_part_alg;

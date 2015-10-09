@@ -27,6 +27,7 @@
 #define Constraint_H
 
 #include "BasicHeader.h"
+#include <memory>
 
 class Solver;
 
@@ -42,7 +43,7 @@ public:
   virtual void projection() = 0;
   virtual void getRightHand(VectorXf& right_hand) = 0;
   virtual void getLinearSys(SparseMatrix& linear_sys) = 0;
-  virtual void setSolver(Solver* solver) = 0;
+  virtual void setSolver(std::shared_ptr<Solver> solver) = 0;
 
 private:
   Constraint(const Constraint&); // not implemented

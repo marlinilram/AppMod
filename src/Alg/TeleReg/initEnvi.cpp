@@ -35,27 +35,27 @@
 void tele2d::init( CURVES curves_, std::vector<std::vector<int>> group, std::vector<int2> endps  ){
 
 
-	// normalize curves
+	// normalize curves, done outside before init
 	curves = curves_ ;
-	double2 minCorner ( 1e10, 1e10);
-	double2 maxCorner (-1e10, -1e10);
-	for( int i=0; i<curves.size(); ++i )
-		for( int j=0; j<curves[i].size(); ++j ){
-			if( curves[i][j].x < minCorner.x  ) minCorner.x =  curves[i][j].x ;
-			if( curves[i][j].y < minCorner.y  ) minCorner.y =  curves[i][j].y ;
-			if( curves[i][j].x > maxCorner.x  ) maxCorner.x =  curves[i][j].x ;
-			if( curves[i][j].y > maxCorner.y  ) maxCorner.y =  curves[i][j].y ;
-		}
+	//double2 minCorner ( 1e10, 1e10);
+	//double2 maxCorner (-1e10, -1e10);
+	//for( int i=0; i<curves.size(); ++i )
+	//	for( int j=0; j<curves[i].size(); ++j ){
+	//		if( curves[i][j].x < minCorner.x  ) minCorner.x =  curves[i][j].x ;
+	//		if( curves[i][j].y < minCorner.y  ) minCorner.y =  curves[i][j].y ;
+	//		if( curves[i][j].x > maxCorner.x  ) maxCorner.x =  curves[i][j].x ;
+	//		if( curves[i][j].y > maxCorner.y  ) maxCorner.y =  curves[i][j].y ;
+	//	}
 
-	double2 cter = (minCorner+maxCorner) / 2 ;
-	normalize_translate =  double2(0.5, 0.5 ) - cter ;
-	normalize_scale = 0.6 / std::max( (maxCorner-minCorner).x, (maxCorner-minCorner).y  ) ;
+	//double2 cter = (minCorner+maxCorner) / 2 ;
+	//normalize_translate =  double2(0.5, 0.5 ) - cter ;
+	//normalize_scale = 0.6 / std::max( (maxCorner-minCorner).x, (maxCorner-minCorner).y  ) ;
 
 
-	for( int i=0; i<curves.size(); ++i )
-		for( int j=0; j<curves[i].size(); ++j ){
-			curves[i][j] = ( curves[i][j] + normalize_translate - double2(0.5, 0.5 ) ) * normalize_scale + double2(0.5, 0.5 );
-		}
+	//for( int i=0; i<curves.size(); ++i )
+	//	for( int j=0; j<curves[i].size(); ++j ){
+	//		curves[i][j] = ( curves[i][j] + normalize_translate - double2(0.5, 0.5 ) ) * normalize_scale + double2(0.5, 0.5 );
+	//	}
 
 	initialCurves = curves ;
 
