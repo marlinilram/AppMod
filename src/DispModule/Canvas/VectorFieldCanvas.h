@@ -42,6 +42,8 @@ public:
   bool displayScalarField();
   bool displayFittedCurves();
   bool displayHistMatchPts();
+  bool displaySourceCrspList();
+  bool displayTargetCrspList();
 
   void setScalarField();
   void updateSourceVectorField();

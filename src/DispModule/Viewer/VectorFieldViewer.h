@@ -16,6 +16,7 @@ public:
   void updateScalarFieldTexture();
   void deleteLastLine();
   void isDrawAllLines(bool allLines);
+  void setDispPara(std::vector<bool>& states);
 
 protected:
   virtual void draw();

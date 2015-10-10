@@ -143,3 +143,22 @@ void MainCanvasViewer::setGLActors(std::vector<GLActor>& actors)
 {
   this->actors = actors;
 }
+
+void MainCanvasViewer::syncCameraToModel()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* main_canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (main_canvas)
+    {
+      // get camera info, matrix is column major
+      GLfloat modelview[16];
+      GLfloat projection[16];
+      GLint viewport[4];
+      camera()->getModelViewMatrix(modelview);
+      camera()->getProjectionMatrix(projection);
+      camera()->getViewport(viewport);
+      main_canvas->passCameraInfo(modelview, projection, viewport);
+    }
+  }
+}

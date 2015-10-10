@@ -40,6 +40,7 @@ private slots:
 	  void loadPoints();
     void deleteLastLine_Source();
     void deleteLastLine_Target();
+    void showToolBox();
 
 private:
     //Viewer *viewer;

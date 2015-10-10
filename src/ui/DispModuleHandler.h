@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 class QWidget;
 class MainCanvas;
@@ -34,6 +35,7 @@ public:
   void showProjCrsp(int state);
   void deleteLastCrspLine_Source();
   void deleteLastCrspLine_Target();
+  void setVectorFieldViewerPara(std::vector<bool>& checkStates);
 
 public:
   std::shared_ptr<MainCanvas> main_canvas;

@@ -151,7 +151,6 @@ void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_
   m_inv_modelview_projection = (m_projection*m_modelview).inverse();
 
   m_viewport = Eigen::Map<Eigen::Vector4i>(c_viewport, 4, 1);
-
 }
 
 bool Model::getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord)
@@ -247,4 +246,17 @@ void Model::getProjRay(float proj_ray[3], int x, int y)
   proj_ray[0] = out[0] / out[3] - cam_ori[0] / cam_ori[3];
   proj_ray[1] = out[1] / out[3] - cam_ori[1] / cam_ori[3];
   proj_ray[2] = out[2] / out[3] - cam_ori[2] / cam_ori[3];
+}
+
+bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
+{
+  Eigen::Vector4f in(object_coord[0], object_coord[1], object_coord[2], 1.0f);
+  Eigen::Vector4f out = m_projection*m_modelview*in;
+
+  if (out(3) == 0.0)
+    return false;
+  out(0) = out(0) / out(3);
+  out(1) = out(1) / out(3);
+  winx = m_viewport(0) + m_viewport(2)*(out(0) + 1) / 2;
+  winy = m_viewport(1) + m_viewport(3)*(out(1) + 1) / 2;
 }

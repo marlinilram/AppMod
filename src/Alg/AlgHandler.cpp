@@ -31,12 +31,22 @@ void AlgHandler::setShapeModel(std::shared_ptr<Model> model)
   shape_model = model;
 }
 
-void AlgHandler::doProjOptimize()
+bool AlgHandler::workable()
 {
   if (!feature_model || !shape_model)
   {
     std::cout << "Early return: feature model or shape model is not built correctly.\n";
-    return;
+    return false;
+  }
+
+  return true;
+}
+
+void AlgHandler::doProjOptimize()
+{
+  if (!workable())
+  {
+   return;
   }
 
   actors.clear();

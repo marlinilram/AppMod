@@ -11,7 +11,7 @@ ParameterDock::ParameterDock()
   connect(Show_ProjCrsp_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showProjCrsp(int)));
 
   // set feature render mode
-  QList<QCheckBox*> checkBox_FeatureRenderMode = groupBox_2->findChildren<QCheckBox*>();
+  QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
   {
     connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
@@ -30,13 +30,15 @@ void ParameterDock::setDispModules(std::shared_ptr<DispModuleHandler> modules)
 
 void ParameterDock::setFeatureRender(int state)
 {
-  //QList<QCheckBox*> checkBox_FeatureRenderMode = groupBox_2->findChildren<QCheckBox*>();
-  //std::vector<bool> checkStates;
-  //for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
-  //{
-  //  checkStates.push_back(checkBox_FeatureRenderMode.at(i)->checkState());
-  //}
-  //feature_guided->setVissualizationPara(checkStates);
+  QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
+  std::vector<bool> checkStates(checkBox_FeatureRenderMode.size());
+  for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
+  {
+    std::string name = checkBox_FeatureRenderMode.at(i)->objectName().toStdString();
+    int list_id = std::stoi(name.substr(name.find_last_of('_') + 1));
+    checkStates[list_id] = checkBox_FeatureRenderMode.at(i)->checkState();
+  }
+  disp_modules->setVectorFieldViewerPara(checkStates);
 }
 
 void ParameterDock::setEdgeThreshold(int val)

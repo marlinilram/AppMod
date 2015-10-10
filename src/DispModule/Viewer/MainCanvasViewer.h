@@ -16,6 +16,7 @@ public:
   void updateBuffer();
   void setGLActors(std::vector<GLActor>& actors);
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
+  void syncCameraToModel();
 
 private:
   std::vector<GLActor> actors;

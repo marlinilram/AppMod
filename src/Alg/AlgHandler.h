@@ -19,6 +19,7 @@ public:
   void setFeatureModel(std::shared_ptr<FeatureGuided> model);
   void setShapeModel(std::shared_ptr<Model> model);
   std::vector<GLActor>& getGLActors() { return actors; };
+  bool workable();
 
   void doProjOptimize();
 

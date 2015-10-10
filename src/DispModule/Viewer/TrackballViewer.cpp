@@ -321,6 +321,7 @@ void TrackballViewer::syncCamera()
     camera()->getModelViewMatrix(m);
     main_canvas_viewer->camera()->setFromModelViewMatrix(m);
     main_canvas_viewer->updateGLOutside();
+    main_canvas_viewer->syncCameraToModel();
 
     //std::cout << "Trackball: znear " << camera()->zNear() << "\tzfar " << camera()->zFar() << "\tfocal " << camera()->focusDistance() << "\tradius " << camera()->sceneRadius() << "\n";
     //std::cout << "Trackball scene center: " << camera()->sceneCenter().x << " " << camera()->sceneCenter().y << " " << camera()->sceneCenter().z <<"\n";
@@ -381,6 +382,9 @@ void TrackballViewer::drawActors()
 
 void TrackballViewer::setGLActors(std::vector<GLActor>& actors)
 {
-  this->actors.push_back(actors[0]);
-  // don't show the line only show points
+  if (!actors.empty())
+  {
+    this->actors.push_back(actors[0]);
+    // don't show the line only show points
+  }
 }

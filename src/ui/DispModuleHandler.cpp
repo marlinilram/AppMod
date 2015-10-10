@@ -150,3 +150,12 @@ void DispModuleHandler::deleteLastCrspLine_Target()
 {
   target_vector_viewer->deleteLastLine();
 }
+
+void DispModuleHandler::setVectorFieldViewerPara(std::vector<bool>& checkStates)
+{
+  source_vector_viewer->setDispPara(checkStates);
+  target_vector_viewer->setDispPara(checkStates);
+
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
+}

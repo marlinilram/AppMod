@@ -18,6 +18,22 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
 {
   shape = in_shape;
   buildCandidates();
+  mergeCandidates();
+}
+
+const std::vector<Edge>& ShapeCrest::getCrestEdge()
+{
+  return crest_edges;
+}
+
+const std::vector<STLVectori>& ShapeCrest::getCrestLine()
+{
+  return crest_lines;
+}
+
+const std::vector<STLVectori>& ShapeCrest::getVisbleCrestLine()
+{
+  return visible_lines;
 }
 
 void ShapeCrest::buildCandidates()
@@ -27,7 +43,7 @@ void ShapeCrest::buildCandidates()
   const FaceList& face_list = shape->getFaceList();
   const STLVectori& edge_connectivity = shape->getEdgeConnectivity();
   std::vector<bool> visited_edge(edge_connectivity.size(), false);
-  STLVectorf edge_dihedral(edge_connectivity.size(), -1.0f);
+  edge_dihedral.resize(edge_connectivity.size(), -1.0f);
 
   for (size_t i = 0; i < edge_connectivity.size(); ++i)
   {
@@ -63,12 +79,12 @@ void ShapeCrest::buildCandidates()
     }
   }
   
-  std::set<int> candidates;
+  candidates.clear();
   crest_edges.clear();
   int inner_index[6] = {0, 1, 1, 2, 2, 0};
   for (size_t i = 0; i < edge_dihedral.size(); ++i)
   {
-    if (edge_dihedral[i] < 0.3)
+    if (edge_dihedral[i] < 0.75)
     {
       if (candidates.find(edge_connectivity[i]) == candidates.end())
       {
@@ -84,7 +100,149 @@ void ShapeCrest::buildCandidates()
   }
 }
 
-const std::vector<Edge>& ShapeCrest::getCrestEdge()
+void ShapeCrest::mergeCandidates()
 {
-  return crest_edges;
+  for (size_t i = 0; i < crest_edges.size(); ++i)
+  {
+    STLVectori temp_edges;
+    temp_edges.push_back(crest_edges[i].first);
+    temp_edges.push_back(crest_edges[i].second);
+    crest_lines.push_back(temp_edges);
+  }
+  // merge connected edge
+  int tag = 0;
+  size_t i = 0;
+  while (i < crest_lines.size())
+  {
+    int start = crest_lines[i][0];
+    int end   = crest_lines[i][crest_lines[i].size() - 1];
+
+    for (size_t j = i + 1; j < crest_lines.size(); ++j)
+    {
+      int cur_start = crest_lines[j][0];
+      int cur_end   = crest_lines[j][crest_lines[j].size() - 1];
+
+      // four types
+      if (start == cur_start)
+      {
+        int start_n = crest_lines[i][1]; // the next v_id from start
+        int cur_start_n = crest_lines[j][1]; // the next v_id from start
+        if (connectable(start, start_n, cur_start_n))
+        {
+          std::reverse(crest_lines[i].begin(), crest_lines[i].end());
+          crest_lines[i].insert(crest_lines[i].end(), crest_lines[j].begin() + 1, crest_lines[j].end());
+          crest_lines.erase(crest_lines.begin() + j);
+          tag = 1;
+          break;
+        }
+      }
+      else if (start == cur_end)
+      {
+        int start_n = crest_lines[i][1]; // the next v_id from start
+        int cur_end_p = crest_lines[j][crest_lines[j].size() - 2];
+        if (connectable(start, start_n, cur_end_p))
+        {
+          crest_lines[i].insert(crest_lines[i].begin(), crest_lines[j].begin(), crest_lines[j].end() - 1);
+          crest_lines.erase(crest_lines.begin() + j);
+          tag = 1;
+          break;
+        }
+      }
+      else if (end == cur_start)
+      {
+        int end_p = crest_lines[i][crest_lines[i].size() - 2];
+        int cur_start_n = crest_lines[j][1]; // the next v_id from start
+        if (connectable(end, end_p, cur_start_n))
+        {
+          crest_lines[i].insert(crest_lines[i].end(), crest_lines[j].begin() + 1, crest_lines[j].end());
+          crest_lines.erase(crest_lines.begin() + j);
+          tag = 1;
+          break;
+        }
+      }
+      else if (end == cur_end)
+      {
+        int end_p = crest_lines[i][crest_lines[i].size() - 2];
+        int cur_end_p = crest_lines[j][crest_lines[j].size() - 2];
+        if (connectable(end, end_p, cur_end_p))
+        {
+          std::reverse(crest_lines[j].begin(), crest_lines[j].end());
+          crest_lines[i].insert(crest_lines[i].end(), crest_lines[j].begin() + 1, crest_lines[j].end());
+          crest_lines.erase(crest_lines.begin() + j);
+          tag = 1;
+          break;
+        }
+      }
+    }
+
+    if (tag == 1)
+    {
+      tag = 0;
+    }
+    else
+    {
+      ++i;
+    }
+  }
+}
+
+bool ShapeCrest::connectable(int v_start, int v_ori_n, int v_cur_n)
+{
+  // test if the two connected (physically) edge should be connected
+  // as a crest line
+  // Only if the cosine of between them is less than -0.75
+  const VertexList& vertex_list = shape->getVertexList();
+
+  Vector3f dir_0;
+  dir_0 << vertex_list[3 * v_ori_n + 0] - vertex_list[3 * v_start + 0],
+           vertex_list[3 * v_ori_n + 1] - vertex_list[3 * v_start + 1],
+           vertex_list[3 * v_ori_n + 2] - vertex_list[3 * v_start + 2];
+
+  Vector3f dir_1;
+  dir_1 << vertex_list[3 * v_cur_n + 0] - vertex_list[3 * v_start + 0],
+           vertex_list[3 * v_cur_n + 1] - vertex_list[3 * v_start + 1],
+           vertex_list[3 * v_cur_n + 2] - vertex_list[3 * v_start + 2];
+
+  float cur_cos = dir_0.dot(dir_1) / dir_0.norm() / dir_1.norm();
+  if (cur_cos < -0.75)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+void ShapeCrest::computeVisible(std::set<int>& vis_faces)
+{
+  std::vector<Edge> crest_edges_cache = crest_edges;
+  std::vector<STLVectori> crest_lines_cache = crest_lines;
+  const STLVectori& edge_connectivity = shape->getEdgeConnectivity();
+
+  crest_edges.clear();
+  crest_lines.clear();
+  int inner_index[6] = {0, 1, 1, 2, 2, 0};
+  std::set<int>::iterator it;
+  size_t i = 0;
+  for (it = candidates.begin(); it != candidates.end(); ++it)
+  {
+    int f_0 = (*it) / 3;
+    int f_1 = edge_connectivity[(*it)] / 3;
+
+    if (vis_faces.find(f_0) != vis_faces.end() || vis_faces.find(f_1) != vis_faces.end())
+    {
+      crest_edges.push_back(crest_edges_cache[i]);
+    }
+
+    ++i;
+  }
+
+  mergeCandidates();
+
+  visible_edges = crest_edges;
+  visible_lines = crest_lines;
+
+  crest_edges = crest_edges_cache;
+  crest_lines = crest_lines_cache;
 }

@@ -17,7 +17,7 @@ public:
   ~ProjOptimize();
 
   void updateShape(std::shared_ptr<FeatureGuided> feature_guided, std::shared_ptr<Model> model);
-  bool isBoundary(cv::Mat& primitive_img, int x, int y);
+  static bool isBoundary(cv::Mat& primitive_img, int x, int y);
   void updateScreenShape(std::shared_ptr<Model> model, Eigen::VectorXf& P_Opt);
   void getDrawableActors(std::vector<GLActor>& actors);
 

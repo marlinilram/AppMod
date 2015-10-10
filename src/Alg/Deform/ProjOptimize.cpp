@@ -27,7 +27,6 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
   actors[1].clearElement();
   actors[2].clearElement();
 
-#define USE_AUTO
 #ifdef USE_AUTO
   CURVES crsp_pairs;
   feature_guided->BuildSourceEdgeKDTree();
@@ -165,6 +164,38 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
 #endif
 #endif // USE_AUTO
 
+#define USE_AUTO_2
+#ifdef USE_AUTO_2
+
+  std::vector<std::pair<int, double2> > crsp_list;
+  feature_guided->BuildClosestPtPair(crsp_list);
+
+  cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
+  std::vector<int> constrained_vertex_id;
+  std::vector<float> constrained_ray;
+
+  for (size_t i = 0; i < crsp_list.size(); ++i)
+  {
+    constrained_vertex_id.push_back(crsp_list[i].first);
+
+    int p_x = int(crsp_list[i].second.x + 0.5);
+    // the y coordinate start from bottom in FeatureGuided
+    // but from top in cv::Mat
+    int p_y = primitive_id_img.rows - 1 - int(crsp_list[i].second.y + 0.5);
+    float proj_ray[3];
+    model->getProjRay(proj_ray, p_x, p_y);
+    constrained_ray.push_back(proj_ray[0]);
+    constrained_ray.push_back(proj_ray[1]);
+    constrained_ray.push_back(proj_ray[2]);
+  }
+
+  float camera_ori[3];
+  model->getCameraOri(camera_ori);
+
+#endif // USE_AUTO_2
+
+
+
 #ifdef USE_MANUL
 
   std::vector<CvPoint3D32f>& pts3d = model->getRenderer()->pts3d;
@@ -229,7 +260,7 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
 
   // init projection constraint
   proj_constraint->setSolver(solver);
-  proj_constraint->initMatrix(new_constrained_ray, new_constrained_vertex_id, camera_ori);
+  proj_constraint->initMatrix(constrained_ray, constrained_vertex_id, camera_ori);
   proj_constraint->setLamdProj(30.0f);
 
   // add constraints to solver

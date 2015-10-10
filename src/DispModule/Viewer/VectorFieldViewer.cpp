@@ -214,3 +214,15 @@ void VectorFieldViewer::drawAllLines()
     }
   }
 }
+
+void VectorFieldViewer::setDispPara(std::vector<bool>& states)
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->setVisualizationParas(states);
+    }
+  }
+}

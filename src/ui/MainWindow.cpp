@@ -18,6 +18,7 @@ MainWindow::MainWindow()
     connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
     connect(action_Vector_Field, SIGNAL(triggered()), this, SLOT(setVectorField()));
     connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
+    connect(action_Tool_Box, SIGNAL(triggered()), this, SLOT(showToolBox()));
     connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
     connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
 
@@ -28,6 +29,7 @@ MainWindow::MainWindow()
     parameter_dock->setFixedWidth(250);
     this->addDockWidget(Qt::LeftDockWidgetArea, parameter_dock.get());
     parameter_dock->setDispModules(disp_modules);
+    parameter_dock->hide();
 
     this->show();
 
@@ -347,4 +349,16 @@ void MainWindow::deleteLastLine_Source()
 void MainWindow::deleteLastLine_Target()
 {
   disp_modules->deleteLastCrspLine_Target();
+}
+
+void MainWindow::showToolBox()
+{
+  if (parameter_dock->isHidden())
+  {
+    parameter_dock->show();
+  }
+  else
+  {
+    parameter_dock->hide();
+  }
 }
