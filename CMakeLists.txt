@@ -55,6 +55,9 @@ SET( MainWin_RCC src/ui/UI.qrc )
 
 SET( ParaDock_UIS src/ui/ParameterDock.ui )
 SET( ParaDock_MOC_HDRS src/ui/ParameterDock.h )
+
+SET( DispModuleHandler_MOC_HDRS src/ui/DispModuleHandler.h
+                                src/DispModule/Viewer/VectorFieldViewer.h )
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)
@@ -62,9 +65,12 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 QT5_WRAP_UI( MainWin_UIS_H ${MainWin_UIS} )
 QT5_WRAP_CPP( MainWin_MOC_SRCS ${MainWin_MOC_HDRS} )
+QT5_ADD_RESOURCES( MainWin_RCC_SRCS ${MainWin_RCC} )
+
 QT5_WRAP_UI( ParaDock_UIS_H ${ParaDock_UIS} )
 QT5_WRAP_CPP( ParaDock_MOC_SRCS ${ParaDock_MOC_HDRS} )
-QT5_ADD_RESOURCES( MainWin_RCC_SRCS ${MainWin_RCC} )
+
+QT5_WRAP_CPP( DispModuleHandler_MOC_SRCS ${DispModuleHandler_MOC_HDRS} )
 
 INCLUDE_DIRECTORIES( ${Project_INCLUDE_DIR} 
                      ${CMAKE_CURRENT_BINARY_DIR} 
@@ -86,8 +92,9 @@ ADD_EXECUTABLE( ${PROJECT_NAME}
 				${MainWin_UIS_H} 
 				${MainWin_RCC_SRCS}
 				${MainWin_MOC_SRCS} 
-        ${ParaDock_RCC_SRCS}
-				${ParaDock_MOC_SRCS} )
+        ${ParaDock_UIS_H}
+				${ParaDock_MOC_SRCS}
+        ${DispModuleHandler_MOC_SRCS} )
 				
 				
 FILE( GLOB UI 			"src/ui/*.*" ) 

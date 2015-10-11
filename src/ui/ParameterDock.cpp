@@ -9,6 +9,7 @@ ParameterDock::ParameterDock()
   connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
   connect(Show_All_Lines_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showAllLines(int)));
   connect(Show_ProjCrsp_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showProjCrsp(int)));
+  connect(InteractiveProjAlign_CheckBox, SIGNAL(stateChanged(int)), SLOT(setInteractiveProjAlign(int)));
 
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
@@ -59,4 +60,9 @@ void ParameterDock::showAllLines(int state)
 void ParameterDock::showProjCrsp(int state)
 {
   disp_modules->showProjCrsp(state);
+}
+
+void ParameterDock::setInteractiveProjAlign(int state)
+{
+  disp_modules->toggleVectorFieldMode(state);
 }

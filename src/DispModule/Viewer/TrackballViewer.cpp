@@ -331,7 +331,7 @@ void TrackballViewer::syncCamera()
 
   if (source_vector_viewer)
   {
-    source_vector_viewer->updateSourceVectorField();
+    source_vector_viewer->updateSourceField();
     source_vector_viewer->updateScalarFieldTexture();
   }
   if (target_vector_viewer)

@@ -58,3 +58,21 @@ void AlgHandler::doProjOptimize()
     actors.push_back(temp_actors[i]);
   }
 }
+
+void AlgHandler::doInteractiveProjOptimize()
+{
+  if (!workable())
+  {
+    return;
+  }
+
+  actors.clear();
+  proj_optimize->updateShapeFromInteraction(feature_model, shape_model);
+  feature_model->updateSourceVectorField();
+  std::vector<GLActor> temp_actors;
+  proj_optimize->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
+}

@@ -22,6 +22,7 @@ public:
   bool workable();
 
   void doProjOptimize();
+  void doInteractiveProjOptimize();
 
 private:
   std::shared_ptr<ProjOptimize> proj_optimize;

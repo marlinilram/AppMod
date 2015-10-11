@@ -522,9 +522,9 @@ void VectorFieldCanvas::setVisualizationParas(std::vector<bool>& paras)
   this->vis_paras = paras;
 }
 
-void VectorFieldCanvas::updateSourceVectorField()
+void VectorFieldCanvas::updateSourceField()
 {
-  feature_model->updateSourceVectorField();
+  feature_model->updateSourceField();
 }
 
 void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line)
@@ -583,6 +583,19 @@ std::shared_ptr<FeatureLine> VectorFieldCanvas::getFeatureLine()
   else
   {
     return feature_model->target_vector_field_lines;
+  }
+}
+
+void VectorFieldCanvas::setConstrainedPair(double start[2], double end[2])
+{
+  if (!feature_model)
+  {
+    return;
+  }
+
+  if (render_mode == VectorField::SOURCE_MODE)
+  {
+    feature_model->setUserCrspPair(start, end);
   }
 }
 

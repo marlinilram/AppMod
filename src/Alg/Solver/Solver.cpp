@@ -29,6 +29,15 @@ void Solver::initCholesky()
   // pre factorize the system matrix
   std::cout << "Pre factorize matrix.\n";
   chol.analyzePattern(this->system_matrix);
+  this->preFactorize();
+}
+
+void Solver::preFactorize()
+{
+  // when we update the system matrix
+  // we need to do factorization again
+  std::cout << "prepare system matrix.\n";
+  this->setSystemMatrix();
   chol.factorize(this->system_matrix);
 }
 

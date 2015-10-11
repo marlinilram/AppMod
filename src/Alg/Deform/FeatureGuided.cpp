@@ -112,13 +112,18 @@ void FeatureGuided::updateSourceVectorField()
   }
   this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
-  this->updateScalarField();
 }
 
 void FeatureGuided::updateScalarField()
 {
   this->source_scalar_field->computeVariationMap();
   this->target_scalar_field->computeMatchingMap(this->source_tele_register->vector_field);
+}
+
+void FeatureGuided::updateSourceField()
+{
+  this->updateSourceVectorField();
+  this->updateScalarField();
 }
 
 void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
@@ -1121,4 +1126,22 @@ void FeatureGuided::BuildClosestPtPair(std::vector<std::pair<int, double2> >& cr
     src_crsp_list.push_back(CurvePt(it->first));
     tar_crsp_list.push_back(CurvePt(it->second.first));
   }
+}
+
+void FeatureGuided::setUserCrspPair(double start[2], double end[2])
+{
+  // input are normalized coordinate
+  double2 src_p(start[0], start[1]);
+  src_p = (src_p - double2(0.5, 0.5)) / curve_scale + double2(0.5, 0.5) - curve_translate;
+
+  int src_i = -1;
+  int src_j = -1;
+  double dis = 0.0;
+  CurvesUtility::closestPtInCurves(src_p, source_curves, src_i, src_j, dis);
+
+  const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
+  user_constrained_src_v = crest_lines[src_i][src_j];
+
+  user_constrained_tar_p = double2(end[0], end[1]);
+  user_constrained_tar_p = (user_constrained_tar_p - double2(0.5, 0.5)) / curve_scale + double2(0.5, 0.5) - curve_translate;
 }

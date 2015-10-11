@@ -7,12 +7,17 @@
 #include "FastMassSpring.h"
 #include "ProjConstraint.h"
 #include "ARAP.h"
+#include "CurvesUtility.h"
 
 ProjOptimize::ProjOptimize()
 {
   actors.push_back(GLActor(ML_POINT, 5.0f));
   actors.push_back(GLActor(ML_MESH, 1.0f));
   actors.push_back(GLActor(ML_LINE, 1.0f));
+
+  solver = nullptr;
+  arap= nullptr;
+  proj_constraint = nullptr;
 }
 
 ProjOptimize::~ProjOptimize()
@@ -41,7 +46,7 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
     {
       if (primitive_id_img.at<int>(i, j) >= 0)
       {
-        if (this->isBoundary(primitive_id_img, j, i))
+        if (CurvesUtility::isBoundary(primitive_id_img, j, i))
         {
         // store as x, y
           boundary_pts.push_back(std::pair<int, int>(j, i));
@@ -171,8 +176,8 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
   feature_guided->BuildClosestPtPair(crsp_list);
 
   cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
-  std::vector<int> constrained_vertex_id;
-  std::vector<float> constrained_ray;
+  constrained_vertex_id.clear();
+  constrained_ray.clear();
 
   for (size_t i = 0; i < crsp_list.size(); ++i)
   {
@@ -191,6 +196,8 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
 
   float camera_ori[3];
   model->getCameraOri(camera_ori);
+
+  return;
 
 #endif // USE_AUTO_2
 
@@ -237,21 +244,33 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
   std::vector<std::vector<int> > vertices_share_faces = model->getShape()->getVertexShareFaces();
   std::vector<std::vector<int> > adj_list = model->getShape()->getVertexAdjList();
 
-  std::shared_ptr<Solver> solver(new Solver);
-  std::shared_ptr<FastMassSpring> fsm(new FastMassSpring);
-  std::shared_ptr<ProjConstraint> proj_constraint(new ProjConstraint);
-  std::shared_ptr<ARAP> arap(new ARAP);
+  if (!solver)
+  {
+    solver.reset(new Solver);
+  }
+  if (!proj_constraint)
+  {
+    proj_constraint.reset(new ProjConstraint);
+    // add constraints to solver
+    solver->addConstraint(proj_constraint);
+  }
+  if (!arap)
+  {
+    arap.reset(new ARAP);
+    // add constraints to solver
+    solver->addConstraint(arap);
+  }
 
   // init solver info
   solver->problem_size = (vertex_list).size();
   solver->P_Opt = Eigen::Map<VectorXf>(&(vertex_list)[0], (vertex_list).size());
 
   // init fast mass spring
-  fsm->setSolver(solver);
-  fsm->initEdgeGraph((face_list), (vertex_list), (vertices_share_faces));
-  fsm->buildMatrix();
-  fsm->setkStrech(10.0f); //10.0f;
-  fsm->setkBending(15.0f); //15.0f;
+  //fsm->setSolver(solver);
+  //fsm->initEdgeGraph((face_list), (vertex_list), (vertices_share_faces));
+  //fsm->buildMatrix();
+  //fsm->setkStrech(10.0f); //10.0f;
+  //fsm->setkBending(15.0f); //15.0f;
 
   // init arap
   arap->setSolver(solver);
@@ -262,10 +281,6 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
   proj_constraint->setSolver(solver);
   proj_constraint->initMatrix(constrained_ray, constrained_vertex_id, camera_ori);
   proj_constraint->setLamdProj(30.0f);
-
-  // add constraints to solver
-  solver->addConstraint(arap);
-  solver->addConstraint(proj_constraint);
 
   // solve
   solver->initCholesky();
@@ -287,27 +302,54 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
   std::cout << "Update geometry finished...\n";
 }
 
-bool ProjOptimize::isBoundary(cv::Mat& primitive_img, int x, int y)
+void ProjOptimize::updateShapeFromInteraction(std::shared_ptr<FeatureGuided> feature_guided, std::shared_ptr<Model> model)
 {
-  for (int i = 0; i < 3; ++i)
-  {
-    for (int j = 0; j < 3; ++j)
-    {
-      int row_id = y + i - 1;
-      int col_id = x + j - 1;
-      row_id = std::max(std::min(row_id, primitive_img.rows - 1), 0);
-      col_id = std::max(std::min(col_id, primitive_img.cols - 1), 0);
+  // assume the optimization has been initialized before by updateShape()
+  cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
+  int user_v_id = feature_guided->user_constrained_src_v;
+  double2 user_win = feature_guided->user_constrained_tar_p;
 
-      if (!(row_id == y && col_id == x))
-      {
-        if (primitive_img.at<int>(row_id, col_id) < 0)
-        {
-          return true;
-        }
-      }
+  for (size_t i = 0; i < constrained_vertex_id.size(); ++i)
+  {
+    if (constrained_vertex_id[i] == user_v_id)
+    {
+      int p_x = int(user_win.x + 0.5);
+      // the y coordinate start from bottom in FeatureGuided
+      // but from top in cv::Mat
+      int p_y = primitive_id_img.rows - 1 - int(user_win.y + 0.5);
+      float proj_ray[3];
+      model->getProjRay(proj_ray, p_x, p_y);
+      constrained_ray[3 * i + 0] = proj_ray[0];
+      constrained_ray[3 * i + 1] = proj_ray[1];
+      constrained_ray[3 * i + 2] = proj_ray[2];
     }
   }
-  return false;
+
+  float camera_ori[3];
+  model->getCameraOri(camera_ori);
+
+  // update the system matrix for proj_constraint
+  proj_constraint->initMatrix(constrained_ray, constrained_vertex_id, camera_ori);
+
+  // since the solver has been initialized before and we don't change the pattern of the 
+  // system matrix, no need to do initCholesky. Use preFactorize() instead
+  solver->preFactorize();
+  int max_iter = 20; //20;
+  int cur_iter = 0;
+  do
+  {
+    solver->runOneStep();
+    ++cur_iter;
+
+    std::cout << "The " << cur_iter << "th iteration finished" << std::endl;
+
+    updateScreenShape(model, solver->P_Opt);
+
+    //model->getRenderer()->saveScreen(model->getOutputPath() + "/" + std::to_string(cur_iter) + ".png");
+
+  } while (cur_iter < max_iter);
+
+  std::cout << "Update geometry finished...\n";
 }
 
 void ProjOptimize::updateScreenShape(std::shared_ptr<Model> model, Eigen::VectorXf& P_Opt)

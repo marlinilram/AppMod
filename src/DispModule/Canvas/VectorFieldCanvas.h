@@ -46,7 +46,7 @@ public:
   bool displayTargetCrspList();
 
   void setScalarField();
-  void updateSourceVectorField();
+  void updateSourceField();
 
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
@@ -54,6 +54,7 @@ public:
   void addConstrainedLines(std::vector<double2>& line);
   void deleteLastLine();
   std::shared_ptr<FeatureLine> getFeatureLine(); 
+  void setConstrainedPair(double start[2], double end[2]);
 
 protected:
   std::shared_ptr<FeatureGuided> feature_model;

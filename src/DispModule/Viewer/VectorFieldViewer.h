@@ -6,17 +6,34 @@
 #include "BasicDataType.h"
 #include <memory>
 
+namespace VectorField
+{
+  enum INTERACTIONMODE
+  {
+    DRAW_CRSP_LINE = 0,
+    SELECT_POINT = 1
+  };
+};
+
 class VectorFieldViewer : public BasicViewer
 {
+  Q_OBJECT
+
 public:
   VectorFieldViewer(QWidget* widget);
   ~VectorFieldViewer();
 
-  void updateSourceVectorField();
+  void updateSourceField();
   void updateScalarFieldTexture();
   void deleteLastLine();
   void isDrawAllLines(bool allLines);
   void setDispPara(std::vector<bool>& states);
+  bool inDrawLineMode();
+  bool inSelectPointMode();
+  inline void setInteractionMode(VectorField::INTERACTIONMODE mode) { interaction_mode = mode; };
+
+signals:
+  void triggeredInteractiveCrsp();
 
 protected:
   virtual void draw();
@@ -33,5 +50,11 @@ private:
   bool is_drawLine;
   bool is_drawAllLines;
   std::vector<double2> line;
+
+  int selected_v_id;
+  double user_start[2];
+  double user_end[2];
+
+  VectorField::INTERACTIONMODE interaction_mode;
 };
 #endif // !VectorFieldViewer_H
