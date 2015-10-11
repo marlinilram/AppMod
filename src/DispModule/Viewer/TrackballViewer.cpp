@@ -4,6 +4,8 @@
 #include "TrackballCanvas.h"
 #include "Bound.h"
 #include <QKeyEvent>
+#include "Model.h"
+#include "ShapeCrest.h"
 
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
@@ -39,6 +41,7 @@ void TrackballViewer::draw()
   {
     glDisable(GL_LIGHTING);
     drawTrackBall();
+    drawCrestLines();
     if (!dispObjects[i]->display())
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
@@ -383,4 +386,28 @@ void TrackballViewer::setGLActors(std::vector<GLActor>& actors)
 {
   this->actors.push_back(actors[0]);
   // don't show the line only show points
+}
+
+void TrackballViewer::drawCrestLines()
+{
+  glClear(GL_DEPTH_BUFFER_BIT);
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+    if (trackball_canvas)
+    {
+      std::vector<std::vector<Vector3f>> crestLinesPoints = trackball_canvas->getModel()->getShapeCrest()->getCrestLinesPoints();
+      for(size_t i = 0; i < 10; i ++)
+      {
+        glPointSize(2.0f);
+        glBegin(GL_POINTS);
+        for(size_t j = 0; j < crestLinesPoints[i].size(); j ++)
+        {
+          glColor3f(0,0,0);
+          glVertex3f(crestLinesPoints[i][j].x(),crestLinesPoints[i][j].y(),crestLinesPoints[i][j].z());
+        }
+        glEnd();
+      }
+    }
+  }
 }

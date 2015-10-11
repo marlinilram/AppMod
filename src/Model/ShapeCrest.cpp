@@ -1,8 +1,11 @@
 #include "ShapeCrest.h"
 #include "BasicHeader.h"
 #include "Shape.h"
+#include "CrestCode.h"
+#include "KDTreeWrapper.h"
 
 #include <set>
+#include <fstream>
 
 ShapeCrest::ShapeCrest()
 {
@@ -87,4 +90,36 @@ void ShapeCrest::buildCandidates()
 const std::vector<Edge>& ShapeCrest::getCrestEdge()
 {
   return crest_edges;
+}
+
+void ShapeCrest::computeCrestLinesPoints()
+{
+  crest.reset(new CrestCode);
+  crest->exportInputFile(shape);
+  std::vector<std::vector<Vector3f>> CLPoints;
+  crest->getCrestLinesPoints(CLPoints);
+  int id;
+  std::vector<float> pt;
+  pt.resize(3);
+  crestLinesPointsId.resize(CLPoints.size());
+  crestLinesPoints.resize(CLPoints.size());
+
+  for(size_t i = 0 ; i < CLPoints.size() ; i ++)
+  {
+    for(size_t j = 0 ; j < CLPoints[i].size() ; j ++)
+    {
+      pt[0] = CLPoints[i][j].x();
+      pt[1] = CLPoints[i][j].y();
+      pt[2] = CLPoints[i][j].z();
+      (shape->getKDTree())->nearestPt(pt,id);
+      crestLinesPointsId[i].push_back(id);
+      Vector3f point;
+      point << (shape->getVertexList())[id * 3],(shape->getVertexList())[id * 3 + 1],(shape->getVertexList())[id * 3 + 2];
+      crestLinesPoints[i].push_back(point);
+      //crestLinesPoints[i].push_back(CLPoints[i][j]);
+    }
+  }
+  /*size_t sum = 0;
+  for(size_t i = 0; i < crestLinesPoints.size(); i ++)
+    sum += crestLinesPoints[i].size();*/
 }
