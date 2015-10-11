@@ -124,6 +124,9 @@ void FeatureGuided::updateSourceField()
 {
   this->updateSourceVectorField();
   this->updateScalarField();
+
+  std::vector<std::pair<int, double2> > crsp_list;
+  this->BuildClosestPtPair(crsp_list);
 }
 
 void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
@@ -349,7 +352,7 @@ CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
 
     //if (cur_length > 0)
     {
-      if (curves[i].size() > 10)
+      if (curves[i].size() > 20)
       {
         int step = 1 + curves[i].size() / 50;
         int tail = 0;

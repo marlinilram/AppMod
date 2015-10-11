@@ -614,19 +614,24 @@ bool VectorFieldCanvas::displaySourceCrspList()
     return false;
   }
 
-  glPointSize(2) ;
+  glPointSize(5) ;
 
   for (size_t i = 0; i < src_crsp_list.size(); ++i)
   {
-    glBegin(GL_LINES);
     QColor color = 
       qtJetColor(double(i)/src_crsp_list.size());
     glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+
+    glBegin(GL_LINES);
     double2 pos_src = source_curves[src_crsp_list[i].first][src_crsp_list[i].second];
     double2 pos_tar = target_curves[tar_crsp_list[i].first][tar_crsp_list[i].second];
     glVertex3f( pos_src.x,pos_src.y, 0 ) ;
     glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
+    glEnd();
 
+    glBegin(GL_POINTS);
+    glVertex3f( pos_src.x,pos_src.y, 0 ) ;
+    glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
     glEnd();
   }
 

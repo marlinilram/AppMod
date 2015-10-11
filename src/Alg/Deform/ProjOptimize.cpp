@@ -197,8 +197,6 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
   float camera_ori[3];
   model->getCameraOri(camera_ori);
 
-  return;
-
 #endif // USE_AUTO_2
 
 
