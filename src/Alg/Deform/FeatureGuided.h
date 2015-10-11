@@ -60,7 +60,7 @@ public:
   void FindHistMatchCrsp(CURVES &curves);
   void GetCrspPair(CURVES& curves);
   void GetUserCrspPair(CURVES& curves, float sample_density);
-  void BuildClosestPtPair(std::vector<std::pair<int, double2> >& crsp_list);
+  void BuildClosestPtPair(std::vector<std::pair<int, double2> >& crsp_list = std::vector<std::pair<int, double2> >(0));
   void setUserCrspPair(double start[2], double end[2]);
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
