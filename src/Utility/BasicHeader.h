@@ -7,6 +7,7 @@
 #include <iostream>
 
 typedef std::pair<int, int> Edge;
+typedef std::pair<int, int> STLPairii;
 typedef std::vector<std::pair<int, int> > Edges;
 typedef std::vector<unsigned int> FaceList;
 typedef std::vector<float> VertexList;

@@ -11,7 +11,8 @@ namespace VectorField
   enum INTERACTIONMODE
   {
     DRAW_CRSP_LINE = 0,
-    SELECT_POINT = 1
+    SELECT_POINT = 1,
+    CORRECT_CRSP = 2
   };
 };
 

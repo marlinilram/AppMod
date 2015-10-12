@@ -173,7 +173,7 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
 #ifdef USE_AUTO_2
 
   std::vector<std::pair<int, double2> > crsp_list;
-  feature_guided->BuildClosestPtPair(crsp_list);
+  feature_guided->GetCurrentCrspList(crsp_list);
 
   cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
   constrained_vertex_id.clear();

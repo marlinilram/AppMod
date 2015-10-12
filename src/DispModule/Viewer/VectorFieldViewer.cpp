@@ -127,7 +127,7 @@ void VectorFieldViewer::mousePressEvent(QMouseEvent *e)
     line.push_back(point);
     //std::cout << "The UnprojectedCoordinates of the selected point is :" << point.x << "," << point.y << std::endl;
   }
-  else if (interaction_mode == VectorField::SELECT_POINT)
+  else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
   {
     // get the v_id
     user_start[0] = res[0];
@@ -159,7 +159,7 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
       }
     }
   }
-  else if (interaction_mode == VectorField::SELECT_POINT)
+  else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
   {
     //if (selected_v_id != -1)
     //{
@@ -188,7 +188,7 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
     }
     line.clear();
   }
-  else if (interaction_mode == VectorField::SELECT_POINT)
+  else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
   {
     if (selected_v_id == 0)
     {
@@ -213,7 +213,14 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
       }
 
       selected_v_id = -1;
-      emit(triggeredInteractiveCrsp());
+      if (interaction_mode == VectorField::SELECT_POINT)
+      {
+        emit(triggeredInteractiveCrsp());
+      }
+      else
+      {
+        this->updateGLOutside();
+      }
     }
   }
 }

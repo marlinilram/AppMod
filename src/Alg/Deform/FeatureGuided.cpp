@@ -93,6 +93,8 @@ void FeatureGuided::initRegister()
   source_scalar_field->computeVariationMap();
   target_scalar_field->computeVariationMap();
   target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
+
+  this->BuildClosestPtPair();
 }
 
 void FeatureGuided::updateSourceVectorField()
@@ -125,8 +127,7 @@ void FeatureGuided::updateSourceField()
   this->updateSourceVectorField();
   this->updateScalarField();
 
-  std::vector<std::pair<int, double2> > crsp_list;
-  this->BuildClosestPtPair(crsp_list);
+  this->BuildClosestPtPair();
 }
 
 void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
@@ -551,6 +552,11 @@ void FeatureGuided::NormalizedSourceCurves(CURVES& curves)
 {
   curves = this->source_curves;
   FeatureGuided::NormalizedCurves(curves, curve_translate, curve_scale);
+}
+
+void FeatureGuided::NormalizedPts(double2& pt)
+{
+  pt = ( pt + curve_translate - double2(0.5, 0.5 ) ) * curve_scale + double2(0.5, 0.5 );
 }
 
 void FeatureGuided::NormalizedCurves(CURVES& curves)
@@ -1062,7 +1068,7 @@ void FeatureGuided::setNormalizePara()
   FeatureGuided::NormalizePara(target_curves, curve_translate, curve_scale);
 }
 
-void FeatureGuided::BuildClosestPtPair(std::vector<std::pair<int, double2> >& crsp_list)
+void FeatureGuided::BuildClosestPtPair()
 {
   // Build corresponding point pair between source curves and target curves
   //
@@ -1117,15 +1123,10 @@ void FeatureGuided::BuildClosestPtPair(std::vector<std::pair<int, double2> >& cr
     }
   }
 
-  const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
   src_crsp_list.clear();
   tar_crsp_list.clear();
   for (it = crsp_map.begin(); it != crsp_map.end(); ++it)
   {
-    int v_id = crest_lines[it->first.first][it->first.second];
-    double2 tar_pt = target_curves[it->second.first.first][it->second.first.second];
-
-    crsp_list.push_back(std::pair<int ,double2>(v_id, tar_pt));
     src_crsp_list.push_back(CurvePt(it->first));
     tar_crsp_list.push_back(CurvePt(it->second.first));
   }
@@ -1140,11 +1141,44 @@ void FeatureGuided::setUserCrspPair(double start[2], double end[2])
   int src_i = -1;
   int src_j = -1;
   double dis = 0.0;
-  CurvesUtility::closestPtInCurves(src_p, source_curves, src_i, src_j, dis);
+  if (CurvesUtility::closestPtInCurves(src_p, source_curves, src_i, src_j, dis))
+  {
+    const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
+    user_constrained_src_v = crest_lines[src_i][src_j];
 
+    user_constrained_tar_p = double2(end[0], end[1]);
+    user_constrained_tar_p = (user_constrained_tar_p - double2(0.5, 0.5)) / curve_scale + double2(0.5, 0.5) - curve_translate;
+
+    user_correct_crsp_map[STLPairii(src_i, src_j)] = user_constrained_tar_p;
+  }
+}
+
+void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list)
+{
   const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
-  user_constrained_src_v = crest_lines[src_i][src_j];
 
-  user_constrained_tar_p = double2(end[0], end[1]);
-  user_constrained_tar_p = (user_constrained_tar_p - double2(0.5, 0.5)) / curve_scale + double2(0.5, 0.5) - curve_translate;
+  if (src_crsp_list.size() != tar_crsp_list.size())
+  {
+    std::cerr << "Size of source correspondence list doesn't match that of target.\n";
+    return;
+  }
+
+  std::map<STLPairii, double2>::iterator map_iter;
+  for (size_t i = 0; i < src_crsp_list.size(); ++i)
+  {
+    int v_id = crest_lines[src_crsp_list[i].first][src_crsp_list[i].second];
+    double2 tar_pt;
+    
+    map_iter = user_correct_crsp_map.find(src_crsp_list[i]);
+    if (map_iter == user_correct_crsp_map.end())
+    {
+      tar_pt = target_curves[tar_crsp_list[i].first][tar_crsp_list[i].second];
+    }
+    else
+    {
+      tar_pt = map_iter->second;;
+    }
+
+    crsp_list.push_back(std::pair<int ,double2>(v_id, tar_pt));
+  }
 }

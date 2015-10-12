@@ -32,7 +32,7 @@
        <attribute name="label">
         <string>Page 1</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
          <widget class="QGroupBox" name="FeatureViewGroupBox">
           <property name="title">
@@ -126,7 +126,7 @@
         <item>
          <widget class="QGroupBox" name="ProjAlignViewGroupBox">
           <property name="title">
-           <string>Projection Alignment View</string>
+           <string>Projection Alignment Tools</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
@@ -144,11 +144,34 @@
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="InteractiveProjAlign_CheckBox">
-             <property name="text">
-              <string>Interactive Align</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Interactive Mode</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="Proj_Interact_Mode_ComboBox">
+               <item>
+                <property name="text">
+                 <string>Draw Crsp Line</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Drag to Deform</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Correct Crsp</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>

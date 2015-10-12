@@ -81,15 +81,8 @@ void DispModuleHandler::updateGeometry()
 
   updateCanvas();
 
-  if (source_vector_viewer)
-  {
-    source_vector_viewer->updateSourceField();
-    source_vector_viewer->updateScalarFieldTexture();
-  }
-  if (target_vector_viewer)
-  {
-    target_vector_viewer->updateScalarFieldTexture();
-  }
+  source_vector_viewer->updateScalarFieldTexture();
+  target_vector_viewer->updateScalarFieldTexture();
 }
 
 void DispModuleHandler::initFeatureModel()
@@ -108,6 +101,8 @@ void DispModuleHandler::initFeatureModel()
     target_vector_viewer->addDispObj(target_vector_canvas.get());
     target_vector_viewer->updateGLOutside();
 
+    // TODO: bug here, every time reset the feature model
+    // we need to reset the projection optimization
     alg_handler->setFeatureModel(share_feature_model);
   }
 }
@@ -172,14 +167,20 @@ void DispModuleHandler::setVectorFieldViewerPara(std::vector<bool>& checkStates)
 
 void DispModuleHandler::toggleVectorFieldMode(int state)
 {
-  if (state)
+  // it's a QComboBox here
+  if (state == 1)
   {
     source_vector_viewer->setInteractionMode(VectorField::SELECT_POINT);
     connect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
   }
-  else
+  else if (state == 0)
   {
     source_vector_viewer->setInteractionMode(VectorField::DRAW_CRSP_LINE);
+    disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
+  }
+  else if (state == 2)
+  {
+    source_vector_viewer->setInteractionMode(VectorField::CORRECT_CRSP);
     disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
   }
 }
@@ -191,5 +192,6 @@ void DispModuleHandler::updateGeometryInteractive()
   trackball_viewer->setGLActors(alg_handler->getGLActors());
 
   updateCanvas();
-  source_vector_viewer->updateGLOutside();
+  source_vector_viewer->updateScalarFieldTexture();
+  target_vector_viewer->updateScalarFieldTexture();
 }

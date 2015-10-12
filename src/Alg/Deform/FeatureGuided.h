@@ -41,6 +41,7 @@ public:
   inline std::shared_ptr<ScalarField> getTargetScalarField() { return target_scalar_field; };
   void NormalizedTargetCurves(CURVES& curves);
   void NormalizedSourceCurves(CURVES& curves);
+  void NormalizedPts(double2& pt);
   void setNormalizePara();
   void OptimizeConnection();
   double MatchScoreToVectorField(std::vector<double2>& curve);
@@ -60,7 +61,8 @@ public:
   void FindHistMatchCrsp(CURVES &curves);
   void GetCrspPair(CURVES& curves);
   void GetUserCrspPair(CURVES& curves, float sample_density);
-  void BuildClosestPtPair(std::vector<std::pair<int, double2> >& crsp_list = std::vector<std::pair<int, double2> >(0));
+  void BuildClosestPtPair();
+  void GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list);
   void setUserCrspPair(double start[2], double end[2]);
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
@@ -90,6 +92,7 @@ public:
 
   std::vector<std::pair<int, int> > src_crsp_list;
   std::vector<std::pair<int, int> > tar_crsp_list;
+  std::map<STLPairii, double2> user_correct_crsp_map;
 
   int user_constrained_src_v; // the index of v in model
   double2 user_constrained_tar_p; // target screen position
