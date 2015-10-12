@@ -29,6 +29,7 @@ Model::Model(const std::string path, const std::string name)
 
   shape_crest.reset(new ShapeCrest());
   shape_crest->setShape(shape);
+  shape_crest->computeCrestLinesPoints();
 
   // make an output path
   char time_postfix[50];
