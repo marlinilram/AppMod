@@ -1,10 +1,14 @@
 #include "FeatureGuided.h"
 #include "Model.h"
+#include "Shape.h"
+#include "ShapeCrest.h"
 #include "FeatureLine.h"
 #include "ScalarField.h"
 #include "KDTreeWrapper.h"
 #include "tele2d.h"
 #include "UtilityHeader.h"
+#include "ProjOptimize.h"
+#include "CurvesUtility.h"
 
 FeatureGuided::FeatureGuided()
 {
@@ -34,7 +38,7 @@ void FeatureGuided::initRegister()
   this->source_curves.clear();
   this->target_curves.clear();
   this->edge_threshold = 0.9;
-  this->ExtractCurves(source_model->getEdgeImg(), this->source_curves);
+  this->ExtractSrcCurves(source_model->getEdgeImg(), this->source_curves);
   this->edge_threshold = 0.2;
   this->ExtractCurves(this->target_img, this->target_curves);
 
@@ -82,20 +86,22 @@ void FeatureGuided::initRegister()
   target_KDTree.reset(new KDTreeWrapper);
   BuildTargetEdgeKDTree();
 
-  source_scalar_field.reset(new ScalarField(100, 3));
-  target_scalar_field.reset(new ScalarField(100, 3));
+  source_scalar_field.reset(new ScalarField(100, 2));
+  target_scalar_field.reset(new ScalarField(100, 2));
   source_scalar_field->setTeleRegister(source_tele_register);
   target_scalar_field->setTeleRegister(target_tele_register);
   source_scalar_field->computeVariationMap();
   target_scalar_field->computeVariationMap();
   target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
+
+  this->BuildClosestPtPair();
 }
 
 void FeatureGuided::updateSourceVectorField()
 {
   this->source_curves.clear();
   this->edge_threshold = 0.9;
-  this->ExtractCurves(source_model->getEdgeImg(), this->source_curves);
+  this->ExtractSrcCurves(source_model->getEdgeImg(), this->source_curves);
   CURVES temp_source_curves;
   this->NormalizedSourceCurves(temp_source_curves);
 
@@ -108,13 +114,48 @@ void FeatureGuided::updateSourceVectorField()
   }
   this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
-  this->updateScalarField();
 }
 
 void FeatureGuided::updateScalarField()
 {
   this->source_scalar_field->computeVariationMap();
   this->target_scalar_field->computeMatchingMap(this->source_tele_register->vector_field);
+}
+
+void FeatureGuided::updateSourceField()
+{
+  this->updateSourceVectorField();
+  this->updateScalarField();
+
+  this->BuildClosestPtPair();
+}
+
+void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
+{
+  // source curves just use the vis_crest_lines in ShapeCrest
+  const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
+  const VertexList& vertex_list = source_model->getShape()->getVertexList();
+  std::vector<double2> curve;
+  for (size_t i = 0; i < crest_lines.size(); ++i)
+  {
+    curve.clear();
+    for (size_t j = 0; j < crest_lines[i].size(); ++j)
+    {
+      float v[3];
+      v[0] = vertex_list[3 * crest_lines[i][j] + 0];
+      v[1] = vertex_list[3 * crest_lines[i][j] + 1];
+      v[2] = vertex_list[3 * crest_lines[i][j] + 2];
+      float winx, winy;
+      source_model->getProjectPt(v, winx, winy);
+      curve.push_back(double2(winx, source.rows - winy));
+    }
+    curves.push_back(curve);
+  }
+
+  // we also need to store the boundary curve
+  CURVES boundary_curve;
+  //this->ExtractCurves(source_model->getEdgeImg(), boundary_curve);
+  //curves.insert(curves.end(), boundary_curve.begin(), boundary_curve.end());
 }
 
 void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
@@ -130,11 +171,13 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
       {
         curve.clear();
         this->SearchCurve(source, i, j, visited_table, curve);
-        CURVES cur_curves = FeatureGuided::ReorganizeCurves(FeatureGuided::SplitCurve(curve));
+        CURVES cur_curves = FeatureGuided::SplitCurve(curve);
         curves.insert(curves.end(), cur_curves.begin(), cur_curves.end());
       }
     }
   }
+
+  curves = FeatureGuided::ReorganizeCurves(curves);
 
 #ifdef DEBUG
   std::vector<std::vector<cv::Point>> contours;
@@ -193,8 +236,8 @@ void FeatureGuided::SearchCurve(const cv::Mat& source,
   std::vector<double2>& curve)
 {
   // if the current pos isn't a edge or is visited before or out of boundary, return
-  if (source.at<float>(cur_row, cur_col) < edge_threshold || visited_table[cur_row][cur_col] == true
-    || cur_row < 0 || cur_row >= source.rows || cur_col < 0 || cur_col >= source.cols)
+  if (cur_row < 0 || cur_row >= source.rows || cur_col < 0 || cur_col >= source.cols
+    || source.at<float>(cur_row, cur_col) < edge_threshold || visited_table[cur_row][cur_col] == true)
   {
     return;
   }
@@ -306,13 +349,13 @@ CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
   CURVES reorganized;
   for (int i = 0; i < curves.size(); ++i)
   {
-    double cur_length = FeatureGuided::CurveLength(curves[i]);
+    //double cur_length = FeatureGuided::CurveLength(curves[i]);
 
-    if (cur_length > 0)
+    //if (cur_length > 0)
     {
-      if (curves[i].size() > 10)
+      if (curves[i].size() > 20)
       {
-        int step = 1;// + curves[i].size() / 50;
+        int step = 1 + curves[i].size() / 50;
         int tail = 0;
         for (int j = 0; j < curves[i].size(); ++j)
         {
@@ -509,6 +552,11 @@ void FeatureGuided::NormalizedSourceCurves(CURVES& curves)
 {
   curves = this->source_curves;
   FeatureGuided::NormalizedCurves(curves, curve_translate, curve_scale);
+}
+
+void FeatureGuided::NormalizedPts(double2& pt)
+{
+  pt = ( pt + curve_translate - double2(0.5, 0.5 ) ) * curve_scale + double2(0.5, 0.5 );
 }
 
 void FeatureGuided::NormalizedCurves(CURVES& curves)
@@ -1018,4 +1066,119 @@ void FeatureGuided::BuildTargetEdgeKDTree()
 void FeatureGuided::setNormalizePara()
 {
   FeatureGuided::NormalizePara(target_curves, curve_translate, curve_scale);
+}
+
+void FeatureGuided::BuildClosestPtPair()
+{
+  // Build corresponding point pair between source curves and target curves
+  //
+  // Method routine:
+  // Search from each curve points in target to find the closest points
+  // in source. Since points in source are one-to-one mapped to vertex
+  // in the agent, we get vertex to pixel correspondences naturally
+  // (see ExtractSrcCurves() about how the source curve maps to 
+  // each vertex in shape)
+  //
+  // More than one curve points in target will find same closest points
+  // in source (depending on the sample density of target curves). In this
+  // case we choose the closest one.
+  //
+  // Distance Evaluation: There are different ways to evaluate the distance
+  // between a source points and a target points. For now, we compute it in
+  // this way. Integrate the matching scalar map between the target and source
+
+  typedef std::pair<int, int> CurvePt;
+  typedef std::pair<std::pair<int, int>, double> CrspCurvePt;
+
+  CURVES n_src_curves; // get normalized source curves
+  CURVES n_tar_curves; // get normalized target curves
+  this->NormalizedSourceCurves(n_src_curves);
+  this->NormalizedTargetCurves(n_tar_curves);
+
+  // find corresponding points in source curves
+  std::map<CurvePt, CrspCurvePt> crsp_map;
+  std::map<CurvePt, CrspCurvePt>::iterator it;
+  for (size_t i = 0; i < n_tar_curves.size(); ++i)
+  {
+    for (size_t j = 0; j < n_tar_curves[i].size(); ++j)
+    {
+      int src_i = -1;
+      int src_j = -1;
+      double dis = 0.0;
+      if (CurvesUtility::closestPtInCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, target_scalar_field->matching_map, target_scalar_field->resolution, 0.3))
+      {
+        it = crsp_map.find(CurvePt(src_i, src_j));
+        if (it != crsp_map.end())
+        {
+          if (dis < it->second.second)
+          {
+            it->second = CrspCurvePt(CurvePt(int(i), int(j)), dis);
+          }
+        }
+        else
+        {
+          crsp_map[CurvePt(src_i, src_j)] = CrspCurvePt(CurvePt(int(i), int(j)), dis);
+        }
+      }
+    }
+  }
+
+  src_crsp_list.clear();
+  tar_crsp_list.clear();
+  for (it = crsp_map.begin(); it != crsp_map.end(); ++it)
+  {
+    src_crsp_list.push_back(CurvePt(it->first));
+    tar_crsp_list.push_back(CurvePt(it->second.first));
+  }
+}
+
+void FeatureGuided::setUserCrspPair(double start[2], double end[2])
+{
+  // input are normalized coordinate
+  double2 src_p(start[0], start[1]);
+  src_p = (src_p - double2(0.5, 0.5)) / curve_scale + double2(0.5, 0.5) - curve_translate;
+
+  int src_i = -1;
+  int src_j = -1;
+  double dis = 0.0;
+  if (CurvesUtility::closestPtInCurves(src_p, source_curves, src_i, src_j, dis))
+  {
+    const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
+    user_constrained_src_v = crest_lines[src_i][src_j];
+
+    user_constrained_tar_p = double2(end[0], end[1]);
+    user_constrained_tar_p = (user_constrained_tar_p - double2(0.5, 0.5)) / curve_scale + double2(0.5, 0.5) - curve_translate;
+
+    user_correct_crsp_map[STLPairii(src_i, src_j)] = user_constrained_tar_p;
+  }
+}
+
+void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list)
+{
+  const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
+
+  if (src_crsp_list.size() != tar_crsp_list.size())
+  {
+    std::cerr << "Size of source correspondence list doesn't match that of target.\n";
+    return;
+  }
+
+  std::map<STLPairii, double2>::iterator map_iter;
+  for (size_t i = 0; i < src_crsp_list.size(); ++i)
+  {
+    int v_id = crest_lines[src_crsp_list[i].first][src_crsp_list[i].second];
+    double2 tar_pt;
+    
+    map_iter = user_correct_crsp_map.find(src_crsp_list[i]);
+    if (map_iter == user_correct_crsp_map.end())
+    {
+      tar_pt = target_curves[tar_crsp_list[i].first][tar_crsp_list[i].second];
+    }
+    else
+    {
+      tar_pt = map_iter->second;;
+    }
+
+    crsp_list.push_back(std::pair<int ,double2>(v_id, tar_pt));
+  }
 }

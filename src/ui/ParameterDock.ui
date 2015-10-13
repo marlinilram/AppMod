@@ -11,11 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>DockWidget</string>
+   <string>Tool Box</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
      <widget class="QToolBox" name="toolBox">
       <property name="currentIndex">
        <number>0</number>
@@ -32,80 +32,151 @@
        <attribute name="label">
         <string>Page 1</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
-         <widget class="QGroupBox" name="groupBox_2">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="QGroupBox" name="FeatureViewGroupBox">
           <property name="title">
            <string>Feature View</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_5">
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="checkBox_2">
+           <item row="3" column="0">
+            <widget class="QCheckBox" name="checkBox_3">
              <property name="text">
-              <string>Show Target Vector Field</string>
+              <string>Show Target Curve</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="6" column="0">
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="checkBox_2">
+             <property name="text">
+              <string>Show Source Curve</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="checkBox_0">
+             <property name="text">
+              <string>Show Source Vector Field</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
             <widget class="QCheckBox" name="checkBox_7">
              <property name="text">
               <string>Show Hist Matched Crsp</string>
              </property>
             </widget>
            </item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="checkBox_1">
+             <property name="text">
+              <string>Show Target Vector Field</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
            <item row="4" column="0">
-            <widget class="QCheckBox" name="checkBox_5">
-             <property name="text">
-              <string>Show Scalar Field</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QCheckBox" name="checkBox_3">
-             <property name="text">
-              <string>Show Source Curve</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
             <widget class="QCheckBox" name="checkBox_4">
              <property name="text">
-              <string>Show Target Curve</string>
+              <string>Show Source Scalar Field</string>
              </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QCheckBox" name="checkBox">
-             <property name="text">
-              <string>Show Source Vector Field</string>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
            <item row="5" column="0">
+            <widget class="QCheckBox" name="checkBox_5">
+             <property name="text">
+              <string>Show Target Scalar Field</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
             <widget class="QCheckBox" name="checkBox_6">
              <property name="text">
               <string>Show Fitted Curve Crsp</string>
              </property>
             </widget>
            </item>
-           <item row="7" column="0">
-            <widget class="QCheckBox" name="Show_All_Lines_CheckBox">
-             <property name="text">
-              <string>Show All Constrained Lines</string>
-             </property>
-            </widget>
-           </item>
            <item row="8" column="0">
-            <widget class="QCheckBox" name="Show_ProjCrsp_CheckBox">
+            <widget class="QCheckBox" name="checkBox_8">
              <property name="text">
-              <string>Show Projection Crsp</string>
+              <string>Show Crsp</string>
              </property>
             </widget>
            </item>
           </layout>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item>
+         <widget class="QGroupBox" name="ProjAlignViewGroupBox">
+          <property name="title">
+           <string>Projection Alignment Tools</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QCheckBox" name="Show_All_Lines_CheckBox">
+             <property name="text">
+              <string>Show All Constrained Lines</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Show_ProjCrsp_CheckBox">
+             <property name="text">
+              <string>Show Projection Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Interactive Mode</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="Proj_Interact_Mode_ComboBox">
+               <item>
+                <property name="text">
+                 <string>Draw Crsp Line</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Drag to Deform</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Correct Crsp</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QCheckBox" name="flatCheckbox">
@@ -129,7 +200,7 @@
           </item>
          </layout>
         </item>
-        <item row="2" column="0">
+        <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -149,8 +220,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>98</width>
-         <height>28</height>
+         <width>382</width>
+         <height>630</height>
         </rect>
        </property>
        <attribute name="label">

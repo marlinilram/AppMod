@@ -95,6 +95,7 @@ void ScalarField::computeMatchingMap(std::vector<double2>& ext_vector_field)
   for (size_t i = 0; i < vector_field.size(); ++i)
   {
     double cur_cos = vector_field[i].x * ext_vector_field[i].x + vector_field[i].y * ext_vector_field[i].y;
+    cur_cos = fabs(cur_cos);
     matching_map[i] = (float)cur_cos;
     if (cur_cos > max_var)
     {

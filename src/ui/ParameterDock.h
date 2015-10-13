@@ -24,6 +24,7 @@ private slots:
   void setUseFlat(int state);
   void showAllLines(int state);
   void showProjCrsp(int state);
+  void setInteractiveProjAlign(int state);
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;

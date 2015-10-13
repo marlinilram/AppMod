@@ -132,7 +132,7 @@ void TrackballCanvas::updateModelBuffer()
 
   if (glGetError() != 0)
   {
-    std::cout<<"GL Error in getting model\n";
+    std::cout<<"TrackballCanvas: GL Error in getting model\n";
   }
 }
 

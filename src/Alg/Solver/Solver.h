@@ -51,6 +51,7 @@ public:
 
   void addConstraint(std::shared_ptr<Constraint> constraint);
   void initCholesky();
+  void preFactorize();
   void solve();
   void runOneStep();
   void setRightHand();

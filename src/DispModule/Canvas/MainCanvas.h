@@ -36,6 +36,7 @@ public:
   void drawModel();
   void drawModelEdge();
   void drawShapeCrest();
+  void drawPrimitiveImg();
   void sketchShader();
   void renderNImage();
   void nmsShader();
@@ -61,6 +62,7 @@ private:
   std::unique_ptr<QGLBuffer> normal_buffer;
   std::unique_ptr<QGLBuffer> color_buffer;
   std::unique_ptr<QGLBuffer> sketch_vertex_buffer;
+  std::unique_ptr<QGLBuffer> vertex_crest_buffer;
 
   GLuint offscr_color;
   GLuint offscr_depth;

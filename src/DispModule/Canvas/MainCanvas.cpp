@@ -4,6 +4,8 @@
 #include "ShapeCrest.h"
 #include "BasicHeader.h"
 #include "YMLHandler.h"
+#include "Colormap.h"
+#include "CurvesUtility.h"
 #include <QGLShader>
 #include <QGLBuffer>
 
@@ -13,6 +15,7 @@ MainCanvas::MainCanvas()
   render_mode = 2;
   edge_threshold = 0.75;
   use_flat = 1;
+
 }
 
 MainCanvas::~MainCanvas()
@@ -22,15 +25,28 @@ MainCanvas::~MainCanvas()
 
 bool MainCanvas::display()
 {
-  sketchShader();
-  drawShapeCrest();
+  if (use_flat)
+  {
+    drawPrimitiveImg();
+    int render_mode_cache = render_mode;
+    render_mode = 4;
+    //drawModel();
+    drawShapeCrest();
+    render_mode = render_mode_cache;
+  }
+  else
+  {
+    glDepthFunc(GL_ALWAYS);
+    drawModel();
+    glDepthFunc(GL_LEQUAL);
+  }
   return true;
 }
 
 void MainCanvas::setGLProperty()
 {
-  updateModelBuffer();
   setShaderProgram();
+  updateModelBuffer();
 }
 
 Bound* MainCanvas::getBoundBox()
@@ -40,6 +56,17 @@ Bound* MainCanvas::getBoundBox()
 
 void MainCanvas::setShaderProgram()
 {
+  vertex_buffer.reset(new QGLBuffer);
+  vertex_buffer->create();
+  face_buffer.reset(new QGLBuffer(QGLBuffer::IndexBuffer));
+  face_buffer->create();
+  color_buffer.reset(new QGLBuffer);
+  color_buffer->create();
+  normal_buffer.reset(new QGLBuffer);
+  normal_buffer->create();
+  vertex_crest_buffer.reset(new QGLBuffer);
+  vertex_crest_buffer->create();
+
   basic_shader.reset(new QGLShaderProgram);
   basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.frag");
   basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/vertexShader.vert");
@@ -72,41 +99,45 @@ void MainCanvas::updateModelBuffer()
   const FaceList&   face_list   = model->getShape()->getFaceList();
   const NormalList& normal_list = model->getShape()->getNormalList();
   const STLVectorf& color_list  = model->getShape()->getColorList();
+  const Edges&      crest_edge = model->getShapeCrest()->getCrestEdge();
+  std::vector<GLfloat> v_crest(vertex_list.size() / 3, 0.0);
+  for (size_t i = 0; i < crest_edge.size(); ++i)
+  {
+    v_crest[crest_edge[i].first] = 1.0f;
+    v_crest[crest_edge[i].second] = 1.0f;
+  }
 
   num_vertex = GLenum(vertex_list.size() / 3);
   num_face   = GLenum(face_list.size() / 3);
 
-  vertex_buffer.reset(new QGLBuffer);
-  vertex_buffer->create();
+
   vertex_buffer->bind();
   vertex_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
   vertex_buffer->write(0, &vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
   vertex_buffer->release();
 
-  face_buffer.reset(new QGLBuffer(QGLBuffer::IndexBuffer));
-  face_buffer->create();
   face_buffer->bind();
   face_buffer->allocate(num_face * 3 * sizeof(GLuint));
   face_buffer->write(0, &face_list[0], num_face * 3 * sizeof(GLuint));
   face_buffer->release();
 
-  color_buffer.reset(new QGLBuffer);
-  color_buffer->create();
   color_buffer->bind();
   color_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
   color_buffer->write(0, &color_list[0], num_vertex * 3 * sizeof(GLfloat));
   color_buffer->release();
 
-  normal_buffer.reset(new QGLBuffer);
-  normal_buffer->create();
   normal_buffer->bind();
   normal_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
   normal_buffer->write(0, &normal_list[0], num_vertex * 3 * sizeof(GLfloat));
   normal_buffer->release();
 
+  vertex_crest_buffer->bind();
+  vertex_crest_buffer->allocate(num_vertex * 1 * sizeof(GLfloat));
+  vertex_crest_buffer->write(0, &v_crest[0], num_vertex * 1 * sizeof(GLfloat));
+
   if (glGetError() != 0)
   {
-    std::cout<<"GL Error in getting model\n";
+    std::cout<<"MainCanvas: GL Error in getting model\n";
   }
 }
 
@@ -292,6 +323,7 @@ void MainCanvas::drawModel()
   basic_shader->setUniformValue("fMeshSize", GLfloat(num_face));
   basic_shader->setUniformValue("L", QVector3D(-0.4082, -0.4082, 0.8165));
   basic_shader->setUniformValue("renderMode", GLint(render_mode));
+  basic_shader->setUniformValue("threshold", GLfloat(edge_threshold));
 
   color_buffer->bind();
   basic_shader->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
@@ -309,11 +341,18 @@ void MainCanvas::drawModel()
   basic_shader->enableAttributeArray("normal");
   normal_buffer->release();
 
+  vertex_crest_buffer->bind();
+  basic_shader->setAttributeBuffer("vCrestTag", GL_FLOAT, 0, 1, 0);
+  basic_shader->enableAttributeArray("vCrestTag");
+  vertex_crest_buffer->release();
+
   //glDrawElements(GL_TRIANGLES, 3 * num_faces, GL_UNSIGNED_INT, faces);
 
   //glDrawArrays(GL_TRIANGLES, 0, vertices.size());
   if (render_mode == 2)
   {
+    //glDepthFunc(GL_ALWAYS);
+    //glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //glEnable(GL_CULL_FACE);
@@ -323,44 +362,76 @@ void MainCanvas::drawModel()
   face_buffer->bind();
   glDrawElements(GL_TRIANGLES, num_face * 3, GL_UNSIGNED_INT, (void*)0);
   face_buffer->release();
-
+  
+  //glDisable(GL_CULL_FACE);
   glDisable(GL_BLEND);
-  glDisable(GL_CULL_FACE);
+  //glDepthFunc(GL_LESS);
+  //glEnable(GL_DEPTH_TEST);
+
 
   basic_shader->disableAttributeArray("vertex");
   basic_shader->disableAttributeArray("color");
   basic_shader->disableAttributeArray("normal");
   basic_shader->release();
+
 }
 
 void MainCanvas::drawShapeCrest()
 {
   const VertexList& vertex_list = model->getShape()->getVertexList();
   const std::vector<Edge>& crest_edge = model->getShapeCrest()->getCrestEdge();
+  const std::vector<STLVectori>& crest_lines = model->getShapeCrest()->getVisbleCrestLine();
+  //const std::vector<STLVectori>& crest_lines = model->getShapeCrest()->getCrestCodeLine();
+  const NormalList& vertex_normal = model->getShape()->getNormalList();
 
-  glClear(GL_DEPTH_BUFFER_BIT);
-  glLineWidth(2);
-  glColor3f( 0.0f, 0.0f, 1.0f );
+  //glClear(GL_DEPTH_BUFFER_BIT);
+  glLineWidth(1);
+  glDisable(GL_LIGHTING);
+  glDepthFunc(GL_LEQUAL);
 
-  glBegin(GL_LINES);
+  //for (size_t i = 0; i < crest_edge.size(); ++i)
+  //{
+  //  GLfloat v_0[3];
+  //  v_0[0] = vertex_list[3 * crest_edge[i].first + 0] + edge_threshold * vertex_normal[3 * crest_edge[i].first + 0];
+  //  v_0[1] = vertex_list[3 * crest_edge[i].first + 1] + edge_threshold * vertex_normal[3 * crest_edge[i].first + 1];
+  //  v_0[2] = vertex_list[3 * crest_edge[i].first + 2] + edge_threshold * vertex_normal[3 * crest_edge[i].first + 2];
 
-  for (size_t i = 0; i < crest_edge.size(); ++i)
+  //  GLfloat v_1[3];
+  //  v_1[0] = vertex_list[3 * crest_edge[i].second + 0] + edge_threshold * vertex_normal[3 * crest_edge[i].second + 0];
+  //  v_1[1] = vertex_list[3 * crest_edge[i].second + 1] + edge_threshold * vertex_normal[3 * crest_edge[i].second + 1];
+  //  v_1[2] = vertex_list[3 * crest_edge[i].second + 2] + edge_threshold * vertex_normal[3 * crest_edge[i].second + 2];
+
+  //  glVertex3f(v_0[0], v_0[1], v_0[2]);
+  //  glVertex3f(v_1[0], v_1[1], v_1[2]);
+  //}
+
+  for (size_t i = 0; i < crest_lines.size(); ++i)
   {
-    GLfloat v_0[3];
-    v_0[0] = vertex_list[3 * crest_edge[i].first + 0];
-    v_0[1] = vertex_list[3 * crest_edge[i].first + 1];
-    v_0[2] = vertex_list[3 * crest_edge[i].first + 2];
+    QColor color = 
+      qtJetColor(double(i)/crest_lines.size());
+    glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+    //glColor4f(0.0f, 1.0f, 0.0f, 0.0f);
+    glBegin(GL_LINE_STRIP);
 
-    GLfloat v_1[3];
-    v_1[0] = vertex_list[3 * crest_edge[i].second + 0];
-    v_1[1] = vertex_list[3 * crest_edge[i].second + 1];
-    v_1[2] = vertex_list[3 * crest_edge[i].second + 2];
+    for (size_t j = 0; j < crest_lines[i].size(); ++j)
+    {
+      GLfloat v[3];
+      v[0] = vertex_list[3 * crest_lines[i][j] + 0];
+      v[1] = vertex_list[3 * crest_lines[i][j] + 1];
+      v[2] = vertex_list[3 * crest_lines[i][j] + 2];
 
-    glVertex3f(v_0[0], v_0[1], v_0[2]);
-    glVertex3f(v_1[0], v_1[1], v_1[2]);
+      glVertex3f(v[0], v[1], v[2]);
+    }
+
+    glEnd();
   }
 
-  glEnd();
+  //glReadBuffer(GL_COLOR_ATTACHMENT0);
+  //cv::Mat &edge_image = model->getEdgeImg();
+  //edge_image.create(height, width, CV_32FC1);
+  //glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, (float*)edge_image.data);
+  //cv::flip(edge_image, edge_image, 0);
+  //edge_image = 1 - edge_image;
 }
 
 void MainCanvas::drawModelEdge()
@@ -734,4 +805,57 @@ void MainCanvas::renderNImage()
 void MainCanvas::passCameraInfo(GLfloat modelview[16], GLfloat projection[16], GLint viewport[4])
 {
   model->passCameraPara(modelview, projection, viewport);
+}
+
+void MainCanvas::drawPrimitiveImg()
+{
+  int render_mode_cache = render_mode;
+  render_mode = 1;
+
+  bool show_background_img_cache = show_background_img;
+  show_background_img = false;
+
+  float *primitive_buffer = new float[height*width];
+
+  glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  drawModel();
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  render_mode = render_mode_cache;
+  show_background_img = show_background_img_cache;
+
+  cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
+  cv::flip(primitive_ID_img, primitive_ID_img, 0);
+
+  cv::Mat &primitive_ID = model->getPrimitiveIDImg();
+  primitive_ID.create(height, width, CV_32S);
+  primitive_ID.setTo(cv::Scalar(-1));
+  std::set<int> vis_faces;
+
+  for (int j = 0; j < width; ++j)
+  {
+    for (int i = 0; i < height; ++i)
+    {
+      float fPrimitive = primitive_ID_img.at<float>(i, j);
+
+      fPrimitive = fPrimitive*num_face;
+      int iPrimitive = (int)(fPrimitive < 0 ? (fPrimitive - 0.5) : (fPrimitive + 0.5));
+
+      if (iPrimitive < (int)num_face) 
+      {
+        primitive_ID.at<int>(i, j) = iPrimitive;
+        if (vis_faces.find(iPrimitive) == vis_faces.end())
+        {
+          vis_faces.insert(iPrimitive);
+        }
+      }
+    }
+  }
+  
+  CurvesUtility::getBoundaryImg(model->getEdgeImg(), primitive_ID);
+  model->getShapeCrest()->computeVisible(vis_faces);
+  delete primitive_buffer;
 }

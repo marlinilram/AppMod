@@ -31,16 +31,45 @@ void AlgHandler::setShapeModel(std::shared_ptr<Model> model)
   shape_model = model;
 }
 
-void AlgHandler::doProjOptimize()
+bool AlgHandler::workable()
 {
   if (!feature_model || !shape_model)
   {
     std::cout << "Early return: feature model or shape model is not built correctly.\n";
-    return;
+    return false;
+  }
+
+  return true;
+}
+
+void AlgHandler::doProjOptimize()
+{
+  if (!workable())
+  {
+   return;
   }
 
   actors.clear();
   proj_optimize->updateShape(feature_model, shape_model);
+  feature_model->updateSourceField();
+  std::vector<GLActor> temp_actors;
+  proj_optimize->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
+}
+
+void AlgHandler::doInteractiveProjOptimize()
+{
+  if (!workable())
+  {
+    return;
+  }
+
+  actors.clear();
+  proj_optimize->updateShapeFromInteraction(feature_model, shape_model);
+  feature_model->updateSourceField();
   std::vector<GLActor> temp_actors;
   proj_optimize->getDrawableActors(temp_actors);
   for (size_t i = 0; i < temp_actors.size(); ++i)

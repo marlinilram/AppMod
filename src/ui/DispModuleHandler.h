@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+#include <QObject>
 
 class QWidget;
 class MainCanvas;
@@ -14,8 +16,10 @@ class VectorFieldViewer;
 class AlgHandler;
 class Model;
 
-class DispModuleHandler
+class DispModuleHandler : public QObject
 {
+  Q_OBJECT
+
 public:
   DispModuleHandler() {};
   ~DispModuleHandler() {};
@@ -34,6 +38,11 @@ public:
   void showProjCrsp(int state);
   void deleteLastCrspLine_Source();
   void deleteLastCrspLine_Target();
+  void setVectorFieldViewerPara(std::vector<bool>& checkStates);
+  void toggleVectorFieldMode(int state);
+
+public slots:
+  void updateGeometryInteractive();
 
 public:
   std::shared_ptr<MainCanvas> main_canvas;

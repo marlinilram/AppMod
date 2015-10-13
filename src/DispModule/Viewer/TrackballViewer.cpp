@@ -41,7 +41,7 @@ void TrackballViewer::draw()
   {
     glDisable(GL_LIGHTING);
     drawTrackBall();
-    drawCrestLines();
+//    drawCrestLines();
     if (!dispObjects[i]->display())
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
@@ -324,6 +324,7 @@ void TrackballViewer::syncCamera()
     camera()->getModelViewMatrix(m);
     main_canvas_viewer->camera()->setFromModelViewMatrix(m);
     main_canvas_viewer->updateGLOutside();
+    main_canvas_viewer->syncCameraToModel();
 
     //std::cout << "Trackball: znear " << camera()->zNear() << "\tzfar " << camera()->zFar() << "\tfocal " << camera()->focusDistance() << "\tradius " << camera()->sceneRadius() << "\n";
     //std::cout << "Trackball scene center: " << camera()->sceneCenter().x << " " << camera()->sceneCenter().y << " " << camera()->sceneCenter().z <<"\n";
@@ -333,7 +334,7 @@ void TrackballViewer::syncCamera()
 
   if (source_vector_viewer)
   {
-    source_vector_viewer->updateSourceVectorField();
+    source_vector_viewer->updateSourceField();
     source_vector_viewer->updateScalarFieldTexture();
   }
   if (target_vector_viewer)
@@ -388,26 +389,26 @@ void TrackballViewer::setGLActors(std::vector<GLActor>& actors)
   // don't show the line only show points
 }
 
-void TrackballViewer::drawCrestLines()
-{
-  glClear(GL_DEPTH_BUFFER_BIT);
-  for (size_t i = 0; i < dispObjects.size(); ++i)
-  {
-    TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
-    if (trackball_canvas)
-    {
-      std::vector<std::vector<Vector3f>> crestLinesPoints = trackball_canvas->getModel()->getShapeCrest()->getCrestLinesPoints();
-      for(size_t i = 0; i < 10; i ++)
-      {
-        glPointSize(2.0f);
-        glBegin(GL_POINTS);
-        for(size_t j = 0; j < crestLinesPoints[i].size(); j ++)
-        {
-          glColor3f(0,0,0);
-          glVertex3f(crestLinesPoints[i][j].x(),crestLinesPoints[i][j].y(),crestLinesPoints[i][j].z());
-        }
-        glEnd();
-      }
-    }
-  }
-}
+//void TrackballViewer::drawCrestLines()
+//{
+//  glClear(GL_DEPTH_BUFFER_BIT);
+//  for (size_t i = 0; i < dispObjects.size(); ++i)
+//  {
+//    TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+//    if (trackball_canvas)
+//    {
+//      std::vector<std::vector<Vector3f>> crestLinesPoints = trackball_canvas->getModel()->getShapeCrest()->getCrestLinesPoints();
+//      for(size_t i = 0; i < 10; i ++)
+//      {
+//        glPointSize(2.0f);
+//        glBegin(GL_POINTS);
+//        for(size_t j = 0; j < crestLinesPoints[i].size(); j ++)
+//        {
+//          glColor3f(0,0,0);
+//          glVertex3f(crestLinesPoints[i][j].x(),crestLinesPoints[i][j].y(),crestLinesPoints[i][j].z());
+//        }
+//        glEnd();
+//      }
+//    }
+//  }
+//}

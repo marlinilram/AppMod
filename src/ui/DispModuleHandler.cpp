@@ -80,6 +80,9 @@ void DispModuleHandler::updateGeometry()
   trackball_viewer->setGLActors(alg_handler->getGLActors());
 
   updateCanvas();
+
+  source_vector_viewer->updateScalarFieldTexture();
+  target_vector_viewer->updateScalarFieldTexture();
 }
 
 void DispModuleHandler::initFeatureModel()
@@ -98,6 +101,8 @@ void DispModuleHandler::initFeatureModel()
     target_vector_viewer->addDispObj(target_vector_canvas.get());
     target_vector_viewer->updateGLOutside();
 
+    // TODO: bug here, every time reset the feature model
+    // we need to reset the projection optimization
     alg_handler->setFeatureModel(share_feature_model);
   }
 }
@@ -149,4 +154,44 @@ void DispModuleHandler::deleteLastCrspLine_Source()
 void DispModuleHandler::deleteLastCrspLine_Target()
 {
   target_vector_viewer->deleteLastLine();
+}
+
+void DispModuleHandler::setVectorFieldViewerPara(std::vector<bool>& checkStates)
+{
+  source_vector_viewer->setDispPara(checkStates);
+  target_vector_viewer->setDispPara(checkStates);
+
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
+}
+
+void DispModuleHandler::toggleVectorFieldMode(int state)
+{
+  // it's a QComboBox here
+  if (state == 1)
+  {
+    source_vector_viewer->setInteractionMode(VectorField::SELECT_POINT);
+    connect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
+  }
+  else if (state == 0)
+  {
+    source_vector_viewer->setInteractionMode(VectorField::DRAW_CRSP_LINE);
+    disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
+  }
+  else if (state == 2)
+  {
+    source_vector_viewer->setInteractionMode(VectorField::CORRECT_CRSP);
+    disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
+  }
+}
+
+void DispModuleHandler::updateGeometryInteractive()
+{
+  alg_handler->doInteractiveProjOptimize();
+  main_canvas_viewer->setGLActors(alg_handler->getGLActors());
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
+
+  updateCanvas();
+  source_vector_viewer->updateScalarFieldTexture();
+  target_vector_viewer->updateScalarFieldTexture();
 }

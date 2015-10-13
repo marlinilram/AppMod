@@ -9,6 +9,9 @@
 
 class FeatureGuided;
 class Model;
+class Solver;
+class ProjConstraint;
+class ARAP;
 
 class ProjOptimize
 {
@@ -17,12 +20,20 @@ public:
   ~ProjOptimize();
 
   void updateShape(std::shared_ptr<FeatureGuided> feature_guided, std::shared_ptr<Model> model);
-  bool isBoundary(cv::Mat& primitive_img, int x, int y);
+  void updateShapeFromInteraction(std::shared_ptr<FeatureGuided> feature_guided, std::shared_ptr<Model> model);
+
   void updateScreenShape(std::shared_ptr<Model> model, Eigen::VectorXf& P_Opt);
   void getDrawableActors(std::vector<GLActor>& actors);
 
 private:
   std::vector<GLActor> actors;
+
+  std::shared_ptr<Solver> solver;
+  std::shared_ptr<ProjConstraint> proj_constraint;
+  std::shared_ptr<ARAP> arap;
+
+  std::vector<int> constrained_vertex_id;
+  std::vector<float> constrained_ray;
 
 private:
   ProjOptimize(const ProjOptimize&);

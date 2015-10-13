@@ -32,6 +32,7 @@ public:
   void initRegister();
   void updateSourceVectorField();
   void updateScalarField();
+  void updateSourceField();
   std::shared_ptr<KDTreeWrapper> getSourceKDTree();
 
   inline std::shared_ptr<tele2d> GetTeleRegister() { return source_tele_register; };
@@ -40,6 +41,7 @@ public:
   inline std::shared_ptr<ScalarField> getTargetScalarField() { return target_scalar_field; };
   void NormalizedTargetCurves(CURVES& curves);
   void NormalizedSourceCurves(CURVES& curves);
+  void NormalizedPts(double2& pt);
   void setNormalizePara();
   void OptimizeConnection();
   double MatchScoreToVectorField(std::vector<double2>& curve);
@@ -59,12 +61,17 @@ public:
   void FindHistMatchCrsp(CURVES &curves);
   void GetCrspPair(CURVES& curves);
   void GetUserCrspPair(CURVES& curves, float sample_density);
+  void BuildClosestPtPair();
+  void GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list);
+  void setUserCrspPair(double start[2], double end[2]);
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
+  void ExtractSrcCurves(const cv::Mat& source, CURVES& curves);
   void SearchCurve(const cv::Mat& source,
     int cur_row, int cur_col,
     std::vector<std::vector<bool>>& visited_table,
     std::vector<double2>& curve);
+
   static CURVES ReorganizeCurves(CURVES& curves);
   static CURVES SplitCurve(std::vector<double2> curve);
   static std::vector<double2> ConnectCurves(
@@ -82,6 +89,13 @@ public:
   // user defined feature line
   std::shared_ptr<FeatureLine> source_vector_field_lines;
   std::shared_ptr<FeatureLine> target_vector_field_lines;
+
+  std::vector<std::pair<int, int> > src_crsp_list;
+  std::vector<std::pair<int, int> > tar_crsp_list;
+  std::map<STLPairii, double2> user_correct_crsp_map;
+
+  int user_constrained_src_v; // the index of v in model
+  double2 user_constrained_tar_p; // target screen position
 
 private:
   std::shared_ptr<Model> source_model;
