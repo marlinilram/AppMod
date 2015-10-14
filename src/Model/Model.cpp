@@ -86,15 +86,15 @@ Bound* Model::getBoundBox()
   return shape->getBoundbox();
 }
 
-std::shared_ptr<Shape> Model::getShape()
-{
-  return shape;
-}
-
-std::shared_ptr<ShapeCrest> Model::getShapeCrest()
-{
-  return shape_crest;
-}
+//std::shared_ptr<Shape> Model::getShape()
+//{
+//  return shape;
+//}
+//
+//std::shared_ptr<ShapeCrest> Model::getShapeCrest()
+//{
+//  return shape_crest;
+//}
 
 std::string Model::getDataPath()
 {
@@ -267,4 +267,68 @@ void Model::getUnprojectVec(Vector3f& vec)
   // transform the vector in camera coordinate to model coordinate
   vec = (m_projection*m_modelview).block(0, 0, 3, 3).inverse() * vec;
   //vec = m_modelview.block(0, 0, 3, 3).inverse() * vec;
+}
+
+// get information from Shape
+const VertexList& Model::getShapeVertexList()
+{
+  return shape->getVertexList();
+}
+const FaceList& Model::getShapeFaceList()
+{
+  return shape->getFaceList();
+}
+const STLVectorf& Model::getShapeUVCoord()
+{
+  return shape->getUVCoord();
+}
+const NormalList& Model::getShapeNormalList()
+{
+  return shape->getNormalList();
+}
+const NormalList& Model::getShapeFaceNormal()
+{
+  return shape->getFaceNormal();
+}
+const STLVectorf& Model::getShapeColorList()
+{
+  return shape->getColorList();
+}
+const AdjList& Model::getShapeVertexShareFaces()
+{
+  return shape->getVertexShareFaces();
+}
+const AdjList& Model::getShapeVertexAdjList()
+{
+  return shape->getVertexAdjList();
+}
+const STLVectori& Model::getShapeEdgeConnectivity()
+{
+  return shape->getEdgeConnectivity();
+}
+void Model::getShapeFaceCenter(int f_id, float p[3])
+{
+  shape->getFaceCenter(f_id, p);
+}
+void Model::updateShape(VertexList& new_vertex_list)
+{
+  shape->updateShape(new_vertex_list);
+}
+
+// get information from ShapeCrest
+const std::vector<Edge>& Model::getShapeCrestEdge()
+{
+  return shape_crest->getCrestEdge();
+}
+const std::vector<STLVectori>& Model::getShapeCrestLine()
+{
+  return shape_crest->getCrestLine();
+}
+const std::vector<STLVectori>& Model::getShapeVisbleCrestLine()
+{
+  return shape_crest->getVisbleCrestLine();
+}
+void Model::computeShapeCrestVisible(std::set<int>& vis_faces)
+{
+  shape_crest->computeVisible(vis_faces);
 }

@@ -1,6 +1,5 @@
 #include "NormalTransfer.h"
 #include "Model.h"
-#include "Shape.h"
 
 #include "Solver.h"
 #include "ARAP.h"
@@ -91,14 +90,14 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
     faces_new_normal.push_back(iter_map->second.normalized());
 
     Vector3f start;
-    model->getShape()->getFaceCenter(iter_map->first, start.data());
+    model->getShapeFaceCenter(iter_map->first, start.data());
     Vector3f end = iter_map->second.normalized();
     end = start + 0.1*end;
     actors[2].addElement(start[0], start[1], start[2], 1.0, 0.0, 0.0);
     actors[2].addElement(end[0], end[1], end[2], 1.0, 0.0, 0.0);
   }
 
-  NormalList new_normals = model->getShape()->getFaceNormal();
+  NormalList new_normals = model->getShapeFaceNormal();
   for (size_t i = 0; i < faces_in_photo.size(); ++i)
   {
     int f_id = faces_in_photo[i];
@@ -107,11 +106,11 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
     new_normals[3 * f_id + 2] = faces_new_normal[i](2);
   }
 
-  FaceList face_list = model->getShape()->getFaceList();
-  VertexList vertex_list = model->getShape()->getVertexList();
-  NormalList normal_list = model->getShape()->getNormalList();
-  AdjList vertex_shared_faces = model->getShape()->getVertexShareFaces();
-  AdjList adj_list = model->getShape()->getVertexAdjList();
+  FaceList face_list = model->getShapeFaceList();
+  VertexList vertex_list = model->getShapeVertexList();
+  NormalList normal_list = model->getShapeNormalList();
+  AdjList vertex_shared_faces = model->getShapeVertexShareFaces();
+  AdjList adj_list = model->getShapeVertexAdjList();
 
   if (!solver)
   {
@@ -156,7 +155,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
 
   std::vector<float> new_vertex_list(solver->P_Opt.data(), solver->P_Opt.data() + solver->P_Opt.rows() * solver->P_Opt.cols());
 
-  model->getShape()->updateShape(new_vertex_list);
+  model->updateShape(new_vertex_list);
 
   std::cout << "Update geometry finished...\n";
 }

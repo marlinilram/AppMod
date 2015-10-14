@@ -1,7 +1,5 @@
 #include "FeatureGuided.h"
 #include "Model.h"
-#include "Shape.h"
-#include "ShapeCrest.h"
 #include "FeatureLine.h"
 #include "ScalarField.h"
 #include "KDTreeWrapper.h"
@@ -133,8 +131,8 @@ void FeatureGuided::updateSourceField()
 void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
 {
   // source curves just use the vis_crest_lines in ShapeCrest
-  const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
-  const VertexList& vertex_list = source_model->getShape()->getVertexList();
+  const std::vector<STLVectori>& crest_lines = source_model->getShapeVisbleCrestLine();
+  const VertexList& vertex_list = source_model->getShapeVertexList();
   std::vector<double2> curve;
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
@@ -1147,7 +1145,7 @@ void FeatureGuided::setUserCrspPair(double start[2], double end[2])
   double dis = 0.0;
   if (CurvesUtility::closestPtInCurves(src_p, source_curves, src_i, src_j, dis))
   {
-    const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
+    const std::vector<STLVectori>& crest_lines = source_model->getShapeVisbleCrestLine();
     user_constrained_src_v = crest_lines[src_i][src_j];
 
     user_constrained_tar_p = double2(end[0], end[1]);
@@ -1159,7 +1157,7 @@ void FeatureGuided::setUserCrspPair(double start[2], double end[2])
 
 void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list)
 {
-  const std::vector<STLVectori>& crest_lines = source_model->getShapeCrest()->getVisbleCrestLine();
+  const std::vector<STLVectori>& crest_lines = source_model->getShapeVisbleCrestLine();
 
   if (src_crsp_list.size() != tar_crsp_list.size())
   {

@@ -1,8 +1,7 @@
 #include "ProjOptimize.h"
 #include "FeatureGuided.h"
 #include "Model.h"
-#include "Shape.h"
-#include "MainCanvasViewer.h"
+
 #include "Solver.h"
 #include "FastMassSpring.h"
 #include "ProjConstraint.h"
@@ -236,11 +235,11 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
 
   //typedef std::pair<int, int> Edge;
 
-  std::vector<unsigned int> face_list = model->getShape()->getFaceList();
-  std::vector<float> vertex_list = model->getShape()->getVertexList();
-  std::vector<float> normal_list = model->getShape()->getNormalList();
-  std::vector<std::vector<int> > vertices_share_faces = model->getShape()->getVertexShareFaces();
-  std::vector<std::vector<int> > adj_list = model->getShape()->getVertexAdjList();
+  std::vector<unsigned int> face_list = model->getShapeFaceList();
+  std::vector<float> vertex_list = model->getShapeVertexList();
+  std::vector<float> normal_list = model->getShapeNormalList();
+  std::vector<std::vector<int> > vertices_share_faces = model->getShapeVertexShareFaces();
+  std::vector<std::vector<int> > adj_list = model->getShapeVertexAdjList();
 
   if (!solver)
   {
@@ -354,7 +353,7 @@ void ProjOptimize::updateScreenShape(std::shared_ptr<Model> model, Eigen::Vector
 {
   std::vector<float> new_vertex_list(P_Opt.data(), P_Opt.data() + P_Opt.rows() * P_Opt.cols());
 
-  model->getShape()->updateShape(new_vertex_list);
+  model->updateShape(new_vertex_list);
 }
 
 void ProjOptimize::getDrawableActors(std::vector<GLActor>& actors)

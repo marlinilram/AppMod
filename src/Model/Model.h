@@ -24,11 +24,12 @@ public:
   void exportOBJ(int cur_iter);
 
   Bound* getBoundBox();
-  std::shared_ptr<Shape> getShape();
-  std::shared_ptr<ShapeCrest> getShapeCrest();
+  //std::shared_ptr<Shape> getShape();
+  //std::shared_ptr<ShapeCrest> getShapeCrest();
   std::string getDataPath();
   std::string getOutputPath();
 
+  // get information from renderer
   inline cv::Mat &getRImg(){ return r_img; };
   inline cv::Mat &getRBGRAImg() { return rBGRA_img; };
   inline cv::Mat &getPrimitiveIDImg(){ return primitive_ID; };
@@ -36,6 +37,26 @@ public:
   inline cv::Mat &getRMask() { return mask_rimg; };
   inline cv::Mat &getEdgeImg() { return edge_image; };
 
+  // get information from Shape
+  const VertexList& getShapeVertexList();
+  const FaceList& getShapeFaceList();
+  const STLVectorf& getShapeUVCoord();
+  const NormalList& getShapeNormalList();
+  const NormalList& getShapeFaceNormal();
+  const STLVectorf& getShapeColorList();
+  const AdjList& getShapeVertexShareFaces();
+  const AdjList& getShapeVertexAdjList();
+  const STLVectori& getShapeEdgeConnectivity();
+  void getShapeFaceCenter(int f_id, float p[3]);
+  void updateShape(VertexList& new_vertex_list);
+
+  // get information from ShapeCrest
+  const std::vector<Edge>& getShapeCrestEdge();
+  const std::vector<STLVectori>& getShapeCrestLine();
+  const std::vector<STLVectori>& getShapeVisbleCrestLine();
+  void computeShapeCrestVisible(std::set<int>& vis_faces);
+
+  // some computations utility of Model
   float getModelAvgEdgeLength();
   void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
   bool getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord);

@@ -1,8 +1,6 @@
 #include "MainCanvas.h"
 #include "Model.h"
-#include "Shape.h"
-#include "ShapeCrest.h"
-#include "BasicHeader.h"
+
 #include "YMLHandler.h"
 #include "Colormap.h"
 #include "CurvesUtility.h"
@@ -95,11 +93,11 @@ void MainCanvas::setModel(std::string path, std::string name)
 
 void MainCanvas::updateModelBuffer()
 {
-  const VertexList& vertex_list = model->getShape()->getVertexList();
-  const FaceList&   face_list   = model->getShape()->getFaceList();
-  const NormalList& normal_list = model->getShape()->getNormalList();
-  const STLVectorf& color_list  = model->getShape()->getColorList();
-  const Edges&      crest_edge = model->getShapeCrest()->getCrestEdge();
+  const VertexList& vertex_list = model->getShapeVertexList();
+  const FaceList&   face_list   = model->getShapeFaceList();
+  const NormalList& normal_list = model->getShapeNormalList();
+  const STLVectorf& color_list  = model->getShapeColorList();
+  const Edges&      crest_edge = model->getShapeCrestEdge();
   std::vector<GLfloat> v_crest(vertex_list.size() / 3, 0.0);
   for (size_t i = 0; i < crest_edge.size(); ++i)
   {
@@ -378,10 +376,10 @@ void MainCanvas::drawModel()
 
 void MainCanvas::drawShapeCrest()
 {
-  const VertexList& vertex_list = model->getShape()->getVertexList();
-  const std::vector<Edge>& crest_edge = model->getShapeCrest()->getCrestEdge();
-  const std::vector<STLVectori>& crest_lines = model->getShapeCrest()->getVisbleCrestLine();
-  const NormalList& vertex_normal = model->getShape()->getNormalList();
+  const VertexList& vertex_list = model->getShapeVertexList();
+  const std::vector<Edge>& crest_edge = model->getShapeCrestEdge();
+  const std::vector<STLVectori>& crest_lines = model->getShapeVisbleCrestLine();
+  const NormalList& vertex_normal = model->getShapeNormalList();
 
   //glClear(GL_DEPTH_BUFFER_BIT);
   glLineWidth(3);
@@ -815,12 +813,15 @@ void MainCanvas::drawPrimitiveImg()
   show_background_img = false;
 
   float *primitive_buffer = new float[height*width];
+  cv::Mat &z_img = model->getZImg();
+  z_img.create(height, width, CV_32FC1);
 
   glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   drawModel();
   glReadBuffer(GL_COLOR_ATTACHMENT0);
   glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
+  glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   render_mode = render_mode_cache;
@@ -828,6 +829,7 @@ void MainCanvas::drawPrimitiveImg()
 
   cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
   cv::flip(primitive_ID_img, primitive_ID_img, 0);
+  cv::flip(z_img, z_img, 0);
 
   cv::Mat &primitive_ID = model->getPrimitiveIDImg();
   primitive_ID.create(height, width, CV_32S);
@@ -855,6 +857,6 @@ void MainCanvas::drawPrimitiveImg()
   }
   
   CurvesUtility::getBoundaryImg(model->getEdgeImg(), primitive_ID);
-  model->getShapeCrest()->computeVisible(vis_faces);
+  model->computeShapeCrestVisible(vis_faces);
   delete primitive_buffer;
 }
