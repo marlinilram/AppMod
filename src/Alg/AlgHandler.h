@@ -6,6 +6,7 @@
 #include "GLActor.h"
 
 class ProjOptimize;
+class NormalTransfer;
 class FeatureGuided;
 class Model;
 
@@ -24,8 +25,11 @@ public:
   void doProjOptimize();
   void doInteractiveProjOptimize();
 
+  void doNormalTransfer();
+
 private:
   std::shared_ptr<ProjOptimize> proj_optimize;
+  std::shared_ptr<NormalTransfer> normal_transfer;
 
   std::shared_ptr<FeatureGuided> feature_model;
   std::shared_ptr<Model>         shape_model;

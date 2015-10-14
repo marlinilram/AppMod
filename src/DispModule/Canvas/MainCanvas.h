@@ -49,6 +49,7 @@ public:
 
   inline void setEdgeThreshold(float value) { edge_threshold = value; };
   inline void setUseFlat(int state) { use_flat = (state == 0) ? 0 : 1; };
+  inline void setShowBackground(int state) { show_background_img = (state == 0) ? false : true; };
 
 private:
   std::shared_ptr<Model> model;

@@ -427,3 +427,14 @@ void Shape::updateShape(VertexList& new_vertex_list)
 
   buildKDTree();
 }
+
+void Shape::getFaceCenter(int f_id, float p[3])
+{
+  size_t v0 = face_list[3 * f_id + 0];
+  size_t v1 = face_list[3 * f_id + 1];
+  size_t v2 = face_list[3 * f_id + 2];
+
+  p[0] = vertex_list[3 * v0 + 0] / 3 + vertex_list[3 * v1 + 0] / 3 + vertex_list[3 * v2 + 0] / 3;
+  p[1] = vertex_list[3 * v0 + 1] / 3 + vertex_list[3 * v1 + 1] / 3 + vertex_list[3 * v2 + 1] / 3;
+  p[2] = vertex_list[3 * v0 + 2] / 3 + vertex_list[3 * v1 + 2] / 3 + vertex_list[3 * v2 + 2] / 3;
+}

@@ -17,11 +17,13 @@ public:
   void setGLActors(std::vector<GLActor>& actors);
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
   void syncCameraToModel();
+  inline void setShowBackground(int state) { show_background = (state == 0) ? false : true; };
 
 private:
   std::vector<GLActor> actors;
 
   bool is_draw_actors;
+  bool show_background;
 
 protected:
   virtual void draw();

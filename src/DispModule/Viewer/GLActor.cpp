@@ -42,9 +42,12 @@ void GLActor::draw()
     if (drawable_type == ML_LINE)
     {
         GLfloat ori_point_size;
+        GLfloat ori_line_width;
         glGetFloatv(GL_POINT_SIZE, &ori_point_size);
+        glGetFloatv(GL_LINE_WIDTH, &ori_line_width);
 
         glPointSize(point_size);
+        glLineWidth(point_size);
 
         glBegin(GL_LINES);
 
@@ -55,6 +58,9 @@ void GLActor::draw()
         }
 
         glEnd();
+
+        glPointSize(ori_point_size);
+        glLineWidth(ori_line_width);
     }
 }
 

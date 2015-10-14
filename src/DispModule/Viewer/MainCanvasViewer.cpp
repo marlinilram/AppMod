@@ -6,6 +6,7 @@ MainCanvasViewer::MainCanvasViewer(QWidget *widget)
   : BasicViewer(widget)
 {
   is_draw_actors = false;
+  show_background = true;
 }
 
 MainCanvasViewer::~MainCanvasViewer()
@@ -19,7 +20,10 @@ void MainCanvasViewer::draw()
   for (int i = 0; i < dispObjects.size(); ++i)
   {
     //startScreenCoordinatesSystem(true);
-    dynamic_cast<MainCanvas*>(dispObjects[i])->drawBackground();
+    if (show_background)
+    {
+      dynamic_cast<MainCanvas*>(dispObjects[i])->drawBackground();
+    }
     //stopScreenCoordinatesSystem();
 
     if (!dispObjects[i]->display())

@@ -384,7 +384,7 @@ void MainCanvas::drawShapeCrest()
   const NormalList& vertex_normal = model->getShape()->getNormalList();
 
   //glClear(GL_DEPTH_BUFFER_BIT);
-  glLineWidth(1);
+  glLineWidth(3);
   glDisable(GL_LIGHTING);
   glDepthFunc(GL_LEQUAL);
 

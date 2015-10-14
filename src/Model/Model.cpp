@@ -29,7 +29,7 @@ Model::Model(const std::string path, const std::string name)
 
   shape_crest.reset(new ShapeCrest());
   shape_crest->setShape(shape);
-  shape_crest->computeCrestLinesPoints();
+  //shape_crest->computeCrestLinesPoints();
 
   // make an output path
   char time_postfix[50];
@@ -260,4 +260,11 @@ bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
   out(1) = out(1) / out(3);
   winx = m_viewport(0) + m_viewport(2)*(out(0) + 1) / 2;
   winy = m_viewport(1) + m_viewport(3)*(out(1) + 1) / 2;
+}
+
+void Model::getUnprojectVec(Vector3f& vec)
+{
+  // transform the vector in camera coordinate to model coordinate
+  vec = (m_projection*m_modelview).block(0, 0, 3, 3).inverse() * vec;
+  //vec = m_modelview.block(0, 0, 3, 3).inverse() * vec;
 }

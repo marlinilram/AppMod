@@ -1123,8 +1123,12 @@ void FeatureGuided::BuildClosestPtPair()
     }
   }
 
+  // this function should be called if and only if the source curve is updated
+  // when rebuild the correspondence pair, the src_crsp_list and tar_crsp_list
+  // need to be updated and user_correct_crsp_map need to be clear up
   src_crsp_list.clear();
   tar_crsp_list.clear();
+  user_correct_crsp_map.clear();
   for (it = crsp_map.begin(); it != crsp_map.end(); ++it)
   {
     src_crsp_list.push_back(CurvePt(it->first));

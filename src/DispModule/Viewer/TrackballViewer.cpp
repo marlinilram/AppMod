@@ -11,6 +11,7 @@ TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {
   wireframe_ = false;
+  is_draw_actors = true;
 }
 
 TrackballViewer::~TrackballViewer()
@@ -41,7 +42,7 @@ void TrackballViewer::draw()
   {
     glDisable(GL_LIGHTING);
     drawTrackBall();
-    drawCrestLines();
+    //drawCrestLines();
     if (!dispObjects[i]->display())
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
@@ -385,7 +386,7 @@ void TrackballViewer::drawActors()
 
 void TrackballViewer::setGLActors(std::vector<GLActor>& actors)
 {
-  this->actors.push_back(actors[0]);
+  this->actors = actors;
   // don't show the line only show points
 }
 

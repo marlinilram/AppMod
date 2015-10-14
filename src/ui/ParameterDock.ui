@@ -32,27 +32,60 @@
        <attribute name="label">
         <string>Page 1</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <layout class="QVBoxLayout" name="verticalLayout_5">
         <item>
-         <widget class="QGroupBox" name="FeatureViewGroupBox">
+         <widget class="QGroupBox" name="groupBox">
           <property name="title">
-           <string>Feature View</string>
+           <string>Main View Tools</string>
           </property>
-          <layout class="QGridLayout" name="gridLayout_5">
-           <item row="3" column="0">
-            <widget class="QCheckBox" name="checkBox_3">
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="QCheckBox" name="Show_Image_CheckBox">
              <property name="text">
-              <string>Show Target Curve</string>
+              <string>Show Image</string>
              </property>
              <property name="checked">
               <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QCheckBox" name="checkBox_2">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QCheckBox" name="flatCheckbox">
+               <property name="text">
+                <string>flat</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSlider" name="edgeThresholdSlider">
+               <property name="value">
+                <number>75</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="FeatureViewGroupBox">
+          <property name="title">
+           <string>Feature View Tools</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="3" column="0">
+            <widget class="QCheckBox" name="checkBox_3">
              <property name="text">
-              <string>Show Source Curve</string>
+              <string>Show Target Curve</string>
              </property>
              <property name="checked">
               <bool>true</bool>
@@ -69,10 +102,20 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="0">
+           <item row="8" column="0">
             <widget class="QCheckBox" name="checkBox_7">
              <property name="text">
               <string>Show Hist Matched Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="checkBox_2">
+             <property name="text">
+              <string>Show Source Curve</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -86,7 +129,14 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
+           <item row="7" column="0">
+            <widget class="QCheckBox" name="checkBox_6">
+             <property name="text">
+              <string>Show Fitted Curve Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
             <widget class="QCheckBox" name="checkBox_4">
              <property name="text">
               <string>Show Source Scalar Field</string>
@@ -96,7 +146,7 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item row="6" column="0">
             <widget class="QCheckBox" name="checkBox_5">
              <property name="text">
               <string>Show Target Scalar Field</string>
@@ -106,17 +156,17 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0">
-            <widget class="QCheckBox" name="checkBox_6">
-             <property name="text">
-              <string>Show Fitted Curve Crsp</string>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="0">
+           <item row="9" column="0">
             <widget class="QCheckBox" name="checkBox_8">
              <property name="text">
               <string>Show Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QCheckBox" name="checkBox_9">
+             <property name="text">
+              <string>Show Overlay Curves</string>
              </property>
             </widget>
            </item>
@@ -177,28 +227,20 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QCheckBox" name="flatCheckbox">
-            <property name="text">
-             <string>flat</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSlider" name="edgeThresholdSlider">
-            <property name="value">
-             <number>75</number>
-            </property>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QGroupBox" name="groupBox_3">
+          <property name="title">
+           <string>Algorithm Tools</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="QPushButton" name="NormalTransfer_PushButton">
+             <property name="text">
+              <string>Test Normal Transfer</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <spacer name="verticalSpacer">
@@ -214,6 +256,10 @@
          </spacer>
         </item>
        </layout>
+       <zorder>FeatureViewGroupBox</zorder>
+       <zorder>ProjAlignViewGroupBox</zorder>
+       <zorder>groupBox</zorder>
+       <zorder>groupBox_3</zorder>
       </widget>
       <widget class="QWidget" name="page_2">
        <property name="geometry">

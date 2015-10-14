@@ -44,6 +44,7 @@ public:
   void getCameraOri(float camera_ori[3]);
   void getProjRay(float proj_ray[3], int x, int y);
   bool getProjectPt(float object_coord[3], float &winx, float &winy);
+  void getUnprojectVec(Vector3f& vec);
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
