@@ -36,6 +36,7 @@ public:
   inline cv::Mat &getZImg() { return z_img; };
   inline cv::Mat &getRMask() { return mask_rimg; };
   inline cv::Mat &getEdgeImg() { return edge_image; };
+  inline cv::Mat &getNImg() { return n_img; };
 
   // get information from Shape
   const VertexList& getShapeVertexList();
@@ -78,6 +79,7 @@ private:
 
   // render info
   cv::Mat z_img;
+  cv::Mat n_img; // normal image
   cv::Mat primitive_ID;
   cv::Mat rBGRA_img;
   cv::Mat r_img;
