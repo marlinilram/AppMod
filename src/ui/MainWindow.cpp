@@ -61,6 +61,8 @@ void MainWindow::loadModel()
     setOptParatoModel();
 
     this->snapShot();
+    /*share_model->getNormalImage();
+    cv::imshow("Normal_image",share_model->normal_image);*/
 
     //coarse_model->exportPtRenderInfo(233);
     //coarse_model->drawFaceNormal();

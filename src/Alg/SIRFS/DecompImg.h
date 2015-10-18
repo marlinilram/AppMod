@@ -1,6 +1,6 @@
 #ifndef DecompImg_H
 #define DecompImg_H
-
+#include<cv.h>
 #include <memory>
 
 class Model;
@@ -12,9 +12,11 @@ public:
   ~DecompImg();
 
   void setModel(std::shared_ptr<Model> model);
-
+  void computeNormal();
+  inline cv::Mat& getNormal(){ return normal_from_shader; };
 private:
   std::shared_ptr<Model> model;
+  cv::Mat normal_from_shader;
   
 private:
   DecompImg(const DecompImg&);

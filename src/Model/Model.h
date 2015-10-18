@@ -35,6 +35,7 @@ public:
   inline cv::Mat &getZImg() { return z_img; };
   inline cv::Mat &getRMask() { return mask_rimg; };
   inline cv::Mat &getEdgeImg() { return edge_image; };
+  inline cv::Mat &getNormalImg() { return normal_image; };
 
   float getModelAvgEdgeLength();
   void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
@@ -45,6 +46,8 @@ public:
   void getProjRay(float proj_ray[3], int x, int y);
   bool getProjectPt(float object_coord[3], float &winx, float &winy);
 
+
+  
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
   std::shared_ptr<ShapeCrest> shape_crest;
@@ -61,6 +64,7 @@ private:
   cv::Mat r_img;
   cv::Mat mask_rimg;
   cv::Mat edge_image;
+  cv::Mat normal_image;
 
   // camera info
   Matrix4f m_modelview;

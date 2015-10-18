@@ -816,20 +816,24 @@ void MainCanvas::drawPrimitiveImg()
   show_background_img = false;
 
   float *primitive_buffer = new float[height*width];
+  cv::Mat &normal_img = model->getNormalImg();
+  normal_img.create(height, width, CV_32FC3);
 
   glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   drawModel();
   glReadBuffer(GL_COLOR_ATTACHMENT0);
   glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
+  glReadPixels(0, 0, width, height, GL_BGR, GL_FLOAT, (float*)normal_img.data);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+  
   render_mode = render_mode_cache;
   show_background_img = show_background_img_cache;
 
   cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
   cv::flip(primitive_ID_img, primitive_ID_img, 0);
-
+  cv::flip(normal_img, normal_img, 0);
+  //cv::imshow("Normal_Image",normal_img);
   cv::Mat &primitive_ID = model->getPrimitiveIDImg();
   primitive_ID.create(height, width, CV_32S);
   primitive_ID.setTo(cv::Scalar(-1));

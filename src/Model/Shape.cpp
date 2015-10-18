@@ -427,3 +427,22 @@ void Shape::updateShape(VertexList& new_vertex_list)
 
   buildKDTree();
 }
+
+void Shape::getBaryCentreCoord(float pt[3],int face_id,float lambda[3])
+{
+  float v1[3],v2[3],v3[3];
+  int v1_id,v2_id,v3_id;
+  v1_id = getFaceList()[3 * face_id];
+  v2_id = getFaceList()[3 * face_id + 1];
+  v3_id = getFaceList()[3 * face_id + 2];
+  v1[0] = getVertexList()[3 * v1_id];
+  v1[1] = getVertexList()[3 * v1_id + 1];
+  v1[2] = getVertexList()[3 * v1_id + 2];
+  v2[0] = getVertexList()[3 * v2_id];
+  v2[1] = getVertexList()[3 * v2_id + 1];
+  v2[2] = getVertexList()[3 * v2_id + 2];
+  v3[0] = getVertexList()[3 * v3_id];
+  v3[1] = getVertexList()[3 * v3_id + 1];
+  v3[2] = getVertexList()[3 * v3_id + 2];
+  computeBaryCentreCoord(pt,v1,v2,v3,lambda); 
+}

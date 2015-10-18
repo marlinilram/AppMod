@@ -8,6 +8,7 @@
 #include <time.h>
 #include <QDir>
 
+
 Model::Model()
 {
 
@@ -29,6 +30,7 @@ Model::Model(const std::string path, const std::string name)
 
   shape_crest.reset(new ShapeCrest());
   shape_crest->setShape(shape);
+  
   //shape_crest->computeCrestLinesPoints();
 
   // make an output path
@@ -169,7 +171,6 @@ bool Model::getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord)
     return false;
 
   w_coord = Eigen::Map<Vector3f>(obj_coord, 3, 1);
-
   return true;
 }
 
@@ -261,3 +262,59 @@ bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
   winx = m_viewport(0) + m_viewport(2)*(out(0) + 1) / 2;
   winy = m_viewport(1) + m_viewport(3)*(out(1) + 1) / 2;
 }
+
+//void Model::getNormalImage()
+//{
+//  int width,height;
+//  width = primitive_ID.size().width;
+//  height = primitive_ID.size().height;
+//  normal_image = cv::Mat(height,width,CV_32FC3);
+//  for(int img_x = 0; img_x < height; img_x ++)
+//  {
+//    for(int img_y = 0; img_y < width; img_y ++)
+//    {
+//      int face_id = primitive_ID.at<int>(img_x,img_y);
+//      if(face_id != -1)
+//      {
+//        Vector3f img_coor,world_coor;
+//        img_coor << img_y,img_x,1;
+//        if(!getWorldCoord(img_coor,world_coor)) //normalized to -1 to 1? getWorldCoord?
+//        {
+//          std::cout << "Can't get the WorldCoor Point!" << std::endl;
+//        }
+//        float lambda[3];
+//        float pt[3];
+//        pt[0] = world_coor.x();
+//        pt[1] = world_coor.y();
+//        pt[2] = world_coor.z();
+//        shape->getBaryCentreCoord(pt,face_id,lambda);
+//        int v1_id,v2_id,v3_id;
+//        v1_id = (shape->getFaceList())[3 * face_id];
+//        v2_id = (shape->getFaceList())[3 * face_id + 1];
+//        v3_id = (shape->getFaceList())[3 * face_id + 2];
+//        float v1_normal[3],v2_normal[3],v3_normal[3],pt_normal[3];
+//        v1_normal[0] = (shape->getNormalList())[3 * v1_id];
+//        v1_normal[1] = (shape->getNormalList())[3 * v1_id + 1];
+//        v1_normal[2] = (shape->getNormalList())[3 * v1_id + 2];
+//        v2_normal[0] = (shape->getNormalList())[3 * v2_id];
+//        v2_normal[1] = (shape->getNormalList())[3 * v2_id + 1];
+//        v2_normal[2] = (shape->getNormalList())[3 * v2_id + 2];
+//        v3_normal[0] = (shape->getNormalList())[3 * v3_id];
+//        v3_normal[1] = (shape->getNormalList())[3 * v3_id + 1];
+//        v3_normal[2] = (shape->getNormalList())[3 * v3_id + 2];
+//        pt_normal[0] = lambda[0] * v1_normal[0] + lambda[1] * v2_normal[0] + lambda[2] * v3_normal[0];
+//        pt_normal[1] = lambda[0] * v1_normal[1] + lambda[1] * v2_normal[1] + lambda[2] * v3_normal[1];
+//        pt_normal[2] = lambda[0] * v1_normal[2] + lambda[1] * v2_normal[2] + lambda[2] * v3_normal[2];
+//        normal_image.at<cv::Vec3f>(img_x,img_y)[0] = pt_normal[0];
+//        normal_image.at<cv::Vec3f>(img_x,img_y)[1] = pt_normal[1];
+//        normal_image.at<cv::Vec3f>(img_x,img_y)[2] = pt_normal[2];
+//      }
+//      else
+//      {
+//        normal_image.at<cv::Vec3f>(img_x,img_y)[0] = 1;
+//        normal_image.at<cv::Vec3f>(img_x,img_y)[1] = 1;
+//        normal_image.at<cv::Vec3f>(img_x,img_y)[2] = 1;
+//      }
+//    }
+//  }
+//}
