@@ -11,6 +11,7 @@ VectorFieldViewer::VectorFieldViewer(QWidget* widget)
 {
   is_drawAllLines = false;
   is_drawLine = false;
+
   interaction_mode = VectorField::DRAW_CRSP_LINE;
   selected_v_id = -1;
 }
@@ -147,42 +148,42 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
 {
 
   int handled = 0;
-    if (interaction_mode == VectorField::DRAW_CRSP_LINE)
+  if (interaction_mode == VectorField::DRAW_CRSP_LINE)
+  {
+    if(is_drawLine)
     {
-      if(is_drawLine)
+      if(!line.empty())
       {
-        if(!line.empty())
-        {
-          double2 previousPoint = line[line.size() - 1];
-          double2 currentPoint;
-          qreal src[3],res[3];
-          src[0] = e->x();
-          src[1] = e->y();
-          src[2] = 0.5;
-          camera()->getUnprojectedCoordinatesOf(src,res);
-          currentPoint.x = res[0];
-          currentPoint.y = res[1];
-          //std::cout << "The UnprojectedCoordinates of the selected point is :" << currentPoint.x << "," << currentPoint.y << std::endl;
-          if(sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > 0.001)
-            line.push_back(currentPoint);
-          updateGLOutside();
-          
-        }
-        handled = 1;
-      }
-    }
-    else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
-    {
-      //if (selected_v_id != -1)
-      //{
-      //  // call projection optimization
-      //}
-    }
+        double2 previousPoint = line[line.size() - 1];
+        double2 currentPoint;
+        qreal src[3],res[3];
+        src[0] = e->x();
+        src[1] = e->y();
+        src[2] = 0.5;
+        camera()->getUnprojectedCoordinatesOf(src,res);
+        currentPoint.x = res[0];
+        currentPoint.y = res[1];
+        //std::cout << "The UnprojectedCoordinates of the selected point is :" << currentPoint.x << "," << currentPoint.y << std::endl;
+        if(sqrt(pow(currentPoint.x - previousPoint.x,2) + pow(currentPoint.y - previousPoint.y,2)) > 0.001)
+          line.push_back(currentPoint);
+        updateGLOutside();
 
-    if (handled == 0)
-    {
-      QGLViewer::mouseMoveEvent(e);
+      }
+      handled = 1;
     }
+  }
+  else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
+  {
+    //if (selected_v_id != -1)
+    //{
+    //  // call projection optimization
+    //}
+  }
+
+  if (handled == 0)
+  {
+    QGLViewer::mouseMoveEvent(e);
+  }
 }
 
 void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
@@ -248,6 +249,7 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
     QGLViewer::mouseReleaseEvent(e);
   }
 }
+
 
 void VectorFieldViewer::drawLine()
 {

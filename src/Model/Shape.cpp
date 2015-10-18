@@ -428,21 +428,13 @@ void Shape::updateShape(VertexList& new_vertex_list)
   buildKDTree();
 }
 
-void Shape::getBaryCentreCoord(float pt[3],int face_id,float lambda[3])
+void Shape::getFaceCenter(int f_id, float p[3])
 {
-  float v1[3],v2[3],v3[3];
-  int v1_id,v2_id,v3_id;
-  v1_id = getFaceList()[3 * face_id];
-  v2_id = getFaceList()[3 * face_id + 1];
-  v3_id = getFaceList()[3 * face_id + 2];
-  v1[0] = getVertexList()[3 * v1_id];
-  v1[1] = getVertexList()[3 * v1_id + 1];
-  v1[2] = getVertexList()[3 * v1_id + 2];
-  v2[0] = getVertexList()[3 * v2_id];
-  v2[1] = getVertexList()[3 * v2_id + 1];
-  v2[2] = getVertexList()[3 * v2_id + 2];
-  v3[0] = getVertexList()[3 * v3_id];
-  v3[1] = getVertexList()[3 * v3_id + 1];
-  v3[2] = getVertexList()[3 * v3_id + 2];
-  computeBaryCentreCoord(pt,v1,v2,v3,lambda); 
+  size_t v0 = face_list[3 * f_id + 0];
+  size_t v1 = face_list[3 * f_id + 1];
+  size_t v2 = face_list[3 * f_id + 2];
+
+  p[0] = vertex_list[3 * v0 + 0] / 3 + vertex_list[3 * v1 + 0] / 3 + vertex_list[3 * v2 + 0] / 3;
+  p[1] = vertex_list[3 * v0 + 1] / 3 + vertex_list[3 * v1 + 1] / 3 + vertex_list[3 * v2 + 1] / 3;
+  p[2] = vertex_list[3 * v0 + 2] / 3 + vertex_list[3 * v1 + 2] / 3 + vertex_list[3 * v2 + 2] / 3;
 }

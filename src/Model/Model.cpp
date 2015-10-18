@@ -8,7 +8,6 @@
 #include <time.h>
 #include <QDir>
 
-
 Model::Model()
 {
 
@@ -30,7 +29,6 @@ Model::Model(const std::string path, const std::string name)
 
   shape_crest.reset(new ShapeCrest());
   shape_crest->setShape(shape);
-  
   //shape_crest->computeCrestLinesPoints();
 
   // make an output path
@@ -88,15 +86,15 @@ Bound* Model::getBoundBox()
   return shape->getBoundbox();
 }
 
-std::shared_ptr<Shape> Model::getShape()
-{
-  return shape;
-}
-
-std::shared_ptr<ShapeCrest> Model::getShapeCrest()
-{
-  return shape_crest;
-}
+//std::shared_ptr<Shape> Model::getShape()
+//{
+//  return shape;
+//}
+//
+//std::shared_ptr<ShapeCrest> Model::getShapeCrest()
+//{
+//  return shape_crest;
+//}
 
 std::string Model::getDataPath()
 {
@@ -171,6 +169,7 @@ bool Model::getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord)
     return false;
 
   w_coord = Eigen::Map<Vector3f>(obj_coord, 3, 1);
+
   return true;
 }
 
@@ -263,58 +262,73 @@ bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
   winy = m_viewport(1) + m_viewport(3)*(out(1) + 1) / 2;
 }
 
-//void Model::getNormalImage()
-//{
-//  int width,height;
-//  width = primitive_ID.size().width;
-//  height = primitive_ID.size().height;
-//  normal_image = cv::Mat(height,width,CV_32FC3);
-//  for(int img_x = 0; img_x < height; img_x ++)
-//  {
-//    for(int img_y = 0; img_y < width; img_y ++)
-//    {
-//      int face_id = primitive_ID.at<int>(img_x,img_y);
-//      if(face_id != -1)
-//      {
-//        Vector3f img_coor,world_coor;
-//        img_coor << img_y,img_x,1;
-//        if(!getWorldCoord(img_coor,world_coor)) //normalized to -1 to 1? getWorldCoord?
-//        {
-//          std::cout << "Can't get the WorldCoor Point!" << std::endl;
-//        }
-//        float lambda[3];
-//        float pt[3];
-//        pt[0] = world_coor.x();
-//        pt[1] = world_coor.y();
-//        pt[2] = world_coor.z();
-//        shape->getBaryCentreCoord(pt,face_id,lambda);
-//        int v1_id,v2_id,v3_id;
-//        v1_id = (shape->getFaceList())[3 * face_id];
-//        v2_id = (shape->getFaceList())[3 * face_id + 1];
-//        v3_id = (shape->getFaceList())[3 * face_id + 2];
-//        float v1_normal[3],v2_normal[3],v3_normal[3],pt_normal[3];
-//        v1_normal[0] = (shape->getNormalList())[3 * v1_id];
-//        v1_normal[1] = (shape->getNormalList())[3 * v1_id + 1];
-//        v1_normal[2] = (shape->getNormalList())[3 * v1_id + 2];
-//        v2_normal[0] = (shape->getNormalList())[3 * v2_id];
-//        v2_normal[1] = (shape->getNormalList())[3 * v2_id + 1];
-//        v2_normal[2] = (shape->getNormalList())[3 * v2_id + 2];
-//        v3_normal[0] = (shape->getNormalList())[3 * v3_id];
-//        v3_normal[1] = (shape->getNormalList())[3 * v3_id + 1];
-//        v3_normal[2] = (shape->getNormalList())[3 * v3_id + 2];
-//        pt_normal[0] = lambda[0] * v1_normal[0] + lambda[1] * v2_normal[0] + lambda[2] * v3_normal[0];
-//        pt_normal[1] = lambda[0] * v1_normal[1] + lambda[1] * v2_normal[1] + lambda[2] * v3_normal[1];
-//        pt_normal[2] = lambda[0] * v1_normal[2] + lambda[1] * v2_normal[2] + lambda[2] * v3_normal[2];
-//        normal_image.at<cv::Vec3f>(img_x,img_y)[0] = pt_normal[0];
-//        normal_image.at<cv::Vec3f>(img_x,img_y)[1] = pt_normal[1];
-//        normal_image.at<cv::Vec3f>(img_x,img_y)[2] = pt_normal[2];
-//      }
-//      else
-//      {
-//        normal_image.at<cv::Vec3f>(img_x,img_y)[0] = 1;
-//        normal_image.at<cv::Vec3f>(img_x,img_y)[1] = 1;
-//        normal_image.at<cv::Vec3f>(img_x,img_y)[2] = 1;
-//      }
-//    }
-//  }
-//}
+void Model::getUnprojectVec(Vector3f& vec)
+{
+  // transform the vector in camera coordinate to model coordinate
+  vec = (m_projection*m_modelview).block(0, 0, 3, 3).inverse() * vec;
+  //vec = m_modelview.block(0, 0, 3, 3).inverse() * vec;
+}
+
+// get information from Shape
+const VertexList& Model::getShapeVertexList()
+{
+  return shape->getVertexList();
+}
+const FaceList& Model::getShapeFaceList()
+{
+  return shape->getFaceList();
+}
+const STLVectorf& Model::getShapeUVCoord()
+{
+  return shape->getUVCoord();
+}
+const NormalList& Model::getShapeNormalList()
+{
+  return shape->getNormalList();
+}
+const NormalList& Model::getShapeFaceNormal()
+{
+  return shape->getFaceNormal();
+}
+const STLVectorf& Model::getShapeColorList()
+{
+  return shape->getColorList();
+}
+const AdjList& Model::getShapeVertexShareFaces()
+{
+  return shape->getVertexShareFaces();
+}
+const AdjList& Model::getShapeVertexAdjList()
+{
+  return shape->getVertexAdjList();
+}
+const STLVectori& Model::getShapeEdgeConnectivity()
+{
+  return shape->getEdgeConnectivity();
+}
+void Model::getShapeFaceCenter(int f_id, float p[3])
+{
+  shape->getFaceCenter(f_id, p);
+}
+void Model::updateShape(VertexList& new_vertex_list)
+{
+  shape->updateShape(new_vertex_list);
+}
+
+// get information from ShapeCrest
+const std::vector<Edge>& Model::getShapeCrestEdge()
+{
+  return shape_crest->getCrestEdge();
+}
+const std::vector<STLVectori>& Model::getShapeCrestLine()
+{
+  return shape_crest->getCrestLine();
+}
+const std::vector<STLVectori>& Model::getShapeVisbleCrestLine()
+{
+  return shape_crest->getVisbleCrestLine();
+}
+void Model::computeShapeCrestVisible(std::set<int>& vis_faces)
+{
+  shape_crest->computeVisible(vis_faces);
+}

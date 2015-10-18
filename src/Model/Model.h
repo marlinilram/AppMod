@@ -24,19 +24,39 @@ public:
   void exportOBJ(int cur_iter);
 
   Bound* getBoundBox();
-  std::shared_ptr<Shape> getShape();
-  std::shared_ptr<ShapeCrest> getShapeCrest();
+  //std::shared_ptr<Shape> getShape();
+  //std::shared_ptr<ShapeCrest> getShapeCrest();
   std::string getDataPath();
   std::string getOutputPath();
 
+  // get information from renderer
   inline cv::Mat &getRImg(){ return r_img; };
   inline cv::Mat &getRBGRAImg() { return rBGRA_img; };
   inline cv::Mat &getPrimitiveIDImg(){ return primitive_ID; };
   inline cv::Mat &getZImg() { return z_img; };
   inline cv::Mat &getRMask() { return mask_rimg; };
   inline cv::Mat &getEdgeImg() { return edge_image; };
-  inline cv::Mat &getNormalImg() { return normal_image; };
 
+  // get information from Shape
+  const VertexList& getShapeVertexList();
+  const FaceList& getShapeFaceList();
+  const STLVectorf& getShapeUVCoord();
+  const NormalList& getShapeNormalList();
+  const NormalList& getShapeFaceNormal();
+  const STLVectorf& getShapeColorList();
+  const AdjList& getShapeVertexShareFaces();
+  const AdjList& getShapeVertexAdjList();
+  const STLVectori& getShapeEdgeConnectivity();
+  void getShapeFaceCenter(int f_id, float p[3]);
+  void updateShape(VertexList& new_vertex_list);
+
+  // get information from ShapeCrest
+  const std::vector<Edge>& getShapeCrestEdge();
+  const std::vector<STLVectori>& getShapeCrestLine();
+  const std::vector<STLVectori>& getShapeVisbleCrestLine();
+  void computeShapeCrestVisible(std::set<int>& vis_faces);
+
+  // some computations utility of Model
   float getModelAvgEdgeLength();
   void passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4]);
   bool getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord);
@@ -45,9 +65,8 @@ public:
   void getCameraOri(float camera_ori[3]);
   void getProjRay(float proj_ray[3], int x, int y);
   bool getProjectPt(float object_coord[3], float &winx, float &winy);
+  void getUnprojectVec(Vector3f& vec);
 
-
-  
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
   std::shared_ptr<ShapeCrest> shape_crest;
@@ -64,7 +83,6 @@ private:
   cv::Mat r_img;
   cv::Mat mask_rimg;
   cv::Mat edge_image;
-  cv::Mat normal_image;
 
   // camera info
   Matrix4f m_modelview;

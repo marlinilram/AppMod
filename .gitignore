@@ -1,0 +1,8 @@
+/lib/libblas.dll
+/lib/libcholmod.lib
+/lib/libgcc_s_sjlj-1.dll
+/lib/libgfortran-3.dll
+/lib/liblapack.dll
+/lib/libquadmath-0.dll
+deprecated
+extern

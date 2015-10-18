@@ -217,6 +217,7 @@ void MainWindow::setVectorField()
   //if (fileName.isEmpty() == true) return;
 
   disp_modules->initFeatureModel();
+  parameter_dock->initFeatureRender();
 
   //std::string fileSource = fileName.toStdString();
   //std::string fileTarget = fileSource.substr(0, fileSource.find_last_of('/') + 1) + "featurePP.png";

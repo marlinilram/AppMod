@@ -1,6 +1,6 @@
 #include "TrackballCanvas.h"
 #include "Model.h"
-#include "Shape.h"
+
 #include <QGLShader>
 #include <QGLBuffer>
 
@@ -94,10 +94,10 @@ void TrackballCanvas::drawModel()
 
 void TrackballCanvas::updateModelBuffer()
 {
-  const VertexList& vertex_list = model->getShape()->getVertexList();
-  const FaceList&   face_list   = model->getShape()->getFaceList();
-  const NormalList& normal_list = model->getShape()->getNormalList();
-  const STLVectorf& color_list  = model->getShape()->getColorList();
+  const VertexList& vertex_list = model->getShapeVertexList();
+  const FaceList&   face_list   = model->getShapeFaceList();
+  const NormalList& normal_list = model->getShapeNormalList();
+  const STLVectorf& color_list  = model->getShapeColorList();
 
   num_vertex = GLenum(vertex_list.size() / 3);
   num_face   = GLenum(face_list.size() / 3);

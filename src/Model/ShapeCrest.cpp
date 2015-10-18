@@ -260,6 +260,41 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
   return;
 }
 
+void ShapeCrest::computeVisible(std::set<int>& vis_faces)
+{
+  std::vector<Edge> crest_edges_cache = crest_edges;
+  std::vector<STLVectori> crest_lines_cache = crest_lines;
+  const STLVectori& edge_connectivity = shape->getEdgeConnectivity();
+
+  crest_edges.clear();
+  crest_lines.clear();
+  int inner_index[6] = {0, 1, 1, 2, 2, 0};
+  std::set<int>::iterator it;
+  size_t i = 0;
+  for (it = candidates.begin(); it != candidates.end(); ++it)
+  {
+    int f_0 = (*it) / 3;
+    int f_1 = edge_connectivity[(*it)] / 3;
+
+    if (vis_faces.find(f_0) != vis_faces.end() || vis_faces.find(f_1) != vis_faces.end())
+    {
+      crest_edges.push_back(crest_edges_cache[i]);
+    }
+
+    ++i;
+  }
+
+  mergeCandidates();
+
+  visible_edges = crest_edges;
+  visible_lines = crest_lines;
+
+  crest_edges = crest_edges_cache;
+  crest_lines = crest_lines_cache;
+
+  return;
+}
+
 //void ShapeCrest::computeCrestLinesPoints()
 //{
 //  crest.reset(new CrestCode);

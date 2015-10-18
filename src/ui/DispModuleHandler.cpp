@@ -80,7 +80,7 @@ void DispModuleHandler::updateGeometry()
   trackball_viewer->setGLActors(alg_handler->getGLActors());
 
   updateCanvas();
-
+  source_vector_viewer->updateSourceField();
   source_vector_viewer->updateScalarFieldTexture();
   target_vector_viewer->updateScalarFieldTexture();
 }
@@ -94,12 +94,12 @@ void DispModuleHandler::initFeatureModel()
     source_vector_canvas->setFeatureModel(share_feature_model);
     source_vector_viewer->deleteDispObj(source_vector_canvas.get());
     source_vector_viewer->addDispObj(source_vector_canvas.get());
-    source_vector_viewer->updateGLOutside();
+    //source_vector_viewer->updateGLOutside();
 
     target_vector_canvas->setFeatureModel(share_feature_model);
     target_vector_viewer->deleteDispObj(target_vector_canvas.get());
     target_vector_viewer->addDispObj(target_vector_canvas.get());
-    target_vector_viewer->updateGLOutside();
+    //target_vector_viewer->updateGLOutside();
 
     // TODO: bug here, every time reset the feature model
     // we need to reset the projection optimization
@@ -192,6 +192,21 @@ void DispModuleHandler::updateGeometryInteractive()
   trackball_viewer->setGLActors(alg_handler->getGLActors());
 
   updateCanvas();
+  source_vector_viewer->updateSourceField();
   source_vector_viewer->updateScalarFieldTexture();
   target_vector_viewer->updateScalarFieldTexture();
+}
+
+void DispModuleHandler::showBackgroundImage(int state)
+{
+  main_canvas_viewer->setShowBackground(state);
+
+  main_canvas_viewer->updateGLOutside();
+}
+
+void DispModuleHandler::runNormalTransfer()
+{
+  alg_handler->doNormalTransfer();
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
+  updateCanvas();
 }

@@ -10,6 +10,8 @@ ParameterDock::ParameterDock()
   connect(Show_All_Lines_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showAllLines(int)));
   connect(Show_ProjCrsp_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showProjCrsp(int)));
   connect(Proj_Interact_Mode_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setInteractiveProjAlign(int)));
+  connect(Show_Image_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showBackgroundImage(int)));
+  connect(NormalTransfer_PushButton, SIGNAL(clicked()), this, SLOT(runNormalTransfer()));
 
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
@@ -27,6 +29,9 @@ ParameterDock::~ParameterDock()
 void ParameterDock::setDispModules(std::shared_ptr<DispModuleHandler> modules)
 {
   disp_modules = modules;
+
+  // init the checkBox list in vector field canvas
+  this->setFeatureRender(1);
 }
 
 void ParameterDock::setFeatureRender(int state)
@@ -40,6 +45,11 @@ void ParameterDock::setFeatureRender(int state)
     checkStates[list_id] = checkBox_FeatureRenderMode.at(i)->checkState();
   }
   disp_modules->setVectorFieldViewerPara(checkStates);
+}
+
+void ParameterDock::initFeatureRender()
+{
+  setFeatureRender(1);
 }
 
 void ParameterDock::setEdgeThreshold(int val)
@@ -65,4 +75,14 @@ void ParameterDock::showProjCrsp(int state)
 void ParameterDock::setInteractiveProjAlign(int state)
 {
   disp_modules->toggleVectorFieldMode(state);
+}
+
+void ParameterDock::showBackgroundImage(int state)
+{
+  disp_modules->showBackgroundImage(state);
+}
+
+void ParameterDock::runNormalTransfer()
+{
+  disp_modules->runNormalTransfer();
 }

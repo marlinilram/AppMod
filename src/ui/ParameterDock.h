@@ -17,6 +17,7 @@ public:
   ~ParameterDock();
 
   void setDispModules(std::shared_ptr<DispModuleHandler> modules);
+  void initFeatureRender();
 
 private slots:
   void setFeatureRender(int state);
@@ -25,6 +26,8 @@ private slots:
   void showAllLines(int state);
   void showProjCrsp(int state);
   void setInteractiveProjAlign(int state);
+  void showBackgroundImage(int state);
+  void runNormalTransfer();
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;

@@ -1,5 +1,6 @@
 #include "AlgHandler.h"
 #include "ProjOptimize.h"
+#include "NormalTransfer.h"
 #include "FeatureGuided.h"
 #include "Model.h"
 
@@ -16,6 +17,7 @@ AlgHandler::~AlgHandler()
 void AlgHandler::init()
 {
   proj_optimize.reset(new ProjOptimize);
+  normal_transfer.reset(new NormalTransfer);
 
   feature_model = nullptr;
   shape_model = nullptr;
@@ -51,7 +53,11 @@ void AlgHandler::doProjOptimize()
 
   actors.clear();
   proj_optimize->updateShape(feature_model, shape_model);
-  feature_model->updateSourceField();
+  // Warning: cannot put updateSourceField() here. Because it need to
+  // recompute source curve from visible crest line and
+  // visible crest line is updated only if the main canvas has been
+  // redrawn and primitive_id image has been updated.
+  //feature_model->updateSourceField();
   std::vector<GLActor> temp_actors;
   proj_optimize->getDrawableActors(temp_actors);
   for (size_t i = 0; i < temp_actors.size(); ++i)
@@ -69,9 +75,26 @@ void AlgHandler::doInteractiveProjOptimize()
 
   actors.clear();
   proj_optimize->updateShapeFromInteraction(feature_model, shape_model);
-  feature_model->updateSourceField();
+  //feature_model->updateSourceField();
   std::vector<GLActor> temp_actors;
   proj_optimize->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
+}
+
+void AlgHandler::doNormalTransfer()
+{
+  if (!workable())
+  {
+    return;
+  }
+
+  normal_transfer->prepareNewNormal(shape_model);
+  actors.clear();
+  std::vector<GLActor> temp_actors;
+  normal_transfer->getDrawableActors(temp_actors);
   for (size_t i = 0; i < temp_actors.size(); ++i)
   {
     actors.push_back(temp_actors[i]);

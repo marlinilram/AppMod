@@ -39,8 +39,6 @@ VectorFieldCanvas::VectorFieldCanvas()
   u_max = 1.0;
   v_max = 1.0;
   ratio = 1.0;
-
-  vis_paras.resize(9, true);
 }
 
 VectorFieldCanvas::~VectorFieldCanvas()
@@ -64,7 +62,10 @@ bool VectorFieldCanvas::display()
     if (vis_paras[2])
     {
       this->displaySourceCurves();
-      this->displayTargetCurves();
+      if (vis_paras[9])
+      {
+        this->displayTargetCurves();
+      }
     }
     if (vis_paras[4])
     {
@@ -84,6 +85,10 @@ bool VectorFieldCanvas::display()
     if (vis_paras[3])
     {
       this->displayTargetCurves();
+      if (vis_paras[9])
+      {
+        this->displaySourceCurves();
+      }
     }
     if (vis_paras[5])
     {
