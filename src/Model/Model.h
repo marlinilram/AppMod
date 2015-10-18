@@ -36,6 +36,7 @@ public:
   inline cv::Mat &getZImg() { return z_img; };
   inline cv::Mat &getRMask() { return mask_rimg; };
   inline cv::Mat &getEdgeImg() { return edge_image; };
+  inline cv::Mat &getNormalImg() { return normal_img; };
 
   // get information from Shape
   const VertexList& getShapeVertexList();
@@ -83,6 +84,7 @@ private:
   cv::Mat r_img;
   cv::Mat mask_rimg;
   cv::Mat edge_image;
+  cv::Mat normal_img;
 
   // camera info
   Matrix4f m_modelview;
