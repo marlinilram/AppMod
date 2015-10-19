@@ -132,8 +132,8 @@ void ShapeCrest::mergeCandidates()
         int cur_start_n = crest_lines[j][1]; // the next v_id from start
         if (connectable(start, start_n, cur_start_n))
         {
-          std::reverse(crest_lines[i].begin(), crest_lines[i].end());
-          crest_lines[i].insert(crest_lines[i].end(), crest_lines[j].begin() + 1, crest_lines[j].end());
+          std::reverse(crest_lines[j].begin(), crest_lines[j].end());
+          crest_lines[i].insert(crest_lines[i].begin(), crest_lines[j].begin(), crest_lines[j].end() - 1);
           crest_lines.erase(crest_lines.begin() + j);
           tag = 1;
           break;

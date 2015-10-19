@@ -7,6 +7,7 @@
 
 class ProjOptimize;
 class NormalTransfer;
+class DetailSynthesis;
 class FeatureGuided;
 class Model;
 
@@ -27,9 +28,13 @@ public:
 
   void doNormalTransfer();
 
+  void doDetailSynthesis();
+
 private:
   std::shared_ptr<ProjOptimize> proj_optimize;
   std::shared_ptr<NormalTransfer> normal_transfer;
+  std::shared_ptr<DetailSynthesis> detail_synthesis;
+
 
   std::shared_ptr<FeatureGuided> feature_model;
   std::shared_ptr<Model>         shape_model;

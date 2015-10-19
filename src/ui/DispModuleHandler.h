@@ -42,6 +42,7 @@ public:
   void toggleVectorFieldMode(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
+  void runDetailSynthesis();
 
 public slots:
   void updateGeometryInteractive();

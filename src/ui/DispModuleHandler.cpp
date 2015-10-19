@@ -210,3 +210,8 @@ void DispModuleHandler::runNormalTransfer()
   trackball_viewer->setGLActors(alg_handler->getGLActors());
   updateCanvas();
 }
+
+void DispModuleHandler::runDetailSynthesis()
+{
+  alg_handler->doDetailSynthesis();
+}

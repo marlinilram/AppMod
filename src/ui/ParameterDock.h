@@ -28,6 +28,7 @@ private slots:
   void setInteractiveProjAlign(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
+  void runDetailSynthesis();
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;
