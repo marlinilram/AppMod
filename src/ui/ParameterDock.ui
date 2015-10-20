@@ -246,6 +246,13 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="DetailSynthesis_PushButton">
+             <property name="text">
+              <string>Test Synthesize (Parameterization)</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>

@@ -230,3 +230,8 @@ void DispModuleHandler::runNormalCompute()
   cv::imshow("Normal_(0 ~ 1)",normal_normalized);
   //cv::imshow("Normal_(-1 ~ 1)",normal);
 }
+
+void DispModuleHandler::runDetailSynthesis()
+{
+  alg_handler->doDetailSynthesis();
+}

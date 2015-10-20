@@ -1,6 +1,7 @@
 #include "AlgHandler.h"
 #include "ProjOptimize.h"
 #include "NormalTransfer.h"
+#include "DetailSynthesis.h"
 #include "FeatureGuided.h"
 #include "Model.h"
 
@@ -18,6 +19,8 @@ void AlgHandler::init()
 {
   proj_optimize.reset(new ProjOptimize);
   normal_transfer.reset(new NormalTransfer);
+  detail_synthesis.reset(new DetailSynthesis);
+
 
   feature_model = nullptr;
   shape_model = nullptr;
@@ -106,4 +109,9 @@ void AlgHandler::doNormalCompute()
 {
   decomp_img->setModel(shape_model);
   decomp_img->computeNormal();
+}
+
+void AlgHandler::doDetailSynthesis()
+{
+  detail_synthesis->testMeshPara(shape_model);
 }

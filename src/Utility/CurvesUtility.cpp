@@ -109,4 +109,79 @@ namespace CurvesUtility
       return false;
     }
   }
+
+  void mergeShapeEdges(std::vector<Edge>& edges, std::vector<STLVectori>& lines)
+  {
+    lines.clear();
+    for (size_t i = 0; i < edges.size(); ++i)
+    {
+      STLVectori temp_edges;
+      temp_edges.push_back(edges[i].first);
+      temp_edges.push_back(edges[i].second);
+      lines.push_back(temp_edges);
+    }
+    // merge connected edge
+    int tag = 0;
+    size_t i = 0;
+    while (i < lines.size())
+    {
+      int start = lines[i][0];
+      int end   = lines[i][lines[i].size() - 1];
+
+      for (size_t j = i + 1; j < lines.size(); ++j)
+      {
+        int cur_start = lines[j][0];
+        int cur_end   = lines[j][lines[j].size() - 1];
+
+        // four types
+        if (start == cur_start)
+        {
+          int start_n = lines[i][1]; // the next v_id from start
+          int cur_start_n = lines[j][1]; // the next v_id from start
+          std::reverse(lines[j].begin(), lines[j].end());
+          lines[i].insert(lines[i].begin(), lines[j].begin(), lines[j].end() - 1);
+          lines.erase(lines.begin() + j);
+          tag = 1;
+          break;
+        }
+        else if (start == cur_end)
+        {
+          int start_n = lines[i][1]; // the next v_id from start
+          int cur_end_p = lines[j][lines[j].size() - 2];
+          lines[i].insert(lines[i].begin(), lines[j].begin(), lines[j].end() - 1);
+          lines.erase(lines.begin() + j);
+          tag = 1;
+          break;
+        }
+        else if (end == cur_start)
+        {
+          int end_p = lines[i][lines[i].size() - 2];
+          int cur_start_n = lines[j][1]; // the next v_id from start
+          lines[i].insert(lines[i].end(), lines[j].begin() + 1, lines[j].end());
+          lines.erase(lines.begin() + j);
+          tag = 1;
+          break;
+        }
+        else if (end == cur_end)
+        {
+          int end_p = lines[i][lines[i].size() - 2];
+          int cur_end_p = lines[j][lines[j].size() - 2];
+          std::reverse(lines[j].begin(), lines[j].end());
+          lines[i].insert(lines[i].end(), lines[j].begin() + 1, lines[j].end());
+          lines.erase(lines.begin() + j);
+          tag = 1;
+          break;
+        }
+      }
+
+      if (tag == 1)
+      {
+        tag = 0;
+      }
+      else
+      {
+        ++i;
+      }
+    }
+  }
 }

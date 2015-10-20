@@ -13,6 +13,7 @@ ParameterDock::ParameterDock()
   connect(Show_Image_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showBackgroundImage(int)));
   connect(NormalTransfer_PushButton, SIGNAL(clicked()), this, SLOT(runNormalTransfer()));
   connect(NormalCompute_PushButton, SIGNAL(clicked()), this, SLOT(runNormalCompute()));
+  connect(DetailSynthesis_PushButton, SIGNAL(clicked()), this, SLOT(runDetailSynthesis()));
 
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
@@ -91,4 +92,9 @@ void ParameterDock::runNormalTransfer()
 void ParameterDock::runNormalCompute()
 {
   disp_modules->runNormalCompute();
+}
+
+void ParameterDock::runDetailSynthesis()
+{
+  disp_modules->runDetailSynthesis();
 }

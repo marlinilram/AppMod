@@ -302,6 +302,10 @@ const AdjList& Model::getShapeVertexAdjList()
 {
   return shape->getVertexAdjList();
 }
+const AdjList& Model::getShapeFaceAdjList()
+{
+  return shape->getFaceAdjList();
+}
 const STLVectori& Model::getShapeEdgeConnectivity()
 {
   return shape->getEdgeConnectivity();

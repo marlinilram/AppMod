@@ -99,6 +99,11 @@ const AdjList& Shape::getVertexAdjList()
   return vertex_adjlist;
 }
 
+const AdjList& Shape::getFaceAdjList()
+{
+  return face_adjlist;
+}
+
 const STLVectori& Shape::getEdgeConnectivity()
 {
   return edge_connectivity;

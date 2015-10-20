@@ -29,6 +29,7 @@ private slots:
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
+  void runDetailSynthesis();
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;

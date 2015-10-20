@@ -47,6 +47,7 @@ public:
   const STLVectorf& getShapeColorList();
   const AdjList& getShapeVertexShareFaces();
   const AdjList& getShapeVertexAdjList();
+  const AdjList& getShapeFaceAdjList();
   const STLVectori& getShapeEdgeConnectivity();
   void getShapeFaceCenter(int f_id, float p[3]);
   void updateShape(VertexList& new_vertex_list);

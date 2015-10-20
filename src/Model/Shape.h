@@ -29,6 +29,7 @@ public:
   const STLVectorf& getColorList();
   const AdjList& getVertexShareFaces();
   const AdjList& getVertexAdjList();
+  const AdjList& getFaceAdjList();
   const STLVectori& getEdgeConnectivity();
   void getFaceCenter(int f_id, float p[3]);
   Bound* getBoundbox();
