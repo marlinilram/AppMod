@@ -23,9 +23,9 @@ void DecompImg::computeNormal()
   cv::Mat normal_from_mesh = model->getNImg();
   normal_from_shading = cv::Mat(normal_from_mesh.size().height,normal_from_mesh.size().width,CV_32FC3);
   cv::Mat shading;
-  /*cv::FileStorage fs(model->getDataPath() + "/shading.xml", cv::FileStorage::READ);
-  fs["shading"] >> shading;*/
-  cv::imread(model->getDataPath() + "/d22.png").convertTo(shading, CV_32FC3);
+  cv::FileStorage fs(model->getDataPath() + "/shading.xml", cv::FileStorage::READ);
+  fs["shading"] >> shading;
+  /*cv::imread(model->getDataPath() + "/d22.png").convertTo(shading, CV_32FC3);*/
   cv::imshow("shading_img", shading);
   //cv::imshow("normal", normal_from_mesh);
   cv::Mat light;
@@ -37,7 +37,7 @@ void DecompImg::computeNormal()
     for(int j = 0; j < normal_from_mesh.size().width; j ++)
     {
       cv::Vec3f tmp = shading.at<cv::Vec3f>(i,j);
-      s.at<float>(count,0) = float((tmp[0] + tmp[1] + tmp[2]) / 3);
+      s.at<float>(count,0) = (tmp[0] + tmp[1] + tmp[2]) / 3;
       n.at<float>(count,0) = normal_from_mesh.at<cv::Vec3f>(i,j)[0] * 2 - 1;
       n.at<float>(count,1) = normal_from_mesh.at<cv::Vec3f>(i,j)[1] * 2 - 1;
       n.at<float>(count,2) = normal_from_mesh.at<cv::Vec3f>(i,j)[2] * 2 - 1;
