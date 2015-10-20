@@ -46,10 +46,22 @@ public:
     AdjList& vertex_share_faces,
     NormalList& normal_list,
     NormalList& new_face_normal);
+  void initMatrix(
+    FaceList& face_list,
+    VertexList& vertex_list,
+    AdjList& vertex_share_faces,
+    NormalList& normal_list,
+    NormalList& new_face_normal,
+    STLVectori& faces_in_photo);
   void fillNormalMatrix(
     FaceList& face_list,
     AdjList& vertex_share_faces,
     NormalList& new_face_normal);
+  void fillPartialNormalMatrix(
+    FaceList& face_list,
+    AdjList& vertex_share_faces,
+    NormalList& new_face_normal,
+    STLVectori& faces_in_photo);
   void fillVMoveMatrix(
     VertexList& vertex_list,
     NormalList& normal_list);

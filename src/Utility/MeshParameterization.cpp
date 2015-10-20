@@ -50,6 +50,12 @@ void MeshParameterization::saveParameterization(std::string file_path)
   obj_shape.mesh.indices = cut_shape->getFaceList();
   shapes.push_back(obj_shape);
   WriteObj(file_path + "/parameterization.obj", shapes, materials);
+
+  obj_shape.mesh.positions = cut_shape->getVertexList();
+  obj_shape.mesh.indices = cut_shape->getFaceList();
+  shapes.pop_back();
+  shapes.push_back(obj_shape);
+  WriteObj(file_path + "/cutmesh.obj", shapes, materials);
 }
 
 void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
@@ -71,90 +77,47 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
 
   // fill holes
   const AdjList& f_adjList = model->getShapeFaceAdjList();
-  std::set<int> hole_faces;
-  do
-  {
-    hole_faces.clear();
-    for (auto i : visible_faces)
-    {
-      for (size_t j = 0; j < f_adjList[i].size(); ++j)
-      {
-        int adj_f = f_adjList[i][j];
-        if (visible_faces.find(adj_f) == visible_faces.end())
-        {
-          // test if the adjacent faces of this new face is in visible_faces
-          // if so, insert it into hole_faces
-          int cnt_faces_in_visible = 0;
-          for (size_t k = 0; k < f_adjList[adj_f].size(); ++k)
-          {
-            if (visible_faces.find(f_adjList[adj_f][k]) != visible_faces.end())
-            {
-              ++cnt_faces_in_visible;
-            }
-          }
-          if (cnt_faces_in_visible >= 2)
-          {
-            hole_faces.insert(adj_f);
-          }
-
-
-          // old method which assuming all faces have 3 adjacent faces
-          // and this is not suitable
-          //int fs[2];
-          //if (f_adjList[adj_f][0] == i) { fs[0] = f_adjList[adj_f][1]; fs[1] = f_adjList[adj_f][2]; }
-          //else if (f_adjList[adj_f][1] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][2]; }
-          //else if (f_adjList[adj_f][2] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][1]; }
-
-          //if (visible_faces.find(fs[0]) != visible_faces.end() || visible_faces.find(fs[1]) != visible_faces.end())
-          //{
-          //  hole_faces.insert(adj_f);
-          //}
-        }
-      }
-    }
-
-    visible_faces.insert(hole_faces.begin(), hole_faces.end());
-  } while (!hole_faces.empty());
+  this->fillHoles(visible_faces, f_adjList);
 
   // delete single face
   std::vector<std::set<int> > connected_components;
-  std::set<int> component;
-  for (auto i : visible_faces)
+  this->connectedComponents(connected_components, visible_faces, f_adjList);
+
+  // find largest component
+  int largest_id = this->findLargestComponent(connected_components);
+  if (largest_id != -1)
   {
-    bool already_visited = false;
-    for (size_t j = 0; j < connected_components.size(); ++j)
+    visible_faces = connected_components[largest_id];
+  }
+
+  // get complement of visible faces to the full faces
+  std::set<int> full_faces;
+  std::set<int> complement_faces;
+  for (size_t i = 0; i < f_adjList.size(); ++i)
+  {
+    full_faces.insert(i);
+  }
+  std::set_difference(full_faces.begin(), full_faces.end(),
+                      visible_faces.begin(), visible_faces.end(),
+                      std::inserter(complement_faces, complement_faces.begin()));
+
+  // merge complement faces into connected components
+  connected_components.clear();
+  this->connectedComponents(connected_components, complement_faces, f_adjList);
+
+  // insert all components into visible faces except the largest one 
+  // so finally we cut the mesh into two part
+  largest_id = this->findLargestComponent(connected_components);
+  if (largest_id != -1)
+  {
+    for (size_t i = 0; i < connected_components.size(); ++i)
     {
-      if (connected_components[j].find(i) != connected_components[j].end())
+      if (i != largest_id)
       {
-        already_visited = true;
-        break;
+        visible_faces.insert(connected_components[i].begin(), connected_components[i].end());
       }
     }
-
-    if (already_visited)
-    {
-      break;
-    }
-    else
-    {
-      component.clear();
-      this->findConnectedFaces(i, component, visible_faces, f_adjList);
-      connected_components.push_back(component);
-    }
   }
-  // find largest component
-  int largest_id = -1;
-  size_t largest_size = std::numeric_limits<size_t>::min();
-  for (size_t i = 0; i < connected_components.size(); ++i)
-  {
-    if (connected_components[i].size() > largest_size)
-    {
-      largest_size = connected_components[i].size();
-      largest_id = i;
-    }
-  }
-  visible_faces = connected_components[largest_id];
-
 
   // save cut_face_list
   cut_face_list.clear();
@@ -407,7 +370,7 @@ float MeshParameterization::computeWij(const float *p1, const float *p2, const f
   return ((alpha_cos/sqrt(1-alpha_cos*alpha_cos))+(beta_cos/sqrt(1-beta_cos*beta_cos)))/2;
 }
 
-void MeshParameterization::findConnectedFaces(int f_id, std::set<int>& connected_faces, std::set<int>& visible_faces, const AdjList& adj_list)
+void MeshParameterization::findConnectedFaces(int f_id, std::set<int>& connected_faces, const std::set<int>& visible_faces, const AdjList& adj_list)
 {
   if (connected_faces.find(f_id) != connected_faces.end())
   {
@@ -422,4 +385,95 @@ void MeshParameterization::findConnectedFaces(int f_id, std::set<int>& connected
       this->findConnectedFaces(adj_list[f_id][i], connected_faces, visible_faces, adj_list);
     }
   }
+}
+
+void MeshParameterization::connectedComponents(std::vector<std::set<int> >& components, const std::set<int>& visible_faces, const AdjList& adj_list)
+{
+  std::set<int> component;
+  for (auto i : visible_faces)
+  {
+    bool already_visited = false;
+    for (size_t j = 0; j < components.size(); ++j)
+    {
+      if (components[j].find(i) != components[j].end())
+      {
+        already_visited = true;
+        break;
+      }
+    }
+
+    if (already_visited)
+    {
+      continue;
+    }
+    else
+    {
+      component.clear();
+      this->findConnectedFaces(i, component, visible_faces, adj_list);
+      components.push_back(component);
+    }
+  }
+}
+
+void MeshParameterization::fillHoles(std::set<int>& visible_faces, const AdjList& f_adjList)
+{
+  std::set<int> hole_faces;
+  do
+  {
+    hole_faces.clear();
+    for (auto i : visible_faces)
+    {
+      for (size_t j = 0; j < f_adjList[i].size(); ++j)
+      {
+        int adj_f = f_adjList[i][j];
+        if (visible_faces.find(adj_f) == visible_faces.end())
+        {
+          // test if the adjacent faces of this new face is in visible_faces
+          // if so, insert it into hole_faces
+          int cnt_faces_in_visible = 0;
+          for (size_t k = 0; k < f_adjList[adj_f].size(); ++k)
+          {
+            if (visible_faces.find(f_adjList[adj_f][k]) != visible_faces.end())
+            {
+              ++cnt_faces_in_visible;
+            }
+          }
+          if (cnt_faces_in_visible >= 2)
+          {
+            hole_faces.insert(adj_f);
+          }
+
+
+          // old method which assuming all faces have 3 adjacent faces
+          // and this is not suitable
+          //int fs[2];
+          //if (f_adjList[adj_f][0] == i) { fs[0] = f_adjList[adj_f][1]; fs[1] = f_adjList[adj_f][2]; }
+          //else if (f_adjList[adj_f][1] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][2]; }
+          //else if (f_adjList[adj_f][2] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][1]; }
+
+          //if (visible_faces.find(fs[0]) != visible_faces.end() || visible_faces.find(fs[1]) != visible_faces.end())
+          //{
+          //  hole_faces.insert(adj_f);
+          //}
+        }
+      }
+    }
+
+    visible_faces.insert(hole_faces.begin(), hole_faces.end());
+  } while (!hole_faces.empty());
+}
+
+int MeshParameterization::findLargestComponent(const std::vector<std::set<int> >& components)
+{
+  int largest_id = -1;
+  size_t largest_size = std::numeric_limits<size_t>::min();
+  for (size_t i = 0; i < components.size(); ++i)
+  {
+    if (components[i].size() > largest_size)
+    {
+      largest_size = components[i].size();
+      largest_id = i;
+    }
+  }
+  return largest_id;
 }

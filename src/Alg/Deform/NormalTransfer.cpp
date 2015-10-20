@@ -97,13 +97,16 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
     actors[2].addElement(end[0], end[1], end[2], 1.0, 0.0, 0.0);
   }
 
-  NormalList new_normals = model->getShapeFaceNormal();
+  NormalList new_normals;// = model->getShapeFaceNormal();
   for (size_t i = 0; i < faces_in_photo.size(); ++i)
   {
     int f_id = faces_in_photo[i];
-    new_normals[3 * f_id + 0] = faces_new_normal[i](0);
-    new_normals[3 * f_id + 1] = faces_new_normal[i](1);
-    new_normals[3 * f_id + 2] = faces_new_normal[i](2);
+    //new_normals[3 * f_id + 0] = faces_new_normal[i](0);
+    //new_normals[3 * f_id + 1] = faces_new_normal[i](1);
+    //new_normals[3 * f_id + 2] = faces_new_normal[i](2);
+    new_normals.push_back(faces_new_normal[i](0));
+    new_normals.push_back(faces_new_normal[i](1));
+    new_normals.push_back(faces_new_normal[i](2));
   }
 
   FaceList face_list = model->getShapeFaceList();
@@ -137,7 +140,9 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
   arap->setLamdARAP(5.0f);
 
   normal_constraint->setSolver(solver);
-  normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals);
+  // use partial normal
+  normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals, faces_in_photo);
+  //normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals);
   normal_constraint->setLamdNormal(3.0f);
   normal_constraint->setLamdVMove(5.0f);
 

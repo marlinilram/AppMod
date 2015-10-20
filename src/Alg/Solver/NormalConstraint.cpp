@@ -33,6 +33,21 @@ void NormalConstraint::initMatrix(
   this->fillVMoveMatrix(vertex_list, normal_list);
 }
 
+void NormalConstraint::initMatrix(
+  FaceList& face_list,
+  VertexList& vertex_list,
+  AdjList& vertex_share_faces,
+  NormalList& normal_list,
+  NormalList& new_face_normal,
+  STLVectori& faces_in_photo)
+{
+  // normal_list is face normal
+  this->P_Num = vertex_list.size() / 3;
+
+  this->fillPartialNormalMatrix(face_list, vertex_share_faces, new_face_normal, faces_in_photo);
+  this->fillVMoveMatrix(vertex_list, normal_list);
+}
+
 void NormalConstraint::fillNormalMatrix(
   FaceList& face_list,
   AdjList& vertex_share_faces,
@@ -49,6 +64,55 @@ void NormalConstraint::fillNormalMatrix(
       float n[3] = { new_face_normal[3 * one_ring_faces[j] + 0],
                      new_face_normal[3 * one_ring_faces[j] + 1],
                      new_face_normal[3 * one_ring_faces[j] + 2] };
+
+      int points_in_face[3] = { face_list[3 * one_ring_faces[j] + 0],
+        face_list[3 * one_ring_faces[j] + 1],
+        face_list[3 * one_ring_faces[j] + 2] };
+      int connect[2];
+      this->getConnectedPtID(i, points_in_face, connect);
+
+      for (int k = 0; k < 3; ++k)
+      {
+        for (int l = 0; l < 3; ++l)
+        {
+          // 2 edges first dimension
+          normal_triplets.push_back(Triplet(3 * i + k, 3 * i + l, n[k] * n[l] * 2));
+          normal_triplets.push_back(Triplet(3 * i + k, 3 * connect[0] + l, -n[k] * n[l]));
+          normal_triplets.push_back(Triplet(3 * i + k, 3 * connect[1] + l, -n[k] * n[l]));
+        }
+      }
+    }
+  }
+
+  normal_matrix.resize(3 * P_Num, 3 * P_Num);
+  normal_matrix.setFromTriplets(normal_triplets.begin(), normal_triplets.end());
+}
+
+void NormalConstraint::fillPartialNormalMatrix(
+  FaceList& face_list,
+  AdjList& vertex_share_faces,
+  NormalList& new_face_normal,
+  STLVectori& faces_in_photo)
+{
+  TripletList normal_triplets;
+
+  for (int i = 0; i < P_Num; ++i)
+  {
+    std::vector<int>& one_ring_faces = vertex_share_faces[i];
+
+    for (decltype(one_ring_faces.size()) j = 0; j < one_ring_faces.size(); ++j)
+    {
+      // only part of faces has been assigned with new normals
+      STLVectori::iterator it = std::find(faces_in_photo.begin(), faces_in_photo.end(), one_ring_faces[j]);
+      if (it == faces_in_photo.end())
+      {
+        continue;
+      }
+
+      size_t f_idx = std::distance(faces_in_photo.begin(), it);
+      float n[3] = { new_face_normal[3 * f_idx + 0],
+        new_face_normal[3 * f_idx + 1],
+        new_face_normal[3 * f_idx + 2] };
 
       int points_in_face[3] = { face_list[3 * one_ring_faces[j] + 0],
         face_list[3 * one_ring_faces[j] + 1],
