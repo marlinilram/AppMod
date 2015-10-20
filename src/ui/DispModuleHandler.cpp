@@ -214,21 +214,22 @@ void DispModuleHandler::runNormalTransfer()
 void DispModuleHandler::runNormalCompute()
 {
   alg_handler->doNormalCompute();
-
-  cv::Mat normal = alg_handler->getDecompImg()->getNormal();
-  //need to reset others
-  cv::Mat normal_normalized = cv::Mat(normal.size().height,normal.size().width,CV_32FC3);
-  for(int i = 0; i < normal.size().height; i ++)
-  {
-    for(int j = 0; j < normal.size().width; j ++)
-    {
-      normal_normalized.at<cv::Vec3f>(i,j)[0] = (normal.at<cv::Vec3f>(i,j)[0] + 1) / 2;
-      normal_normalized.at<cv::Vec3f>(i,j)[1] = (normal.at<cv::Vec3f>(i,j)[1] + 1) / 2;
-      normal_normalized.at<cv::Vec3f>(i,j)[2] = (normal.at<cv::Vec3f>(i,j)[2] + 1) / 2;
-    }
-  }
-  cv::imshow("Normal_(0 ~ 1)",normal_normalized);
-  //cv::imshow("Normal_(-1 ~ 1)",normal);
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
+  updateCanvas();
+  //cv::Mat normal = alg_handler->getDecompImg()->getNormal();
+  ////need to reset others
+  //cv::Mat normal_normalized = cv::Mat(normal.size().height,normal.size().width,CV_32FC3);
+  //for(int i = 0; i < normal.size().height; i ++)
+  //{
+  //  for(int j = 0; j < normal.size().width; j ++)
+  //  {
+  //    normal_normalized.at<cv::Vec3f>(i,j)[0] = (normal.at<cv::Vec3f>(i,j)[0] + 1) / 2;
+  //    normal_normalized.at<cv::Vec3f>(i,j)[1] = (normal.at<cv::Vec3f>(i,j)[1] + 1) / 2;
+  //    normal_normalized.at<cv::Vec3f>(i,j)[2] = (normal.at<cv::Vec3f>(i,j)[2] + 1) / 2;
+  //  }
+  //}
+  //cv::imshow("Normal_(0 ~ 1)",normal_normalized);
+  ////cv::imshow("Normal_(-1 ~ 1)",normal);
 }
 
 void DispModuleHandler::runDetailSynthesis()

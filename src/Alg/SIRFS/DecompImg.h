@@ -14,11 +14,13 @@ public:
   DecompImg();
   ~DecompImg();
 
-  void setModel(std::shared_ptr<Model> model);
-  void computeNormal();
-  inline cv::Mat& getNormal(){ return normal_from_shading; };
+  //void setModel(std::shared_ptr<Model> model);
+  void computeNormal(std::shared_ptr<Model> model);
+  //inline cv::Mat& getNormal(){ return normal_from_shading; };
+  void getDrawableActors(std::vector<GLActor>& actors);
+
 private:
-  std::shared_ptr<Model> model;
+  //std::shared_ptr<Model> model;
   std::vector<GLActor> actors;
   cv::Mat normal_from_shading;
   

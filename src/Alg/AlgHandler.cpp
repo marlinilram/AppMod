@@ -107,8 +107,15 @@ void AlgHandler::doNormalTransfer()
 
 void AlgHandler::doNormalCompute()
 {
-  decomp_img->setModel(shape_model);
-  decomp_img->computeNormal();
+  /*decomp_img->setModel(shape_model);*/
+  decomp_img->computeNormal(shape_model);
+  actors.clear();
+  std::vector<GLActor> temp_actors;
+  decomp_img->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
 }
 
 void AlgHandler::doDetailSynthesis()
