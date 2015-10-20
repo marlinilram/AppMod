@@ -54,6 +54,7 @@ void MeshParameterization::saveParameterization(std::string file_path)
 
 void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
 {
+  // detect visible faces
   cv::Mat& primitive_ID_img = model->getPrimitiveIDImg();
   std::set<int> visible_faces;
   for (int i = 0; i < primitive_ID_img.rows; ++i)
@@ -68,6 +69,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
     }
   }
 
+  // fill holes
   const AdjList& f_adjList = model->getShapeFaceAdjList();
   std::set<int> hole_faces;
   do
@@ -75,20 +77,38 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
     hole_faces.clear();
     for (auto i : visible_faces)
     {
-      for (int j = 0; j < 3; ++j)
+      for (size_t j = 0; j < f_adjList[i].size(); ++j)
       {
         int adj_f = f_adjList[i][j];
         if (visible_faces.find(adj_f) == visible_faces.end())
         {
-          int fs[2];
-          if (f_adjList[adj_f][0] == i) { fs[0] = f_adjList[adj_f][1]; fs[1] = f_adjList[adj_f][2]; }
-          else if (f_adjList[adj_f][1] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][2]; }
-          else if (f_adjList[adj_f][2] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][1]; }
-
-          if (visible_faces.find(fs[0]) != visible_faces.end() || visible_faces.find(fs[1]) != visible_faces.end())
+          // test if the adjacent faces of this new face is in visible_faces
+          // if so, insert it into hole_faces
+          int cnt_faces_in_visible = 0;
+          for (size_t k = 0; k < f_adjList[adj_f].size(); ++k)
+          {
+            if (visible_faces.find(f_adjList[adj_f][k]) != visible_faces.end())
+            {
+              ++cnt_faces_in_visible;
+            }
+          }
+          if (cnt_faces_in_visible >= 2)
           {
             hole_faces.insert(adj_f);
           }
+
+
+          // old method which assuming all faces have 3 adjacent faces
+          // and this is not suitable
+          //int fs[2];
+          //if (f_adjList[adj_f][0] == i) { fs[0] = f_adjList[adj_f][1]; fs[1] = f_adjList[adj_f][2]; }
+          //else if (f_adjList[adj_f][1] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][2]; }
+          //else if (f_adjList[adj_f][2] == i) { fs[0] = f_adjList[adj_f][0]; fs[1] = f_adjList[adj_f][1]; }
+
+          //if (visible_faces.find(fs[0]) != visible_faces.end() || visible_faces.find(fs[1]) != visible_faces.end())
+          //{
+          //  hole_faces.insert(adj_f);
+          //}
         }
       }
     }
@@ -96,6 +116,47 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
     visible_faces.insert(hole_faces.begin(), hole_faces.end());
   } while (!hole_faces.empty());
 
+  // delete single face
+  std::vector<std::set<int> > connected_components;
+  std::set<int> component;
+  for (auto i : visible_faces)
+  {
+    bool already_visited = false;
+    for (size_t j = 0; j < connected_components.size(); ++j)
+    {
+      if (connected_components[j].find(i) != connected_components[j].end())
+      {
+        already_visited = true;
+        break;
+      }
+    }
+
+    if (already_visited)
+    {
+      break;
+    }
+    else
+    {
+      component.clear();
+      this->findConnectedFaces(i, component, visible_faces, f_adjList);
+      connected_components.push_back(component);
+    }
+  }
+  // find largest component
+  int largest_id = -1;
+  size_t largest_size = std::numeric_limits<size_t>::min();
+  for (size_t i = 0; i < connected_components.size(); ++i)
+  {
+    if (connected_components[i].size() > largest_size)
+    {
+      largest_size = connected_components[i].size();
+      largest_id = i;
+    }
+  }
+  visible_faces = connected_components[largest_id];
+
+
+  // save cut_face_list
   cut_face_list.clear();
   const FaceList& ori_face_list = model->getShapeFaceList();
   for (auto i : visible_faces)
@@ -172,7 +233,7 @@ void MeshParameterization::findBoundary()
   std::vector<STLVectori> boundary_lines;
   CurvesUtility::mergeShapeEdges(boundary_edges, boundary_lines);
   // use the longest boundary for parameterization
-  size_t longest_id = 0;
+  int longest_id = -1;
   size_t longest_len = std::numeric_limits<size_t>::min();
   for (size_t i = 0; i < boundary_lines.size(); ++i)
   {
@@ -182,7 +243,10 @@ void MeshParameterization::findBoundary()
       longest_id = i;
     }
   }
-  boundary_loop = boundary_lines[longest_id];
+  if (longest_id != -1)
+  {
+    boundary_loop = boundary_lines[longest_id];
+  }
 }
 
 void MeshParameterization::computeBaryCentericPara()
@@ -341,4 +405,21 @@ float MeshParameterization::computeWij(const float *p1, const float *p2, const f
     beta_cos = fabs((e4*e4+e5*e5-e1*e1)/(2*e4*e5));
   }
   return ((alpha_cos/sqrt(1-alpha_cos*alpha_cos))+(beta_cos/sqrt(1-beta_cos*beta_cos)))/2;
+}
+
+void MeshParameterization::findConnectedFaces(int f_id, std::set<int>& connected_faces, std::set<int>& visible_faces, const AdjList& adj_list)
+{
+  if (connected_faces.find(f_id) != connected_faces.end())
+  {
+    return;
+  }
+
+  connected_faces.insert(f_id);
+  for (size_t i = 0; i < adj_list[f_id].size(); ++i)
+  {
+    if (visible_faces.find(adj_list[f_id][i]) != visible_faces.end())
+    {
+      this->findConnectedFaces(adj_list[f_id][i], connected_faces, visible_faces, adj_list);
+    }
+  }
 }

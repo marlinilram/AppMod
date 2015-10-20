@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <map>
+#include<set>
 #include <string>
 #include "BasicHeader.h"
 
@@ -27,6 +28,7 @@ private:
   void computeLaplacianWeight(int v_id, std::map<int, float>& weight);
   void findShareVertex(int pi, int pj, STLVectori& share_vertex);
   float computeWij(const float *p1, const float *p2, const float *p3, const float *p4 = nullptr);
+  void findConnectedFaces(int f_id, std::set<int>& connected_faces, std::set<int>& visible_faces, const AdjList& adj_list);
 
 public:
   FaceList cut_face_list; // triplets which store the old vertex id of the faces
