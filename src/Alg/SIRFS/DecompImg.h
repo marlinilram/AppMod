@@ -1,7 +1,10 @@
 #ifndef DecompImg_H
 #define DecompImg_H
-#include<cv.h>
+
 #include <memory>
+#include <cv.h>
+
+#include "GLActor.h"
 
 class Model;
 
@@ -13,10 +16,11 @@ public:
 
   void setModel(std::shared_ptr<Model> model);
   void computeNormal();
-  inline cv::Mat& getNormal(){ return normal_from_shader; };
+  inline cv::Mat& getNormal(){ return normal_from_shading; };
 private:
   std::shared_ptr<Model> model;
-  cv::Mat normal_from_shader;
+  std::vector<GLActor> actors;
+  cv::Mat normal_from_shading;
   
 private:
   DecompImg(const DecompImg&);

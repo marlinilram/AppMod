@@ -21,6 +21,7 @@ void AlgHandler::init()
 
   feature_model = nullptr;
   shape_model = nullptr;
+  decomp_img.reset(new DecompImg);
 }
 
 void AlgHandler::setFeatureModel(std::shared_ptr<FeatureGuided> model)
@@ -99,4 +100,10 @@ void AlgHandler::doNormalTransfer()
   {
     actors.push_back(temp_actors[i]);
   }
+}
+
+void AlgHandler::doNormalCompute()
+{
+  decomp_img->setModel(shape_model);
+  decomp_img->computeNormal();
 }
