@@ -30,7 +30,7 @@ protected:
   virtual void init();
   void drawTrackBall();
   void drawActors();
-  void drawCrestLines();
+  //void drawCrestLines();
 
 private:
   void drawCornerAxis();

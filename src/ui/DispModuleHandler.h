@@ -42,6 +42,7 @@ public:
   void toggleVectorFieldMode(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
+  void runNormalCompute();
   void runDetailSynthesis();
 
 public slots:

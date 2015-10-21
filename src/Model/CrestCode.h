@@ -12,8 +12,17 @@ public:
   CrestCode();
   ~CrestCode();
 
-  void exportInputFile(std::shared_ptr<Shape> shape);
-  void getCrestLinesPoints(std::vector<std::vector<Vector3f>>& crestLinesPoints);
+  void setShape(std::shared_ptr<Shape> in_shape);
+  void exportInputFile();
+  std::vector<STLVectori>& getCrestLines(){ return crest_lines; };
+  void computeCrestLines();
+  void mergeCrestEdges();
+
+private:
+  std::shared_ptr<Shape> shape;
+  std::vector<Edge> crest_edges;
+  std::vector<STLVectori> crest_lines;
+  std::vector<Vector3f> crest_lines_attributes;
 
 };
 

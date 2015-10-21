@@ -22,6 +22,9 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
   shape = in_shape;
   buildCandidates();
   mergeCandidates();
+  crestCode.reset(new CrestCode);
+  crestCode->setShape(in_shape);
+  crestCode_lines = crestCode->getCrestLines();
 }
 
 const std::vector<Edge>& ShapeCrest::getCrestEdge()
@@ -32,6 +35,11 @@ const std::vector<Edge>& ShapeCrest::getCrestEdge()
 const std::vector<STLVectori>& ShapeCrest::getCrestLine()
 {
   return crest_lines;
+}
+
+const std::vector<STLVectori>& ShapeCrest::getCrestCodeLine()
+{
+  return crestCode_lines;
 }
 
 const std::vector<STLVectori>& ShapeCrest::getVisbleCrestLine()
@@ -252,34 +260,36 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
   return;
 }
 
-void ShapeCrest::computeCrestLinesPoints()
-{
-  crest.reset(new CrestCode);
-  crest->exportInputFile(shape);
-  std::vector<std::vector<Vector3f>> CLPoints;
-  crest->getCrestLinesPoints(CLPoints);
-  int id;
-  std::vector<float> pt;
-  pt.resize(3);
-  crestLinesPointsId.resize(CLPoints.size());
-  crestLinesPoints.resize(CLPoints.size());
 
-  for(size_t i = 0 ; i < CLPoints.size() ; i ++)
-  {
-    for(size_t j = 0 ; j < CLPoints[i].size() ; j ++)
-    {
-      pt[0] = CLPoints[i][j].x();
-      pt[1] = CLPoints[i][j].y();
-      pt[2] = CLPoints[i][j].z();
-      (shape->getKDTree())->nearestPt(pt,id);
-      crestLinesPointsId[i].push_back(id);
-      Vector3f point;
-      point << (shape->getVertexList())[id * 3],(shape->getVertexList())[id * 3 + 1],(shape->getVertexList())[id * 3 + 2];
-      crestLinesPoints[i].push_back(point);
-      //crestLinesPoints[i].push_back(CLPoints[i][j]);
-    }
-  }
-  /*size_t sum = 0;
-  for(size_t i = 0; i < crestLinesPoints.size(); i ++)
-    sum += crestLinesPoints[i].size();*/
-}
+//void ShapeCrest::computeCrestLinesPoints()
+//{
+//  crest.reset(new CrestCode);
+//  crest->exportInputFile(shape);
+//  std::vector<std::vector<Vector3f>> CLPoints;
+//  crest->getCrestLinesPoints(CLPoints);
+//  int id;
+//  std::vector<float> pt;
+//  pt.resize(3);
+//  crestLinesPointsId.resize(CLPoints.size());
+//  crestLinesPoints.resize(CLPoints.size());
+//
+//  for(size_t i = 0 ; i < CLPoints.size() ; i ++)
+//  {
+//    for(size_t j = 0 ; j < CLPoints[i].size() ; j ++)
+//    {
+//      pt[0] = CLPoints[i][j].x();
+//      pt[1] = CLPoints[i][j].y();
+//      pt[2] = CLPoints[i][j].z();
+//      (shape->getKDTree())->nearestPt(pt,id);
+//      crestLinesPointsId[i].push_back(id);
+//      Vector3f point;
+//      point << (shape->getVertexList())[id * 3],(shape->getVertexList())[id * 3 + 1],(shape->getVertexList())[id * 3 + 2];
+//      crestLinesPoints[i].push_back(point);
+//      //crestLinesPoints[i].push_back(CLPoints[i][j]);
+//    }
+//  }
+//  *size_t sum = 0;
+//  for(size_t i = 0; i < crestLinesPoints.size(); i ++)
+//    sum += crestLinesPoints[i].size();*/
+//}
+
