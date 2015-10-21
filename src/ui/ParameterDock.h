@@ -28,6 +28,7 @@ private slots:
   void setInteractiveProjAlign(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
+  void runNormalCompute();
   void runDetailSynthesis();
 
 private:

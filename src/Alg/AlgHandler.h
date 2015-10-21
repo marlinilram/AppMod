@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "GLActor.h"
+#include "DecompImg.h"
 
 class ProjOptimize;
 class NormalTransfer;
@@ -27,6 +28,8 @@ public:
   void doInteractiveProjOptimize();
 
   void doNormalTransfer();
+  void doNormalCompute();
+  std::shared_ptr<DecompImg> getDecompImg() { return decomp_img; };
 
   void doDetailSynthesis();
 
@@ -38,6 +41,7 @@ private:
 
   std::shared_ptr<FeatureGuided> feature_model;
   std::shared_ptr<Model>         shape_model;
+  std::shared_ptr<DecompImg> decomp_img;
 
   // parameters for algorithms
   //float sample_density;

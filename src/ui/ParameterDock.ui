@@ -240,6 +240,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="NormalCompute_PushButton">
+             <property name="text">
+              <string>Do Normal Computing</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="DetailSynthesis_PushButton">
              <property name="text">
               <string>Test Synthesize (Parameterization)</string>
@@ -273,8 +280,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>382</width>
-         <height>630</height>
+         <width>98</width>
+         <height>28</height>
         </rect>
        </property>
        <attribute name="label">
