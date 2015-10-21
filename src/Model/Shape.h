@@ -49,11 +49,9 @@ private:
   void computeEdgeConnectivity();
 
 private:
+  // geometry information
   VertexList vertex_list;
   FaceList   face_list;
-
-  NormalList vertex_normal;
-  NormalList face_normal;
 
   // connectivity information
   AdjList    face_adjlist;
@@ -62,6 +60,8 @@ private:
   STLVectori edge_connectivity; // edge id is stored implicitly in the array index, the value stores edge id of the other half edge to it
 
   // attribute
+  NormalList vertex_normal;
+  NormalList face_normal;
   STLVectorf UV_list;
   STLVectorf color_list;
 
