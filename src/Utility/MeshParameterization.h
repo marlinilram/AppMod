@@ -32,6 +32,7 @@ private:
 
   // barycentric parameterization
   void computeBaryCentericPara();
+  void mapBoundary(STLVectorf& UV_list, const STLVectori& boundary_loop, const VertexList& vertex_list, int b_type = 0);
   void computeLaplacianWeight(int v_id, std::map<int, float>& weight);
   void findShareVertex(int pi, int pj, STLVectori& share_vertex);
   float computeWij(const float *p1, const float *p2, const float *p3, const float *p4 = nullptr);

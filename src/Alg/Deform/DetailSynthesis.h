@@ -16,6 +16,7 @@ public:
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;
+  std::shared_ptr<Shape> cache_shape;
 
 private:
   DetailSynthesis(const DetailSynthesis&);

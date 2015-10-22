@@ -31,6 +31,10 @@ Model::Model(const std::string path, const std::string name)
   shape_crest->setShape(shape);
   //shape_crest->computeCrestLinesPoints();
 
+  // read photo
+  cv::imread(path + "/photo.png").convertTo(photo, CV_32FC3);
+  photo = photo / 255.0;
+
   // make an output path
   char time_postfix[50];
   time_t current_time = time(NULL);
@@ -317,6 +321,32 @@ void Model::getShapeFaceCenter(int f_id, float p[3])
 void Model::updateShape(VertexList& new_vertex_list)
 {
   shape->updateShape(new_vertex_list);
+}
+
+void Model::updateColor()
+{
+  // set color from photo to shape
+  // or using UV coordinate
+  const VertexList& vertex_list = shape->getVertexList();
+  STLVectorf color_list(vertex_list.size(), 0.0f);
+  float pt[3];
+  float winx;
+  float winy;
+  for (size_t i = 0; i < vertex_list.size() / 3; ++i)
+  {
+    pt[0] = vertex_list[3 * i + 0];
+    pt[1] = vertex_list[3 * i + 1];
+    pt[2] = vertex_list[3 * i + 2];
+    this->getProjectPt(pt, winx, winy);
+    winy = winy < 0 ? 0 : (winy >= photo.rows ? photo.rows - 1 : winy);
+    winx = winx < 0 ? 0 : (winx >= photo.cols ? photo.cols - 1 : winx);
+    cv::Vec3f c = photo.at<cv::Vec3f>(winy, winx);
+    color_list[3 * i + 0] = c[2];
+    color_list[3 * i + 1] = c[1];
+    color_list[3 * i + 2] = c[0];
+  }
+
+  shape->setColorList(color_list);
 }
 
 // get information from ShapeCrest

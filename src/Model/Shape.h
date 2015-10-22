@@ -20,6 +20,7 @@ public:
   void init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList);
   void setVertexList(VertexList& vertexList);
   void setFaceList(FaceList& faceList);
+  void setColorList(STLVectorf& colorList);
   void setUVCoord(STLVectorf& UVCoord);
   const VertexList& getVertexList();
   const FaceList& getFaceList();

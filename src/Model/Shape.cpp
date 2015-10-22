@@ -54,6 +54,11 @@ void Shape::setFaceList(FaceList& faceList)
   face_list = faceList;
 }
 
+void Shape::setColorList(STLVectorf& colorList)
+{
+  color_list = colorList;
+}
+
 void Shape::setUVCoord(STLVectorf& UVCoord)
 {
   UV_list = UVCoord;

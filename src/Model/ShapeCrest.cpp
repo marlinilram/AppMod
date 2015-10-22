@@ -22,9 +22,9 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
   shape = in_shape;
   buildCandidates();
   mergeCandidates();
-  crestCode.reset(new CrestCode);
-  crestCode->setShape(in_shape);
-  crestCode_lines = crestCode->getCrestLines();
+  //crestCode.reset(new CrestCode);
+  //crestCode->setShape(in_shape);
+  //crestCode_lines = crestCode->getCrestLines();
 }
 
 const std::vector<Edge>& ShapeCrest::getCrestEdge()

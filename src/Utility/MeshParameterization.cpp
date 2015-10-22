@@ -217,35 +217,7 @@ void MeshParameterization::computeBaryCentericPara()
   // map boundary loop to unit circle in texture domain
   const VertexList& vertex_list = cut_shape->getVertexList();
   STLVectorf UV_list(2 * vertex_list.size() / 3, 0.0f);
-  float length = 0.0;
-  size_t n = boundary_loop.size();
-  for (size_t i = 0; i < n; ++i)
-  {
-    int v_0 = boundary_loop[i];
-    int v_1 = boundary_loop[(i + 1) % n];
-
-    Vector3f diff(vertex_list[3 * v_0 + 0] - vertex_list[3 * v_1 + 0],
-                  vertex_list[3 * v_0 + 1] - vertex_list[3 * v_1 + 1],
-                  vertex_list[3 * v_0 + 2] - vertex_list[3 * v_1 + 2]);
-
-    length += diff.norm();
-  }
-  float l = 0.0;
-  for (size_t i = 0; i < n; ++i)
-  {
-    float angle = l / length * 2.0 * M_PI;
-    UV_list[2 * boundary_loop[i] + 0] = 0.5 * cos(angle) + 0.5;
-    UV_list[2 * boundary_loop[i] + 1] = 0.5 * sin(angle) + 0.5;
-
-    int v_0 = boundary_loop[i];
-    int v_1 = boundary_loop[(i + 1) % n];
-
-    Vector3f diff(vertex_list[3 * v_0 + 0] - vertex_list[3 * v_1 + 0],
-                  vertex_list[3 * v_0 + 1] - vertex_list[3 * v_1 + 1],
-                  vertex_list[3 * v_0 + 2] - vertex_list[3 * v_1 + 2]);
-    
-    l += diff.norm();
-  }
+  this->mapBoundary(UV_list, boundary_loop, vertex_list, 1);
 
   // setup matrix and rhs
   // 1. delete boundary loop vertex from the vertex list
@@ -301,6 +273,77 @@ void MeshParameterization::computeBaryCentericPara()
   }
 
   cut_shape->setUVCoord(UV_list);
+}
+
+void MeshParameterization::mapBoundary(STLVectorf& UV_list, const STLVectori& boundary_loop, const VertexList& vertex_list, int b_type /* = 0 */)
+{
+  // map the boundary loop to a kind of shape
+
+  // compute the length of boundary loop
+  float length = 0.0;
+  size_t n = boundary_loop.size();
+  for (size_t i = 0; i < n; ++i)
+  {
+    int v_0 = boundary_loop[i];
+    int v_1 = boundary_loop[(i + 1) % n];
+
+    Vector3f diff(vertex_list[3 * v_0 + 0] - vertex_list[3 * v_1 + 0],
+      vertex_list[3 * v_0 + 1] - vertex_list[3 * v_1 + 1],
+      vertex_list[3 * v_0 + 2] - vertex_list[3 * v_1 + 2]);
+
+    length += diff.norm();
+  }
+
+  if (b_type == 0)
+  {
+    // map boundary to unit circle
+    float l = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+      float angle = l / length * 2.0 * M_PI + 5 * M_PI / 4;
+      UV_list[2 * boundary_loop[i] + 0] = 0.5 * cos(angle) + 0.5;
+      UV_list[2 * boundary_loop[i] + 1] = 0.5 * sin(angle) + 0.5;
+
+      int v_0 = boundary_loop[i];
+      int v_1 = boundary_loop[(i + 1) % n];
+
+      Vector3f diff(vertex_list[3 * v_0 + 0] - vertex_list[3 * v_1 + 0],
+        vertex_list[3 * v_0 + 1] - vertex_list[3 * v_1 + 1],
+        vertex_list[3 * v_0 + 2] - vertex_list[3 * v_1 + 2]);
+
+      l += diff.norm();
+    }
+  }
+  else if (b_type == 1)
+  {
+    // map boundary to unit square
+    float l = 0.0;
+    float side_length = length / 4;
+    Vector2f start(0.0, 0.0);
+    Vector2f dir(1.0, 0.0);
+    for (size_t i = 0; i < n; ++i)
+    {
+      float offset = l / side_length;
+      UV_list[2 * boundary_loop[i] + 0] = start[0] + offset * dir[0];
+      UV_list[2 * boundary_loop[i] + 1] = start[1] + offset * dir[1];
+
+      int v_0 = boundary_loop[i];
+      int v_1 = boundary_loop[(i + 1) % n];
+
+      Vector3f diff(vertex_list[3 * v_0 + 0] - vertex_list[3 * v_1 + 0],
+        vertex_list[3 * v_0 + 1] - vertex_list[3 * v_1 + 1],
+        vertex_list[3 * v_0 + 2] - vertex_list[3 * v_1 + 2]);
+
+      l += diff.norm();
+
+      if (l > side_length)
+      {
+        l -= side_length;
+        start += dir;
+        dir = Vector2f(- dir[1], dir[0]);
+      }
+    }
+  }
 }
 
 void MeshParameterization::computeLaplacianWeight(int v_id, std::map<int, float>& weight)

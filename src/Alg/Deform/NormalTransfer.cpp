@@ -161,6 +161,8 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
   std::vector<float> new_vertex_list(solver->P_Opt.data(), solver->P_Opt.data() + solver->P_Opt.rows() * solver->P_Opt.cols());
 
   model->updateShape(new_vertex_list);
+  // map new texture
+  model->updateColor();
 
   std::cout << "Update geometry finished...\n";
 }

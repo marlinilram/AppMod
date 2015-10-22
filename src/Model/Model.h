@@ -29,6 +29,10 @@ public:
   std::string getDataPath();
   std::string getOutputPath();
 
+  //
+  void updateShape(VertexList& new_vertex_list);
+  void updateColor();
+
   // get information from renderer
   inline cv::Mat &getRImg(){ return r_img; };
   inline cv::Mat &getRBGRAImg() { return rBGRA_img; };
@@ -50,7 +54,6 @@ public:
   const AdjList& getShapeFaceAdjList();
   const STLVectori& getShapeEdgeConnectivity();
   void getShapeFaceCenter(int f_id, float p[3]);
-  void updateShape(VertexList& new_vertex_list);
 
   // get information from ShapeCrest
   const std::vector<Edge>& getShapeCrestEdge();
@@ -86,6 +89,7 @@ private:
   cv::Mat r_img;
   cv::Mat mask_rimg;
   cv::Mat edge_image;
+  cv::Mat photo;
 
   // camera info
   Matrix4f m_modelview;

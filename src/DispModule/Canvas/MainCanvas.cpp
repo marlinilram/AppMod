@@ -34,9 +34,13 @@ bool MainCanvas::display()
   }
   else
   {
-    glDepthFunc(GL_ALWAYS);
+    int render_mode_cache = render_mode;
+    render_mode = 3;
+    glDisable(GL_LIGHTING);
+    //glDepthFunc(GL_ALWAYS);
     drawModel();
-    glDepthFunc(GL_LEQUAL);
+    //glDepthFunc(GL_LEQUAL);
+    render_mode = render_mode_cache;
   }
   return true;
 }
