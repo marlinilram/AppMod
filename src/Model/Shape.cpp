@@ -349,7 +349,7 @@ void Shape::computeVertexNormal()
       cur_v_normal(2) += face_normal[3*cur_1_ring_face[j] + 2];
     }
     cur_v_normal = cur_v_normal / cur_1_ring_face.size();
-    cur_v_normal.normalized();
+    cur_v_normal.normalize();
 
     vertex_normal.push_back(cur_v_normal(0));
     vertex_normal.push_back(cur_v_normal(1));

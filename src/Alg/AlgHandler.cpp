@@ -120,6 +120,7 @@ void AlgHandler::doNormalCompute()
 
 void AlgHandler::doDetailSynthesis()
 {
+
   detail_synthesis->testMeshPara(shape_model);
   shape_model->exportOBJ(0);
   doNormalTransfer();
