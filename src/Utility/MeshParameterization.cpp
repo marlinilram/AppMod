@@ -3,6 +3,7 @@
 #include "Shape.h"
 #include "obj_writer.h"
 #include "CurvesUtility.h"
+#include "KDTreeWrapper.h"
 
 #include <cv.h>
 #include <set>
@@ -20,21 +21,31 @@ MeshParameterization::~MeshParameterization()
 void MeshParameterization::init()
 {
   cut_shape = nullptr;
+  cut_shape_hidden = nullptr;
+
 }
 
 void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
 {
   this->cutMesh(model);
-  this->prepareCutShape(model);
-  this->findBoundary();
-  this->computeBaryCentericPara();
-  this->saveParameterization(model->getOutputPath());
+  this->prepareCutShape(model, cut_face_list, vertex_set, cut_shape);
+  this->findBoundary(cut_shape, boundary_loop);
+  this->computeBaryCentericPara(cut_shape, boundary_loop);
+  this->saveParameterization(model->getOutputPath(), cut_shape, FALSE);
+  this->buildKDTree_UV();
+  this->getNormalOfOriginalMesh(model);
+  this->getVertexOfOriginalMesh(model);
+
+  this->prepareCutShape(model, cut_face_list_hidden, vertex_set_hidden, cut_shape_hidden);
+  this->findBoundary(cut_shape_hidden, boundary_loop_hidden);
+  this->computeBaryCentericPara(cut_shape_hidden, boundary_loop_hidden);
+  this->saveParameterization(model->getOutputPath(), cut_shape_hidden, TRUE);
 }
 
-void MeshParameterization::saveParameterization(std::string file_path)
+void MeshParameterization::saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, bool is_hidden)
 {
   STLVectorf vertex_list;
-  const STLVectorf& UV_list = cut_shape->getUVCoord();
+  const STLVectorf& UV_list = shape->getUVCoord();
   for (size_t i = 0; i < UV_list.size() / 2; ++i)
   {
     vertex_list.push_back(UV_list[2 * i + 0]);
@@ -47,15 +58,29 @@ void MeshParameterization::saveParameterization(std::string file_path)
   tinyobj::shape_t obj_shape;
 
   obj_shape.mesh.positions = vertex_list;
-  obj_shape.mesh.indices = cut_shape->getFaceList();
+  obj_shape.mesh.indices = shape->getFaceList();
   shapes.push_back(obj_shape);
-  WriteObj(file_path + "/parameterization.obj", shapes, materials);
+  if(is_hidden)
+  {
+    WriteObj(file_path + "/parameterization_hidden.obj", shapes, materials);
+  }
+  else
+  {
+    WriteObj(file_path + "/parameterization.obj", shapes, materials);
+  }
 
-  obj_shape.mesh.positions = cut_shape->getVertexList();
-  obj_shape.mesh.indices = cut_shape->getFaceList();
+  obj_shape.mesh.positions = shape->getVertexList();
+  obj_shape.mesh.indices = shape->getFaceList();
   shapes.pop_back();
   shapes.push_back(obj_shape);
-  WriteObj(file_path + "/cutmesh.obj", shapes, materials);
+  if(is_hidden)
+  {
+    WriteObj(file_path + "/cutmesh_hidden.obj", shapes, materials);
+  }
+  else
+  {
+    WriteObj(file_path + "/cutmesh.obj", shapes, materials);
+  }
 }
 
 void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
@@ -129,6 +154,19 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
     cut_face_list.push_back(ori_face_list[3 * i + 2]);
   }
 
+  // get hidden face_list
+  std::set<int> hidden_faces;
+  std::set_difference(full_faces.begin(), full_faces.end(),
+                      visible_faces.begin(), visible_faces.end(),
+                      std::inserter(hidden_faces, hidden_faces.begin()));
+  cut_face_list_hidden.clear();
+  for (auto i : hidden_faces)
+  {
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 0]);
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 1]);
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 2]);
+  }
+
   //std::vector<tinyobj::shape_t> shapes;
   //std::vector<tinyobj::material_t> materials;
   //tinyobj::shape_t obj_shape;
@@ -139,46 +177,46 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   //WriteObj(model->getOutputPath() + "/cutface.obj", shapes, materials);
 }
 
-void MeshParameterization::prepareCutShape(std::shared_ptr<Model> model)
+void MeshParameterization::prepareCutShape(std::shared_ptr<Model> model, FaceList& f_list, STLVectori& v_set, std::shared_ptr<Shape>& shape)
 {
   //get all parameterization related vertices
   const FaceList& face_list = model->getShapeFaceList();
 
   // vertex_set store the vertex id map from old full mesh to new cut mesh
-  vertex_set.clear();
-  for (auto i : cut_face_list)
+  v_set.clear();
+  for (auto i : f_list)
   {
-    vertex_set.push_back(i);
+    v_set.push_back(i);
   }
-  std::sort(vertex_set.begin(), vertex_set.end());
-  vertex_set.erase(std::unique(vertex_set.begin(), vertex_set.end()), vertex_set.end());
-  vertex_set.shrink_to_fit();
+  std::sort(v_set.begin(), v_set.end());
+  v_set.erase(std::unique(v_set.begin(), v_set.end()), v_set.end());
+  v_set.shrink_to_fit();
 
   const VertexList& vertex_list = model->getShapeVertexList();
   VertexList new_vertex_list;
-  for (auto i : vertex_set)
+  for (auto i : v_set)
   {
     new_vertex_list.push_back(vertex_list[3 * i + 0]);
     new_vertex_list.push_back(vertex_list[3 * i + 1]);
     new_vertex_list.push_back(vertex_list[3 * i + 2]);
   }
   FaceList new_face_list;
-  for (auto i : cut_face_list)
+  for (auto i : f_list)
   {
-    size_t id = std::distance(vertex_set.begin(), std::find(vertex_set.begin(), vertex_set.end(), i));
+    size_t id = std::distance(v_set.begin(), std::find(v_set.begin(), v_set.end(), i));
     new_face_list.push_back(id);
   }
-  STLVectorf UVList(vertex_set.size() * 2, 0.0f);
+  STLVectorf UVList(v_set.size() * 2, 0.0f);
 
-  cut_shape.reset(new Shape);
-  cut_shape->init(new_vertex_list, new_face_list, UVList);
+  shape.reset(new Shape);
+  shape->init(new_vertex_list, new_face_list, UVList);
 }
 
-void MeshParameterization::findBoundary()
+void MeshParameterization::findBoundary(std::shared_ptr<Shape> shape, STLVectori& b_loop)
 {
   // find all boundaries
-  const STLVectori& edge_connectivity = cut_shape->getEdgeConnectivity();
-  const FaceList& face_list = cut_shape->getFaceList();
+  const STLVectori& edge_connectivity = shape->getEdgeConnectivity();
+  const FaceList& face_list = shape->getFaceList();
   std::vector<Edge> boundary_edges;
   int inner_index[6] = {0, 1, 1, 2, 2, 0};
   for (size_t i = 0; i < edge_connectivity.size(); ++i)
@@ -208,30 +246,30 @@ void MeshParameterization::findBoundary()
   }
   if (longest_id != -1)
   {
-    boundary_loop = boundary_lines[longest_id];
+    b_loop = boundary_lines[longest_id];
   }
 }
 
-void MeshParameterization::computeBaryCentericPara()
+void MeshParameterization::computeBaryCentericPara(std::shared_ptr<Shape>& shape, STLVectori& b_loop)
 {
   // map boundary loop to unit circle in texture domain
-  const VertexList& vertex_list = cut_shape->getVertexList();
+  const VertexList& vertex_list = shape->getVertexList();
   STLVectorf UV_list(2 * vertex_list.size() / 3, 0.0f);
-  this->mapBoundary(UV_list, boundary_loop, vertex_list, 1);
+  this->mapBoundary(UV_list, b_loop, vertex_list, 1);
 
   // setup matrix and rhs
   // 1. delete boundary loop vertex from the vertex list
   STLVectori free_vertices;
   for (size_t i = 0; i < vertex_list.size() / 3; ++i)
   {
-    if (std::find(boundary_loop.begin(), boundary_loop.end(), i) == boundary_loop.end())
+    if (std::find(b_loop.begin(), b_loop.end(), i) == b_loop.end())
     {
       free_vertices.push_back(i);
     }
   }
 
   // 2. fill matrix
-  const AdjList& v_adjlist = cut_shape->getVertexAdjList();
+  const AdjList& v_adjlist = shape->getVertexAdjList();
   size_t N = free_vertices.size();
   SparseMatrix A(N, N);
   TripletList A_triplets;
@@ -242,12 +280,12 @@ void MeshParameterization::computeBaryCentericPara()
   for (size_t i = 0; i < N; ++i)
   {
     row.clear();
-    this->computeLaplacianWeight(free_vertices[i], row);
+    this->computeLaplacianWeight(free_vertices[i], row, shape);
     b[0][i] = 0.0; b[1][i] = 0.0;
 
     for (r_it = row.begin(); r_it != row.end(); ++r_it)
     {
-      if (std::find(boundary_loop.begin(), boundary_loop.end(), r_it->first) != boundary_loop.end())
+      if (std::find(b_loop.begin(), b_loop.end(), r_it->first) != b_loop.end())
       {
         b[0][i] -= r_it->second * UV_list[2 * r_it->first + 0];
         b[1][i] -= r_it->second * UV_list[2 * r_it->first + 1];
@@ -272,7 +310,7 @@ void MeshParameterization::computeBaryCentericPara()
     UV_list[2 * free_vertices[i] + 1] = x[1][i];
   }
 
-  cut_shape->setUVCoord(UV_list);
+  shape->setUVCoord(UV_list);
 }
 
 void MeshParameterization::mapBoundary(STLVectorf& UV_list, const STLVectori& boundary_loop, const VertexList& vertex_list, int b_type /* = 0 */)
@@ -346,16 +384,16 @@ void MeshParameterization::mapBoundary(STLVectorf& UV_list, const STLVectori& bo
   }
 }
 
-void MeshParameterization::computeLaplacianWeight(int v_id, std::map<int, float>& weight)
+void MeshParameterization::computeLaplacianWeight(int v_id, std::map<int, float>& weight, std::shared_ptr<Shape> shape)
 {
-  const STLVectori& v_ring = cut_shape->getVertexAdjList()[v_id];
-  const VertexList& vertex_list = cut_shape->getVertexList();
+  const STLVectori& v_ring = shape->getVertexAdjList()[v_id];
+  const VertexList& vertex_list = shape->getVertexList();
   float wi = 0.0f;
 
   for (size_t i = 0; i < v_ring.size(); ++i)
   {
     STLVectori share_vertex;
-    this->findShareVertex(v_id, v_ring[i], share_vertex);
+    this->findShareVertex(v_id, v_ring[i], share_vertex, shape);
 
     float wij = 0.0f;
     if (share_vertex.size() == 2) 
@@ -371,15 +409,15 @@ void MeshParameterization::computeLaplacianWeight(int v_id, std::map<int, float>
   weight[v_id] = wi;
 }
 
-void MeshParameterization::findShareVertex(int pi, int pj, STLVectori& share_vertex)
+void MeshParameterization::findShareVertex(int pi, int pj, STLVectori& share_vertex, std::shared_ptr<Shape> shape)
 {
-  const STLVectori& pi_f_ring = cut_shape->getVertexShareFaces()[pi];
-  const STLVectori& pj_f_ring = cut_shape->getVertexShareFaces()[pj];
+  const STLVectori& pi_f_ring = shape->getVertexShareFaces()[pi];
+  const STLVectori& pj_f_ring = shape->getVertexShareFaces()[pj];
 
   STLVectori faces;
   std::set_intersection(pi_f_ring.begin(), pi_f_ring.end(), pj_f_ring.begin(), pj_f_ring.end(), back_inserter(faces));
 
-  const FaceList& face_list = cut_shape->getFaceList();
+  const FaceList& face_list = shape->getFaceList();
   for (size_t i = 0; i < faces.size(); ++i)
   {
     for (int j = 0; j < 3; ++j)
@@ -519,4 +557,20 @@ int MeshParameterization::findLargestComponent(const std::vector<std::set<int> >
     }
   }
   return largest_id;
+}
+
+void MeshParameterization::buildKDTree_UV()
+{
+  kdTree_UV.reset(new KDTreeWrapper);
+  kdTree_UV->initKDTree(std::vector<float>(cut_shape->getUVCoord()), cut_shape->getUVCoord().size() / 2, 2);
+}
+
+void MeshParameterization::getNormalOfOriginalMesh(std::shared_ptr<Model> model)
+{
+  normal_original_mesh = model->getShapeNormalList();
+}
+
+void MeshParameterization::getVertexOfOriginalMesh(std::shared_ptr<Model> model)
+{
+  vertex_original_mesh = model->getShapeVertexList();
 }

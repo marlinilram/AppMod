@@ -1,6 +1,7 @@
 #ifndef DetailSynthesis_H
 #define DetailSynthesis_H
 
+#include <cv.h>
 #include <memory>
 
 class Model;
@@ -13,10 +14,11 @@ public:
   ~DetailSynthesis();
 
   void testMeshPara(std::shared_ptr<Model> model);
+  void computeDisplacementMap(std::shared_ptr<Model> model);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;
-  std::shared_ptr<Shape> cache_shape;
+  cv::Mat displacement_map;
 
 private:
   DetailSynthesis(const DetailSynthesis&);
