@@ -69,6 +69,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
     {
       int face_id = primitive_ID_img.at<int>(i, j);
       if (face_id >= 0)
+
       {
         visible_faces.insert(face_id);
       }

@@ -120,5 +120,6 @@ void AlgHandler::doNormalCompute()
 
 void AlgHandler::doDetailSynthesis()
 {
+
   detail_synthesis->testMeshPara(shape_model);
 }

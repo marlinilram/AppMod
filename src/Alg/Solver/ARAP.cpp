@@ -198,6 +198,14 @@ void ARAP::updatedvec()
       P_diff << P_vec[3 * i + 0] - P_vec[3 * adj_list[i][j] + 0],
                 P_vec[3 * i + 1] - P_vec[3 * adj_list[i][j] + 1],
                 P_vec[3 * i + 2] - P_vec[3 * adj_list[i][j] + 2];
+
+      // TODO: try to make the scale possible ?
+      //Vector3f P_Opt_diff;
+      //P_Opt_diff << solver->P_Opt[3 * i + 0] - solver->P_Opt[3 * adj_list[i][j] + 0],
+      //              solver->P_Opt[3 * i + 1] - solver->P_Opt[3 * adj_list[i][j] + 1],
+      //              solver->P_Opt[3 * i + 2] - solver->P_Opt[3 * adj_list[i][j] + 2];
+      //float scale = P_Opt_diff.norm() / P_diff.norm();
+
       d.col(i) += (Weight_matrix.coeffRef(3 * i, 3 * adj_list[i][j]) / 2) * (R[i] + R[adj_list[i][j]]) * P_diff;
     }
   }

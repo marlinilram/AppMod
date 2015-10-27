@@ -5,6 +5,7 @@
 
 class Model;
 class MeshParameterization;
+class SynthesisTool;
 
 class DetailSynthesis
 {
@@ -16,7 +17,7 @@ public:
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;
-  std::shared_ptr<Shape> cache_shape;
+  std::shared_ptr<SynthesisTool>        syn_tool;
 
 private:
   DetailSynthesis(const DetailSynthesis&);

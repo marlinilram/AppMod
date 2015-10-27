@@ -5,6 +5,7 @@
 #include <map>
 #include<set>
 #include <string>
+#include <cv.h>
 #include "BasicHeader.h"
 
 class Model;
