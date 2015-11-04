@@ -26,6 +26,7 @@ private slots:
   void showAllLines(int state);
   void showProjCrsp(int state);
   void setInteractiveProjAlign(int state);
+  void setInteractiveMainView(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();

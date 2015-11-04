@@ -24,6 +24,14 @@ find_package( OpenCV REQUIRED )
 # BOOST FILES
 FIND_PATH( BOOST_DIR "boost" )
 
+# LGMESH FILES
+SET( LGMESH_PATH "D:/Projects/LgMesh/LgMesh/LgMeshLib" )
+FILE ( GLOB LGMESH_SRCS "${LGMESH_PATH}/core/*.*" "${LGMESH_PATH}/IO/*.*" )
+SET( LGMESH_INCLUDE_DIR ${LGMESH_PATH}/core/ ${LGMESH_PATH}/IO/ )
+MESSAGE( STATUS "LGMESH_SRCS:         " ${LGMESH_SRCS} )
+MESSAGE( STATUS "LGMESH_INCLUDE_DIR:         " ${LGMESH_INCLUDE_DIR} )
+
+# PROJECT FILES
 FILE( GLOB Project_SRCS "src/*.*"
 						"src/*/*.*" 
 						"src/*/*/*.*")
@@ -73,6 +81,7 @@ QT5_WRAP_CPP( ParaDock_MOC_SRCS ${ParaDock_MOC_HDRS} )
 QT5_WRAP_CPP( DispModuleHandler_MOC_SRCS ${DispModuleHandler_MOC_HDRS} )
 
 INCLUDE_DIRECTORIES( ${Project_INCLUDE_DIR} 
+                     ${LGMESH_INCLUDE_DIR}
                      ${CMAKE_CURRENT_BINARY_DIR} 
                      ${Qt5Widgets_INCLUDE_DIRS} 
                      ${Qt5Xml_INCLUDE_DIRS} 
@@ -89,6 +98,7 @@ FILE( GLOB Cholmod_lib 		"${CMAKE_CURRENT_SOURCE_DIR}/extern/cholmod/lib/*.lib" 
 
 ADD_EXECUTABLE( ${PROJECT_NAME} 
 				${Project_SRCS}  
+        ${LGMESH_SRCS}
 				${MainWin_UIS_H} 
 				${MainWin_RCC_SRCS}
 				${MainWin_MOC_SRCS} 
@@ -115,10 +125,12 @@ FILE( GLOB Solver		  "src/Alg/Solver/*.*" )
 FILE( GLOB TeleReg  	"src/Alg/TeleReg/*.*" )
 FILE( GLOB Shader		  "src/DispModule/shader/*.*" )
 FILE( GLOB Resource   "src/ui/icons/*.*" )
+FILE( GLOB LgMesh     ${LGMESH_SRCS} )
 					 
 source_group("UI" 					FILES ${UI} )
 source_group("Resources"		FILES ${Resource} )
 source_group("Model" 				FILES ${Model} )
+source_group("Lgmesh" 				FILES ${LgMesh} )
 source_group("Utility" 				FILES ${Utility} )
 source_group("Utility\\TinyOBJ" 	FILES ${TinyOBJ} )
 source_group("DispModule\\Render" 	FILES ${Render} )
@@ -142,3 +154,4 @@ TARGET_LINK_LIBRARIES( ${PROJECT_NAME}
 					   optimized ${NLopt_lib_release}
 					   debug ${QGLViewer_lib_debug} 
 					   optimized ${QGLViewer_lib_release} )
+            

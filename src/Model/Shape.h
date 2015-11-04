@@ -7,6 +7,9 @@
 
 class Bound;
 class KDTreeWrapper;
+namespace LgMesh {
+class PolygonMesh;
+}
 
 // a triangle mesh class
 // if we need a more abstract shape base class in the future
@@ -51,6 +54,9 @@ private:
   void computeEdgeConnectivity();
 
 private:
+  // PolygonMesh
+  std::shared_ptr<LgMesh::PolygonMesh> poly_mesh;
+
   // geometry information
   VertexList vertex_list;
   FaceList   face_list;

@@ -236,3 +236,28 @@ void DispModuleHandler::runDetailSynthesis()
 {
   alg_handler->doDetailSynthesis();
 }
+
+void DispModuleHandler::toggleMainViewMode(int state)
+{
+  // it's a QComboBox here
+  if (state == 1)
+  {
+    main_canvas_viewer->setInteractionMode(MainViewer::TAG_PLANE);
+    main_canvas_viewer->clearPreviousInteractionInfo();
+    main_canvas_viewer->updateBuffer();
+    main_canvas_viewer->updateGLOutside();
+
+  }
+  else if (state == 0)
+  {
+    main_canvas_viewer->setInteractionMode(MainViewer::STATIC);
+    main_canvas_viewer->clearPreviousInteractionInfo();
+    main_canvas_viewer->updateBuffer();
+    main_canvas_viewer->updateGLOutside();
+  }
+}
+
+void DispModuleHandler::resetCamera()
+{
+  trackball_viewer->resetCamera();
+}

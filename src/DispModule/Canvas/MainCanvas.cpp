@@ -23,9 +23,10 @@ MainCanvas::~MainCanvas()
 
 bool MainCanvas::display()
 {
+  drawPrimitiveImg();
+
   if (use_flat)
   {
-    drawPrimitiveImg();
     int render_mode_cache = render_mode;
     render_mode = 4;
     //drawModel();
@@ -112,7 +113,6 @@ void MainCanvas::updateModelBuffer()
   num_vertex = GLenum(vertex_list.size() / 3);
   num_face   = GLenum(face_list.size() / 3);
 
-
   vertex_buffer->bind();
   vertex_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
   vertex_buffer->write(0, &vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
@@ -137,9 +137,10 @@ void MainCanvas::updateModelBuffer()
   vertex_crest_buffer->allocate(num_vertex * 1 * sizeof(GLfloat));
   vertex_crest_buffer->write(0, &v_crest[0], num_vertex * 1 * sizeof(GLfloat));
 
-  if (glGetError() != 0)
+  GLenum error_code = glGetError();
+  if (error_code != 0)
   {
-    std::cout<<"MainCanvas: GL Error in getting model\n";
+    std::cout<<"MainCanvas: GL Error in getting model. Error Code: " << error_code << "\n";
   }
 }
 
@@ -647,7 +648,7 @@ void MainCanvas::drawBackground()
   sketch_shader->setUniformValue("sketch_texture", 0);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, background_texture);
-  glActiveTexture(0);
+  //glActiveTexture(0); // it leads to glerror 1280 which I don't know why
 
   sketch_shader->setUniformValue("isBackground", GLint(1));
 
@@ -658,7 +659,6 @@ void MainCanvas::drawBackground()
   // Draw the triangles !
   glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
   sketch_vertex_buffer->release();
-
 
   sketch_shader->disableAttributeArray("vertex");
   sketch_shader->release();
@@ -868,4 +868,15 @@ void MainCanvas::drawPrimitiveImg()
   CurvesUtility::getBoundaryImg(model->getEdgeImg(), primitive_ID);
   model->computeShapeCrestVisible(vis_faces);
   delete primitive_buffer;
+}
+
+void MainCanvas::passTagPlanePos(int x, int y)
+{
+  model->addTaggedPlane(x, y);
+}
+
+void MainCanvas::clearInteractionInfo()
+{
+  // clear the tag plane
+  model->clearTaggedPlanes();
 }

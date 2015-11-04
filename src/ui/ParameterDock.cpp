@@ -14,6 +14,7 @@ ParameterDock::ParameterDock()
   connect(NormalTransfer_PushButton, SIGNAL(clicked()), this, SLOT(runNormalTransfer()));
   connect(NormalCompute_PushButton, SIGNAL(clicked()), this, SLOT(runNormalCompute()));
   connect(DetailSynthesis_PushButton, SIGNAL(clicked()), this, SLOT(runDetailSynthesis()));
+  connect(Main_Interact_Mode_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setInteractiveMainView(int)));
 
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
@@ -33,7 +34,7 @@ void ParameterDock::setDispModules(std::shared_ptr<DispModuleHandler> modules)
   disp_modules = modules;
 
   // init the checkBox list in vector field canvas
-  this->setFeatureRender(1);
+  //this->setFeatureRender(1);
 }
 
 void ParameterDock::setFeatureRender(int state)
@@ -97,4 +98,9 @@ void ParameterDock::runNormalCompute()
 void ParameterDock::runDetailSynthesis()
 {
   disp_modules->runDetailSynthesis();
+}
+
+void ParameterDock::setInteractiveMainView(int state)
+{
+  disp_modules->toggleMainViewMode(state);
 }

@@ -1,12 +1,15 @@
 #include "Model.h"
 #include "Shape.h"
 #include "ShapeCrest.h"
+#include "ShapePlane.h"
 #include "KDTreeWrapper.h"
 #include "Bound.h"
 #include "tiny_obj_loader.h"
 #include "obj_writer.h"
 #include <time.h>
 #include <QDir>
+
+#include "Colormap.h"
 
 Model::Model()
 {
@@ -29,6 +32,33 @@ Model::Model(const std::string path, const std::string name)
 
   shape_crest.reset(new ShapeCrest());
   shape_crest->setShape(shape);
+  shape_plane.reset(new ShapePlane());
+  shape_plane->setShape(shape);
+  //const std::vector<std::set<int> > flats = shape_plane->getFlats();
+  //STLVectorf color_list = shape->getColorList();
+  //for (size_t i = 0; i < flats.size(); ++i)
+  //{
+  //  QColor color = 
+  //    qtJetColor(double(i)/flats.size());
+  //  for (auto j : flats[i])
+  //  {
+  //    // j is face id
+  //    int v0 = shape->getFaceList()[3 * j + 0];
+  //    int v1 = shape->getFaceList()[3 * j + 1];
+  //    int v2 = shape->getFaceList()[3 * j + 2];
+  //    color_list[3 * v0 + 0] = color.redF();
+  //    color_list[3 * v0 + 1] = color.greenF();
+  //    color_list[3 * v0 + 2] = color.blueF();
+  //    color_list[3 * v1 + 0] = color.redF();
+  //    color_list[3 * v1 + 1] = color.greenF();
+  //    color_list[3 * v1 + 2] = color.blueF();
+  //    color_list[3 * v2 + 0] = color.redF();
+  //    color_list[3 * v2 + 1] = color.greenF();
+  //    color_list[3 * v2 + 2] = color.blueF();
+  //  }
+  //}
+  //shape->setColorList(color_list);
+  //shape_crest->computeCrestLinesPoints();
   //shape_crest->computeCrestLinesPoints();
 
   // read photo
@@ -365,4 +395,21 @@ const std::vector<STLVectori>& Model::getShapeVisbleCrestLine()
 void Model::computeShapeCrestVisible(std::set<int>& vis_faces)
 {
   shape_crest->computeVisible(vis_faces);
+}
+
+void Model::addTaggedPlane(int x, int y)
+{
+  // get face id of this pixel
+  int f_id = primitive_ID.at<int>(y, x);
+  shape_plane->addTaggedPlane(f_id);
+}
+
+void Model::clearTaggedPlanes()
+{
+  shape_plane->clearTaggedPlanes();
+}
+
+void Model::getTaggedPlaneVertices(std::vector<STLVectori>& vertices)
+{
+  shape_plane->getFlatSurfaceVertices(vertices);
 }

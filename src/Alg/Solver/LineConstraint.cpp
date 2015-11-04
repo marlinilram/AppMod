@@ -51,8 +51,8 @@ void LineConstraint::projection()
     int v_id = feature_line[i];
     Vector3f v_pos;
     v_pos << this->solver->P_Opt[3 * v_id + 0], 
-             this->solver->P_Opt[3 * v_id + 0],
-             this->solver->P_Opt[3 * v_id + 0];
+             this->solver->P_Opt[3 * v_id + 1],
+             this->solver->P_Opt[3 * v_id + 2];
     C.col(i) = v_pos;
   }
 

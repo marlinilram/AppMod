@@ -156,6 +156,11 @@ void TrackballViewer::updateBuffer()
 void TrackballViewer::resetCamera()
 {
   // assume only one dispObjects MainCanvas exist here
+  if (dispObjects.empty())
+  {
+    return;
+  }
+
   Bound* scene_bounds = dynamic_cast<TrackballCanvas*>(dispObjects[0])->getBoundBox();
 
   qglviewer::Vec scene_center;

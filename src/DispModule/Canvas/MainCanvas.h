@@ -51,6 +51,10 @@ public:
   inline void setUseFlat(int state) { use_flat = (state == 0) ? 0 : 1; };
   inline void setShowBackground(int state) { show_background_img = (state == 0) ? false : true; };
 
+  // pass interaction info
+  void passTagPlanePos(int x, int y);
+  void clearInteractionInfo();
+
 private:
   std::shared_ptr<Model> model;
 

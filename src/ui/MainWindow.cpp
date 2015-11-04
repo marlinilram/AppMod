@@ -103,6 +103,7 @@ void MainWindow::resetScreen()
     //viewer->resetScreen();
     //viewer->getModel(coarse_model);
     //viewer->setShowModel(true);
+  disp_modules->resetCamera();
 }
 
 void MainWindow::updateGeometry()
