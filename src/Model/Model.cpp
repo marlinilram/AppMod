@@ -1,12 +1,16 @@
 #include "Model.h"
 #include "Shape.h"
 #include "ShapeCrest.h"
+#include "ShapePlane.h"
 #include "KDTreeWrapper.h"
 #include "Bound.h"
 #include "tiny_obj_loader.h"
 #include "obj_writer.h"
 #include <time.h>
 #include <QDir>
+
+#include "ParameterMgr.h"
+#include "Colormap.h"
 
 Model::Model()
 {
@@ -29,6 +33,33 @@ Model::Model(const std::string path, const std::string name)
 
   shape_crest.reset(new ShapeCrest());
   shape_crest->setShape(shape);
+  shape_plane.reset(new ShapePlane());
+  shape_plane->setShape(shape);
+  //const std::vector<std::set<int> > flats = shape_plane->getFlats();
+  //STLVectorf color_list = shape->getColorList();
+  //for (size_t i = 0; i < flats.size(); ++i)
+  //{
+  //  QColor color = 
+  //    qtJetColor(double(i)/flats.size());
+  //  for (auto j : flats[i])
+  //  {
+  //    // j is face id
+  //    int v0 = shape->getFaceList()[3 * j + 0];
+  //    int v1 = shape->getFaceList()[3 * j + 1];
+  //    int v2 = shape->getFaceList()[3 * j + 2];
+  //    color_list[3 * v0 + 0] = color.redF();
+  //    color_list[3 * v0 + 1] = color.greenF();
+  //    color_list[3 * v0 + 2] = color.blueF();
+  //    color_list[3 * v1 + 0] = color.redF();
+  //    color_list[3 * v1 + 1] = color.greenF();
+  //    color_list[3 * v1 + 2] = color.blueF();
+  //    color_list[3 * v2 + 0] = color.redF();
+  //    color_list[3 * v2 + 1] = color.greenF();
+  //    color_list[3 * v2 + 2] = color.blueF();
+  //  }
+  //}
+  //shape->setColorList(color_list);
+  //shape_crest->computeCrestLinesPoints();
   //shape_crest->computeCrestLinesPoints();
 
   // read photo
@@ -73,6 +104,25 @@ void Model::exportOBJ(int cur_iter)
   obj_shape.mesh.positions = shape->getVertexList();
   obj_shape.mesh.indices = shape->getFaceList();
   obj_shape.mesh.texcoords = shape->getUVCoord();
+
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform") != 0)
+  {
+    // put the transform to vertex
+    Matrix4f model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+    for (size_t i = 0; i < obj_shape.mesh.positions.size() / 3; ++i)
+    {
+      Vector4f v;
+      v[0] = obj_shape.mesh.positions[3 * i + 0];
+      v[1] = obj_shape.mesh.positions[3 * i + 1];
+      v[2] = obj_shape.mesh.positions[3 * i + 2];
+      v[3] = 1.0f;
+      v = model_transform * v;
+      v = v / v[3];
+      obj_shape.mesh.positions[3 * i + 0] = v[0];
+      obj_shape.mesh.positions[3 * i + 1] = v[1];
+      obj_shape.mesh.positions[3 * i + 2] = v[2];
+    }
+  }
 
   shapes.push_back(obj_shape);
 
@@ -236,6 +286,8 @@ void Model::getCameraOri(float camera_ori[3])
 
 void Model::getProjRay(float proj_ray[3], int x, int y)
 {
+  // return the projection ray start from camera origin
+  // camera origin is (0, 0, 0) for the ray vector
   Eigen::Vector4f in;
   in << (x - (float)m_viewport(0)) / (float)m_viewport(2) * 2.0 - 1.0,
     (y - (float)m_viewport(1)) / (float)m_viewport(3) * 2.0 - 1.0,
@@ -248,9 +300,14 @@ void Model::getProjRay(float proj_ray[3], int x, int y)
   cam_ori = m_modelview.inverse() * cam_ori;
   out = m_modelview.inverse() * out;
 
-  proj_ray[0] = out[0] / out[3] - cam_ori[0] / cam_ori[3];
-  proj_ray[1] = out[1] / out[3] - cam_ori[1] / cam_ori[3];
-  proj_ray[2] = out[2] / out[3] - cam_ori[2] / cam_ori[3];
+  Vector3f ray;
+  ray << out[0] / out[3] - cam_ori[0] / cam_ori[3],
+         out[1] / out[3] - cam_ori[1] / cam_ori[3],
+         out[2] / out[3] - cam_ori[2] / cam_ori[3];
+  ray.normalize();
+  proj_ray[0] = ray[0];
+  proj_ray[1] = ray[1];
+  proj_ray[2] = ray[2];
 }
 
 bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
@@ -365,4 +422,21 @@ const std::vector<STLVectori>& Model::getShapeVisbleCrestLine()
 void Model::computeShapeCrestVisible(std::set<int>& vis_faces)
 {
   shape_crest->computeVisible(vis_faces);
+}
+
+void Model::addTaggedPlane(int x, int y)
+{
+  // get face id of this pixel
+  int f_id = primitive_ID.at<int>(y, x);
+  shape_plane->addTaggedPlane(f_id);
+}
+
+void Model::clearTaggedPlanes()
+{
+  shape_plane->clearTaggedPlanes();
+}
+
+void Model::getTaggedPlaneVertices(std::vector<STLVectori>& vertices)
+{
+  shape_plane->getFlatSurfaceVertices(vertices);
 }

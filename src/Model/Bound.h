@@ -8,6 +8,7 @@ public:
     Bound();
     ~Bound();
 	  double getRadius();
+    void setRadius();
     void getCenter(float center[3]);
     float minX;
     float maxX;
@@ -15,6 +16,7 @@ public:
     float maxY;
     float minZ;
     float maxZ;
+    double radius; 
     CvPoint3D32f centroid;
 };
 

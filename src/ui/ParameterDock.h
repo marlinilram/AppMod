@@ -26,10 +26,22 @@ private slots:
   void showAllLines(int state);
   void showProjCrsp(int state);
   void setInteractiveProjAlign(int state);
+  void setInteractiveMainView(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
   void runDetailSynthesis();
+  void setDistAttenuation(int val);
+  void setShowTrackball(int state);
+
+  void setSFieldRad(double val);
+  void setSFieldExpa(double val);
+  void setSFieldExpb(double val);
+  void setSFieldWinCenter(int val);
+  void setSFieldWinWidth(int val);
+  void setMainRenderMode(int state);
+
+  void setLFRegMethod(int state);
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;

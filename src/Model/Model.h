@@ -11,6 +11,7 @@
 
 class Shape;
 class ShapeCrest;
+class ShapePlane;
 class Bound;
 
 class Model
@@ -72,9 +73,15 @@ public:
   bool getProjectPt(float object_coord[3], float &winx, float &winy);
   void getUnprojectVec(Vector3f& vec);
 
+  // get info from ShapePlane
+  void addTaggedPlane(int x, int y);
+  void clearTaggedPlanes();
+  void getTaggedPlaneVertices(std::vector<STLVectori>& vertices);
+
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
   std::shared_ptr<ShapeCrest> shape_crest;
+  std::shared_ptr<ShapePlane> shape_plane;
 
   // file system data
   std::string data_path;

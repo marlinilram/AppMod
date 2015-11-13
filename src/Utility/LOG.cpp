@@ -27,7 +27,7 @@ bool LOG::Init(const char * newFilename)
     strcpy(filename, newFilename);
 
     //Open file, overwriting any previous contents
-    logFile=fopen(filename, "wb");
+    logFile=fopen(filename, "a+");
     if(!logFile)
         return false;
 

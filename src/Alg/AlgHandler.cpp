@@ -2,8 +2,12 @@
 #include "ProjOptimize.h"
 #include "NormalTransfer.h"
 #include "DetailSynthesis.h"
+#include "ProjICP.h"
+#include "LargeFeatureReg.h"
 #include "FeatureGuided.h"
 #include "Model.h"
+
+#include "ParameterMgr.h"
 
 AlgHandler::AlgHandler()
 {
@@ -20,6 +24,9 @@ void AlgHandler::init()
   proj_optimize.reset(new ProjOptimize);
   normal_transfer.reset(new NormalTransfer);
   detail_synthesis.reset(new DetailSynthesis);
+  proj_icp.reset(new ProjICP);
+  lf_reg.reset(new LargeFeatureReg);
+
 
 
   feature_model = nullptr;
@@ -125,4 +132,26 @@ void AlgHandler::doDetailSynthesis()
   doNormalTransfer();
   shape_model->exportOBJ(0);*/
   detail_synthesis->startDetailSynthesis(shape_model);
+}
+
+void AlgHandler::doProjICP()
+{
+  if (!workable())
+  {
+    return;
+  }
+
+  proj_icp->buildCrsp(feature_model);
+}
+
+void AlgHandler::doLargeFeatureReg()
+{
+  if (!workable())
+  {
+    return;
+  }
+
+  lf_reg->setFeatureModel(feature_model.get());
+  lf_reg->runReg(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));
+  //lf_reg->testNlopt();
 }

@@ -30,5 +30,6 @@ typedef Eigen::Matrix4f Matrix4f;
 typedef Eigen::MatrixXf MatrixXf;
 typedef Eigen::Matrix3Xf Matrix3Xf;
 typedef Eigen::SimplicialCholesky<Eigen::SparseMatrix<float> > SimplicialCholesky;
+typedef Eigen::Affine3f Affine3f;
 
 #endif

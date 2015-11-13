@@ -2,36 +2,38 @@
 #include "ParameterDock.h"
 #include "DispModuleHandler.h"
 #include "Model.h"
+#include "ParaInit.h"
 
 //#include "camera_pose.h"
 
 MainWindow::MainWindow()
 {
-    setupUi(this); 
+  InitGlobalParameter();
+  setupUi(this); 
 
-    connect(action_Load_Model, SIGNAL(triggered()), this, SLOT(loadModel()));
-    connect(action_Snap_Shot, SIGNAL(triggered()), this, SLOT(snapShot()));
-    connect(action_Fix_Camera, SIGNAL(triggered()), this, SLOT(fixCamera()));
-    connect(action_Reset_Screen, SIGNAL(triggered()), this, SLOT(resetScreen()));
-    connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
-    connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
-    connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
-    connect(action_Vector_Field, SIGNAL(triggered()), this, SLOT(setVectorField()));
-    connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
-    connect(action_Tool_Box, SIGNAL(triggered()), this, SLOT(showToolBox()));
-    connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
-    connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
+  connect(action_Load_Model, SIGNAL(triggered()), this, SLOT(loadModel()));
+  connect(action_Snap_Shot, SIGNAL(triggered()), this, SLOT(snapShot()));
+  connect(action_Fix_Camera, SIGNAL(triggered()), this, SLOT(fixCamera()));
+  connect(action_Reset_Screen, SIGNAL(triggered()), this, SLOT(resetScreen()));
+  connect(action_Update_Geometry, SIGNAL(triggered()), this, SLOT(updateGeometry()));
+  connect(action_Export_OBJ, SIGNAL(triggered()), this, SLOT(exportOBJ()));
+  connect(action_Render, SIGNAL(triggered()), this, SLOT(renderTexture()));
+  connect(action_Vector_Field, SIGNAL(triggered()), this, SLOT(setVectorField()));
+  connect(action_Load_2D_3D_points, SIGNAL(triggered()), this, SLOT(loadPoints()));
+  connect(action_Tool_Box, SIGNAL(triggered()), this, SLOT(showToolBox()));
+  connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
+  connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
 
-    disp_modules.reset(new DispModuleHandler(centralwidget));
-    this->setCentralWidget(centralwidget);
+  disp_modules.reset(new DispModuleHandler(centralwidget));
+  this->setCentralWidget(centralwidget);
 
-    parameter_dock.reset(new ParameterDock);
-    parameter_dock->setFixedWidth(250);
-    this->addDockWidget(Qt::LeftDockWidgetArea, parameter_dock.get());
-    parameter_dock->setDispModules(disp_modules);
-    parameter_dock->hide();
+  parameter_dock.reset(new ParameterDock);
+  //parameter_dock->setFixedWidth(250);
+  this->addDockWidget(Qt::LeftDockWidgetArea, parameter_dock.get());
+  parameter_dock->setDispModules(disp_modules);
+  parameter_dock->hide();
 
-    this->show();
+  this->show();
 
 	//pointsSelect = false;
 	//isCompute = false;
@@ -103,6 +105,7 @@ void MainWindow::resetScreen()
     //viewer->resetScreen();
     //viewer->getModel(coarse_model);
     //viewer->setShowModel(true);
+  disp_modules->resetCamera();
 }
 
 void MainWindow::updateGeometry()

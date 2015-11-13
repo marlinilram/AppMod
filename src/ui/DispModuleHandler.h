@@ -40,10 +40,16 @@ public:
   void deleteLastCrspLine_Target();
   void setVectorFieldViewerPara(std::vector<bool>& checkStates);
   void toggleVectorFieldMode(int state);
+  void toggleMainViewMode(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
   void runDetailSynthesis();
+  void resetCamera();
+  void setSFieldDistAttenuation();
+  void setShowTrackball();
+  void setSFieldPara(int set_type = 1);
+  void setMainCanvasRenderMode();
 
 public slots:
   void updateGeometryInteractive();

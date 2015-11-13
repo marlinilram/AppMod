@@ -85,6 +85,11 @@ void TrackballViewer::init()
 
 void TrackballViewer::drawTrackBall()
 {
+  if (!show_trackball)
+  {
+    return;
+  }
+
 	//double radius = 1.5;
 	double v1,v2;
 	glBegin(GL_LINE_STRIP);
@@ -156,6 +161,11 @@ void TrackballViewer::updateBuffer()
 void TrackballViewer::resetCamera()
 {
   // assume only one dispObjects MainCanvas exist here
+  if (dispObjects.empty())
+  {
+    return;
+  }
+
   Bound* scene_bounds = dynamic_cast<TrackballCanvas*>(dispObjects[0])->getBoundBox();
 
   qglviewer::Vec scene_center;
@@ -168,7 +178,7 @@ void TrackballViewer::resetCamera()
   float x_span = (scene_bounds->maxX - scene_bounds->minX) / 2;
   float y_span = (scene_bounds->maxY - scene_bounds->minY) / 2;
   float z_span = (scene_bounds->maxZ - scene_bounds->minZ) / 2;
-  float scene_radius = x_span>y_span ? (x_span > z_span ? x_span : z_span) : (y_span > z_span ? y_span : z_span);
+  float scene_radius = sqrt(x_span * x_span + y_span * y_span + z_span * z_span);
   scene_radius *= 1.5;
 
   setSceneRadius(scene_radius);

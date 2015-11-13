@@ -24,6 +24,7 @@ public:
 
   void setGLActors(std::vector<GLActor>& actors);
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
+  inline void setShowTrackball(bool state) { show_trackball = state; };
   
 protected:
   virtual void draw();
@@ -45,6 +46,7 @@ private:
 private:
   bool sync_camera;
   bool wireframe_;
+  bool show_trackball;
 
   std::vector<GLActor> actors;
   bool is_draw_actors;

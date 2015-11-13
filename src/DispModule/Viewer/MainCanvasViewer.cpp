@@ -2,11 +2,15 @@
 #include "MainCanvas.h"
 #include "Bound.h"
 
+#include <QMouseEvent>
+
 MainCanvasViewer::MainCanvasViewer(QWidget *widget)
   : BasicViewer(widget)
 {
   is_draw_actors = false;
   show_background = true;
+
+  interaction_mode = MainViewer::STATIC;
 }
 
 MainCanvasViewer::~MainCanvasViewer()
@@ -30,6 +34,7 @@ void MainCanvasViewer::draw()
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
     }
+
   }
 
   if (is_draw_actors)
@@ -86,7 +91,7 @@ void MainCanvasViewer::getSnapShot()
       main_canvas->passCameraInfo(modelview, projection, viewport);
     }
   }
-  
+
   doneCurrent();
 }
 
@@ -163,6 +168,60 @@ void MainCanvasViewer::syncCameraToModel()
       camera()->getProjectionMatrix(projection);
       camera()->getViewport(viewport);
       main_canvas->passCameraInfo(modelview, projection, viewport);
+    }
+  }
+}
+
+void MainCanvasViewer::mouseReleaseEvent(QMouseEvent *e)
+{
+  if ((e->button() == Qt::LeftButton) && (e->modifiers() == Qt::NoButton))
+  {
+    if (interaction_mode == MainViewer::STATIC)
+    {
+      // do nothing
+    }
+    else if (interaction_mode == MainViewer::TAG_PLANE)
+    {
+      // get coordinates
+      for (size_t i = 0; i < dispObjects.size(); ++i)
+      {
+        MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+        if (canvas)
+        {
+          canvas->passTagPlanePos(e->x(), e->y());
+        }
+      }
+
+      this->updateBuffer();
+      this->updateGLOutside();
+    }
+  }
+  else
+  {
+    QGLViewer::mouseReleaseEvent(e);
+  }
+}
+
+void MainCanvasViewer::clearPreviousInteractionInfo()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->clearInteractionInfo();
+    }
+  }
+}
+
+void MainCanvasViewer::updateCanvasRenderMode()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->setCanvasRenderMode();
     }
   }
 }

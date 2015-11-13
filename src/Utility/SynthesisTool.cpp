@@ -147,6 +147,8 @@ void SynthesisTool::findCandidates(std::vector<ImagePyramid>& gpsrc, std::vector
       }
     }
   }
+
+
 }
 
 double SynthesisTool::distNeighborOnFeature(std::vector<ImagePyramid>& gpsrc, std::vector<ImagePyramid>& gptar, int level, int srcpointX, int srcpointY, int tarpointX, int tarpointY)

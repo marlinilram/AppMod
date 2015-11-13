@@ -7,6 +7,8 @@
 #include "UtilityHeader.h"
 #include "ProjOptimize.h"
 #include "CurvesUtility.h"
+#include "ParameterMgr.h"
+#include "YMLHandler.h"
 
 FeatureGuided::FeatureGuided()
 {
@@ -26,8 +28,11 @@ FeatureGuided::FeatureGuided(std::shared_ptr<Model> source_model, std::string ta
 
 void FeatureGuided::initTargetImage(std::string targetFile)
 {
-  cv::imread(targetFile, CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_img, CV_32FC1);
+  cv::imread(targetFile + "/featurePPnms.png", CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_img, CV_32FC1);
   this->target_img = this->target_img / 255.0;
+
+  cv::imread(targetFile + "/featurePP.png", CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_edge_saliency, CV_32FC1);
+  this->target_edge_saliency = this->target_edge_saliency / 255.0;
 }
 
 void FeatureGuided::initRegister()
@@ -37,7 +42,7 @@ void FeatureGuided::initRegister()
   this->target_curves.clear();
   this->edge_threshold = 0.9;
   this->ExtractSrcCurves(source_model->getEdgeImg(), this->source_curves);
-  this->edge_threshold = 0.2;
+  this->edge_threshold = 0.01;
   this->ExtractCurves(this->target_img, this->target_curves);
 
   this->setNormalizePara();
@@ -85,12 +90,14 @@ void FeatureGuided::initRegister()
   BuildTargetEdgeKDTree();
 
   source_scalar_field.reset(new ScalarField(100, 2));
-  target_scalar_field.reset(new ScalarField(100, 2));
+  target_scalar_field.reset(new ScalarField(300, 50));
   source_scalar_field->setTeleRegister(source_tele_register);
   target_scalar_field->setTeleRegister(target_tele_register);
   source_scalar_field->computeVariationMap();
-  target_scalar_field->computeVariationMap();
-  target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
+  //target_scalar_field->computeDistanceMap(this);
+  //target_scalar_field->computeVariationMap();
+  //target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
+  this->updateDistSField();
 
   this->BuildClosestPtPair();
 }
@@ -112,6 +119,8 @@ void FeatureGuided::updateSourceVectorField()
   }
   this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
+
+  std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
 }
 
 void FeatureGuided::updateScalarField()
@@ -120,12 +129,38 @@ void FeatureGuided::updateScalarField()
   this->target_scalar_field->computeMatchingMap(this->source_tele_register->vector_field);
 }
 
-void FeatureGuided::updateSourceField()
+void FeatureGuided::updateSourceField(int update_type)
 {
-  this->updateSourceVectorField();
-  this->updateScalarField();
+  if (update_type == 0)
+  {
+    this->updateSourceVectorField();
+    this->updateScalarField();
 
-  this->BuildClosestPtPair();
+    this->BuildClosestPtPair();
+  }
+  else if (update_type == 1)
+  {
+    this->updateDistSField();
+  }
+  else if (update_type == 2)
+  {
+    this->updateSourceVectorField();
+  }
+  else if (update_type == 3)
+  {
+    this->target_scalar_field->win_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinCenter");
+    this->target_scalar_field->win_width = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinWidth");
+  }
+}
+
+void FeatureGuided::updateDistSField()
+{
+  this->target_scalar_field->dist_attenuation = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:rad");
+  this->target_scalar_field->para_a = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
+  this->target_scalar_field->para_b = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
+  this->target_scalar_field->win_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinCenter");
+  this->target_scalar_field->win_width = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinWidth");
+  this->target_scalar_field->computeDistanceMap(this);
 }
 
 void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
@@ -133,18 +168,26 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
   // source curves just use the vis_crest_lines in ShapeCrest
   const std::vector<STLVectori>& crest_lines = source_model->getShapeVisbleCrestLine();
   const VertexList& vertex_list = source_model->getShapeVertexList();
+  Matrix4f model_transform = Matrix4f::Identity();
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform") != 0)
+  {
+    model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+  }
   std::vector<double2> curve;
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
     curve.clear();
     for (size_t j = 0; j < crest_lines[i].size(); ++j)
     {
-      float v[3];
+      Vector4f v;
       v[0] = vertex_list[3 * crest_lines[i][j] + 0];
       v[1] = vertex_list[3 * crest_lines[i][j] + 1];
       v[2] = vertex_list[3 * crest_lines[i][j] + 2];
+      v[3] = 1.0f;
+      v = model_transform * v;
+      v = v / v[3];
       float winx, winy;
-      source_model->getProjectPt(v, winx, winy);
+      source_model->getProjectPt(v.data(), winx, winy);
       curve.push_back(double2(winx, source.rows - winy));
     }
     curves.push_back(curve);
@@ -175,7 +218,69 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
     }
   }
 
-  curves = FeatureGuided::ReorganizeCurves(curves);
+  curves = FeatureGuided::ReorganizeCurves(curves, 1);
+
+  // save edges lenth from each sample to two ends of the curve
+  target_edges_sp_len.clear();
+  std::vector<double2> temp_edge_sp_len;
+  for (size_t i = 0; i < curves.size(); ++i)
+  {
+    temp_edge_sp_len.clear();
+    double cur_length = 0;
+    temp_edge_sp_len.push_back(double2(cur_length, 0));
+    for (int j = 1; j < curves[i].size(); ++j)
+    {
+      cur_length += 
+        sqrt(pow(curves[i][j].x - curves[i][j - 1].x, 2)
+        + pow(curves[i][j].y - curves[i][j - 1].y, 2));
+
+      temp_edge_sp_len.push_back(double2(cur_length, 0));
+    }
+    
+    for (size_t j = 0; j < temp_edge_sp_len.size(); ++j)
+    {
+      temp_edge_sp_len[j].y = cur_length - temp_edge_sp_len[j].x;
+    }
+    target_edges_sp_len.push_back(temp_edge_sp_len);
+  }
+
+  target_edges_sp_sl.clear();
+  for (size_t i = 0; i < curves.size(); ++i)
+  {
+    std::vector<double> temp_edge_sp_sl;
+    for (size_t j = 0; j < curves[i].size(); ++j)
+    {
+      double saliency = 0.0;
+      for (int k = -10; k <= 10; ++k)
+      {
+        int cur_idx = int(j) + k;
+        if (cur_idx >= 0 && cur_idx < curves[i].size())
+        {
+          // get the saliency
+          int img_i = target_edge_saliency.rows - (curves[i][cur_idx].y + 0.5);
+          int img_j = curves[i][cur_idx].x + 0.5;
+          img_i = img_i < 0 ? 0 : (img_i < target_edge_saliency.rows ? img_i : target_edge_saliency.rows);
+          img_j = img_j < 0 ? 0 : (img_j < target_edge_saliency.cols ? img_j : target_edge_saliency.cols);
+          saliency += target_edge_saliency.at<float>(img_i, img_j);
+        }
+      }
+      temp_edge_sp_sl.push_back(saliency / 21);
+    }
+    target_edges_sp_sl.push_back(temp_edge_sp_sl);
+  }
+
+std::ofstream f_debug(source_model->getDataPath() + "/saliency.mat");
+if (f_debug)
+{
+  for (size_t i = 0; i < target_edges_sp_sl.size(); ++i)
+  {
+    for (size_t j = 0; j < target_edges_sp_sl[i].size(); ++j)
+    {
+      f_debug << target_edges_sp_sl[i][j] << "\n";
+    }
+  }
+  f_debug.close();
+}
 
 #ifdef DEBUG
   std::vector<std::vector<cv::Point>> contours;
@@ -283,7 +388,7 @@ void FeatureGuided::SearchCurve(const cv::Mat& source,
   //}
 }
 
-CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
+CURVES FeatureGuided::ReorganizeCurves(CURVES& curves, float sp_rate)
 {
   // check if all curves are single connected
   for (int i = 0; i < curves.size(); ++i)
@@ -353,7 +458,7 @@ CURVES FeatureGuided::ReorganizeCurves(CURVES& curves)
     {
       if (curves[i].size() > 20)
       {
-        int step = 1 + curves[i].size() / 50;
+        int step = int(sp_rate + 0.5);// 1;// + curves[i].size() / 50;
         int tail = 0;
         for (int j = 0; j < curves[i].size(); ++j)
         {
@@ -617,8 +722,13 @@ void FeatureGuided::GetSourceNormalizePara(double2& translate, double& scale)
 
 double FeatureGuided::CurveLength(std::vector<double2>& curve)
 {
+  return FeatureGuided::PartCurveLength(curve, curve.size() - 1);
+}
+
+double FeatureGuided::PartCurveLength(std::vector<double2>& curve, int sp_id)
+{
   double cur_length = 0;
-  for (int j = 1; j < curve.size(); ++j)
+  for (int j = 1; j < curve.size() && j <= sp_id; ++j)
   {
     cur_length += 
       sqrt(pow(curve[j].x - curve[j - 1].x, 2)
@@ -1036,6 +1146,7 @@ void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
 void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree)
 {
   std::vector<float> data;
+  kdtree_id_mapper.clear();
   size_t n_pts = 0;
   for (size_t i = 0; i < curves.size(); ++i)
   {
@@ -1043,6 +1154,7 @@ void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrappe
     {
       data.push_back((float)curves[i][j].x);
       data.push_back((float)curves[i][j].y);
+      kdtree_id_mapper[n_pts] = std::pair<int, int>(i, j);
       ++ n_pts;
     }
   }

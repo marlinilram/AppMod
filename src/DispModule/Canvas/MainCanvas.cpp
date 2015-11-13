@@ -4,6 +4,7 @@
 #include "YMLHandler.h"
 #include "Colormap.h"
 #include "CurvesUtility.h"
+#include "ParameterMgr.h"
 #include <QGLShader>
 #include <QGLBuffer>
 
@@ -14,6 +15,7 @@ MainCanvas::MainCanvas()
   edge_threshold = 0.75;
   use_flat = 1;
 
+  render_with_model_transform = 0;
 }
 
 MainCanvas::~MainCanvas()
@@ -23,9 +25,10 @@ MainCanvas::~MainCanvas()
 
 bool MainCanvas::display()
 {
+  drawPrimitiveImg();
+
   if (use_flat)
   {
-    drawPrimitiveImg();
     int render_mode_cache = render_mode;
     render_mode = 4;
     //drawModel();
@@ -83,6 +86,11 @@ void MainCanvas::setShaderProgram()
   sketch_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/sketch.frag");
   sketch_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/sketch.vert");
   sketch_shader->link();
+
+  lf_update_shader.reset(new QGLShaderProgram);
+  lf_update_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/lf_update.frag");
+  lf_update_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/lf_update.vert");
+  lf_update_shader->link();
 }
 
 void MainCanvas::setModel(std::shared_ptr<Model> model)
@@ -112,7 +120,6 @@ void MainCanvas::updateModelBuffer()
   num_vertex = GLenum(vertex_list.size() / 3);
   num_face   = GLenum(face_list.size() / 3);
 
-
   vertex_buffer->bind();
   vertex_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
   vertex_buffer->write(0, &vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
@@ -137,9 +144,10 @@ void MainCanvas::updateModelBuffer()
   vertex_crest_buffer->allocate(num_vertex * 1 * sizeof(GLfloat));
   vertex_crest_buffer->write(0, &v_crest[0], num_vertex * 1 * sizeof(GLfloat));
 
-  if (glGetError() != 0)
+  GLenum error_code = glGetError();
+  if (error_code != 0)
   {
-    std::cout<<"MainCanvas: GL Error in getting model\n";
+    std::cout<<"MainCanvas: GL Error in getting model. Error Code: " << error_code << "\n";
   }
 }
 
@@ -385,6 +393,12 @@ void MainCanvas::drawShapeCrest()
   const std::vector<STLVectori>& crest_lines = model->getShapeVisbleCrestLine();
   const NormalList& vertex_normal = model->getShapeNormalList();
 
+  Matrix4f model_transform = Matrix4f::Identity();
+  if (render_with_model_transform != 0)
+  {
+    model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+  }
+
   //glClear(GL_DEPTH_BUFFER_BIT);
   glLineWidth(3);
   glDisable(GL_LIGHTING);
@@ -416,10 +430,13 @@ void MainCanvas::drawShapeCrest()
 
     for (size_t j = 0; j < crest_lines[i].size(); ++j)
     {
-      GLfloat v[3];
+      Vector4f v;
       v[0] = vertex_list[3 * crest_lines[i][j] + 0];
       v[1] = vertex_list[3 * crest_lines[i][j] + 1];
       v[2] = vertex_list[3 * crest_lines[i][j] + 2];
+      v[3] = 1.0f;
+      v = model_transform * v;
+      v = v / v[3];
 
       glVertex3f(v[0], v[1], v[2]);
     }
@@ -647,7 +664,7 @@ void MainCanvas::drawBackground()
   sketch_shader->setUniformValue("sketch_texture", 0);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, background_texture);
-  glActiveTexture(0);
+  //glActiveTexture(0); // it leads to glerror 1280 which I don't know why
 
   sketch_shader->setUniformValue("isBackground", GLint(1));
 
@@ -658,7 +675,6 @@ void MainCanvas::drawBackground()
   // Draw the triangles !
   glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
   sketch_vertex_buffer->release();
-
 
   sketch_shader->disableAttributeArray("vertex");
   sketch_shader->release();
@@ -868,4 +884,68 @@ void MainCanvas::drawPrimitiveImg()
   CurvesUtility::getBoundaryImg(model->getEdgeImg(), primitive_ID);
   model->computeShapeCrestVisible(vis_faces);
   delete primitive_buffer;
+}
+
+void MainCanvas::passTagPlanePos(int x, int y)
+{
+  model->addTaggedPlane(x, y);
+}
+
+void MainCanvas::clearInteractionInfo()
+{
+  // clear the tag plane
+  model->clearTaggedPlanes();
+}
+
+void MainCanvas::updateVisibleEdge()
+{
+  float *primitive_buffer = new float[height*width];
+
+  glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
+  lf_update_shader->bind();
+
+  lf_update_shader->setUniformValue("fMeshSize", GLfloat(num_face));
+  Matrix4f& tmp_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+  lf_update_shader->setUniformValue("rigidTransform", QMatrix4x4(tmp_transform.data()).transposed());
+
+  vertex_buffer->bind();
+  //shaderProgram->setAttributeArray("vertex", vertices.constData());
+  lf_update_shader->setAttributeBuffer("vertex", GL_FLOAT, 0, 3, 0);
+  lf_update_shader->enableAttributeArray("vertex");
+  vertex_buffer->release();
+
+  face_buffer->bind();
+  glDrawElements(GL_TRIANGLES, num_face * 3, GL_UNSIGNED_INT, (void*)0);
+  face_buffer->release();
+
+  lf_update_shader->disableAttributeArray("vertex");
+  lf_update_shader->release();
+
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  std::set<int> vis_faces;
+  for (int i = 0; i < width * height; ++i)
+  {
+    float fPrimitive = primitive_buffer[i] * num_face;
+    int iPrimitive = (int)(fPrimitive < 0 ? (fPrimitive - 0.5) : (fPrimitive + 0.5));
+    if (iPrimitive < (int)num_face) 
+    {
+      if (vis_faces.find(iPrimitive) == vis_faces.end())
+      {
+        vis_faces.insert(iPrimitive);
+      }
+    }
+  }
+
+  model->computeShapeCrestVisible(vis_faces);
+  delete primitive_buffer;
+}
+
+void MainCanvas::setCanvasRenderMode()
+{
+  render_with_model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform");
 }
