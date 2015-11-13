@@ -52,6 +52,7 @@ public:
   STLVectori boundary_loop;
   std::shared_ptr<Shape> cut_shape;
   std::shared_ptr<KDTreeWrapper> kdTree_UV;
+
   NormalList normal_original_mesh;
   VertexList vertex_original_mesh;
 
@@ -59,6 +60,7 @@ public:
   STLVectori vertex_set_hidden;
   STLVectori boundary_loop_hidden;
   std::shared_ptr<Shape> cut_shape_hidden;
+  std::shared_ptr<KDTreeWrapper> kdTree_UV_hidden; 
 
 private:
   MeshParameterization(const MeshParameterization&);

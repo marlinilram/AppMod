@@ -32,14 +32,15 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->findBoundary(cut_shape, boundary_loop);
   this->computeBaryCentericPara(cut_shape, boundary_loop);
   this->saveParameterization(model->getOutputPath(), cut_shape, FALSE);
-  this->buildKDTree_UV();
-  this->getNormalOfOriginalMesh(model);
-  this->getVertexOfOriginalMesh(model);
-
+  
   this->prepareCutShape(model, cut_face_list_hidden, vertex_set_hidden, cut_shape_hidden);
   this->findBoundary(cut_shape_hidden, boundary_loop_hidden);
   this->computeBaryCentericPara(cut_shape_hidden, boundary_loop_hidden);
   this->saveParameterization(model->getOutputPath(), cut_shape_hidden, TRUE);
+
+  this->buildKDTree_UV();
+  this->getNormalOfOriginalMesh(model);
+  this->getVertexOfOriginalMesh(model);
 }
 
 void MeshParameterization::saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, bool is_hidden)
@@ -563,7 +564,9 @@ int MeshParameterization::findLargestComponent(const std::vector<std::set<int> >
 void MeshParameterization::buildKDTree_UV()
 {
   kdTree_UV.reset(new KDTreeWrapper);
+  kdTree_UV_hidden.reset(new KDTreeWrapper);
   kdTree_UV->initKDTree(std::vector<float>(cut_shape->getUVCoord()), cut_shape->getUVCoord().size() / 2, 2);
+  kdTree_UV_hidden->initKDTree(std::vector<float>(cut_shape_hidden->getUVCoord()), cut_shape_hidden->getUVCoord().size() / 2, 2);
 }
 
 void MeshParameterization::getNormalOfOriginalMesh(std::shared_ptr<Model> model)
