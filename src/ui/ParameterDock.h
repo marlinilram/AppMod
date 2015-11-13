@@ -39,6 +39,7 @@ private slots:
   void setSFieldExpb(double val);
   void setSFieldWinCenter(int val);
   void setSFieldWinWidth(int val);
+  void setSFieldType(int val);
   void setMainRenderMode(int state);
 
   void setLFRegMethod(int state);

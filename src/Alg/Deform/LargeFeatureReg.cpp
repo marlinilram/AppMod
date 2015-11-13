@@ -131,8 +131,8 @@ void LargeFeatureReg::runReg(int method_id)
   {
     if (i < 3)
     {
-      lb[i] = -0.5 * modelRadius();
-      ub[i] = 0.5 * modelRadius();
+      lb[i] = -1 * modelRadius();
+      ub[i] = 1 * modelRadius();
     }
     else if (i < 6)
     {
@@ -149,7 +149,15 @@ void LargeFeatureReg::runReg(int method_id)
   opt.set_upper_bounds(ub);
 
   // set objective function
-  opt.set_min_objective(LFReg::efunc, this);
+  int SField_type = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:Type");
+  if (SField_type == 0 || SField_type == 1)
+  {
+    opt.set_min_objective(LFReg::efunc, this);
+  }
+  else if (SField_type == 2)
+  {
+    opt.set_max_objective(LFReg::efunc, this);
+  }
 
   // set stop criteria
   opt.set_ftol_rel(0.001);
@@ -173,13 +181,27 @@ void LargeFeatureReg::runReg(int method_id)
   std::stringstream log_stream;
   log_stream << "LFReg Log:" << std::endl;
   log_stream << "Method: " << method_id << " " << opt.get_algorithm_name() << std::endl;
-  log_stream << "Start f(x): " << start_func_val << "\tMax f(x): " << maxf << std::endl;
+  log_stream << "Start f(x): " << start_func_val << "\tStop f(x): " << maxf << std::endl;
   log_stream << "optimized transform: " << std::endl;
   log_stream << cur_transform << std::endl;
   log_stream << "registration time = " << (double)(clock() - time1) / CLOCKS_PER_SEC << " s" << std::endl;
   std::cout << "end registration" << std::endl;
 
-  LOG::Instance((feature_model->source_model->getDataPath() + "/LFRegDistLog.txt").c_str())->OutputMisc(log_stream.str().c_str());
+  std::string log_fname;
+
+  if (SField_type == 0)
+  {
+    log_fname = feature_model->source_model->getDataPath() + "/LFRegDistLog.txt";
+  }
+  else if (SField_type == 1)
+  {
+    log_fname = feature_model->source_model->getDataPath() + "/LFRegTunedKDLog.txt";
+  }
+  else if (SField_type == 2)
+  {
+    log_fname = feature_model->source_model->getDataPath() + "/LFRegMLEqLog.txt";
+  }
+  LOG::Instance(log_fname.c_str())->OutputMisc(log_stream.str().c_str());
 }
 
 double LargeFeatureReg::modelRadius()

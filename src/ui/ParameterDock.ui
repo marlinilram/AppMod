@@ -432,6 +432,25 @@
              <item>
               <widget class="QSpinBox" name="LFReg_Method_SpinBox"/>
              </item>
+             <item>
+              <widget class="QComboBox" name="SField_Type_ComboBox">
+               <item>
+                <property name="text">
+                 <string>Dist Map</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Tuned KD</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ML's eq</string>
+                </property>
+               </item>
+              </widget>
+             </item>
             </layout>
            </item>
           </layout>
