@@ -32,7 +32,8 @@ public:
   void initRegister();
   void updateSourceVectorField();
   void updateScalarField();
-  void updateSourceField();
+  void updateSourceField(int update_type = 0);
+  void updateDistSField();
   std::shared_ptr<KDTreeWrapper> getSourceKDTree();
 
   inline std::shared_ptr<tele2d> GetTeleRegister() { return source_tele_register; };
@@ -72,12 +73,13 @@ public:
     std::vector<std::vector<bool>>& visited_table,
     std::vector<double2>& curve);
 
-  static CURVES ReorganizeCurves(CURVES& curves);
+  static CURVES ReorganizeCurves(CURVES& curves, float sp_rate);
   static CURVES SplitCurve(std::vector<double2> curve);
   static std::vector<double2> ConnectCurves(
     std::vector<double2> curve0, std::vector<double2> curve1,
     int endtag0, int endtag1);
   static double CurveLength(std::vector<double2>& curve);
+  static double PartCurveLength(std::vector<double2>& curve, int sp_id);
   static void EliminateRedundancy(CURVES& curves);
   static void NormalizedCurves(CURVES& curves);
   static void NormalizedCurves(CURVES& curves, double2 translate, double scale);
@@ -86,6 +88,7 @@ public:
   static void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
 public:
+
   // user defined feature line
   std::shared_ptr<FeatureLine> source_vector_field_lines;
   std::shared_ptr<FeatureLine> target_vector_field_lines;
@@ -98,8 +101,16 @@ public:
   double2 user_constrained_tar_p; // target screen position
 
 private:
+  
+  friend class ProjICP;
+  friend class LargeFeatureReg;
+  friend class ScalarField;
+
   std::shared_ptr<Model> source_model;
   cv::Mat target_img;
+  cv::Mat target_edge_saliency;
+  std::vector<std::vector<double2>> target_edges_sp_len; // attribute storing the length to each end of this edge for each edge sample point
+  std::vector<std::vector<double> > target_edges_sp_sl;
 
   CURVES source_curves;
   CURVES target_curves;
@@ -109,6 +120,7 @@ private:
 
   std::shared_ptr<KDTreeWrapper> source_KDTree;
   std::shared_ptr<KDTreeWrapper> target_KDTree;
+  std::map<int, std::pair<int, int> > kdtree_id_mapper; // map from kdtree it to curves id
 
   std::shared_ptr<tele2d> source_tele_register;
   std::shared_ptr<tele2d> target_tele_register;

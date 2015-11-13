@@ -46,8 +46,7 @@ public:
   bool displayTargetCrspList();
 
   void setScalarField();
-  void updateSourceField();
-
+  void updateSourceField(int update_type = 0);
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
 

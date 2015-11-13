@@ -84,7 +84,7 @@ bool VectorFieldCanvas::display()
     }
     if (vis_paras[3])
     {
-      this->displayTargetCurves();
+      //this->displayTargetCurves();
       if (vis_paras[9])
       {
         this->displaySourceCurves();
@@ -340,8 +340,8 @@ bool VectorFieldCanvas::displaySourceCurves()
   CURVES source_curves;
   this->feature_model->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
-  glLineWidth(1);
-  glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;
+  glLineWidth(2);
+  glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
   for (int i = 0; i < source_curves.size(); ++i)
   {
     glBegin(GL_LINE_STRIP);
@@ -434,6 +434,8 @@ void VectorFieldCanvas::setScalarField()
 {
   std::shared_ptr<ScalarField> scalar_field;
   std::vector<float>* dmap = nullptr;
+  double vmin = 0;
+  double vmax = 1;
   if (render_mode == VectorField::SOURCE_MODE)
   {
     scalar_field = feature_model->getSourceScalarField();
@@ -442,7 +444,14 @@ void VectorFieldCanvas::setScalarField()
   else if (render_mode == VectorField::TARGET_MODE)
   {
     scalar_field = feature_model->getTargetScalarField();
-    dmap = &scalar_field->matching_map;
+    dmap = &scalar_field->distance_map;
+    double wcenter = scalar_field->win_center;
+    double wwidth = scalar_field->win_width;
+    wwidth = wwidth * (1 - 0) * std::min(wcenter, 1 - wcenter);
+    wcenter = wcenter * (1 - 0) + 0;
+    vmin = wcenter - wwidth;
+    vmax = wcenter + wwidth;
+    std::cout << "vmin: " << vmin << "\tvmax: " << vmax << "\n";
   }
 
   int resolution = scalar_field->resolution;
@@ -486,7 +495,7 @@ void VectorFieldCanvas::setScalarField()
       //QColor color = 
       //  qtJetColor(dmap[j + i * 800] / max_dist, 0, 0.01);
       QColor color = 
-          qtJetColor((*dmap)[j + i * resolution]);
+          qtJetColor((*dmap)[j + i * resolution], vmin, vmax);
       bgmap[(j + i * resolution) * 3 + 0] = color.red();
       bgmap[(j + i * resolution) * 3 + 1] = color.green();
       bgmap[(j + i * resolution) * 3 + 2] = color.blue();
@@ -527,9 +536,9 @@ void VectorFieldCanvas::setVisualizationParas(std::vector<bool>& paras)
   this->vis_paras = paras;
 }
 
-void VectorFieldCanvas::updateSourceField()
+void VectorFieldCanvas::updateSourceField(int update_type)
 {
-  feature_model->updateSourceField();
+  feature_model->updateSourceField(update_type);
 }
 
 void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line)

@@ -7,7 +7,7 @@
 
 class Bound;
 class KDTreeWrapper;
-namespace LgMesh {
+namespace LG {
 class PolygonMesh;
 }
 
@@ -55,7 +55,7 @@ private:
 
 private:
   // PolygonMesh
-  std::shared_ptr<LgMesh::PolygonMesh> poly_mesh;
+  std::shared_ptr<LG::PolygonMesh> poly_mesh;
 
   // geometry information
   VertexList vertex_list;

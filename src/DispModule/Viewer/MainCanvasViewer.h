@@ -29,6 +29,7 @@ public:
   inline void setShowBackground(int state) { show_background = (state == 0) ? false : true; };
   inline void setInteractionMode(MainViewer::INTERACTIONMODE mode) { interaction_mode = mode; };
   void clearPreviousInteractionInfo();
+  void updateCanvasRenderMode();
 
 private:
   void mouseReleaseEvent(QMouseEvent *e);

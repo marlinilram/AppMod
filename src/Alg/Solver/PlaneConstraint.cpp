@@ -79,7 +79,7 @@ void PlaneConstraint::projection()
   //  f_debug.close();
   //}
 
-  std::cout << "U*U':\n" << U_part * U_part.transpose() << "\n";
+  //std::cout << "U*U':\n" << U_part * U_part.transpose() << "\n";
 
   Eigen::Matrix3Xf temp = U_part * U_part.transpose() * C;
 

@@ -24,7 +24,7 @@ public:
   VectorFieldViewer(QWidget* widget);
   ~VectorFieldViewer();
 
-  void updateSourceField();
+  void updateSourceField(int update_type = 0);
   void updateScalarFieldTexture();
   void deleteLastLine();
   void isDrawAllLines(bool allLines);

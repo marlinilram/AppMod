@@ -63,7 +63,7 @@ void ShapePlane::flatSurface(std::set<int>& surface, int f_id, float ref_normal[
   face_cos += shape->getFaceNormal()[3 * f_id + 0] * ref_normal[0];
   face_cos += shape->getFaceNormal()[3 * f_id + 1] * ref_normal[1];
   face_cos += shape->getFaceNormal()[3 * f_id + 2] * ref_normal[2];
-  if (face_cos < 0.9)
+  if (face_cos < 0.95)
   {
     return;
   }

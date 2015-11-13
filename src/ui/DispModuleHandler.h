@@ -46,6 +46,10 @@ public:
   void runNormalCompute();
   void runDetailSynthesis();
   void resetCamera();
+  void setSFieldDistAttenuation();
+  void setShowTrackball();
+  void setSFieldPara(int set_type = 1);
+  void setMainCanvasRenderMode();
 
 public slots:
   void updateGeometryInteractive();

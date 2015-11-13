@@ -37,6 +37,7 @@ public:
   void drawModelEdge();
   void drawShapeCrest();
   void drawPrimitiveImg();
+  void updateVisibleEdge();
   void sketchShader();
   void renderNImage();
   void nmsShader();
@@ -50,6 +51,7 @@ public:
   inline void setEdgeThreshold(float value) { edge_threshold = value; };
   inline void setUseFlat(int state) { use_flat = (state == 0) ? 0 : 1; };
   inline void setShowBackground(int state) { show_background_img = (state == 0) ? false : true; };
+  void setCanvasRenderMode();
 
   // pass interaction info
   void passTagPlanePos(int x, int y);
@@ -61,6 +63,7 @@ private:
   std::unique_ptr<QGLShaderProgram> basic_shader;
   std::unique_ptr<QGLShaderProgram> edge_detect_shader;
   std::unique_ptr<QGLShaderProgram> sketch_shader;
+  std::unique_ptr<QGLShaderProgram> lf_update_shader;
 
   std::unique_ptr<QGLBuffer> vertex_buffer;
   std::unique_ptr<QGLBuffer> face_buffer;
@@ -97,6 +100,8 @@ private:
 
   float edge_threshold;
   int use_flat;
+
+  int render_with_model_transform;
 
 private:
   MainCanvas(const MainCanvas&);

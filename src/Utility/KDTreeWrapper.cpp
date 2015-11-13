@@ -69,3 +69,33 @@ void KDTreeWrapper::nearestPt(std::vector<float>& pt, int& pt_id, float& dis)
   pt_id = result[0].idx;
   dis = result[0].dis;
 }
+
+void KDTreeWrapper::rNearestPt(float r, std::vector<float>& pt_in, std::vector<float>& pt_out, std::vector<float>& dis)
+{
+  kdtree::KDTreeResultVector result;
+  kdTree->r_nearest(pt_in, r, result);
+  for (size_t i = 0; i < result.size(); ++i)
+  {
+    for (int j = 0; j < kdTree->dim; ++j)
+    {
+      pt_out.push_back(kdTree->the_data[result[i].idx][j]);
+    }
+    dis.push_back(result[i].dis);
+  }
+}
+
+void KDTreeWrapper::rNearestPt(float r, std::vector<float>& pt_in, std::vector<float>& pt_out, std::vector<float>& dis, std::vector<int>& pt_id)
+{
+  kdtree::KDTreeResultVector result;
+  //kdTree->r_nearest(pt_in, r, result);
+  kdTree->n_nearest(pt_in, 1, result);
+  for (size_t i = 0; i < result.size(); ++i)
+  {
+    for (int j = 0; j < kdTree->dim; ++j)
+    {
+      pt_out.push_back(kdTree->the_data[result[i].idx][j]);
+    }
+    dis.push_back(result[i].dis);
+    pt_id.push_back(result[i].idx);
+  }
+}

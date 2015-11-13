@@ -213,3 +213,15 @@ void MainCanvasViewer::clearPreviousInteractionInfo()
     }
   }
 }
+
+void MainCanvasViewer::updateCanvasRenderMode()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->setCanvasRenderMode();
+    }
+  }
+}

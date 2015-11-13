@@ -3,6 +3,7 @@
 //! [0]
 in vec4 vs_color;
 in vec3 vs_normal;
+in vec3 vs_eye_normal;
 in vec4 vs_pos;
 in float vs_CrestTag;
 
@@ -23,6 +24,10 @@ void main(void)
 {
 	switch (renderMode)
 	{
+  case 5:
+		fragColor = (vec4(vs_eye_normal, 0) + 1) / 2;
+		fragColor[3] = (gl_PrimitiveID)/(fMeshSize);
+    break;
   case 4:
     fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     //fragColor = vec4(vs_CrestTag);

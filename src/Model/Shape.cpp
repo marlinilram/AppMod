@@ -6,7 +6,7 @@
 #include <set>
 #include <fstream>
 
-using namespace LgMesh;
+using namespace LG;
 
 Shape::Shape()
   : bound(new Bound())
@@ -109,7 +109,7 @@ void Shape::setColorList(STLVectorf& colorList)
   }
 
   color_list.resize(3 * poly_mesh->n_vertices());
-  PolygonMesh::Vertex_attribute<Vec3> colors = poly_mesh->vertex_attribute<Vec3>("v:colors");
+  //PolygonMesh::Vertex_attribute<Vec3> colors = poly_mesh->vertex_attribute<Vec3>("v:colors");
   for (auto vit : poly_mesh->vertices())
   {
     const Vec3& color = colors[vit];
@@ -140,7 +140,7 @@ void Shape::setUVCoord(STLVectorf& UVCoord)
   }
 
   UV_list.resize(2 * poly_mesh->n_vertices());
-  PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
+  //PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
   for (auto vit : poly_mesh->vertices())
   {
     const Vec2& uv_coord = tex_coords[vit];
@@ -447,6 +447,7 @@ void Shape::computeBounds()
   bound->centroid.x = sum_x / (vertex_list.size() / 3);
 	bound->centroid.y = sum_y / (vertex_list.size() / 3);
 	bound->centroid.z = sum_z / (vertex_list.size() / 3);
+  bound->setRadius();
 }
 
 void Shape::computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float v2[3], float lambd[3])
