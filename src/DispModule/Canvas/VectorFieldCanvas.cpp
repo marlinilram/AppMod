@@ -318,7 +318,14 @@ bool VectorFieldCanvas::displayTargetCurves()
   feature_model->NormalizedTargetCurves(target_curves);
   glPointSize(2) ;
   glLineWidth(1);
-  glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
+  if (render_mode == VectorField::SOURCE_MODE)
+  {
+    glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
+  }
+  else if(render_mode == VectorField::TARGET_MODE)
+  {
+    glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;    
+  }
   for (int i = 0; i < target_curves.size(); ++i)
   {
     glBegin(GL_LINE_STRIP);
@@ -341,7 +348,7 @@ bool VectorFieldCanvas::displaySourceCurves()
   this->feature_model->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
   glLineWidth(2);
-  if (render_mode == VectorField::SOURCE_MODE)
+  if (render_mode == VectorField::TARGET_MODE)
   {
     glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;
   }

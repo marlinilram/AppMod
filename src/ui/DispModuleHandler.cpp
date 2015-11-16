@@ -301,3 +301,12 @@ void DispModuleHandler::setMainCanvasRenderMode()
   main_canvas_viewer->updateCanvasRenderMode();
   main_canvas_viewer->updateGLOutside();
 }
+
+void DispModuleHandler::runLFRegNonRigid()
+{
+  alg_handler->doLargeFeatureReg(1);
+  updateCanvas();
+  source_vector_viewer->updateSourceField(2);
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
+}

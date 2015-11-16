@@ -6,6 +6,8 @@ ParameterDock::ParameterDock()
 {
   setupUi(this);
 
+  setInitPara();
+
   connect(edgeThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(setEdgeThreshold(int)));
   connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
   connect(Show_All_Lines_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showAllLines(int)));
@@ -25,6 +27,7 @@ ParameterDock::ParameterDock()
   connect(Main_Render_Mode_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setMainRenderMode(int)));
   connect(LFReg_Method_SpinBox, SIGNAL(valueChanged(int)), this, SLOT(setLFRegMethod(int)));
   connect(SField_Type_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setSFieldType(int)));
+  connect(LFReg_NonRigid_PushButton, SIGNAL(clicked()), this, SLOT(runLFRegNonRigid()));
 
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
@@ -35,6 +38,11 @@ ParameterDock::ParameterDock()
 }
 
 ParameterDock::~ParameterDock()
+{
+
+}
+
+void ParameterDock::setInitPara()
 {
 
 }
@@ -171,4 +179,9 @@ void ParameterDock::setLFRegMethod(int state)
 void ParameterDock::setSFieldType(int val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:Type") = val;
+}
+
+void ParameterDock::runLFRegNonRigid()
+{
+  disp_modules->runLFRegNonRigid();
 }

@@ -53,6 +53,9 @@ void Shape::init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList)
   computeFaceNormal();
   computeVertexNormal();
 
+  std::cout << "Computing laplacian cotangent weight...\n";
+  poly_mesh->update_laplacian_cot();
+
   buildKDTree();
 }
 

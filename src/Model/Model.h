@@ -13,6 +13,9 @@ class Shape;
 class ShapeCrest;
 class ShapePlane;
 class Bound;
+namespace LG {
+class PolygonMesh;
+}
 
 class Model
 {
@@ -27,6 +30,7 @@ public:
   Bound* getBoundBox();
   //std::shared_ptr<Shape> getShape();
   //std::shared_ptr<ShapeCrest> getShapeCrest();
+  LG::PolygonMesh* getPolygonMesh();
   std::string getDataPath();
   std::string getOutputPath();
 

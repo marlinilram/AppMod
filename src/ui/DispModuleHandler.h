@@ -50,6 +50,7 @@ public:
   void setShowTrackball();
   void setSFieldPara(int set_type = 1);
   void setMainCanvasRenderMode();
+  void runLFRegNonRigid();
 
 public slots:
   void updateGeometryInteractive();
