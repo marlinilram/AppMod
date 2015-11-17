@@ -27,12 +27,18 @@ public:
 private:
   double energyFunc(const std::vector<double>& X);
   double modelRadius();
+
   double energyFuncNonRigid(const std::vector<double>& X);
   double energyScalarField(const std::vector<double>& X);
   double energyARAP(const std::vector<double>& X);
   void updateARAPRotation(const std::vector<double>& X);
   void updateARAPGrad(const std::vector<double>& X, std::vector<double>& grad);
   void updateARAPLMatrix(SparseMatrix& matrix);
+  
+  double energyFlat(const std::vector<double>& X);
+  void updateFlatGrad(const std::vector<double>& X, std::vector<double>& grad);
+  void updateFlatProj(const std::vector<double>& X);
+  void updateFlatCoefs(std::vector<double>& coefs);
 
   friend double LFReg::efunc(const std::vector<double>&x, std::vector<double>& grad, void *func_data);
   friend double LFReg::efuncNonRigid(const std::vector<double>&x, std::vector<double>& grad, void *func_data);
@@ -41,12 +47,16 @@ private:
   MainCanvasViewer* main_viewer;
   FeatureGuided*    feature_model;
 
-  // internal variables
+  // internal variables for ARAP
   std::vector<Matrix3f> ARAP_R;
   Matrix3Xf P_init;
   SparseMatrix ARAP_L_matrix;
   double lamd_ARAP;
 
+  // internal variables for Flatness
+  std::vector<double> flat_coefs;
+  Matrix3Xf P_plane_proj;
+  double lamd_flat;
 
 private:
   LargeFeatureReg(const LargeFeatureReg&);
