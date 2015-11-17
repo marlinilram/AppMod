@@ -113,3 +113,8 @@ void KDTreeWrapper::nearestPt(int n_neighbor, std::vector<float>& pt_in, std::ve
     pt_id.push_back(result[i].idx);
   }
 }
+
+int KDTreeWrapper::nDataPt()
+{
+  return kdTree->N;
+}

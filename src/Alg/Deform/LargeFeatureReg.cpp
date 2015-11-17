@@ -67,7 +67,7 @@ void LargeFeatureReg::runReg(int method_id)
   }
   else if (SField_type == 2)
   {
-    opt.set_max_objective(LFReg::efunc, this);
+    opt.set_min_objective(LFReg::efunc, this);
   }
 
   // set stop criteria
@@ -201,7 +201,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
   }
   else if (SField_type == 2)
   {
-    opt.set_max_objective(LFReg::efuncNonRigid, this);
+    opt.set_min_objective(LFReg::efuncNonRigid, this);
   }
 
   // set stop criteria
