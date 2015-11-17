@@ -143,13 +143,13 @@ void ShapePlane::addTaggedPlane(int f_id)
   //std::cout<<"set new color for flat face.\n";
 }
 
-void ShapePlane::getFlatSurfaceVertices(std::vector<std::vector<int> >& vertices)
+void ShapePlane::getFlatSurfaceVertices(std::vector<std::vector<int> >& vertices, int tagged)
 {
   vertices.clear();
   std::vector<int> cur_vertices;
   for (size_t i = 0; i < flat_surfaces.size(); ++i)
   {
-    if (tagged_planes[i])
+    if (tagged_planes[i] || (tagged == 0))
     {
       cur_vertices.clear();
       for (auto j : flat_surfaces[i])

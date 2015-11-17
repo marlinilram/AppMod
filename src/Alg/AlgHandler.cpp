@@ -154,7 +154,7 @@ void AlgHandler::doProjICP()
   proj_icp->buildCrsp(feature_model);
 }
 
-void AlgHandler::doLargeFeatureReg()
+void AlgHandler::doLargeFeatureReg(int reg_type)
 {
   if (!workable())
   {
@@ -162,6 +162,13 @@ void AlgHandler::doLargeFeatureReg()
   }
 
   lf_reg->setFeatureModel(feature_model.get());
-  lf_reg->runReg(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));
+  if (reg_type == 0)
+  {
+    lf_reg->runReg(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));
+  }
+  else if (reg_type == 1)
+  {
+    lf_reg->runRegNonRigid(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));
+  }
   //lf_reg->testNlopt();
 }

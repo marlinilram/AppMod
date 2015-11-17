@@ -42,6 +42,7 @@ public:
   std::shared_ptr<KDTreeWrapper> getKDTree();
   void updateShape(VertexList& new_vertex_list);
   void getBaryCentreCoord(float pt[3],int face_id,float lambda[3]);
+  LG::PolygonMesh* getPolygonMesh() { return poly_mesh.get(); };
 
 private:
   void computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float v2[3], float lambd[3]);

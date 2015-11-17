@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "Shape.h"
+#include "PolygonMesh.h"
 #include "ShapeCrest.h"
 #include "ShapePlane.h"
 #include "KDTreeWrapper.h"
@@ -439,4 +440,14 @@ void Model::clearTaggedPlanes()
 void Model::getTaggedPlaneVertices(std::vector<STLVectori>& vertices)
 {
   shape_plane->getFlatSurfaceVertices(vertices);
+}
+
+void Model::getPlaneVertices(std::vector<STLVectori>& vertices)
+{
+  shape_plane->getFlatSurfaceVertices(vertices, 0);
+}
+
+LG::PolygonMesh* Model::getPolygonMesh()
+{
+  return shape->getPolygonMesh();
 }

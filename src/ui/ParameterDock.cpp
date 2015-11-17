@@ -6,6 +6,8 @@ ParameterDock::ParameterDock()
 {
   setupUi(this);
 
+  setInitPara();
+
   connect(edgeThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(setEdgeThreshold(int)));
   connect(flatCheckbox, SIGNAL(stateChanged(int)), this, SLOT(setUseFlat(int)));
   connect(Show_All_Lines_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showAllLines(int)));
@@ -24,6 +26,8 @@ ParameterDock::ParameterDock()
   connect(SField_WinWidth_Slider, SIGNAL(valueChanged(int)), this, SLOT(setSFieldWinWidth(int)));
   connect(Main_Render_Mode_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setMainRenderMode(int)));
   connect(LFReg_Method_SpinBox, SIGNAL(valueChanged(int)), this, SLOT(setLFRegMethod(int)));
+  connect(SField_Type_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setSFieldType(int)));
+  connect(LFReg_NonRigid_PushButton, SIGNAL(clicked()), this, SLOT(runLFRegNonRigid()));
   connect(Synthesis_PushButton, SIGNAL(clicked()), this, SLOT(doSynthesis()));;
 
   // set feature render mode
@@ -35,6 +39,11 @@ ParameterDock::ParameterDock()
 }
 
 ParameterDock::~ParameterDock()
+{
+
+}
+
+void ParameterDock::setInitPara()
 {
 
 }
@@ -166,6 +175,16 @@ void ParameterDock::setMainRenderMode(int state)
 void ParameterDock::setLFRegMethod(int state)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod") = state;
+}
+
+void ParameterDock::setSFieldType(int val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:Type") = val;
+}
+
+void ParameterDock::runLFRegNonRigid()
+{
+  disp_modules->runLFRegNonRigid();
 }
 
 void ParameterDock::doSynthesis()

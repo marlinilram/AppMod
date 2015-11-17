@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>289</width>
+    <width>332</width>
     <height>893</height>
    </rect>
   </property>
@@ -25,7 +25,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>276</width>
+         <width>324</width>
          <height>784</height>
         </rect>
        </property>
@@ -274,7 +274,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.500000000000000</double>
+                <double>0.100000000000000</double>
                </property>
               </widget>
              </item>
@@ -432,12 +432,45 @@
              <item>
               <widget class="QPushButton" name="DetailSynthesis_PushButton">
                <property name="text">
-                <string>Test LFReg</string>
+                <string>LFReg</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="LFReg_Method_SpinBox"/>
+              <widget class="QPushButton" name="LFReg_NonRigid_PushButton">
+               <property name="text">
+                <string>NonRigid</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="LFReg_Method_SpinBox">
+               <property name="value">
+                <number>11</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="SField_Type_ComboBox">
+               <property name="currentIndex">
+                <number>1</number>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Dist Map</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Tuned KD</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ML's eq</string>
+                </property>
+               </item>
+              </widget>
              </item>
             </layout>
            </item>
@@ -469,6 +502,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
+         <width>98</width>
+         <height>28</height>
          <width>271</width>
          <height>801</height>
         </rect>

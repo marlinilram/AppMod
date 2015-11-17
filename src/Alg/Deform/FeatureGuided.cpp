@@ -45,6 +45,33 @@ void FeatureGuided::initRegister()
   this->edge_threshold = 0.01;
   this->ExtractCurves(this->target_img, this->target_curves);
 
+  // output curves
+  //std::ofstream f_debug(source_model->getDataPath() + "/source_curve.txt");
+  //if (f_debug)
+  //{
+  //  for (size_t i = 0; i < source_curves.size(); ++i)
+  //  {
+  //    for (size_t j = 0; j < source_curves[i].size(); ++j)
+  //    {
+  //      f_debug << source_curves[i][j].x << " " << source_curves[i][j].y << "\n";
+  //    }
+  //  }
+  //  f_debug.close();
+  //}
+
+  //f_debug.open(source_model->getDataPath() + "/target_curve.txt");
+  //if (f_debug)
+  //{
+  //  for (size_t i = 0; i < target_curves.size(); ++i)
+  //  {
+  //    for (size_t j = 0; j < target_curves[i].size(); ++j)
+  //    {
+  //      f_debug << target_curves[i][j].x << " " << target_curves[i][j].y << "\n";
+  //    }
+  //  }
+  //  f_debug.close();
+  //}
+
   this->setNormalizePara();
   CURVES temp_source_curves;
   CURVES temp_target_curves;
@@ -93,7 +120,7 @@ void FeatureGuided::initRegister()
   target_scalar_field.reset(new ScalarField(300, 50));
   source_scalar_field->setTeleRegister(source_tele_register);
   target_scalar_field->setTeleRegister(target_tele_register);
-  source_scalar_field->computeVariationMap();
+  //source_scalar_field->computeVariationMap();
   //target_scalar_field->computeDistanceMap(this);
   //target_scalar_field->computeVariationMap();
   //target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
@@ -125,8 +152,8 @@ void FeatureGuided::updateSourceVectorField()
 
 void FeatureGuided::updateScalarField()
 {
-  this->source_scalar_field->computeVariationMap();
-  this->target_scalar_field->computeMatchingMap(this->source_tele_register->vector_field);
+  //this->source_scalar_field->computeVariationMap();
+  //this->target_scalar_field->computeMatchingMap(this->source_tele_register->vector_field);
 }
 
 void FeatureGuided::updateSourceField(int update_type)

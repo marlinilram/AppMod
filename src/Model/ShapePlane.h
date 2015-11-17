@@ -18,7 +18,7 @@ public:
   std::vector<std::set<int> >& getFlats();
   void addTaggedPlane(int f_id);
   void clearTaggedPlanes();
-  void getFlatSurfaceVertices(std::vector<std::vector<int> >& vertices);
+  void getFlatSurfaceVertices(std::vector<std::vector<int> >& vertices, int tagged = 1);
 
 private:
   void flatSurface(std::set<int>& surface, int f_id, float ref_normal[3]);

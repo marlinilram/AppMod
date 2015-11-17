@@ -13,6 +13,9 @@ class Shape;
 class ShapeCrest;
 class ShapePlane;
 class Bound;
+namespace LG {
+class PolygonMesh;
+}
 
 class Model
 {
@@ -27,6 +30,7 @@ public:
   Bound* getBoundBox();
   //std::shared_ptr<Shape> getShape();
   //std::shared_ptr<ShapeCrest> getShapeCrest();
+  LG::PolygonMesh* getPolygonMesh();
   std::string getDataPath();
   std::string getOutputPath();
 
@@ -77,6 +81,7 @@ public:
   void addTaggedPlane(int x, int y);
   void clearTaggedPlanes();
   void getTaggedPlaneVertices(std::vector<STLVectori>& vertices);
+  void getPlaneVertices(std::vector<STLVectori>& vertices);
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape

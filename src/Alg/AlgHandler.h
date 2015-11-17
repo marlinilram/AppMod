@@ -35,7 +35,7 @@ public:
 
   void doDetailSynthesis();
   void doProjICP();
-  void doLargeFeatureReg();
+  void doLargeFeatureReg(int reg_type = 0);
 
 private:
   std::shared_ptr<ProjOptimize> proj_optimize;

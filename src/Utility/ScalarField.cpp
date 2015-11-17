@@ -140,6 +140,29 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
   double2 curve_translate = feature_model->curve_translate;
   float max_val = std::numeric_limits<float>::min();
   float min_val = std::numeric_limits<float>::max();
+  int SField_type = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:Type");
+
+  std::shared_ptr<KDTreeWrapper> tuned_kdTree(new KDTreeWrapper);
+  if (SField_type == 1)
+  {
+    // build tuned kdtree
+    std::vector<float> tree_data;
+    size_t n_pts = 0;
+    for (size_t i = 0; i < feature_model->target_curves.size(); ++i)
+    {
+      for (size_t j = 0; j < feature_model->target_curves[i].size(); ++j)
+      {
+        tree_data.push_back((float)feature_model->target_curves[i][j].x);
+        tree_data.push_back((float)feature_model->target_curves[i][j].y);
+        // to normalize the distance and saliency
+        // saliency need to multiply the scale
+        // para_a control the importance
+        tree_data.push_back((float)((para_a / (1 - para_a + 1e-3)) / scale * feature_model->target_edges_sp_sl[i][j]));
+        ++ n_pts;
+      }
+    }
+    tuned_kdTree->initKDTree(tree_data, n_pts, 3);
+  }
 
 
   double avg_edge_len = 0;
@@ -157,56 +180,44 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
   {
     for (int j = 0; j < resolution; ++j)
     {
-      std::vector<float> pos(2, 0.0);
+      std::vector<float> pos(3, 0.0);
       pos[0] = float(j) / resolution;
       pos[1] = float(i) / resolution;
       pos[0] = (pos[0] - 0.5) / scale + 0.5 - curve_translate.x;
       pos[1] = (pos[1] - 0.5) / scale + 0.5 - curve_translate.y;
 
-      //float cur_dist = 0;
-      //for (size_t k = 0; k < feature_model->target_curves.size(); ++k)
-      //{
-      //  for (size_t kk = 0; kk < feature_model->target_curves[k].size(); ++kk)
-      //  {
-      //      int img_i = feature_model->target_edge_saliency.rows - (feature_model->target_curves[k][kk].y + 0.5);
-      //      int img_j = feature_model->target_curves[k][kk].x + 0.5;
-      //      img_i = img_i < 0 ? 0 : (img_i < feature_model->target_edge_saliency.rows ? img_i : feature_model->target_edge_saliency.rows);
-      //      img_j = img_j < 0 ? 0 : (img_j < feature_model->target_edge_saliency.cols ? img_j : feature_model->target_edge_saliency.cols);
-      //      float saliency = feature_model->target_edge_saliency.at<float>(img_i, img_j);
-      //      //std::pair<int, int> curve_id = feature_model->kdtree_id_mapper[nearest_sp_id[k]];
-      //      double2 edge_lens = feature_model->target_edges_sp_len[k][kk];
-      //      double new_edge_len = 1 - sigmoid(edge_lens.x + edge_lens.y, avg_edge_len, 1);
-      //      edge_lens = edge_lens / (edge_lens.x + edge_lens.y) * new_edge_len;
-
-      //      // saliency * sigmoid(d)
-      //      double e_dist = sqrt(pow(feature_model->target_curves[k][kk].x - pos[0], 2) + pow(feature_model->target_curves[k][kk].y - pos[1], 2));
-      //      cur_dist +=  edge_lens.x * edge_lens.y * saliency / e_dist; //* sigmoid(e_dist, sigmoid_center / 2, dist_attenuation);
-      //  }
-      //}
-
       // here the radius for rNearestPt is r^2 and returned dist is also square distance
       std::vector<float> nearest_sp;
       std::vector<float> nearest_sp_dist;
       std::vector<int>   nearest_sp_id;
-      feature_model->target_KDTree->rNearestPt(search_rad * search_rad, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
+      if (SField_type == 0)
+      {
+        feature_model->target_KDTree->nearestPt(1, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
+      }
+      else if (SField_type == 2)
+      {
+        feature_model->target_KDTree->rNearestPt(search_rad * search_rad, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
+      }
+      else if (SField_type == 1)
+      {
+        pos[2] = para_a / (1 - para_a + 1e-3) / scale;
+        tuned_kdTree->nearestPt(1, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
+      }
       float cur_dist = std::numeric_limits<float>::min();
       for (size_t k = 0; k < nearest_sp_id.size(); ++k)
       {
-        //int img_i = feature_model->target_edge_saliency.rows - (nearest_sp[2 * k + 1] + 0.5);
-        //int img_j = nearest_sp[2 * k + 0];
-        //img_i = img_i < 0 ? 0 : (img_i < feature_model->target_edge_saliency.rows ? img_i : feature_model->target_edge_saliency.rows);
-        //img_j = img_j < 0 ? 0 : (img_j < feature_model->target_edge_saliency.cols ? img_j : feature_model->target_edge_saliency.cols);
-        //float saliency = feature_model->target_edge_saliency.at<float>(img_i, img_j);
         std::pair<int, int> curve_id = feature_model->kdtree_id_mapper[nearest_sp_id[k]];
-        //double2 edge_lens = feature_model->target_edges_sp_len[curve_id.first][curve_id.second];
-        //double new_edge_len = 1 - sigmoid(edge_lens.x + edge_lens.y, avg_edge_len, 1);
-        //edge_lens = edge_lens / (edge_lens.x + edge_lens.y) * new_edge_len;
         double saliency = feature_model->target_edges_sp_sl[curve_id.first][curve_id.second];
 
-        // saliency * sigmoid(d)
-        //cur_dist +=  edge_lens.x * edge_lens.y * saliency * sigmoid(sqrt(nearest_sp_dist[k]), search_rad / 2, dist_attenuation);// *
-        //cur_dist += saliency * exp(-nearest_sp_dist[k] / search_rad / search_rad);
-        double score = sqrt(nearest_sp_dist[k]);//pow(saliency, para_a) / pow((sqrt(nearest_sp_dist[k]) / search_rad + 0.0001), para_b);
+        double score = 0;
+        if (SField_type == 0 || SField_type == 1)
+        {
+          score = sqrt(nearest_sp_dist[k]);
+        }
+        else if (SField_type == 2)
+        {
+          score = pow(saliency, para_a) / pow((sqrt(nearest_sp_dist[k]) / search_rad + 0.0001), para_b);
+        }
         if (cur_dist < score)
         {
           cur_dist = score;
