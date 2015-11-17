@@ -271,11 +271,11 @@ void LargeFeatureReg::updateFlatCoefs(std::vector<double>& coefs)
       cos_list(i) = (var.col(i).dot(var.col(i - 1)));
     }
     //coefs[vi] = std::exp(-(cos_list.array() - cos_list.mean()).matrix().squaredNorm() / ring_cnt);
-    //coefs[vi] = cos_list.minCoeff() < 0 ? 0 : cos_list.minCoeff();
-    //if (coefs[vi] < min_coef) min_coef = coefs[vi];
+    coefs[vi] = cos_list.minCoeff() < 0 ? 0 : cos_list.minCoeff();
+    if (coefs[vi] < min_coef) min_coef = coefs[vi];
   }
 
-  //std::cout << "min flat coef: " << min_coef << std::endl;
+  std::cout << "min flat coef: " << min_coef << std::endl;
 }
 
 void LargeFeatureReg::updateFlatProj(const std::vector<double>& X)
@@ -286,42 +286,26 @@ void LargeFeatureReg::updateFlatProj(const std::vector<double>& X)
   for (; vit != vend; ++vit)
   {
     int vi = (*vit).idx();
-    std::set<int> neighbors;
-    std::vector<int> cur_ring;
-    std::vector<int> next_ring;
-    cur_ring.push_back(vi);
-    neighbors.insert(vi);
-    PolygonMesh::Vertex_around_vertex_circulator vc, vc_end;
-    for (int i_ring = 0; i_ring < 2; ++i_ring)
+    int ring_cnt = 0;
+    PolygonMesh::Halfedge_around_vertex_circulator hec, hec_end;
+    hec = hec_end = mesh->halfedges(*vit);
+    do 
     {
-      for (size_t i = 0; i < cur_ring.size(); ++i)
-      {
-        vc = vc_end = mesh->vertices(PolygonMesh::Vertex(cur_ring[i]));
-        do 
-        {
-          int cur_v = (*vc).idx();
-          if (neighbors.find(cur_v) == neighbors.end())
-          {
-            neighbors.insert(cur_v);
-            next_ring.push_back(cur_v);
-          }
-        } while (++vc != vc_end);
-      }
-      cur_ring.swap(next_ring);
-      next_ring.clear();
-    }
+      ++ring_cnt;
+    } while (++hec != hec_end);
 
-    Matrix3Xf C(3, neighbors.size());
-    int neighbor_cnt = 0;
-    for (auto i : neighbors)
+    Matrix3Xf C(3, ring_cnt + 1);
+    ring_cnt = 0;
+    do 
     {
-      C.col(neighbor_cnt) =  Vector3f(X[3 * i + 0], X[3 * i + 1], X[3 * i + 2]);
-      ++neighbor_cnt;
-    }
-    Vector3f cur_pos(X[3 * vi + 0], X[3 * vi + 1], X[3 * vi + 2]); // the vertex self also need to be considered
+      int vj = mesh->to_vertex(*hec).idx();
+      C.col(ring_cnt) = Vector3f(X[3 * vj + 0], X[3 * vj + 1], X[3 * vj + 2]);
+      ++ring_cnt;
+    } while (++hec != hec_end);
+    C.col(ring_cnt) = Vector3f(X[3 * vi + 0], X[3 * vi + 1], X[3 * vi + 2]); // the vertex self also need to be considered
 
-    Vector3f center = C * VectorXf::Ones(C.cols()) / (C.cols());
-    C = ((MatrixXf::Identity(C.cols(), C.cols()) - MatrixXf::Ones(C.cols(), C.cols()) / C.cols()) * C.transpose()).transpose();
+    Vector3f center = C * VectorXf::Ones(ring_cnt + 1) / (ring_cnt + 1);
+    C = ((MatrixXf::Identity(ring_cnt + 1, ring_cnt + 1) - MatrixXf::Ones(ring_cnt + 1, ring_cnt + 1) / (ring_cnt + 1)) * C.transpose()).transpose();
     Matrix3f C_cov = C * C.transpose();
     Matrix3f U;
     Vector3f W;
@@ -331,7 +315,7 @@ void LargeFeatureReg::updateFlatProj(const std::vector<double>& X)
     Matrix3Xf U_part(3, 2);
     U_part.col(0) = U.col(0);
     U_part.col(1) = U.col(1);
-    P_plane_proj.col(vi) = U_part * U_part.transpose() * cur_pos + center;
+    P_plane_proj.col(vi) = U_part * U_part.transpose() * C.col(ring_cnt) + center;
   }
 }
 
