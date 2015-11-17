@@ -131,7 +131,17 @@ void AlgHandler::doDetailSynthesis()
   shape_model->exportOBJ(0);
   doNormalTransfer();
   shape_model->exportOBJ(0);*/
-  detail_synthesis->startDetailSynthesis(shape_model);
+
+  /*detail_synthesis->startDetailSynthesis(shape_model);*/
+
+  detail_synthesis->computeVectorField(shape_model);
+  actors.clear();
+  std::vector<GLActor> temp_actors;
+  detail_synthesis->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
 }
 
 void AlgHandler::doProjICP()

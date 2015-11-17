@@ -7,7 +7,8 @@
 #include "ShapeUtility.h"
 #include "obj_writer.h"
 #include "SynthesisTool.h"
-
+#include "CurveGuidedVectorField.h"
+#include "GLActor.h"
 
 DetailSynthesis::DetailSynthesis()
 {
@@ -321,4 +322,22 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   cv::Mat tar_detail = (syn_tool->getTargetDetail())[0];
   cv::minMaxLoc(tar_detail,&min,&max);
   cv::imshow("result", (tar_detail - min) / (max - min));
+}
+
+void DetailSynthesis::computeVectorField(std::shared_ptr<Model> model)
+{
+  curve_guided_vector_field.reset(new CurveGuidedVectorField);
+  curve_guided_vector_field->computeVectorField(model);
+  actors.clear();
+  std::vector<GLActor> temp_actors;
+  curve_guided_vector_field->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
+}
+
+void DetailSynthesis::getDrawableActors(std::vector<GLActor>& actors)
+{
+  actors = this->actors;
 }

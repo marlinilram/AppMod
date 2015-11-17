@@ -303,3 +303,10 @@ void DispModuleHandler::setMainCanvasRenderMode()
   /*trackball_viewer->setGLActors(alg_handler->getGLActors());
   updateCanvas();*/
 }
+
+void DispModuleHandler::doSynthesis()
+{
+  alg_handler->doDetailSynthesis();
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
+  updateCanvas();
+}

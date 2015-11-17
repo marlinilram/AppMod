@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>289</width>
-    <height>867</height>
+    <height>893</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,7 +26,7 @@
          <x>0</x>
          <y>0</y>
          <width>276</width>
-         <height>758</height>
+         <height>784</height>
         </rect>
        </property>
        <attribute name="label">
@@ -421,6 +421,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="Synthesis_PushButton">
+             <property name="text">
+              <string>Do Synthesis</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
              <item>
               <widget class="QPushButton" name="DetailSynthesis_PushButton">
@@ -463,7 +470,7 @@
          <x>0</x>
          <y>0</y>
          <width>271</width>
-         <height>775</height>
+         <height>801</height>
         </rect>
        </property>
        <attribute name="label">
