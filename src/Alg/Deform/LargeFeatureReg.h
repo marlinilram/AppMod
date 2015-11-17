@@ -39,6 +39,9 @@ private:
   void updateFlatGrad(const std::vector<double>& X, std::vector<double>& grad);
   void updateFlatProj(const std::vector<double>& X);
   void updateFlatCoefs(std::vector<double>& coefs);
+  double energyFlatNew(const std::vector<double>& X);
+  void updateFlatGradNew(const std::vector<double>& X, std::vector<double>& grad);
+  void updateFlatProjNew(const std::vector<double>& X);
 
   friend double LFReg::efunc(const std::vector<double>&x, std::vector<double>& grad, void *func_data);
   friend double LFReg::efuncNonRigid(const std::vector<double>&x, std::vector<double>& grad, void *func_data);
@@ -56,6 +59,8 @@ private:
   // internal variables for Flatness
   std::vector<double> flat_coefs;
   Matrix3Xf P_plane_proj;
+  std::vector<std::vector<int> > flat_vertices;
+  std::vector<Matrix3Xf> P_plane_proj_new;
   double lamd_flat;
 
 private:

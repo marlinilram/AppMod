@@ -144,7 +144,9 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
 
   P_plane_proj = P_init;
   updateFlatCoefs(flat_coefs);
-  lamd_flat = 1.5;
+  feature_model->source_model->getPlaneVertices(flat_vertices);
+  P_plane_proj_new.resize(flat_vertices.size());
+  lamd_flat = 0.5;
 
   int x_dim = 3 * mesh->n_vertices();
   std::vector<double> x0;

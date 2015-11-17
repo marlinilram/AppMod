@@ -21,7 +21,7 @@ namespace LFReg {
     fx0_SField = lf_reg->energyScalarField(x); // to estimate grad of SField
     fx0 += fx0_SField;
     fx0 += lf_reg->lamd_ARAP * lf_reg->energyARAP(x);
-    fx0 += lf_reg->lamd_flat * lf_reg->energyFlat(x);
+    fx0 += lf_reg->lamd_flat * lf_reg->energyFlatNew(x);
 
 
     grad.resize(x.size());
@@ -29,7 +29,7 @@ namespace LFReg {
     std::vector<double> ARAP_grad;
     std::vector<double> flat_grad;
     lf_reg->updateARAPGrad(x, ARAP_grad);
-    lf_reg->updateFlatGrad(x, flat_grad);
+    lf_reg->updateFlatGradNew(x, flat_grad);
 
     for (size_t i = 0; i < x.size(); ++i)
     {
@@ -272,10 +272,10 @@ void LargeFeatureReg::updateFlatCoefs(std::vector<double>& coefs)
     }
     //coefs[vi] = std::exp(-(cos_list.array() - cos_list.mean()).matrix().squaredNorm() / ring_cnt);
     coefs[vi] = cos_list.minCoeff() < 0 ? 0 : cos_list.minCoeff();
-    if (coefs[vi] < min_coef) min_coef = coefs[vi];
+    //if (coefs[vi] < min_coef) min_coef = coefs[vi];
   }
 
-  std::cout << "min flat coef: " << min_coef << std::endl;
+  //std::cout << "min flat coef: " << min_coef << std::endl;
 }
 
 void LargeFeatureReg::updateFlatProj(const std::vector<double>& X)
@@ -286,26 +286,44 @@ void LargeFeatureReg::updateFlatProj(const std::vector<double>& X)
   for (; vit != vend; ++vit)
   {
     int vi = (*vit).idx();
-    int ring_cnt = 0;
-    PolygonMesh::Halfedge_around_vertex_circulator hec, hec_end;
-    hec = hec_end = mesh->halfedges(*vit);
-    do 
+    std::set<int> neighbors;
+    std::vector<int> cur_ring;
+    std::vector<int> next_ring;
+    cur_ring.push_back(vi);
+    neighbors.insert(vi);
+    PolygonMesh::Vertex_around_vertex_circulator vc, vc_end;
+    for (int i_ring = 0; i_ring < 1; ++i_ring)
     {
-      ++ring_cnt;
-    } while (++hec != hec_end);
+      for (size_t i = 0; i < cur_ring.size(); ++i)
+      {
+        vc = vc_end = mesh->vertices(PolygonMesh::Vertex(cur_ring[i]));
+        do 
+        {
+          int cur_v = (*vc).idx();
+          if (neighbors.find(cur_v) == neighbors.end())
+          {
+            neighbors.insert(cur_v);
+            next_ring.push_back(cur_v);
+          }
+        } while (++vc != vc_end);
+      }
+      cur_ring.swap(next_ring);
+      next_ring.clear();
+    }
 
-    Matrix3Xf C(3, ring_cnt + 1);
-    ring_cnt = 0;
-    do 
+    Matrix3Xf C(3, neighbors.size());
+    int neighbor_cnt = 0;
+    int vi_id = 0;
+    for (auto i : neighbors)
     {
-      int vj = mesh->to_vertex(*hec).idx();
-      C.col(ring_cnt) = Vector3f(X[3 * vj + 0], X[3 * vj + 1], X[3 * vj + 2]);
-      ++ring_cnt;
-    } while (++hec != hec_end);
-    C.col(ring_cnt) = Vector3f(X[3 * vi + 0], X[3 * vi + 1], X[3 * vi + 2]); // the vertex self also need to be considered
+      if (i == vi) vi_id = neighbor_cnt;
+      C.col(neighbor_cnt) =  Vector3f(X[3 * i + 0], X[3 * i + 1], X[3 * i + 2]);
+      ++neighbor_cnt;
+    }
+    //Vector3f cur_pos(X[3 * vi + 0], X[3 * vi + 1], X[3 * vi + 2]); // the vertex self also need to be considered
 
-    Vector3f center = C * VectorXf::Ones(ring_cnt + 1) / (ring_cnt + 1);
-    C = ((MatrixXf::Identity(ring_cnt + 1, ring_cnt + 1) - MatrixXf::Ones(ring_cnt + 1, ring_cnt + 1) / (ring_cnt + 1)) * C.transpose()).transpose();
+    Vector3f center = C * VectorXf::Ones(neighbors.size()) / (neighbors.size());
+    C = ((MatrixXf::Identity(neighbors.size(), neighbors.size()) - MatrixXf::Ones(neighbors.size(), neighbors.size()) / neighbors.size()) * C.transpose()).transpose();
     Matrix3f C_cov = C * C.transpose();
     Matrix3f U;
     Vector3f W;
@@ -315,7 +333,7 @@ void LargeFeatureReg::updateFlatProj(const std::vector<double>& X)
     Matrix3Xf U_part(3, 2);
     U_part.col(0) = U.col(0);
     U_part.col(1) = U.col(1);
-    P_plane_proj.col(vi) = U_part * U_part.transpose() * C.col(ring_cnt) + center;
+    P_plane_proj.col(vi) = U_part * U_part.transpose() * C.col(vi_id) + center;
   }
 }
 
@@ -342,4 +360,66 @@ double LargeFeatureReg::energyFlat(const std::vector<double>& X)
     sum += flat_coefs[i] * pow(X[3 * i + 2] - P_plane_proj(2, i), 2);
   }
   return sum;
+}
+
+double LargeFeatureReg::energyFlatNew(const std::vector<double>& X)
+{
+  updateFlatProjNew(X);
+
+  double sum = 0;
+  for (size_t i = 0; i < flat_vertices.size(); ++i)
+  {
+    for (size_t j = 0; j < flat_vertices[i].size(); ++j)
+    {
+      sum += pow(X[3 * flat_vertices[i][j] + 0] - P_plane_proj_new[i](0, j), 2);
+      sum += pow(X[3 * flat_vertices[i][j] + 1] - P_plane_proj_new[i](1, j), 2);
+      sum += pow(X[3 * flat_vertices[i][j] + 2] - P_plane_proj_new[i](2, j), 2);
+    }
+  }
+  return sum;
+}
+
+void LargeFeatureReg::updateFlatProjNew(const std::vector<double>& X)
+{
+  for (size_t i = 0; i < flat_vertices.size(); ++i)
+  {
+    size_t plane_size = flat_vertices[i].size();
+    P_plane_proj_new[i].resize(3, plane_size);
+    Matrix3Xf C(3, plane_size);
+    for (size_t j = 0; j < plane_size; ++j)
+    {
+      C.col(j) =  Vector3f(X[3 * flat_vertices[i][j] + 0], X[3 * flat_vertices[i][j] + 1], X[3 * flat_vertices[i][j] + 2]);
+    }
+
+    Vector3f center = C * VectorXf::Ones(plane_size) / (plane_size);
+    C = ((MatrixXf::Identity(plane_size, plane_size) - MatrixXf::Ones(plane_size, plane_size) / plane_size) * C.transpose()).transpose();
+    Matrix3f C_cov = C * C.transpose();
+    Matrix3f U;
+    Vector3f W;
+    Matrix3f V;
+    wunderSVD3x3(C_cov, U, W, V);
+
+    Matrix3Xf U_part(3, 2);
+    U_part.col(0) = U.col(0);
+    U_part.col(1) = U.col(1);
+    P_plane_proj_new[i] = U_part * U_part.transpose() * C;
+    for (size_t j = 0; j < plane_size; ++j)
+    {
+      P_plane_proj_new[i].col(j) += center;
+    }
+  }
+}
+
+void LargeFeatureReg::updateFlatGradNew(const std::vector<double>& X, std::vector<double>& grad)
+{
+  grad.resize(X.size(), 0);
+  for (size_t i = 0; i < flat_vertices.size(); ++i)
+  {
+    for (size_t j = 0; j < flat_vertices[i].size(); ++j)
+    {
+      grad[3 * flat_vertices[i][j] + 0] += 2 * (X[3 * flat_vertices[i][j] + 0] - P_plane_proj_new[i](0, j));
+      grad[3 * flat_vertices[i][j] + 1] += 2 * (X[3 * flat_vertices[i][j] + 1] - P_plane_proj_new[i](1, j));
+      grad[3 * flat_vertices[i][j] + 2] += 2 * (X[3 * flat_vertices[i][j] + 2] - P_plane_proj_new[i](2, j));
+    }
+  }
 }
