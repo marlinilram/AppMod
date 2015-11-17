@@ -168,6 +168,7 @@ void FeatureGuided::updateSourceField(int update_type)
   else if (update_type == 1)
   {
     this->updateDistSField();
+    this->BuildClosestPtPair();
   }
   else if (update_type == 2)
   {
@@ -1233,6 +1234,9 @@ void FeatureGuided::BuildClosestPtPair()
   this->NormalizedTargetCurves(n_tar_curves);
 
   // find corresponding points in source curves
+  std::vector<double> paras(3, 0);
+  paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
+  paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
   std::map<CurvePt, CrspCurvePt> crsp_map;
   std::map<CurvePt, CrspCurvePt>::iterator it;
   for (size_t i = 0; i < n_tar_curves.size(); ++i)
@@ -1242,12 +1246,14 @@ void FeatureGuided::BuildClosestPtPair()
       int src_i = -1;
       int src_j = -1;
       double dis = 0.0;
-      if (CurvesUtility::closestPtInCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, target_scalar_field->matching_map, target_scalar_field->resolution, 0.3))
+      paras[0] = target_edges_sp_sl[i][j];
+      //if (CurvesUtility::closestPtInCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, target_scalar_field->matching_map, target_scalar_field->resolution, 0.3))
+      if (CurvesUtility::closestPtInSaliencyCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, paras))
       {
         it = crsp_map.find(CurvePt(src_i, src_j));
         if (it != crsp_map.end())
         {
-          if (dis < it->second.second)
+          if (dis > it->second.second)
           {
             it->second = CrspCurvePt(CurvePt(int(i), int(j)), dis);
           }

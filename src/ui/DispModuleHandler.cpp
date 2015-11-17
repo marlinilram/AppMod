@@ -291,6 +291,7 @@ void DispModuleHandler::setSFieldPara(int set_type)
 {
   target_vector_viewer->updateSourceField(set_type);
   target_vector_viewer->updateScalarFieldTexture();
+  source_vector_viewer->updateGLOutside();
 }
 
 void DispModuleHandler::setMainCanvasRenderMode()

@@ -1,6 +1,7 @@
 #include "CurvesUtility.h"
 
 
+
 namespace CurvesUtility
 {
   bool isBoundary(cv::Mat& primitive_img, int x, int y)
@@ -103,6 +104,36 @@ namespace CurvesUtility
     if (src_i != -1 && src_j != -1)
     {
      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  bool closestPtInSaliencyCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_curves,
+    int& src_i, int& src_j, double& dis, std::vector<double>& paras)
+  {
+    dis = std::numeric_limits<double>::min();
+    for (size_t i = 0; i < src_curves.size(); ++i)
+    {
+      for (size_t j = 0; j < src_curves[i].size(); ++j)
+      {
+        double2 diff = tar_pt - src_curves[i][j];
+        double cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
+        cur_score = pow(paras[0], paras[1]) / pow(cur_score + 0.0001, paras[2]);
+        if (cur_score > dis)
+        {
+          src_i = int(i);
+          src_j = int(j);
+          dis = cur_score;
+        }
+      }
+    }
+
+    if (src_i != -1 && src_j != -1)
+    {
+      return true;
     }
     else
     {

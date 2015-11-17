@@ -172,9 +172,7 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
   }
   avg_edge_len /= feature_model->target_edges_sp_len.size();
   double sigmoid_center = std::max(feature_model->target_edge_saliency.cols, feature_model->target_edge_saliency.rows);
-  //search_rad = dist_attenuation * 0.6 / scale;
-  search_rad = dist_attenuation * feature_model->target_KDTree->nDataPt();
-  //search_rad = search_rad > 25 ? 25 : search_rad;
+  search_rad = dist_attenuation * 0.6 / scale;
 
   std::cout << "dist attenuation: " << dist_attenuation << "\tsearch radius: " << search_rad << "\n";
 
@@ -198,15 +196,14 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
       }
       else if (SField_type == 2)
       {
-        //feature_model->target_KDTree->rNearestPt(search_rad * search_rad, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
-        feature_model->target_KDTree->nearestPt(search_rad, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
+        feature_model->target_KDTree->rNearestPt(search_rad * search_rad, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
       }
       else if (SField_type == 1)
       {
         pos[2] = para_a / (1 - para_a + 1e-3) / scale;
         tuned_kdTree->nearestPt(1, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
       }
-      float cur_dist = 0;
+      float cur_dist = std::numeric_limits<float>::min();
       for (size_t k = 0; k < nearest_sp_id.size(); ++k)
       {
         std::pair<int, int> curve_id = feature_model->kdtree_id_mapper[nearest_sp_id[k]];
@@ -221,7 +218,10 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
         {
           score = pow(saliency, para_a) / pow((sqrt(nearest_sp_dist[k]) / search_rad + 0.0001), para_b);
         }
-        cur_dist += score;
+        if (cur_dist < score)
+        {
+          cur_dist = score;
+        }
       }
       if (nearest_sp_id.size() == 0)
       {
@@ -229,7 +229,6 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
       }
       else
       {
-        cur_dist = cur_dist / nearest_sp_id.size();
         if (cur_dist > max_val)
         {
           max_val = cur_dist;

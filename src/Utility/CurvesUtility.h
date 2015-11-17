@@ -18,6 +18,9 @@ namespace CurvesUtility
     int& src_i, int& src_j, double& dis, 
     STLVectorf& scalar_map = STLVectorf(0), int dim = 0, double threshold = 0.0);
 
+  bool closestPtInSaliencyCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_curves,
+    int& src_i, int& src_j, double& dis, std::vector<double>& paras);
+
   void mergeShapeEdges(std::vector<Edge>& edges, std::vector<STLVectori>& lines);
 }
 
