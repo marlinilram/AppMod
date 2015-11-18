@@ -20,7 +20,7 @@ public:
 
 private:
   std::vector<Vector3f> vector_field;
-  std::shared_ptr<ARAP> arap;
+  //std::shared_ptr<ARAP> arap;
   std::vector<GLActor> actors;
 };
 
