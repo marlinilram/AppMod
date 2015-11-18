@@ -125,4 +125,7 @@ public:
 
 };
 
+typedef std::vector<std::vector<double2> > CURVES;
+typedef             std::vector<double2>   CURVE;
+
 #endif // !BasicDataType_H

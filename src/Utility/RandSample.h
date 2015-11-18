@@ -1,6 +1,5 @@
 #ifndef RandSample_H
 #define RandSample_H
-
 #include "BasicHeader.h"
 
 #include <set>

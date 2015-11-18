@@ -14,8 +14,6 @@ class FeatureLine;
 class ScalarField;
 class KDTreeWrapper;
 class tele2d;
-typedef std::vector<std::vector<double2> > CURVES;
-typedef             std::vector<double2>   CURVE;
 // suppose the HIST contains 8 + 1 + 2 elements
 // 8 for directions, 1 for scalar and 2 for pos (x, y)
 typedef             std::vector<double>    HIST;
@@ -73,19 +71,6 @@ public:
     std::vector<std::vector<bool>>& visited_table,
     std::vector<double2>& curve);
 
-  static CURVES ReorganizeCurves(CURVES& curves, float sp_rate);
-  static CURVES SplitCurve(std::vector<double2> curve);
-  static std::vector<double2> ConnectCurves(
-    std::vector<double2> curve0, std::vector<double2> curve1,
-    int endtag0, int endtag1);
-  static double CurveLength(std::vector<double2>& curve);
-  static double PartCurveLength(std::vector<double2>& curve, int sp_id);
-  static void EliminateRedundancy(CURVES& curves);
-  static void NormalizedCurves(CURVES& curves);
-  static void NormalizedCurves(CURVES& curves, double2 translate, double scale);
-  static void NormalizedCurve(CURVE& curve, double2 translate, double scale);
-  static void DenormalizedCurve(CURVE& curve, double2 translate, double scale);
-  static void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
 public:
 
