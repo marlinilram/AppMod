@@ -65,9 +65,8 @@ void LargeFeatureCrsp::buildCrsp(std::map<CurvePt, CurvePt>& crsp)
     }
   }
 
-  return;
   // refine the correspondences
-  // 1. 
+  // 1. keep the most confidential target curve
 
   std::map<int, std::map<int, std::vector<CurvePt> > > s_t_cnt_map;
   std::map<int, std::map<int, std::vector<CurvePt> > >::iterator cnt_map_it;
@@ -94,6 +93,34 @@ void LargeFeatureCrsp::buildCrsp(std::map<CurvePt, CurvePt>& crsp)
     }
   }
 
+  // 
+  std::map<int, std::pair<int, int> > t_s_cnt_map;
+  std::map<int, std::pair<int, int> >::iterator t_s_cnt_it;
+  for (auto i : s_t_cnt_map)
+  {
+    // source curve id = i.first
+    for (auto j : i.second)
+    {
+      // target curve id = j.first
+      // corresponding curve point std::vector<int, int>& = j.second
+      // a corresponding pair is (i.first, j.second[k].first) and (j.first, j.second[k].second)
+      
+      int cnt = j.second.size();
+      t_s_cnt_it = t_s_cnt_map.find(j.first);
+      if (t_s_cnt_it != t_s_cnt_map.end())
+      {
+        if (cnt > t_s_cnt_it->second.second)
+        {
+          t_s_cnt_it->second = std::pair<int, int>(i.first, cnt);
+        }
+      }
+      else
+      {
+        t_s_cnt_map[j.first] = std::pair<int, int>(i.first, cnt);
+      }
+    }
+  }
+
   int cnt = 0;
   crsp.clear();
   for (auto i : s_t_cnt_map)
@@ -111,10 +138,23 @@ void LargeFeatureCrsp::buildCrsp(std::map<CurvePt, CurvePt>& crsp)
     }
 
     // save the best crsp
-    for (auto j : i.second[best_target])
+    // if the best target curve also has its best source curve than we confirm it
+    t_s_cnt_it = t_s_cnt_map.find(best_target);
+    if (t_s_cnt_it != t_s_cnt_map.end())
     {
-      crsp[CurvePt(i.first, j.first)] = CurvePt(best_target, j.second);
+      if (i.first == t_s_cnt_it->second.first)
+      {
+        for (auto j : i.second[best_target])
+        {
+          crsp[CurvePt(i.first, j.first)] = CurvePt(best_target, j.second);
+        }
+      }
     }
+    else
+    {
+      std::cout << "The best target curve isn't found in the t_s_cnt_map." << std::endl;
+    }
+
     
   }
 }
