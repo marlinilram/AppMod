@@ -90,6 +90,7 @@ private:
   friend class ProjICP;
   friend class LargeFeatureReg;
   friend class ScalarField;
+  friend class LargeFeatureCrsp;
 
   std::shared_ptr<Model> source_model;
   cv::Mat target_img;

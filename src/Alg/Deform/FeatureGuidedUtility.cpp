@@ -1,9 +1,11 @@
 #include "FeatureGuided.h"
+#include "FeatureLine.h"
 #include "tele2d.h"
 
 #include "KDTreeWrapper.h"
 #include "CurvesUtility.h"
 #include "UtilityHeader.h"
+#include "RandSample.h"
 
 void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
 {
