@@ -38,10 +38,14 @@ void NormalizedCurve(CURVE& curve, double2 translate, double scale);
 void DenormalizedCurve(CURVE& curve, double2 translate, double scale);
 void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
+void CurveSpTwoSideDist(std::vector<std::vector<double2> >& edges_sp_len, CURVES& curves);
+void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& curves, cv::Mat& saliency_img);
+
 CURVE SmoothCurve(CURVE& curve_in, int win_size = 3);
 CURVES SmoothCurves(CURVES& curves_in, int win_size = 3);
-std::vector<int> BreakPoint(CURVE& curve_in, int win_size = 3, double th = 0.5);
-std::vector<std::vector<int> > BreakPointAll(CURVES& curves_in, int win_size = 3, double th = 0.5);
+std::vector<int> DetectBreakPoint(CURVE& curve_in, int win_size = 3, double th = 0.5);
+std::vector<std::vector<int> > DetectBreakPointAll(CURVES& curves_in, int win_size = 3, double th = 0.5);
+CURVES BreakCurves(CURVES& curves, std::vector<std::vector<int> >& bk_points);
 }
 
 

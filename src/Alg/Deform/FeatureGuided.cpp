@@ -245,92 +245,43 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
     }
   }
 
+  // reorganize curves and detect break points
   int bk_sp_rate = 3;
   curves = CurvesUtility::ReorganizeCurves(curves, 1);
-  std::vector<std::vector<int> > bk_points = CurvesUtility::BreakPointAll(CurvesUtility::SmoothCurves(CurvesUtility::ReorganizeCurves(curves, bk_sp_rate), 3), 11, 0.87); // cos(30') = 0.8660
+  std::vector<std::vector<int> > bk_points = CurvesUtility::DetectBreakPointAll(CurvesUtility::SmoothCurves(CurvesUtility::ReorganizeCurves(curves, bk_sp_rate), 3), 11, 0.87); // cos(30') = 0.8660
+  // break the curves according to the break points
+  for (size_t i = 0; i < bk_points.size(); +i)
+  {
+    for (size_t j = 0; j < bk_points[i].size(); ++j)
+    {
+      bk_points[i][j] *= bk_sp_rate;
+    }
+  }
+  curves = CurvesUtility::BreakCurves(curves, bk_points);
 
 
   // save edges lenth from each sample to two ends of the curve
   target_edges_sp_len.clear();
-  std::vector<double2> temp_edge_sp_len;
-  for (size_t i = 0; i < curves.size(); ++i)
-  {
-    temp_edge_sp_len.clear();
-    double cur_length = 0;
-    temp_edge_sp_len.push_back(double2(cur_length, 0));
-    for (int j = 1; j < curves[i].size(); ++j)
-    {
-      cur_length += 
-        sqrt(pow(curves[i][j].x - curves[i][j - 1].x, 2)
-        + pow(curves[i][j].y - curves[i][j - 1].y, 2));
-
-      temp_edge_sp_len.push_back(double2(cur_length, 0));
-    }
-    
-    for (size_t j = 0; j < temp_edge_sp_len.size(); ++j)
-    {
-      temp_edge_sp_len[j].y = cur_length - temp_edge_sp_len[j].x;
-    }
-    target_edges_sp_len.push_back(temp_edge_sp_len);
-  }
+  CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, curves);
 
   target_edges_sp_sl.clear();
-  for (size_t i = 0; i < curves.size(); ++i)
-  {
-    std::vector<double> temp_edge_sp_sl;
-    for (size_t j = 0; j < curves[i].size(); ++j)
-    {
-      double saliency = 0.0;
-      for (int k = -10; k <= 10; ++k)
-      {
-        int cur_idx = int(j) + k;
-        if (cur_idx >= 0 && cur_idx < curves[i].size())
-        {
-          // get the saliency
-          int img_i = target_edge_saliency.rows - (curves[i][cur_idx].y + 0.5);
-          int img_j = curves[i][cur_idx].x + 0.5;
-          img_i = img_i < 0 ? 0 : (img_i < target_edge_saliency.rows ? img_i : target_edge_saliency.rows);
-          img_j = img_j < 0 ? 0 : (img_j < target_edge_saliency.cols ? img_j : target_edge_saliency.cols);
-          saliency += target_edge_saliency.at<float>(img_i, img_j);
-        }
-      }
-      temp_edge_sp_sl.push_back(saliency / 21);
-    }
-    target_edges_sp_sl.push_back(temp_edge_sp_sl);
-  }
-
-std::ofstream f_debug(source_model->getDataPath() + "/saliency.mat");
-if (f_debug)
-{
-  for (size_t i = 0; i < target_edges_sp_sl.size(); ++i)
-  {
-    for (size_t j = 0; j < target_edges_sp_sl[i].size(); ++j)
-    {
-      f_debug << target_edges_sp_sl[i][j] << "\n";
-    }
-  }
-  f_debug.close();
-}
+  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, curves, target_edge_saliency);
 
 #define DEBUG
 #ifdef DEBUG
   std::vector<std::vector<cv::Point>> contours;
   //cv::findContours(source, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
   // draw curves
-  cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC3);
+  cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC1);
   for (int i = 0; i < curves.size(); ++i)
   {
     for (int j = 0; j < curves[i].size(); ++j)
     {
-      contour.at<cv::Vec3b>(source.rows - 1 - curves[i][j].y, curves[i][j].x) = cv::Vec3b(255, 255, 255);
+      contour.at<uchar>(source.rows - 1 - curves[i][j].y, curves[i][j].x) = 255;
     }
-
-    for (int j = 0; j < bk_points[i].size(); ++j)
-    {
-      contour.at<cv::Vec3b>(source.rows - 1 - curves[i][bk_sp_rate * bk_points[i][j]].y, curves[i][bk_sp_rate * bk_points[i][j]].x) = cv::Vec3b(0, 0, 200);
-    }
+    cv::imwrite(source_model->getDataPath() + "/curve_imgs/" + std::to_string(i) + ".png", contour);
   }
-  cv::imwrite(source_model->getDataPath() + "/curve_imgs/" + std::to_string(0) + ".png", contour);
+
 #endif
 }
 

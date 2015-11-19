@@ -439,6 +439,73 @@ void NormalizePara(CURVES& curves, double2& translate, double& scale)
 }
 
 
+void CurveSpTwoSideDist(std::vector<std::vector<double2> >& edges_sp_len, CURVES& curves)
+{
+  // compute the distance to two end of the curve for each sample
+  std::vector<double2> temp_edge_sp_len;
+  for (size_t i = 0; i < curves.size(); ++i)
+  {
+    temp_edge_sp_len.clear();
+    double cur_length = 0;
+    temp_edge_sp_len.push_back(double2(cur_length, 0));
+    for (int j = 1; j < curves[i].size(); ++j)
+    {
+      cur_length += 
+        sqrt(pow(curves[i][j].x - curves[i][j - 1].x, 2)
+        + pow(curves[i][j].y - curves[i][j - 1].y, 2));
+
+      temp_edge_sp_len.push_back(double2(cur_length, 0));
+    }
+
+    for (size_t j = 0; j < temp_edge_sp_len.size(); ++j)
+    {
+      temp_edge_sp_len[j].y = cur_length - temp_edge_sp_len[j].x;
+    }
+    edges_sp_len.push_back(temp_edge_sp_len);
+  }
+}
+
+void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& curves, cv::Mat& saliency_img)
+{
+  for (size_t i = 0; i < curves.size(); ++i)
+  {
+    std::vector<double> temp_edge_sp_sl;
+    for (size_t j = 0; j < curves[i].size(); ++j)
+    {
+      double saliency = 0.0;
+      for (int k = -10; k <= 10; ++k)
+      {
+        int cur_idx = int(j) + k;
+        if (cur_idx >= 0 && cur_idx < curves[i].size())
+        {
+          // get the saliency
+          int img_i = saliency_img.rows - (curves[i][cur_idx].y + 0.5);
+          int img_j = curves[i][cur_idx].x + 0.5;
+          img_i = img_i < 0 ? 0 : (img_i < saliency_img.rows ? img_i : saliency_img.rows);
+          img_j = img_j < 0 ? 0 : (img_j < saliency_img.cols ? img_j : saliency_img.cols);
+          saliency += saliency_img.at<float>(img_i, img_j);
+        }
+      }
+      temp_edge_sp_sl.push_back(saliency / 21);
+    }
+    edges_sp_sl.push_back(temp_edge_sp_sl);
+  }
+
+  std::ofstream f_debug("saliency.mat");
+  if (f_debug)
+  {
+    for (size_t i = 0; i < edges_sp_sl.size(); ++i)
+    {
+      for (size_t j = 0; j < edges_sp_sl[i].size(); ++j)
+      {
+        f_debug << edges_sp_sl[i][j] << "\n";
+      }
+    }
+    f_debug.close();
+  }
+}
+
+
 CURVE SmoothCurve(CURVE& curve_in, int win_size)
 {
   int offset = win_size / 2;
@@ -472,7 +539,7 @@ CURVES SmoothCurves(CURVES& curves_in, int win_size /* = 3 */)
 }
 
 
-std::vector<int> BreakPoint(CURVE& curve_in, int win_size /* = 3 */, double th /* = 0.5 */)
+std::vector<int> DetectBreakPoint(CURVE& curve_in, int win_size /* = 3 */, double th /* = 0.5 */)
 {
   int offset = win_size / 2;
   std::vector<int> bk_point;
@@ -507,14 +574,36 @@ std::vector<int> BreakPoint(CURVE& curve_in, int win_size /* = 3 */, double th /
   return bk_point;
 }
 
-std::vector<std::vector<int> > BreakPointAll(CURVES& curves_in, int win_size /* = 3 */, double th /* = 0.5 */)
+std::vector<std::vector<int> > DetectBreakPointAll(CURVES& curves_in, int win_size /* = 3 */, double th /* = 0.5 */)
 {
   std::vector<std::vector<int> > bk_points;
   for (size_t i = 0; i < curves_in.size(); ++i)
   {
-    bk_points.push_back(BreakPoint(curves_in[i], win_size, th));
+    bk_points.push_back(DetectBreakPoint(curves_in[i], win_size, th));
   }
   return bk_points;
+}
+
+CURVES BreakCurves(CURVES& curves, std::vector<std::vector<int> >& bk_points)
+{
+  if (curves.size() != bk_points.size())
+  {
+    std::cout << "size of curves and bk_points doesn't match." << std::endl;
+    return curves;
+  }
+
+  CURVES curves_out;
+  for (size_t i = 0; i < curves.size(); ++i)
+  {
+    int start = 0;
+    for (size_t j = 0; j < bk_points.size(); ++j)
+    {
+      curves_out.push_back(CURVE(curves.begin() + start, curves.begin() + bk_points[i][j]));
+      start = bk_points[i][j];
+    }
+    curves_out.push_back(CURVE(curves.begin() + start, curves.end()));
+  }
+  return curves_out;
 }
 
 } // namespace CurvesUtility
