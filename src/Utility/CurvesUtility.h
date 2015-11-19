@@ -37,6 +37,11 @@ void NormalizedCurves(CURVES& curves, double2 translate, double scale);
 void NormalizedCurve(CURVE& curve, double2 translate, double scale);
 void DenormalizedCurve(CURVE& curve, double2 translate, double scale);
 void NormalizePara(CURVES& curves, double2& translate, double& scale);
+
+CURVE SmoothCurve(CURVE& curve_in, int win_size = 3);
+CURVES SmoothCurves(CURVES& curves_in, int win_size = 3);
+std::vector<int> BreakPoint(CURVE& curve_in, int win_size = 3, double th = 0.5);
+std::vector<std::vector<int> > BreakPointAll(CURVES& curves_in, int win_size = 3, double th = 0.5);
 }
 
 

@@ -291,16 +291,17 @@ CURVES ReorganizeCurves(CURVES& curves, float sp_rate)
       {
         int step = int(sp_rate + 0.5);// 1;// + curves[i].size() / 50;
         int tail = 0;
+        CURVE temp_curve;
         for (int j = 0; j < curves[i].size(); ++j)
         {
           if (j % step == 0)
           {
-            curves[i][tail] = curves[i][j];
+            temp_curve.push_back(curves[i][j]);
             ++tail;
           }
         }
-        curves[i].erase(curves[i].begin() + tail, curves[i].end());
-        reorganized.push_back(curves[i]);
+        //curves[i].erase(curves[i].begin() + tail, curves[i].end());
+        reorganized.push_back(temp_curve);
       }
     }
   }
@@ -437,4 +438,83 @@ void NormalizePara(CURVES& curves, double2& translate, double& scale)
     scale = 0.6 / std::max( (maxCorner-minCorner).x, (maxCorner-minCorner).y  ) ;
 }
 
+
+CURVE SmoothCurve(CURVE& curve_in, int win_size)
+{
+  int offset = win_size / 2;
+  CURVE curve_out;
+  for (size_t i = 0; i < curve_in.size(); ++i)
+  {
+    int n_pt = 0;
+    double2 sum_pt(0, 0);
+    for (int i_off = -offset; i_off <= offset; ++i_off)
+    {
+      if ((i + i_off) >= 0 && (i + i_off) < curve_in.size())
+      {
+        sum_pt = sum_pt + curve_in[i + i_off];
+        ++n_pt;
+      }
+    }
+    sum_pt = sum_pt / n_pt;
+    curve_out.push_back(sum_pt);
+  }
+  return curve_out;
 }
+
+CURVES SmoothCurves(CURVES& curves_in, int win_size /* = 3 */)
+{
+  CURVES curves_out;
+  for (size_t i = 0; i < curves_in.size(); ++i)
+  {
+    curves_out.push_back(SmoothCurve(curves_in[i], win_size));
+  }
+  return curves_out;
+}
+
+
+std::vector<int> BreakPoint(CURVE& curve_in, int win_size /* = 3 */, double th /* = 0.5 */)
+{
+  int offset = win_size / 2;
+  std::vector<int> bk_point;
+  std::vector<int> id_cache; // to prevent the case that successive points are all break points
+  for (int i = 0; i < curve_in.size(); ++i)
+  {
+    if ((i - offset) >= 0 && (i + offset) < curve_in.size())
+    {
+      double2 prev = curve_in[i] - curve_in[i - offset];
+      double2 next = curve_in[i + offset] - curve_in[i];
+      double cos_pt = ((prev.x * next.x + prev.y * next.y) / prev.norm() / next.norm());
+
+      if (cos_pt < th)
+      {
+        if (id_cache.empty() || (id_cache.back() == (i - 1)))
+        {
+          id_cache.push_back(i);
+        }
+        else
+        {
+          bk_point.push_back(id_cache[id_cache.size() / 2]); // take the median one
+          id_cache.clear();
+          id_cache.push_back(i);
+        }
+      }
+    }
+  }
+  if (!id_cache.empty())
+  {
+    bk_point.push_back(id_cache[id_cache.size() / 2]);
+  }
+  return bk_point;
+}
+
+std::vector<std::vector<int> > BreakPointAll(CURVES& curves_in, int win_size /* = 3 */, double th /* = 0.5 */)
+{
+  std::vector<std::vector<int> > bk_points;
+  for (size_t i = 0; i < curves_in.size(); ++i)
+  {
+    bk_points.push_back(BreakPoint(curves_in[i], win_size, th));
+  }
+  return bk_points;
+}
+
+} // namespace CurvesUtility
