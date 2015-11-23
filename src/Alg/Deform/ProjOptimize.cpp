@@ -199,7 +199,7 @@ void ProjOptimize::updateShape(std::shared_ptr<FeatureGuided> feature_guided, st
 
   // plane constaint
   std::vector<STLVectori> vertices;
-  model->getTaggedPlaneVertices(vertices);
+  model->getPlaneVertices(vertices);
 
 #endif // USE_AUTO_2
 
@@ -325,6 +325,7 @@ void ProjOptimize::updateShapeFromInteraction(std::shared_ptr<FeatureGuided> fea
   int user_v_id = feature_guided->user_constrained_src_v;
   double2 user_win = feature_guided->user_constrained_tar_p;
 
+  bool is_new = true;
   for (size_t i = 0; i < constrained_vertex_id.size(); ++i)
   {
     if (constrained_vertex_id[i] == user_v_id)
@@ -338,7 +339,22 @@ void ProjOptimize::updateShapeFromInteraction(std::shared_ptr<FeatureGuided> fea
       constrained_ray[3 * i + 0] = proj_ray[0];
       constrained_ray[3 * i + 1] = proj_ray[1];
       constrained_ray[3 * i + 2] = proj_ray[2];
+      is_new = false;
     }
+  }
+  if (is_new)
+  {
+    constrained_vertex_id.push_back(user_v_id);
+
+    int p_x = int(user_win.x + 0.5);
+    // the y coordinate start from bottom in FeatureGuided
+    // but from top in cv::Mat
+    int p_y = primitive_id_img.rows - 1 - int(user_win.y + 0.5);
+    float proj_ray[3];
+    model->getProjRay(proj_ray, p_x, p_y);
+    constrained_ray.push_back(proj_ray[0]);
+    constrained_ray.push_back(proj_ray[1]);
+    constrained_ray.push_back(proj_ray[2]);
   }
 
   float camera_ori[3];
@@ -349,7 +365,7 @@ void ProjOptimize::updateShapeFromInteraction(std::shared_ptr<FeatureGuided> fea
 
   // since the solver has been initialized before and we don't change the pattern of the 
   // system matrix, no need to do initCholesky. Use preFactorize() instead
-  solver->preFactorize();
+  solver->initCholesky();
   int max_iter = 20; //20;
   int cur_iter = 0;
   do

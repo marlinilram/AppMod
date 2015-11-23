@@ -89,6 +89,7 @@ void MainCanvasViewer::getSnapShot()
       camera()->getProjectionMatrix(projection);
       camera()->getViewport(viewport);
       main_canvas->passCameraInfo(modelview, projection, viewport);
+      std::cout << "zClippingCoefficient: " << camera()->zClippingCoefficient() << "\tsceneRadius: " << camera()->sceneRadius() << std::endl;
     }
   }
 

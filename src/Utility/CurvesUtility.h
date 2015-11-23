@@ -16,11 +16,14 @@ void getBoundaryImg(cv::Mat& outputImg, cv::Mat& primitive_id_img);
 double distInScalarMap(STLVectorf& scalar_map, int dim, double2& src_pt, double2& tar_pt, double threshold);
 
 bool closestPtInCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_curves,
-  int& src_i, int& src_j, double& dis, 
-  STLVectorf& scalar_map = STLVectorf(0), int dim = 0, double threshold = 0.0);
+                       int& src_i, int& src_j, double& dis, 
+                       STLVectorf& scalar_map = STLVectorf(0), int dim = 0, double threshold = 0.0);
 
-bool closestPtInSaliencyCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_curves,
-  int& src_i, int& src_j, double& dis, std::vector<double>& paras);
+bool closestPtFromSaliencyCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_curves,
+                               int& src_i, int& src_j, double& dis, std::vector<double>& paras);
+
+bool closestPtInSaliencyCurves(double2& src_pt, std::vector<std::vector<double2> >& tar_curves, std::vector<std::vector<double> >& tar_sl,
+                                      int& tar_i, int& tar_j, double& dis, std::vector<double>& paras);
 
 void mergeShapeEdges(std::vector<Edge>& edges, std::vector<STLVectori>& lines);
 
@@ -46,6 +49,8 @@ CURVES SmoothCurves(CURVES& curves_in, int win_size = 3);
 std::vector<int> DetectBreakPoint(CURVE& curve_in, int win_size = 3, double th = 0.5);
 std::vector<std::vector<int> > DetectBreakPointAll(CURVES& curves_in, int win_size = 3, double th = 0.5);
 CURVES BreakCurves(CURVES& curves, std::vector<std::vector<int> >& bk_points);
+
+double2 ClosestConnection(double2& end_0_0, double2& end_0_1, double2& end_1_0, double2& end_1_1);
 }
 
 

@@ -179,7 +179,7 @@ void TrackballViewer::resetCamera()
   float y_span = (scene_bounds->maxY - scene_bounds->minY) / 2;
   float z_span = (scene_bounds->maxZ - scene_bounds->minZ) / 2;
   float scene_radius = sqrt(x_span * x_span + y_span * y_span + z_span * z_span);
-  scene_radius *= 1.5;
+  //scene_radius *= 1.5;
 
   setSceneRadius(scene_radius);
   camera()->fitSphere(scene_center, scene_radius);

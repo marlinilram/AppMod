@@ -209,6 +209,19 @@ void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_
   m_viewport = Eigen::Map<Eigen::Vector4i>(c_viewport, 4, 1);
 }
 
+void Model::getProjectionMatrix(Matrix4f& proj_mat_out)
+{
+  // returned matrix will give screen coordinate start from bottom left
+  proj_mat_out.setZero();
+  proj_mat_out(0, 0) = m_viewport(2) / 2;
+  proj_mat_out(0, 3) = m_viewport(0) + m_viewport(2) / 2;
+  proj_mat_out(1, 1) = -m_viewport(3) / 2;
+  proj_mat_out(1, 3) = -m_viewport(3) / 2;
+  proj_mat_out(3, 3) = 1.0;
+
+  proj_mat_out = proj_mat_out * m_projection * m_modelview;
+}
+
 bool Model::getWorldCoord(Vector3f rimg_coord, Vector3f &w_coord)
 {
   // passed in screen coordinates is homogeneous
@@ -322,6 +335,13 @@ bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
   out(1) = out(1) / out(3);
   winx = m_viewport(0) + m_viewport(2)*(out(0) + 1) / 2;
   winy = m_viewport(1) + m_viewport(3)*(out(1) + 1) / 2;
+
+  // test the matrix is right
+  //Matrix4f proj_mat;
+  //getProjectionMatrix(proj_mat);
+  //Vector4f test = proj_mat * in;
+  //float test_winx = test(0) / test(3);
+  //float test_winy = test(1) / test(3);
 }
 
 void Model::getUnprojectVec(Vector3f& vec)

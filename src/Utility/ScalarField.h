@@ -23,6 +23,8 @@ public:
   void computeVariationMap();
   void computeMatchingMap(std::vector<double2>& ext_vector_field);
   void computeDistanceMap(FeatureGuided* feature_model);
+  void updateDistanceMapGrad();
+  void getDistanceMapGrad(double2& n_curve_pt, double& grad_x, double& grad_y);
 
   double curveIntegrate(std::vector<std::vector<double2> >& curves, FeatureGuided* feature_model);
 
@@ -31,11 +33,14 @@ public:
   STLVectorf distance_map;
   STLVectorf variation_map;
   STLVectorf matching_map;
+  STLVectorf distance_map_grad_x;
+  STLVectorf distance_map_grad_y;
 
   float search_rad;
   float dist_attenuation;
   float para_a;
   float para_b;
+  float para_w;
 
   // vis para
   float win_center;

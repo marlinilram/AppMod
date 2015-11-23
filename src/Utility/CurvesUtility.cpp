@@ -113,7 +113,7 @@ bool closestPtInCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_
   }
 }
 
-bool closestPtInSaliencyCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_curves,
+bool closestPtFromSaliencyCurves(double2& tar_pt, std::vector<std::vector<double2> >& src_curves,
   int& src_i, int& src_j, double& dis, std::vector<double>& paras)
 {
   dis = std::numeric_limits<double>::min();
@@ -141,6 +141,28 @@ bool closestPtInSaliencyCurves(double2& tar_pt, std::vector<std::vector<double2>
   {
     return false;
   }
+}
+
+bool closestPtInSaliencyCurves(double2& src_pt, std::vector<std::vector<double2> >& tar_curves, std::vector<std::vector<double> >& tar_sl,
+  int& tar_i, int& tar_j, double& dis, std::vector<double>& paras)
+{
+  dis = std::numeric_limits<double>::min();
+  for (size_t i = 0; i < tar_curves.size(); ++i)
+  {
+    for (size_t j = 0; j < tar_curves[i].size(); ++j)
+    {
+      double2 diff = src_pt - tar_curves[i][j];
+      double cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
+      cur_score = pow(tar_sl[i][j], paras[0]) / pow(cur_score + 0.0001, paras[1]);
+      if (cur_score > dis)
+      {
+        tar_i = int(i);
+        tar_j = int(j);
+        dis = cur_score;
+      }
+    }
+  }
+  return true;
 }
 
 void mergeShapeEdges(std::vector<Edge>& edges, std::vector<STLVectori>& lines)
@@ -596,14 +618,24 @@ CURVES BreakCurves(CURVES& curves, std::vector<std::vector<int> >& bk_points)
   for (size_t i = 0; i < curves.size(); ++i)
   {
     int start = 0;
-    for (size_t j = 0; j < bk_points.size(); ++j)
+    for (size_t j = 0; j < bk_points[i].size(); ++j)
     {
-      curves_out.push_back(CURVE(curves.begin() + start, curves.begin() + bk_points[i][j]));
-      start = bk_points[i][j];
+      if ((bk_points[i][j] - start) * 50 >= curves[i].size())
+      {
+        curves_out.push_back(CURVE(curves[i].begin() + start, curves[i].begin() + bk_points[i][j]));
+        start = bk_points[i][j] + 1;
+      }
     }
-    curves_out.push_back(CURVE(curves.begin() + start, curves.end()));
+    curves_out.push_back(CURVE(curves[i].begin() + start, curves[i].end()));
   }
   return curves_out;
+}
+
+double2 ClosestConnection(double2& end_0_0, double2& end_0_1, double2& end_1_0, double2& end_1_1)
+{
+  double2 temp_0 = (end_0_0 - end_1_0).norm() < (end_0_0 - end_1_1).norm() ? (end_0_0 - end_1_0) : (end_0_0 - end_1_1);
+  double2 temp_1 = (end_0_1 - end_1_0).norm() < (end_0_1 - end_1_1).norm() ? (end_0_1 - end_1_0) : (end_0_1 - end_1_1);
+  return (temp_0.norm() < temp_1.norm() ? temp_0 : temp_1);
 }
 
 } // namespace CurvesUtility

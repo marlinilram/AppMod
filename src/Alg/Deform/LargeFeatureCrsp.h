@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <map>
+#include <deque>
+#include "BasicDataType.h"
 
 class FeatureGuided;
 
@@ -18,6 +20,8 @@ public:
   ~LargeFeatureCrsp() {};
 
   void buildCrsp(std::map<CurvePt, CurvePt>& crsp);
+  void refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, std::deque<bool>& tar_curve_mark, CURVES& n_src_curves, CURVES& n_tar_curves);
+  void buildCrsp(std::map<CurvePt, CurvePt>& crsp, CURVES& curves_in);
 
 private:
   FeatureGuided* feature_model;

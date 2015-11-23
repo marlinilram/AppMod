@@ -2,6 +2,7 @@
 #define BasicDataType_H
 
 #include <cmath>
+#include <iostream>
 
 class double2{
 public:

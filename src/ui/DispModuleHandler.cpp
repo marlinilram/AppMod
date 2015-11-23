@@ -61,6 +61,8 @@ void DispModuleHandler::loadModel(std::shared_ptr<Model> model, std::string mode
   main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
   main_canvas_viewer->updateGLOutside();
 
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform") = Matrix4f::Identity();
+
   alg_handler->setShapeModel(model);
 }
 

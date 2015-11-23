@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>345</width>
+    <width>311</width>
     <height>867</height>
    </rect>
   </property>
@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>327</width>
-         <height>775</height>
+         <width>276</width>
+         <height>803</height>
         </rect>
        </property>
        <attribute name="label">
@@ -259,6 +259,30 @@
               </widget>
              </item>
              <item>
+              <widget class="QLabel" name="label_9">
+               <property name="text">
+                <string>w</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_w_doubleSpinBox">
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.100000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
               <widget class="QLabel" name="label_4">
                <property name="text">
                 <string>a</string>
@@ -274,7 +298,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.100000000000000</double>
+                <double>0.700000000000000</double>
                </property>
               </widget>
              </item>
@@ -294,7 +318,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.500000000000000</double>
+                <double>0.300000000000000</double>
                </property>
               </widget>
              </item>
@@ -436,6 +460,10 @@
                </property>
               </widget>
              </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
              <item>
               <widget class="QSpinBox" name="LFReg_Method_SpinBox">
                <property name="value">
@@ -495,7 +523,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>327</width>
+         <width>293</width>
          <height>775</height>
         </rect>
        </property>

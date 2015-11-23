@@ -172,11 +172,16 @@ void FeatureGuided::updateSourceField(int update_type)
   else if (update_type == 2)
   {
     this->updateSourceVectorField();
+    this->BuildClosestPtPair();
   }
   else if (update_type == 3)
   {
     this->target_scalar_field->win_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinCenter");
     this->target_scalar_field->win_width = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinWidth");
+  }
+  else if (update_type == 4)
+  {
+    this->BuildClosestPtPair();
   }
 }
 
@@ -185,6 +190,7 @@ void FeatureGuided::updateDistSField()
   this->target_scalar_field->dist_attenuation = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:rad");
   this->target_scalar_field->para_a = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
   this->target_scalar_field->para_b = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
+  this->target_scalar_field->para_w = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:w");
   this->target_scalar_field->win_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinCenter");
   this->target_scalar_field->win_width = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinWidth");
   this->target_scalar_field->computeDistanceMap(this);
@@ -200,6 +206,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
   {
     model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   }
+  src_vid_mapper.clear();
   std::vector<double2> curve;
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
@@ -216,6 +223,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
       float winx, winy;
       source_model->getProjectPt(v.data(), winx, winy);
       curve.push_back(double2(winx, source.rows - winy));
+      src_vid_mapper[std::pair<int, int>(i, j)] = crest_lines[i][j];
     }
     curves.push_back(curve);
   }
@@ -250,7 +258,7 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
   curves = CurvesUtility::ReorganizeCurves(curves, 1);
   std::vector<std::vector<int> > bk_points = CurvesUtility::DetectBreakPointAll(CurvesUtility::SmoothCurves(CurvesUtility::ReorganizeCurves(curves, bk_sp_rate), 3), 11, 0.87); // cos(30') = 0.8660
   // break the curves according to the break points
-  for (size_t i = 0; i < bk_points.size(); +i)
+  for (size_t i = 0; i < bk_points.size(); ++i)
   {
     for (size_t j = 0; j < bk_points[i].size(); ++j)
     {
@@ -267,14 +275,16 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
   target_edges_sp_sl.clear();
   CurvesUtility::CurveSpSaliency(target_edges_sp_sl, curves, target_edge_saliency);
 
+  AnalyzeTargetRelationship();
+
 #define DEBUG
 #ifdef DEBUG
   std::vector<std::vector<cv::Point>> contours;
   //cv::findContours(source, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
   // draw curves
-  cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC1);
+  
   for (int i = 0; i < curves.size(); ++i)
-  {
+  {cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC1);
     for (int j = 0; j < curves[i].size(); ++j)
     {
       contour.at<uchar>(source.rows - 1 - curves[i][j].y, curves[i][j].x) = 255;
@@ -340,6 +350,96 @@ void FeatureGuided::SearchCurve(const cv::Mat& source,
   //}
 }
 
+void FeatureGuided::AnalyzeTargetRelationship()
+{
+  // compute avg direction of each target curve
+  tar_avg_direction.clear();
+  int sp_rate = 5;
+  for (size_t i = 0; i < target_curves.size(); ++i)
+  {
+    Vector2f dir(0, 0);
+    for (int j = sp_rate; j < target_curves[i].size(); j += sp_rate)
+    {
+      dir += Vector2f(target_curves[i][j].x - target_curves[i][j - sp_rate].x,
+                      target_curves[i][j].y - target_curves[i][j - sp_rate].y);
+    }
+    dir.normalize();
+    tar_avg_direction.push_back(dir);
+  }
+
+  double dir_th = 0.9; // cosine
+  double end_th = 7; // pixel length
+  double end_th_extra = 11;
+  tar_relationship.resize(tar_avg_direction.size(), std::set<int>());
+  for (size_t i = 0; i < tar_relationship.size(); ++i)
+  {
+    // put the i itself into the relationship set
+    tar_relationship[i].insert(int(i));
+    std::set<int> new_relationship;
+    bool find_good;
+    do 
+    {
+      new_relationship.clear();
+      find_good = false;
+      for (size_t j = 0; j < target_curves.size(); ++j)
+      {
+        if (tar_relationship[i].find(int(j)) != tar_relationship[i].end())
+        {
+          continue;
+        }
+        for (auto i_set : tar_relationship[i])
+        {
+          double dir_diff = fabs(tar_avg_direction[i_set].dot(tar_avg_direction[j]));
+          double2 end_diff_vec = CurvesUtility::ClosestConnection(target_curves[i_set][0], target_curves[i_set].back(), target_curves[j][0], target_curves[j].back());
+          double end_diff = end_diff_vec.norm();
+          if (end_diff < end_th && dir_diff > dir_th)
+          {
+            // j is a good one, can be inserted into the relationship set
+            new_relationship.insert(int(j));
+            find_good = true;
+            break;
+          }
+          //else if (end_diff < end_th_extra && dir_diff > dir_th)
+          //{
+          //  // check if the connection line is good when the distance is not that close
+          //  if (fabs(tar_avg_direction[i_set].dot(Vector2f(end_diff_vec.x, end_diff_vec.y))) > dir_th)
+          //  {
+          //    // j is a good one, can be inserted into the relationship set
+          //    new_relationship.insert(int(j));
+          //    find_good = true;
+          //    break;
+          //  }
+          //}
+        }
+      }
+      tar_relationship[i].insert(new_relationship.begin(), new_relationship.end());
+      for (auto i_set : new_relationship)
+      {
+        // i is also good for every curve in the new_relationship
+        tar_relationship[i_set].insert(int(i));
+      }
+    } while (find_good);
+  }
+#define DEBUG
+#ifdef DEBUG
+  std::vector<std::vector<cv::Point>> contours;
+  //cv::findContours(source, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+  // draw curves
+
+  for (int i = 0; i < target_curves.size(); ++i)
+  {  cv::Mat contour = cv::Mat::zeros(target_img.rows, target_img.cols, CV_8UC1);
+    for (auto j : tar_relationship[i])
+    {
+      for (int k = 0; k < target_curves[j].size(); ++k)
+      {
+        contour.at<uchar>(target_img.rows - 1 - target_curves[j][k].y, target_curves[j][k].x) = 255;
+      }
+    }
+    cv::imwrite(source_model->getDataPath() + "/curve_imgs/relation_" + std::to_string(i) + ".png", contour);
+  }
+
+#endif
+}
 
 void FeatureGuided::NormalizedTargetCurves(CURVES& curves)
 {
@@ -447,6 +547,21 @@ void FeatureGuided::BuildClosestPtPair()
   //}
 }
 
+void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, Vector2f>& data_crsp)
+{
+  typedef std::pair<int, int> CurvePt;
+  std::map<CurvePt, CurvePt> crsp_map;
+  std::map<CurvePt, CurvePt>::iterator it;
+  std::shared_ptr<LargeFeatureCrsp> lf_crsp(new LargeFeatureCrsp(this));
+  lf_crsp->buildCrsp(crsp_map, curves);
+
+  for (auto i : crsp_map)
+  {
+    double2& temp = target_curves[i.second.first][i.second.second];
+    data_crsp[src_vid_mapper[i.first]] = Vector2f(temp.x, temp.y);
+  }
+}
+
 void FeatureGuided::setUserCrspPair(double start[2], double end[2])
 {
   // input are normalized coordinate
@@ -470,7 +585,7 @@ void FeatureGuided::setUserCrspPair(double start[2], double end[2])
 
 void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list)
 {
-  const std::vector<STLVectori>& crest_lines = source_model->getShapeVisbleCrestLine();
+  //const std::vector<STLVectori>& crest_lines = source_model->getShapeVisbleCrestLine();
 
   if (src_crsp_list.size() != tar_crsp_list.size())
   {
@@ -479,21 +594,26 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
   }
 
   std::map<STLPairii, double2>::iterator map_iter;
+  std::map<int, double2> temp_crsp_map;
   for (size_t i = 0; i < src_crsp_list.size(); ++i)
   {
-    int v_id = crest_lines[src_crsp_list[i].first][src_crsp_list[i].second];
+    int v_id = src_vid_mapper[src_crsp_list[i]];
     double2 tar_pt;
     
     map_iter = user_correct_crsp_map.find(src_crsp_list[i]);
     if (map_iter == user_correct_crsp_map.end())
     {
       tar_pt = target_curves[tar_crsp_list[i].first][tar_crsp_list[i].second];
+      temp_crsp_map[v_id] = tar_pt;
     }
-    else
-    {
-      tar_pt = map_iter->second;;
-    }
-
-    crsp_list.push_back(std::pair<int ,double2>(v_id, tar_pt));
+  }
+  for (auto i : user_correct_crsp_map)
+  {
+    int v_id = src_vid_mapper[i.first];
+    temp_crsp_map[v_id] = i.second;
+  }
+  for (auto i : temp_crsp_map)
+  {
+    crsp_list.push_back(std::pair<int ,double2>(i.first, i.second));
   }
 }

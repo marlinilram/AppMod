@@ -63,6 +63,7 @@ public:
   void BuildClosestPtPair();
   void GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list);
   void setUserCrspPair(double start[2], double end[2]);
+  void BuildClosestPtPair(CURVES& curves, std::map<int, Vector2f>& data_crsp); // data_crsp stores corresponding vid-pixel pair
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
   void ExtractSrcCurves(const cv::Mat& source, CURVES& curves);
@@ -70,7 +71,7 @@ public:
     int cur_row, int cur_col,
     std::vector<std::vector<bool>>& visited_table,
     std::vector<double2>& curve);
-
+  void AnalyzeTargetRelationship();
 
 public:
 
@@ -103,6 +104,9 @@ private:
   double2 curve_translate;
   double curve_scale;
   float edge_threshold; // threshold for edge detection
+  std::map<std::pair<int, int>, int> src_vid_mapper; // map from curve id to vertex id
+  std::vector<std::set<int> > tar_relationship;
+  std::vector<Vector2f>       tar_avg_direction;
 
   std::shared_ptr<KDTreeWrapper> source_KDTree;
   std::shared_ptr<KDTreeWrapper> target_KDTree;

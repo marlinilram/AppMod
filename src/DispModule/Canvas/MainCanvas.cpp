@@ -422,10 +422,10 @@ void MainCanvas::drawShapeCrest()
 
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
-    //QColor color = 
-    //  qtJetColor(double(i)/crest_lines.size());
-    //glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
-    glColor4f(0.0f, 1.0f, 0.0f, 0.0f);
+    QColor color = 
+      qtJetColor(double(i)/crest_lines.size());
+    glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+    //glColor4f(0.0f, 1.0f, 0.0f, 0.0f);
     glBegin(GL_LINE_STRIP);
 
     for (size_t j = 0; j < crest_lines[i].size(); ++j)
@@ -777,6 +777,23 @@ void MainCanvas::drawInfo()
   //model->passRenderImgInfo(z_img, primitive_ID, r_img);
   cv::Mat mask_temp = (primitive_ID >= 0);
   mask_temp.convertTo(mask_rimg, CV_8UC1);
+
+  float min_val = std::numeric_limits<float>::max();
+  float max_val = std::numeric_limits<float>::min();
+  for (int i = 0; i < z_img.rows; ++i)
+  {
+    for (int j = 0; j < z_img.cols; ++j)
+    {
+      float cur_val = z_img.at<float>(i, j);
+      if (cur_val < 1.0)
+      {
+        if (cur_val > max_val) max_val = cur_val;
+        if (cur_val < min_val) min_val = cur_val;
+      }
+    }
+  }
+
+  std::cout << "Z max-min: " << max_val - min_val << std::endl;
 
   if (save_to_file)
   {

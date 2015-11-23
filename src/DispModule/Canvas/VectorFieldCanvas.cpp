@@ -676,6 +676,24 @@ bool VectorFieldCanvas::displaySourceCrspList()
     glEnd();
   }
 
+  glColor4f( 0.75f, 0.75f, 0.75f, 0.1f );
+  for (auto i : user_correct_crsp_map)
+  {
+    glBegin(GL_LINES);
+    double2 pos_src = source_curves[i.first.first][i.first.second];
+    double2 pos_tar = i.second;
+    feature_model->NormalizedPts(pos_tar);
+
+    glVertex3f( pos_src.x,pos_src.y, 0 ) ;
+    glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
+    glEnd();
+
+    glBegin(GL_POINTS);
+    glVertex3f( pos_src.x,pos_src.y, 0 ) ;
+    glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
+    glEnd();
+  }
+
   return true;
 }
 
