@@ -484,7 +484,8 @@ double LargeFeatureReg::energyDataTerm(const std::vector<double>& X)
   for (auto i : data_crsp)
   {
     Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * i.first + 0], X[3 * i.first + 1], X[3 * i.first + 2], 1.0);
-    sum += (Vector2f(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) - i.second).squaredNorm();
+    Vector2f diff = Vector2f(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) - i.second.first;
+    sum += diff.squaredNorm() - pow(diff.dot(i.second.second), 2); // point to line distance
   }
   return sum;
 }
@@ -496,11 +497,16 @@ void LargeFeatureReg::updateDataTermGrad(const std::vector<double>& X, std::vect
   {
     int vid = i.first;
     Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * vid + 0], X[3 * vid + 1], X[3 * vid + 2], 1.0);
-    grad[3 * vid + 0] = 2 * (v_proj[0] / v_proj[3] - i.second[0]) * (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])
-                      + 2 * (v_proj[1] / v_proj[3] - i.second[1]) * (v_proj[3] * vpPMV_mat(1, 0) - v_proj[1] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3]);
-    grad[3 * vid + 1] = 2 * (v_proj[0] / v_proj[3] - i.second[0]) * (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])
-                      + 2 * (v_proj[1] / v_proj[3] - i.second[1]) * (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
-    grad[3 * vid + 2] = 2 * (v_proj[0] / v_proj[3] - i.second[0]) * (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])
-                      + 2 * (v_proj[1] / v_proj[3] - i.second[1]) * (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
+    Vector2f diff = Vector2f(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) - i.second.first;
+    Vector2f dpdx, dpdy, dpdz;
+    dpdx[0] = (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3]);
+    dpdx[1] = (v_proj[3] * vpPMV_mat(1, 0) - v_proj[1] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3]);
+    dpdy[0] = (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
+    dpdy[1] = (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
+    dpdz[0] = (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
+    dpdz[1] = (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
+    grad[3 * vid + 0] = 2 * diff.dot(dpdx) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdx));
+    grad[3 * vid + 1] = 2 * diff.dot(dpdy) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdy));
+    grad[3 * vid + 2] = 2 * diff.dot(dpdz) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdz)); 
   }
 }

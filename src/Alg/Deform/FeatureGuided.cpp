@@ -358,6 +358,8 @@ void FeatureGuided::AnalyzeTargetRelationship()
   tar_avg_direction.clear();
   CurvesUtility::CurvesAvgDir(target_curves, tar_avg_direction, 5);
 
+  // build target curve groups
+  // TODO: there might be better way to do this for example clustering
   double dir_th = 0.9; // cosine
   double end_th = 7; // pixel length
   double end_th_extra = 11;
@@ -538,7 +540,7 @@ void FeatureGuided::BuildClosestPtPair()
   //}
 }
 
-void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, Vector2f>& data_crsp)
+void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<Vector2f, Vector2f> >& data_crsp)
 {
   typedef std::pair<int, int> CurvePt;
   std::map<CurvePt, CurvePt> crsp_map;
@@ -549,13 +551,14 @@ void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, Vector2f>& 
   for (auto i : crsp_map)
   {
     double2& temp = target_curves[i.second.first][i.second.second];
-    data_crsp[src_vid_mapper[i.first]] = Vector2f(temp.x, temp.y);
+    Vector2f& temp_dir = tar_avg_direction[i.second.first]; // use average curve direction as current line direction
+    data_crsp[src_vid_mapper[i.first]] = std::pair<Vector2f, Vector2f>(Vector2f(temp.x, temp.y), temp_dir); // for detected correspondence we minimize point to line distance
   }
 
   for (auto i : user_correct_crsp_map)
   {
     int v_id = src_vid_mapper[i.first];
-    data_crsp[v_id] = Vector2f(i.second.x, i.second.y);
+    data_crsp[v_id] = std::pair<Vector2f, Vector2f>(Vector2f(i.second.x, i.second.y), Vector2f(0, 0)); // for user correspondence we minimize absolute distance
   }
 }
 

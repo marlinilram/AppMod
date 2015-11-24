@@ -63,7 +63,7 @@ public:
   void BuildClosestPtPair();
   void GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list);
   void setUserCrspPair(double start[2], double end[2]);
-  void BuildClosestPtPair(CURVES& curves, std::map<int, Vector2f>& data_crsp); // data_crsp stores corresponding vid-pixel pair
+  void BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<Vector2f, Vector2f> >& data_crsp); // data_crsp stores corresponding vid-pixel pair
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
   void ExtractSrcCurves(const cv::Mat& source, CURVES& curves);

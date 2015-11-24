@@ -76,7 +76,7 @@ private:
   double lamd_flat;
 
   // internal variables for data-term (the correspondences)
-  std::map<int, Vector2f> data_crsp;
+  std::map<int, std::pair<Vector2f, Vector2f> > data_crsp; // the first Vector2f is point pos the second is direction
   Matrix4f vpPMV_mat; // matrix project model coordinate to real screen coordinate
   double lamd_data;
 

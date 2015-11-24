@@ -85,23 +85,22 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
         //if (CurvesUtility::closestPtInCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, target_scalar_field->matching_map, target_scalar_field->resolution, 0.3))
         if (CurvesUtility::closestPtFromSaliencyCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, score, paras))
         {
-          //if (fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) < 0.9 ) continue;
-          if (crsp_map_out.find(CurvePt(src_i, src_j)) == crsp_map_out.end())
+          if (fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) < 0.9 ) continue;
+          if (crsp_map_out.find(CurvePt(src_i, src_j)) != crsp_map_out.end()) continue;
+
+          crsp_map_it = crsp_map.find(CurvePt(src_i, src_j));
+          if (crsp_map_it != crsp_map.end())
           {
-            crsp_map_it = crsp_map.find(CurvePt(src_i, src_j));
-            if (crsp_map_it != crsp_map.end())
+            if (score > crsp_map_it->second.second)
             {
-              if (score > crsp_map_it->second.second)
-              {
-                crsp_map_it->second = CrspCurvePt(CurvePt(int(i), int(j)), score);
-                crsp[CurvePt(src_i, src_j)] = CurvePt(int(i), int(j));
-              }
-            }
-            else
-            {
-              crsp_map[CurvePt(src_i, src_j)] = CrspCurvePt(CurvePt(int(i), int(j)), score);
+              crsp_map_it->second = CrspCurvePt(CurvePt(int(i), int(j)), score);
               crsp[CurvePt(src_i, src_j)] = CurvePt(int(i), int(j));
             }
+          }
+          else
+          {
+            crsp_map[CurvePt(src_i, src_j)] = CrspCurvePt(CurvePt(int(i), int(j)), score);
+            crsp[CurvePt(src_i, src_j)] = CurvePt(int(i), int(j));
           }
         }
       }
