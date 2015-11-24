@@ -24,7 +24,7 @@ public:
 
   virtual bool display();
   void drawBackground();
-  void drawInfo();
+  void drawInfo(double z_scale = 1);
   void passCameraInfo(GLfloat modelview[16], GLfloat projection[16], GLint viewport[4]);
   virtual void setGLProperty();
   virtual Bound* getBoundBox();

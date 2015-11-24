@@ -638,4 +638,19 @@ double2 ClosestConnection(double2& end_0_0, double2& end_0_1, double2& end_1_0, 
   return (temp_0.norm() < temp_1.norm() ? temp_0 : temp_1);
 }
 
+void CurvesAvgDir(CURVES& curves, std::vector<Vector2f>& cur_avg_dir, int sp_rate)
+{
+  for (size_t i = 0; i < curves.size(); ++i)
+  {
+    Vector2f dir(0, 0);
+    for (int j = sp_rate; j < curves[i].size(); j += sp_rate)
+    {
+      dir += Vector2f(curves[i][j].x - curves[i][j - sp_rate].x,
+                      curves[i][j].y - curves[i][j - sp_rate].y);
+    }
+    dir.normalize();
+    cur_avg_dir.push_back(dir);
+  }
+}
+
 } // namespace CurvesUtility

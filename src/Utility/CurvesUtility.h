@@ -51,6 +51,8 @@ std::vector<std::vector<int> > DetectBreakPointAll(CURVES& curves_in, int win_si
 CURVES BreakCurves(CURVES& curves, std::vector<std::vector<int> >& bk_points);
 
 double2 ClosestConnection(double2& end_0_0, double2& end_0_1, double2& end_1_0, double2& end_1_1);
+
+void CurvesAvgDir(CURVES& curves, std::vector<Vector2f>& cur_avg_dir, int sp_rate);
 }
 
 

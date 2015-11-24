@@ -79,8 +79,6 @@ void MainCanvasViewer::getSnapShot()
     MainCanvas* main_canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
     if (main_canvas)
     {
-      main_canvas->drawInfo();
-
       // get camera info, matrix is column major
       GLfloat modelview[16];
       GLfloat projection[16];
@@ -89,7 +87,15 @@ void MainCanvasViewer::getSnapShot()
       camera()->getProjectionMatrix(projection);
       camera()->getViewport(viewport);
       main_canvas->passCameraInfo(modelview, projection, viewport);
-      std::cout << "zClippingCoefficient: " << camera()->zClippingCoefficient() << "\tsceneRadius: " << camera()->sceneRadius() << std::endl;
+      std::cout << "Field of View: " << camera()->fieldOfView() << "\tzClippingCoefficient: " << camera()->zClippingCoefficient() << "\tsceneRadius: " << camera()->sceneRadius() << std::endl;
+
+      double clipping_range = 2 * camera()->zClippingCoefficient() * camera()->sceneRadius();
+      double img_width = width();
+      Eigen::Matrix4f inv_projection = Eigen::Map<Eigen::Matrix4f>(projection, 4, 4).inverse();
+      Eigen::Vector4f world_width = inv_projection * Eigen::Vector4f(1, 1, 0, 1) - inv_projection * Eigen::Vector4f(-1, 1, 0, 1);
+      double z_scale = clipping_range * img_width / (world_width(0));
+
+      main_canvas->drawInfo(z_scale);
     }
   }
 

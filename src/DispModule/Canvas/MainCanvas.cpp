@@ -7,6 +7,7 @@
 #include "ParameterMgr.h"
 #include <QGLShader>
 #include <QGLBuffer>
+#include <fstream>
 
 MainCanvas::MainCanvas()
   : show_background_img(false), show_model(true), wireframe_(false), flatShading_(true), save_to_file(true)
@@ -708,7 +709,7 @@ std::string MainCanvas::getFilePath()
   return model->getDataPath();
 }
 
-void MainCanvas::drawInfo()
+void MainCanvas::drawInfo(double z_scale)
 {
   float *primitive_buffer = new float[height*width];
   cv::Mat &r_img = model->getRImg();
@@ -795,14 +796,20 @@ void MainCanvas::drawInfo()
 
   std::cout << "Z max-min: " << max_val - min_val << std::endl;
 
-  if (save_to_file)
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SnapShot:SaveToFile") == 1)
   {
     std::string data_path = model->getOutputPath();
     cv::imwrite(data_path + "/r_img.png", r_img*255);
     cv::imwrite(data_path + "/z_img.png", z_img*255);
     cv::imwrite(data_path + "/primitive_img.png", primitive_ID_img*255);
-
-    YMLHandler::saveToFile(data_path, std::string("rendered.yml"), r_img);
+    
+    std::ofstream mat_output(data_path + "/height_img.mat");
+    if (mat_output)
+    {
+      Eigen::Map<Eigen::MatrixXf>temp_mat(z_img.ptr<float>(), z_img.cols, z_img.rows);
+      mat_output << ((1 - temp_mat.array()).matrix() * z_scale).transpose();
+      mat_output.close();
+    }YMLHandler::saveToFile(data_path, std::string("rendered.yml"), r_img);
     //YMLHandler::saveToFile(data_path, std::string("primitive.yml"), primitive_ID);
   }
 

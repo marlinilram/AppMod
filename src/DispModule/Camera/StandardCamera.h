@@ -8,14 +8,7 @@ class StandardCamera : public qglviewer::Camera
 public:
     StandardCamera();
 
-    virtual qreal zNear() const;
-    virtual qreal zFar() const;
-
-    void toggleMode() { standard = !standard; }
-    bool isStandard() { return standard; }
-
-private:
-    bool standard;
+    void computeProjectionMatrix() const;
 };
 
 #endif

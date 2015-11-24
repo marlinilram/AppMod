@@ -62,7 +62,9 @@ void MainWindow::loadModel()
 
     setOptParatoModel();
 
+    LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SnapShot:SaveToFile") = 0;
     this->snapShot();
+    LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SnapShot:SaveToFile") = 1;
     /*share_model->getNormalImage();
     cv::imshow("Normal_image",share_model->normal_image);*/
 

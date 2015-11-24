@@ -157,7 +157,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
   feature_model->source_model->getProjectionMatrix(vpPMV_mat);
   lamd_data = 0.5 * feature_model->curve_scale;
   // init SField term
-  lamd_SField = 1;
+  lamd_SField = 0.01;
 
   int x_dim = 3 * mesh->n_vertices();
   std::vector<double> x0;

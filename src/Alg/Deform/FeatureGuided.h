@@ -107,6 +107,7 @@ private:
   std::map<std::pair<int, int>, int> src_vid_mapper; // map from curve id to vertex id
   std::vector<std::set<int> > tar_relationship;
   std::vector<Vector2f>       tar_avg_direction;
+  std::vector<Vector2f>       src_avg_direction;
 
   std::shared_ptr<KDTreeWrapper> source_KDTree;
   std::shared_ptr<KDTreeWrapper> target_KDTree;

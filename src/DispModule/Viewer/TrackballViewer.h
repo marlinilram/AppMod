@@ -39,7 +39,7 @@ private:
   void mousePressEvent(QMouseEvent *e);
   void mouseMoveEvent(QMouseEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
-  void syncCamera();
+  void syncCamera(int sync_type = 1);
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
 

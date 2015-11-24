@@ -21,6 +21,8 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<Matrix4f>("LFeature:rigidTransform", Matrix4f::Identity());
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("LFeature:renderWithTransform", 0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("LFeature:registerMethod", 11);
+
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("SnapShot:SaveToFile", 1);
 }
 
 #endif

@@ -228,8 +228,10 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
     curves.push_back(curve);
   }
 
+  src_avg_direction.clear();
+  CurvesUtility::CurvesAvgDir(curves, src_avg_direction, 1);
   // we also need to store the boundary curve
-  CURVES boundary_curve;
+  //CURVES boundary_curve;
   //this->ExtractCurves(source_model->getEdgeImg(), boundary_curve);
   //curves.insert(curves.end(), boundary_curve.begin(), boundary_curve.end());
 }
@@ -282,9 +284,9 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
   std::vector<std::vector<cv::Point>> contours;
   //cv::findContours(source, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
   // draw curves
-  
+  cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC1);
   for (int i = 0; i < curves.size(); ++i)
-  {cv::Mat contour = cv::Mat::zeros(source.rows, source.cols, CV_8UC1);
+  {
     for (int j = 0; j < curves[i].size(); ++j)
     {
       contour.at<uchar>(source.rows - 1 - curves[i][j].y, curves[i][j].x) = 255;
@@ -354,18 +356,7 @@ void FeatureGuided::AnalyzeTargetRelationship()
 {
   // compute avg direction of each target curve
   tar_avg_direction.clear();
-  int sp_rate = 5;
-  for (size_t i = 0; i < target_curves.size(); ++i)
-  {
-    Vector2f dir(0, 0);
-    for (int j = sp_rate; j < target_curves[i].size(); j += sp_rate)
-    {
-      dir += Vector2f(target_curves[i][j].x - target_curves[i][j - sp_rate].x,
-                      target_curves[i][j].y - target_curves[i][j - sp_rate].y);
-    }
-    dir.normalize();
-    tar_avg_direction.push_back(dir);
-  }
+  CurvesUtility::CurvesAvgDir(target_curves, tar_avg_direction, 5);
 
   double dir_th = 0.9; // cosine
   double end_th = 7; // pixel length
@@ -559,6 +550,12 @@ void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, Vector2f>& 
   {
     double2& temp = target_curves[i.second.first][i.second.second];
     data_crsp[src_vid_mapper[i.first]] = Vector2f(temp.x, temp.y);
+  }
+
+  for (auto i : user_correct_crsp_map)
+  {
+    int v_id = src_vid_mapper[i.first];
+    data_crsp[v_id] = Vector2f(i.second.x, i.second.y);
   }
 }
 

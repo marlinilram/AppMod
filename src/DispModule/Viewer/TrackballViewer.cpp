@@ -194,9 +194,6 @@ void TrackballViewer::resetCamera()
 
   // set the scene in MainCanvasViewer
   syncCamera();
-  main_canvas_viewer->setSceneCenter(sceneCenter());
-  main_canvas_viewer->setSceneRadius(sceneRadius());
-  main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
 }
 
 void TrackballViewer::drawCornerAxis()
@@ -298,10 +295,6 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
   {
     QGLViewer::mousePressEvent(e);
     sync_camera = true;
-    if(sync_camera)
-    {
-      syncCamera();
-    }
   }
 }
 
@@ -310,30 +303,64 @@ void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
   QGLViewer::mouseMoveEvent(e);
   if(sync_camera)
   {
-    syncCamera();
+    syncCamera(0); // mouse move event don't sync the vector field viewer to decrease lagecy
   }
 }
 
 void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
 {
   QGLViewer::mouseReleaseEvent(e);
+  if(sync_camera)
+  {
+    syncCamera();
+  }
   sync_camera = false;
 }
 
 void TrackballViewer::wheelEvent(QWheelEvent* e)
 {
-  QGLViewer::wheelEvent(e);
-  
-  syncCamera();
+  if (e->modifiers() ==  Qt::ShiftModifier)
+  {
+    qreal cur_fov = camera()->fieldOfView();
+    qreal cur_fd = camera()->focusDistance();
+    std::cout << "Current FOV: " << cur_fov << "\t";
+    if (e->delta() > 0)
+    {
+      camera()->setFieldOfView(cur_fov + 0.0175);
+    }
+    else
+    {
+      camera()->setFieldOfView(cur_fov - 0.0175);
+    }
+    //std::cout << "angle delta: " << e->delta() << std::endl;
+    // set FOV
+    camera()->setFocusDistance(cur_fd);
+    syncCamera(0);
+    std::cout << camera()->position()[0] << " " << camera()->position()[1] << " "  << camera()->position()[2] << std::endl;
+    updateGLOutside();
+    GLdouble m[16];
+    camera()->getProjectionMatrix(m);
+    Eigen::Map<Eigen::Matrix4d>proj(m, 4, 4);
+    std::cout<< proj << std::endl;
+  }
+  else
+  {
+    QGLViewer::wheelEvent(e);
+    syncCamera();
+  }
 }
 
-void TrackballViewer::syncCamera()
+void TrackballViewer::syncCamera(int sync_type)
 {
   if(main_canvas_viewer)
   {
     GLdouble m[16];
     camera()->getModelViewMatrix(m);
     main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+    main_canvas_viewer->setSceneCenter(sceneCenter());
+    main_canvas_viewer->setSceneRadius(sceneRadius());
+    main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
+    main_canvas_viewer->camera()->setFieldOfView(camera()->fieldOfView());
     main_canvas_viewer->updateGLOutside();
     main_canvas_viewer->syncCameraToModel();
 
@@ -343,14 +370,17 @@ void TrackballViewer::syncCamera()
     //std::cout << "Maincanvas scene center: " << main_canvas_viewer->camera()->sceneCenter().x << " " << main_canvas_viewer->camera()->sceneCenter().y << " " << main_canvas_viewer->camera()->sceneCenter().z <<"\n";
   }
 
-  if (source_vector_viewer)
+  if (sync_type == 1)
   {
-    source_vector_viewer->updateSourceField();
-    source_vector_viewer->updateScalarFieldTexture();
-  }
-  if (target_vector_viewer)
-  {
-    target_vector_viewer->updateScalarFieldTexture();
+    if (source_vector_viewer)
+    {
+      source_vector_viewer->updateSourceField();
+      source_vector_viewer->updateScalarFieldTexture();
+    }
+    if (target_vector_viewer)
+    {
+      target_vector_viewer->updateScalarFieldTexture();
+    }
   }
 }
 
