@@ -312,4 +312,5 @@ void DispModuleHandler::runLFRegNonRigid()
   source_vector_viewer->updateSourceField(2);
   source_vector_viewer->updateGLOutside();
   target_vector_viewer->updateGLOutside();
+  std::cout << "bug test.\n";
 }

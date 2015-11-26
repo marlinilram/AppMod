@@ -33,12 +33,14 @@ public:
 
 private:
   void mouseReleaseEvent(QMouseEvent *e);
+  void keyPressEvent(QKeyEvent *e);
 
 private:
   std::vector<GLActor> actors;
 
   bool is_draw_actors;
   bool show_background;
+  bool show_wireframe;
 
   MainViewer::INTERACTIONMODE interaction_mode;
 

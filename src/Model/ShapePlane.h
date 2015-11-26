@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <map>
 
 class Shape;
 
@@ -27,6 +28,7 @@ private:
   std::shared_ptr<Shape> shape;
   std::vector<std::set<int> > flat_surfaces; // face id here
   std::vector<bool> tagged_planes; // face id here
+  std::map<int, int> face_plane_mapper;
 
 private:
   ShapePlane(const ShapePlane&);

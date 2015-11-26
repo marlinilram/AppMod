@@ -54,6 +54,7 @@ public:
   const NormalList& getShapeNormalList();
   const NormalList& getShapeFaceNormal();
   const STLVectorf& getShapeColorList();
+  const STLVectorf& getShapeFaceColorList();
   const AdjList& getShapeVertexShareFaces();
   const AdjList& getShapeVertexAdjList();
   const AdjList& getShapeFaceAdjList();
@@ -75,6 +76,7 @@ public:
   void getCameraOri(float camera_ori[3]);
   void getProjRay(float proj_ray[3], int x, int y);
   bool getProjectPt(float object_coord[3], float &winx, float &winy);
+  bool getProjectPt(const int vid, float& winx, float& winy);
   void getUnprojectVec(Vector3f& vec);
   void getProjectionMatrix(Matrix4f& proj_mat_out);
 

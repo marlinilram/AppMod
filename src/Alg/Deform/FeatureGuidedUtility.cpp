@@ -1,6 +1,7 @@
 #include "FeatureGuided.h"
 #include "FeatureLine.h"
 #include "tele2d.h"
+#include "Model.h"
 
 #include "KDTreeWrapper.h"
 #include "CurvesUtility.h"
@@ -508,4 +509,13 @@ void FeatureGuided::GetCrspPair(CURVES& curves)
     crsp_pair[1] = target_crsp[i];
     curves.push_back(crsp_pair);
   }
+}
+
+void FeatureGuided::getNormalizedProjPt(const int vid, double2& proj_pos)
+{
+  float winx, winy;
+  source_model->getProjectPt(vid, winx, winy);
+  proj_pos.x = winx;
+  proj_pos.y = target_img.rows - winy;
+  proj_pos = ( proj_pos + curve_translate - double2(0.5, 0.5 ) ) * curve_scale + double2(0.5, 0.5 );
 }

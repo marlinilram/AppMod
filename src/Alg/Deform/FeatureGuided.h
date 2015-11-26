@@ -73,6 +73,9 @@ public:
     std::vector<double2>& curve);
   void AnalyzeTargetRelationship();
 
+  inline std::map<std::pair<int, int>, int>& getSrcVidMapper() { return src_vid_mapper; };
+  void getNormalizedProjPt(const int vid, double2& proj_pos);
+
 public:
 
   // user defined feature line
@@ -81,7 +84,7 @@ public:
 
   std::vector<std::pair<int, int> > src_crsp_list;
   std::vector<std::pair<int, int> > tar_crsp_list;
-  std::map<STLPairii, double2> user_correct_crsp_map;
+  std::map<int, double2> user_correct_crsp_map;
 
   int user_constrained_src_v; // the index of v in model
   double2 user_constrained_tar_p; // target screen position

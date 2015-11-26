@@ -24,6 +24,7 @@ public:
   void setVertexList(VertexList& vertexList);
   void setFaceList(FaceList& faceList);
   void setColorList(STLVectorf& colorList);
+  void setFaceColorList(STLVectorf& facecolorList);
   void setUVCoord(STLVectorf& UVCoord);
   const VertexList& getVertexList();
   const FaceList& getFaceList();
@@ -31,6 +32,7 @@ public:
   const NormalList& getNormalList();
   const NormalList& getFaceNormal();
   const STLVectorf& getColorList();
+  const STLVectorf& getFaceColorList();
   const AdjList& getVertexShareFaces();
   const AdjList& getVertexAdjList();
   const AdjList& getFaceAdjList();
@@ -73,6 +75,7 @@ private:
   NormalList face_normal;
   STLVectorf UV_list;
   STLVectorf color_list;
+  STLVectorf face_color_list;
 
   std::unique_ptr<Bound> bound; // Shape is the owner of bound
   std::shared_ptr<KDTreeWrapper> kdTree;

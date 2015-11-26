@@ -5,9 +5,12 @@
 #include "LargeFeatureCrsp.h"
 #include "KDTreeWrapper.h"
 #include "tele2d.h"
+
 #include "CurvesUtility.h"
 #include "ParameterMgr.h"
 #include "YMLHandler.h"
+#include <QDir>
+#include <QString>
 
 FeatureGuided::FeatureGuided()
 {
@@ -418,6 +421,8 @@ void FeatureGuided::AnalyzeTargetRelationship()
   std::vector<std::vector<cv::Point>> contours;
   //cv::findContours(source, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
   // draw curves
+  QDir dir;
+  dir.mkpath(QString((source_model->getDataPath() + "/curve_imgs/").c_str()));
 
   for (int i = 0; i < target_curves.size(); ++i)
   {  cv::Mat contour = cv::Mat::zeros(target_img.rows, target_img.cols, CV_8UC1);
@@ -511,7 +516,7 @@ void FeatureGuided::BuildClosestPtPair()
   // need to be updated and user_correct_crsp_map need to be clear up
   src_crsp_list.clear();
   tar_crsp_list.clear();
-  user_correct_crsp_map.clear();
+  //user_correct_crsp_map.clear();
   for (it = crsp_map.begin(); it != crsp_map.end(); ++it)
   {
     src_crsp_list.push_back(CurvePt(it->first));
@@ -557,7 +562,8 @@ void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<V
 
   for (auto i : user_correct_crsp_map)
   {
-    int v_id = src_vid_mapper[i.first];
+    //int v_id = src_vid_mapper[i.first];
+    int v_id = i.first;
     data_crsp[v_id] = std::pair<Vector2f, Vector2f>(Vector2f(i.second.x, i.second.y), Vector2f(0, 0)); // for user correspondence we minimize absolute distance
   }
 }
@@ -579,7 +585,7 @@ void FeatureGuided::setUserCrspPair(double start[2], double end[2])
     user_constrained_tar_p = double2(end[0], end[1]);
     user_constrained_tar_p = (user_constrained_tar_p - double2(0.5, 0.5)) / curve_scale + double2(0.5, 0.5) - curve_translate;
 
-    user_correct_crsp_map[STLPairii(src_i, src_j)] = user_constrained_tar_p;
+    user_correct_crsp_map[user_constrained_src_v] = user_constrained_tar_p;
   }
 }
 
@@ -593,14 +599,14 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
     return;
   }
 
-  std::map<STLPairii, double2>::iterator map_iter;
+  std::map<int, double2>::iterator map_iter;
   std::map<int, double2> temp_crsp_map;
   for (size_t i = 0; i < src_crsp_list.size(); ++i)
   {
     int v_id = src_vid_mapper[src_crsp_list[i]];
     double2 tar_pt;
     
-    map_iter = user_correct_crsp_map.find(src_crsp_list[i]);
+    map_iter = user_correct_crsp_map.find(src_vid_mapper[src_crsp_list[i]]);
     if (map_iter == user_correct_crsp_map.end())
     {
       tar_pt = target_curves[tar_crsp_list[i].first][tar_crsp_list[i].second];
@@ -609,7 +615,8 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
   }
   for (auto i : user_correct_crsp_map)
   {
-    int v_id = src_vid_mapper[i.first];
+    //int v_id = src_vid_mapper[i.first];
+    int v_id = i.first;
     temp_crsp_map[v_id] = i.second;
   }
   for (auto i : temp_crsp_map)

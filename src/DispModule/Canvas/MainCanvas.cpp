@@ -110,35 +110,64 @@ void MainCanvas::updateModelBuffer()
   const FaceList&   face_list   = model->getShapeFaceList();
   const NormalList& normal_list = model->getShapeNormalList();
   const STLVectorf& color_list  = model->getShapeColorList();
+  const STLVectorf& face_color_list = model->getShapeFaceColorList();
   const Edges&      crest_edge = model->getShapeCrestEdge();
-  std::vector<GLfloat> v_crest(vertex_list.size() / 3, 0.0);
-  for (size_t i = 0; i < crest_edge.size(); ++i)
-  {
-    v_crest[crest_edge[i].first] = 1.0f;
-    v_crest[crest_edge[i].second] = 1.0f;
-  }
 
-  num_vertex = GLenum(vertex_list.size() / 3);
-  num_face   = GLenum(face_list.size() / 3);
+  // duplicate the vertex for face color
+  FaceList new_face_list;
+  VertexList new_vertex_list;
+  NormalList new_normal_list;
+  STLVectorf new_color_list;
+  for (size_t i = 0; i < face_list.size(); ++i)
+  {
+    new_face_list.push_back(int(i));
+    for (int j = 0; j < 3; ++j)
+    {
+      new_vertex_list.push_back(vertex_list[3 * face_list[i] + j]);
+      new_normal_list.push_back(normal_list[3 * face_list[i] + j]);
+    }
+  }
+  for (size_t i = 0; i < face_list.size() / 3; ++i)
+  {
+    for (int j = 0; j < 3; ++j)
+    {
+      // for each vertex
+      for (int k = 0; k < 3; ++k)
+      {
+        new_color_list.push_back(face_color_list[3 * i + k]);
+      }
+    }
+  }
+  std::cout << "new vertex size: " << new_vertex_list.size() << "\tnew color size: " << new_color_list.size() << std::endl;
+
+  num_vertex = GLenum(new_vertex_list.size() / 3);
+  num_face   = GLenum(new_face_list.size() / 3);
+
+  std::vector<GLfloat> v_crest(num_vertex, 0.0);
+  //for (size_t i = 0; i < crest_edge.size(); ++i)
+  //{
+  //  v_crest[crest_edge[i].first] = 1.0f;
+  //  v_crest[crest_edge[i].second] = 1.0f;
+  //}
 
   vertex_buffer->bind();
   vertex_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  vertex_buffer->write(0, &vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
+  vertex_buffer->write(0, &new_vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
   vertex_buffer->release();
 
   face_buffer->bind();
   face_buffer->allocate(num_face * 3 * sizeof(GLuint));
-  face_buffer->write(0, &face_list[0], num_face * 3 * sizeof(GLuint));
+  face_buffer->write(0, &new_face_list[0], num_face * 3 * sizeof(GLuint));
   face_buffer->release();
 
   color_buffer->bind();
   color_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  color_buffer->write(0, &color_list[0], num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->write(0, &new_color_list[0], num_vertex * 3 * sizeof(GLfloat));
   color_buffer->release();
 
   normal_buffer->bind();
   normal_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  normal_buffer->write(0, &normal_list[0], num_vertex * 3 * sizeof(GLfloat));
+  normal_buffer->write(0, &new_normal_list[0], num_vertex * 3 * sizeof(GLfloat));
   normal_buffer->release();
 
   vertex_crest_buffer->bind();

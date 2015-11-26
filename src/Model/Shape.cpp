@@ -32,6 +32,7 @@ void Shape::init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList)
   {
     colors[vit] = Vec3(0.5, 0.5, 0.5);
   }
+  face_color_list.resize(face_list.size(), 0.5);
 
 
   std::cout<<"Building face adjacent list...\n";
@@ -122,6 +123,11 @@ void Shape::setColorList(STLVectorf& colorList)
   } // this will update the internal variable color_list from poly_mesh
 }
 
+void Shape::setFaceColorList(STLVectorf& facecolorList)
+{
+  face_color_list = facecolorList;
+}
+
 void Shape::setUVCoord(STLVectorf& UVCoord)
 {
   //UV_list = UVCoord;
@@ -180,6 +186,11 @@ const NormalList& Shape::getFaceNormal()
 const STLVectorf& Shape::getColorList()
 {
   return color_list;
+}
+
+const STLVectorf& Shape::getFaceColorList()
+{
+  return face_color_list;
 }
 
 const AdjList& Shape::getVertexShareFaces()

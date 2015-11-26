@@ -9,6 +9,7 @@ MainCanvasViewer::MainCanvasViewer(QWidget *widget)
 {
   is_draw_actors = false;
   show_background = true;
+  show_wireframe - false;
 
   interaction_mode = MainViewer::STATIC;
 }
@@ -91,10 +92,12 @@ void MainCanvasViewer::getSnapShot()
 
       double clipping_range = 2 * camera()->zClippingCoefficient() * camera()->sceneRadius();
       double img_width = width();
-      Eigen::Matrix4f inv_projection = Eigen::Map<Eigen::Matrix4f>(projection, 4, 4).inverse();
-      Eigen::Vector4f world_width = inv_projection * Eigen::Vector4f(1, 1, 0, 1) - inv_projection * Eigen::Vector4f(-1, 1, 0, 1);
-      double z_scale = clipping_range * img_width / (world_width(0));
-
+      qglviewer::Vec point_1(img_width, 0, 0.5);
+      qglviewer::Vec point_2(0, 0, 0.5);
+      point_1 = camera()->unprojectedCoordinatesOf(point_1);
+      point_2 = camera()->unprojectedCoordinatesOf(point_2);
+      double world_width = (point_1 - point_2).norm();
+      double z_scale = clipping_range * img_width / world_width;
       main_canvas->drawInfo(z_scale);
     }
   }
@@ -206,6 +209,27 @@ void MainCanvasViewer::mouseReleaseEvent(QMouseEvent *e)
   else
   {
     QGLViewer::mouseReleaseEvent(e);
+  }
+}
+
+void MainCanvasViewer::keyPressEvent(QKeyEvent *e)
+{
+  // Get event modifiers key
+  const Qt::KeyboardModifiers modifiers = e->modifiers();
+
+  // A simple switch on e->key() is not sufficient if we want to take state key into account.
+  // With a switch, it would have been impossible to separate 'F' from 'CTRL+F'.
+  // That's why we use imbricated if...else and a "handled" boolean.
+  bool handled = false;
+  if ((e->key()==Qt::Key_W) && (modifiers==Qt::NoButton))
+  {
+    show_wireframe = !show_wireframe;
+    if (show_wireframe)
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    handled = true;
+    updateGL();
   }
 }
 

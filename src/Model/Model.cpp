@@ -344,6 +344,13 @@ bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
   //float test_winy = test(1) / test(3);
 }
 
+bool Model::getProjectPt(const int vid, float& winx, float& winy)
+{
+  const STLVectorf& v_list = shape->getVertexList();
+  float coord[3] = { v_list[3 * vid + 0], v_list[3 * vid + 1], v_list[3 * vid + 2] };
+  return getProjectPt(coord, winx, winy);
+}
+
 void Model::getUnprojectVec(Vector3f& vec)
 {
   // transform the vector in camera coordinate to model coordinate
@@ -376,6 +383,10 @@ const STLVectorf& Model::getShapeColorList()
 {
   return shape->getColorList();
 }
+const STLVectorf& Model::getShapeFaceColorList()
+{
+  return shape->getFaceColorList();
+}
 const AdjList& Model::getShapeVertexShareFaces()
 {
   return shape->getVertexShareFaces();
@@ -405,6 +416,10 @@ void Model::updateColor()
 {
   // set color from photo to shape
   // or using UV coordinate
+  cv::Mat reflectance;
+  cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
+  reflectance = reflectance / 255.0;
+
   const VertexList& vertex_list = shape->getVertexList();
   STLVectorf color_list(vertex_list.size(), 0.0f);
   float pt[3];
@@ -416,9 +431,9 @@ void Model::updateColor()
     pt[1] = vertex_list[3 * i + 1];
     pt[2] = vertex_list[3 * i + 2];
     this->getProjectPt(pt, winx, winy);
-    winy = winy < 0 ? 0 : (winy >= photo.rows ? photo.rows - 1 : winy);
-    winx = winx < 0 ? 0 : (winx >= photo.cols ? photo.cols - 1 : winx);
-    cv::Vec3f c = photo.at<cv::Vec3f>(winy, winx);
+    winy = winy < 0 ? 0 : (winy >= reflectance.rows ? reflectance.rows - 1 : winy);
+    winx = winx < 0 ? 0 : (winx >= reflectance.cols ? reflectance.cols - 1 : winx);
+    cv::Vec3f c = reflectance.at<cv::Vec3f>(winy, winx);
     color_list[3 * i + 0] = c[2];
     color_list[3 * i + 1] = c[1];
     color_list[3 * i + 2] = c[0];

@@ -152,7 +152,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
   updateFlatCoefs(flat_coefs);
   feature_model->source_model->getPlaneVertices(flat_vertices);
   P_plane_proj_new.resize(flat_vertices.size());
-  lamd_flat = 1;//2;//2;
+  lamd_flat = 0.1;//2;//2;
   // init data term
   feature_model->source_model->getProjectionMatrix(vpPMV_mat);
   lamd_data = 0.5 * feature_model->curve_scale;
