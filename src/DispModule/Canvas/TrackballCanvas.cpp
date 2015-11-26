@@ -40,8 +40,8 @@ void TrackballCanvas::setModel(std::shared_ptr<Model> shared_model)
 void TrackballCanvas::setShaderProgram()
 {
   basic_shader.reset(new QGLShaderProgram);
-  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.frag");
-  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/vertexShader.vert");
+  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/edge.frag");
+  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/edge.vert");
   basic_shader->link();
 }
 
@@ -52,6 +52,7 @@ void TrackballCanvas::drawModel()
   basic_shader->setUniformValue("fMeshSize", GLfloat(num_face));
   basic_shader->setUniformValue("L", QVector3D(-0.4082, -0.4082, 0.8165));
   basic_shader->setUniformValue("renderMode", GLint(render_mode));
+  basic_shader->setUniformValue("use_flat", GLint(1));
 
   color_buffer->bind();
   basic_shader->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);

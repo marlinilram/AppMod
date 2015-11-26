@@ -193,3 +193,17 @@ void DecompImg::getDrawableActors(std::vector<GLActor>& actors)
 {
    actors = this->actors;
 }
+
+void DecompImg::buildMask(std::shared_ptr<Model> model)
+{
+  cv::Mat& primitive_img = model->getPrimitiveIDImg();
+  cv::Mat visited = cv::Mat::zeros(primitive_img.rows, primitive_img.cols, CV_8UC1);
+
+  for (int i = 0; i < primitive_img.rows; ++i)
+  {
+    for (int j = 0; j < primitive_img.cols; ++j)
+    {
+      if (primitive_img.at<int>(i, j) < 0 || visited.at<uchar>)
+    }
+  }
+}
