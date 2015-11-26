@@ -84,7 +84,7 @@ bool VectorFieldCanvas::display()
     }
     if (vis_paras[3])
     {
-      this->displayTargetCurves();
+      //this->displayTargetCurves();
       if (vis_paras[9])
       {
         this->displaySourceCurves();
@@ -318,7 +318,14 @@ bool VectorFieldCanvas::displayTargetCurves()
   feature_model->NormalizedTargetCurves(target_curves);
   glPointSize(2) ;
   glLineWidth(1);
-  glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
+  if (render_mode == VectorField::SOURCE_MODE)
+  {
+    glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
+  }
+  else if(render_mode == VectorField::TARGET_MODE)
+  {
+    glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;    
+  }
   for (int i = 0; i < target_curves.size(); ++i)
   {
     glBegin(GL_LINE_STRIP);
@@ -340,8 +347,16 @@ bool VectorFieldCanvas::displaySourceCurves()
   CURVES source_curves;
   this->feature_model->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
-  glLineWidth(1);
-  glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;
+  glLineWidth(2);
+  if (render_mode == VectorField::TARGET_MODE)
+  {
+    glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;
+  }
+  else if(render_mode == VectorField::TARGET_MODE)
+  {
+    glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
+  }
+
   for (int i = 0; i < source_curves.size(); ++i)
   {
     glBegin(GL_LINE_STRIP);
@@ -434,6 +449,8 @@ void VectorFieldCanvas::setScalarField()
 {
   std::shared_ptr<ScalarField> scalar_field;
   std::vector<float>* dmap = nullptr;
+  double vmin = 0;
+  double vmax = 1;
   if (render_mode == VectorField::SOURCE_MODE)
   {
     scalar_field = feature_model->getSourceScalarField();
@@ -442,7 +459,14 @@ void VectorFieldCanvas::setScalarField()
   else if (render_mode == VectorField::TARGET_MODE)
   {
     scalar_field = feature_model->getTargetScalarField();
-    dmap = &scalar_field->matching_map;
+    dmap = &scalar_field->distance_map;
+    double wcenter = scalar_field->win_center;
+    double wwidth = scalar_field->win_width;
+    wwidth = wwidth * (1 - 0) * std::min(wcenter, 1 - wcenter);
+    wcenter = wcenter * (1 - 0) + 0;
+    vmin = wcenter - wwidth;
+    vmax = wcenter + wwidth;
+    std::cout << "vmin: " << vmin << "\tvmax: " << vmax << "\n";
   }
 
   int resolution = scalar_field->resolution;
@@ -486,7 +510,7 @@ void VectorFieldCanvas::setScalarField()
       //QColor color = 
       //  qtJetColor(dmap[j + i * 800] / max_dist, 0, 0.01);
       QColor color = 
-          qtJetColor((*dmap)[j + i * resolution]);
+          qtJetColor((*dmap)[j + i * resolution], vmin, vmax);
       bgmap[(j + i * resolution) * 3 + 0] = color.red();
       bgmap[(j + i * resolution) * 3 + 1] = color.green();
       bgmap[(j + i * resolution) * 3 + 2] = color.blue();
@@ -527,9 +551,9 @@ void VectorFieldCanvas::setVisualizationParas(std::vector<bool>& paras)
   this->vis_paras = paras;
 }
 
-void VectorFieldCanvas::updateSourceField()
+void VectorFieldCanvas::updateSourceField(int update_type)
 {
-  feature_model->updateSourceField();
+  feature_model->updateSourceField(update_type);
 }
 
 void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line)
@@ -612,8 +636,9 @@ bool VectorFieldCanvas::displaySourceCrspList()
   feature_model->NormalizedTargetCurves(target_curves);
   std::vector<std::pair<int, int> >& src_crsp_list = feature_model->src_crsp_list;
   std::vector<std::pair<int, int> >& tar_crsp_list = feature_model->tar_crsp_list;
-  std::map<STLPairii, double2>& user_correct_crsp_map = feature_model->user_correct_crsp_map;
-  std::map<STLPairii, double2>::iterator map_iter;
+  std::map<std::pair<int, int>, int>& src_vid_mapper= feature_model->getSrcVidMapper();
+  std::map<int, double2>& user_correct_crsp_map = feature_model->user_correct_crsp_map;
+  std::map<int, double2>::iterator map_iter;
 
   if (src_crsp_list.size() != tar_crsp_list.size())
   {
@@ -632,7 +657,7 @@ bool VectorFieldCanvas::displaySourceCrspList()
     glBegin(GL_LINES);
     double2 pos_src = source_curves[src_crsp_list[i].first][src_crsp_list[i].second];
     double2 pos_tar;
-    map_iter = user_correct_crsp_map.find(src_crsp_list[i]);
+    map_iter = user_correct_crsp_map.find(src_vid_mapper[src_crsp_list[i]]); // TODO
     if (map_iter == user_correct_crsp_map.end())
     {
       pos_tar = target_curves[tar_crsp_list[i].first][tar_crsp_list[i].second];
@@ -642,6 +667,25 @@ bool VectorFieldCanvas::displaySourceCrspList()
       pos_tar = map_iter->second;
       feature_model->NormalizedPts(pos_tar);
     }
+    glVertex3f( pos_src.x,pos_src.y, 0 ) ;
+    glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
+    glEnd();
+
+    glBegin(GL_POINTS);
+    glVertex3f( pos_src.x,pos_src.y, 0 ) ;
+    glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
+    glEnd();
+  }
+
+  glColor4f( 0.75f, 0.75f, 0.75f, 0.1f );
+  for (auto i : user_correct_crsp_map)
+  {
+    glBegin(GL_LINES);
+    double2 pos_src;
+    feature_model->getNormalizedProjPt(i.first, pos_src);
+    double2 pos_tar = i.second;
+    feature_model->NormalizedPts(pos_tar);
+
     glVertex3f( pos_src.x,pos_src.y, 0 ) ;
     glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
     glEnd();

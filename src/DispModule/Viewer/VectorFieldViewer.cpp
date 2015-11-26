@@ -80,14 +80,14 @@ void VectorFieldViewer::init()
 //   
 //}
 
-void VectorFieldViewer::updateSourceField()
+void VectorFieldViewer::updateSourceField(int update_type)
 {
   for (size_t i = 0; i < dispObjects.size(); ++i)
   {
     VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
     if (canvas)
     {
-      canvas->updateSourceField();
+      canvas->updateSourceField(update_type);
     }
   }
 }

@@ -59,7 +59,7 @@ void SynthesisTool::doSynthesis()
       for (int j = 0; j < width; ++j)
       {
         this->findBestMatch(gpsrc_feature, gptar_feature, l, j, i, findX, findY);
-        gptar_detail.at(l).at<float>(i, j) = gptar_detail.at(l).at<float>(findY, findX);
+        gptar_detail.at(l).at<float>(i, j) = gpsrc_detail.at(l).at<float>(findY, findX);
       }
     }
   }
@@ -87,6 +87,8 @@ void SynthesisTool::findBestMatch(ImagePyramid& gpsrc, ImagePyramid& gptar, int 
       }
     }
   }
+
+
 }
 
 double SynthesisTool::distNeighbor(ImagePyramid& gpsrc, ImagePyramid& gptar, int level, int srcpointX, int srcpointY, int tarpointX, int tarpointY)

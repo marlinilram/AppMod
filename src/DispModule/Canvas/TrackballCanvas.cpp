@@ -7,7 +7,7 @@
 
 TrackballCanvas::TrackballCanvas()
 {
-  render_mode = 1;
+  render_mode = 5;
 }
 
 TrackballCanvas::~TrackballCanvas()

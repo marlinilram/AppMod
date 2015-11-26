@@ -7,6 +7,9 @@
 
 class Bound;
 class KDTreeWrapper;
+namespace LG {
+class PolygonMesh;
+}
 
 // a triangle mesh class
 // if we need a more abstract shape base class in the future
@@ -21,6 +24,7 @@ public:
   void setVertexList(VertexList& vertexList);
   void setFaceList(FaceList& faceList);
   void setColorList(STLVectorf& colorList);
+  void setFaceColorList(STLVectorf& facecolorList);
   void setUVCoord(STLVectorf& UVCoord);
   const VertexList& getVertexList();
   const FaceList& getFaceList();
@@ -28,6 +32,7 @@ public:
   const NormalList& getNormalList();
   const NormalList& getFaceNormal();
   const STLVectorf& getColorList();
+  const STLVectorf& getFaceColorList();
   const AdjList& getVertexShareFaces();
   const AdjList& getVertexAdjList();
   const AdjList& getFaceAdjList();
@@ -39,6 +44,7 @@ public:
   std::shared_ptr<KDTreeWrapper> getKDTree();
   void updateShape(VertexList& new_vertex_list);
   void getBaryCentreCoord(float pt[3],int face_id,float lambda[3]);
+  LG::PolygonMesh* getPolygonMesh() { return poly_mesh.get(); };
 
 private:
   void computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float v2[3], float lambd[3]);
@@ -51,6 +57,9 @@ private:
   void computeEdgeConnectivity();
 
 private:
+  // PolygonMesh
+  std::shared_ptr<LG::PolygonMesh> poly_mesh;
+
   // geometry information
   VertexList vertex_list;
   FaceList   face_list;
@@ -66,6 +75,7 @@ private:
   NormalList face_normal;
   STLVectorf UV_list;
   STLVectorf color_list;
+  STLVectorf face_color_list;
 
   std::unique_ptr<Bound> bound; // Shape is the owner of bound
   std::shared_ptr<KDTreeWrapper> kdTree;

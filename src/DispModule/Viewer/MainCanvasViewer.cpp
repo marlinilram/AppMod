@@ -2,11 +2,16 @@
 #include "MainCanvas.h"
 #include "Bound.h"
 
+#include <QMouseEvent>
+
 MainCanvasViewer::MainCanvasViewer(QWidget *widget)
   : BasicViewer(widget)
 {
   is_draw_actors = false;
   show_background = true;
+  show_wireframe - false;
+
+  interaction_mode = MainViewer::STATIC;
 }
 
 MainCanvasViewer::~MainCanvasViewer()
@@ -30,6 +35,7 @@ void MainCanvasViewer::draw()
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
     }
+
   }
 
   if (is_draw_actors)
@@ -74,8 +80,6 @@ void MainCanvasViewer::getSnapShot()
     MainCanvas* main_canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
     if (main_canvas)
     {
-      main_canvas->drawInfo();
-
       // get camera info, matrix is column major
       GLfloat modelview[16];
       GLfloat projection[16];
@@ -84,9 +88,20 @@ void MainCanvasViewer::getSnapShot()
       camera()->getProjectionMatrix(projection);
       camera()->getViewport(viewport);
       main_canvas->passCameraInfo(modelview, projection, viewport);
+      std::cout << "Field of View: " << camera()->fieldOfView() << "\tzClippingCoefficient: " << camera()->zClippingCoefficient() << "\tsceneRadius: " << camera()->sceneRadius() << std::endl;
+
+      double clipping_range = 2 * camera()->zClippingCoefficient() * camera()->sceneRadius();
+      double img_width = width();
+      qglviewer::Vec point_1(img_width, 0, 0.5);
+      qglviewer::Vec point_2(0, 0, 0.5);
+      point_1 = camera()->unprojectedCoordinatesOf(point_1);
+      point_2 = camera()->unprojectedCoordinatesOf(point_2);
+      double world_width = (point_1 - point_2).norm();
+      double z_scale = clipping_range * img_width / world_width;
+      main_canvas->drawInfo(z_scale);
     }
   }
-  
+
   doneCurrent();
 }
 
@@ -163,6 +178,81 @@ void MainCanvasViewer::syncCameraToModel()
       camera()->getProjectionMatrix(projection);
       camera()->getViewport(viewport);
       main_canvas->passCameraInfo(modelview, projection, viewport);
+    }
+  }
+}
+
+void MainCanvasViewer::mouseReleaseEvent(QMouseEvent *e)
+{
+  if ((e->button() == Qt::LeftButton) && (e->modifiers() == Qt::NoButton))
+  {
+    if (interaction_mode == MainViewer::STATIC)
+    {
+      // do nothing
+    }
+    else if (interaction_mode == MainViewer::TAG_PLANE)
+    {
+      // get coordinates
+      for (size_t i = 0; i < dispObjects.size(); ++i)
+      {
+        MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+        if (canvas)
+        {
+          canvas->passTagPlanePos(e->x(), e->y());
+        }
+      }
+
+      this->updateBuffer();
+      this->updateGLOutside();
+    }
+  }
+  else
+  {
+    QGLViewer::mouseReleaseEvent(e);
+  }
+}
+
+void MainCanvasViewer::keyPressEvent(QKeyEvent *e)
+{
+  // Get event modifiers key
+  const Qt::KeyboardModifiers modifiers = e->modifiers();
+
+  // A simple switch on e->key() is not sufficient if we want to take state key into account.
+  // With a switch, it would have been impossible to separate 'F' from 'CTRL+F'.
+  // That's why we use imbricated if...else and a "handled" boolean.
+  bool handled = false;
+  if ((e->key()==Qt::Key_W) && (modifiers==Qt::NoButton))
+  {
+    show_wireframe = !show_wireframe;
+    if (show_wireframe)
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    handled = true;
+    updateGL();
+  }
+}
+
+void MainCanvasViewer::clearPreviousInteractionInfo()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->clearInteractionInfo();
+    }
+  }
+}
+
+void MainCanvasViewer::updateCanvasRenderMode()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (canvas)
+    {
+      canvas->setCanvasRenderMode();
     }
   }
 }

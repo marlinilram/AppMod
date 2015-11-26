@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>722</height>
+    <width>311</width>
+    <height>867</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Tool Box</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout_6">
     <item>
      <widget class="QToolBox" name="toolBox">
       <property name="currentIndex">
@@ -25,14 +25,30 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>382</width>
-         <height>630</height>
+         <width>276</width>
+         <height>803</height>
         </rect>
        </property>
        <attribute name="label">
         <string>Page 1</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QGroupBox" name="groupBox_2">
+          <property name="title">
+           <string>Proxy View Tools</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QCheckBox" name="Show_Trackball_CheckBox">
+             <property name="text">
+              <string>Show Trackball</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
         <item>
          <widget class="QGroupBox" name="groupBox">
           <property name="title">
@@ -73,6 +89,56 @@
              </item>
             </layout>
            </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Interactive Mode</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="Main_Interact_Mode_ComboBox">
+               <item>
+                <property name="text">
+                 <string>Static</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Tag Plane</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_6">
+             <item>
+              <widget class="QLabel" name="label_8">
+               <property name="text">
+                <string>Render Mode</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="Main_Render_Mode_ComboBox">
+               <item>
+                <property name="text">
+                 <string>Without Model Transform</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>With Model Transform</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
           </layout>
          </widget>
         </item>
@@ -81,35 +147,28 @@
           <property name="title">
            <string>Feature View Tools</string>
           </property>
-          <layout class="QGridLayout" name="gridLayout_5">
-           <item row="3" column="0">
-            <widget class="QCheckBox" name="checkBox_3">
-             <property name="text">
-              <string>Show Target Curve</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
             <widget class="QCheckBox" name="checkBox_0">
              <property name="text">
               <string>Show Source Vector Field</string>
              </property>
              <property name="checked">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
             </widget>
            </item>
-           <item row="8" column="0">
-            <widget class="QCheckBox" name="checkBox_7">
+           <item>
+            <widget class="QCheckBox" name="checkBox_1">
              <property name="text">
-              <string>Show Hist Matched Crsp</string>
+              <string>Show Target Vector Field</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
+           <item>
             <widget class="QCheckBox" name="checkBox_2">
              <property name="text">
               <string>Show Source Curve</string>
@@ -119,24 +178,24 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="checkBox_1">
+           <item>
+            <widget class="QCheckBox" name="checkBox_3">
              <property name="text">
-              <string>Show Target Vector Field</string>
+              <string>Show Target Curve</string>
              </property>
              <property name="checked">
               <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="7" column="0">
-            <widget class="QCheckBox" name="checkBox_6">
+           <item>
+            <widget class="QCheckBox" name="checkBox_9">
              <property name="text">
-              <string>Show Fitted Curve Crsp</string>
+              <string>Show Overlay Curves</string>
              </property>
             </widget>
            </item>
-           <item row="5" column="0">
+           <item>
             <widget class="QCheckBox" name="checkBox_4">
              <property name="text">
               <string>Show Source Scalar Field</string>
@@ -146,7 +205,7 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0">
+           <item>
             <widget class="QCheckBox" name="checkBox_5">
              <property name="text">
               <string>Show Target Scalar Field</string>
@@ -156,19 +215,158 @@
              </property>
             </widget>
            </item>
-           <item row="9" column="0">
+           <item>
+            <widget class="QCheckBox" name="checkBox_6">
+             <property name="text">
+              <string>Show Fitted Curve Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_7">
+             <property name="text">
+              <string>Show Hist Matched Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QCheckBox" name="checkBox_8">
              <property name="text">
               <string>Show Crsp</string>
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
-            <widget class="QCheckBox" name="checkBox_9">
-             <property name="text">
-              <string>Show Overlay Curves</string>
-             </property>
-            </widget>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>R(%)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_rad_doubleSpinBox">
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.040000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_9">
+               <property name="text">
+                <string>w</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_w_doubleSpinBox">
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.100000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>a</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_a_doubleSpinBox">
+               <property name="maximum">
+                <double>10.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.700000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>b</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_b_doubleSpinBox">
+               <property name="maximum">
+                <double>10.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.300000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <item>
+              <widget class="QLabel" name="label_6">
+               <property name="text">
+                <string>Center</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSlider" name="SField_WinCenter_Slider">
+               <property name="maximum">
+                <number>100</number>
+               </property>
+               <property name="value">
+                <number>50</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_7">
+               <property name="text">
+                <string>Width</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSlider" name="SField_WinWidth_Slider">
+               <property name="maximum">
+                <number>100</number>
+               </property>
+               <property name="value">
+                <number>100</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -247,11 +445,55 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="DetailSynthesis_PushButton">
-             <property name="text">
-              <string>Test Synthesize (Parameterization)</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <item>
+              <widget class="QPushButton" name="DetailSynthesis_PushButton">
+               <property name="text">
+                <string>LFReg</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="LFReg_NonRigid_PushButton">
+               <property name="text">
+                <string>NonRigid</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <item>
+              <widget class="QSpinBox" name="LFReg_Method_SpinBox">
+               <property name="value">
+                <number>11</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="SField_Type_ComboBox">
+               <property name="currentIndex">
+                <number>1</number>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Dist Map</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Tuned KD</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ML's eq</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -274,14 +516,15 @@
        <zorder>ProjAlignViewGroupBox</zorder>
        <zorder>groupBox</zorder>
        <zorder>groupBox_3</zorder>
+       <zorder>groupBox_2</zorder>
       </widget>
       <widget class="QWidget" name="page_2">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>98</width>
-         <height>28</height>
+         <width>293</width>
+         <height>775</height>
         </rect>
        </property>
        <attribute name="label">

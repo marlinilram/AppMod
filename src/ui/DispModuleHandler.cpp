@@ -5,6 +5,7 @@
 #include "MainCanvas.h"
 #include "TrackballCanvas.h"
 #include "VectorFieldCanvas.h"
+#include "ParameterMgr.h"
 
 #include "Model.h"
 #include "FeatureGuided.h"
@@ -60,6 +61,8 @@ void DispModuleHandler::loadModel(std::shared_ptr<Model> model, std::string mode
   main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
   main_canvas_viewer->updateGLOutside();
 
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform") = Matrix4f::Identity();
+
   alg_handler->setShapeModel(model);
 }
 
@@ -89,7 +92,7 @@ void DispModuleHandler::initFeatureModel()
 {
   if (trackball_canvas->getModel())
   {
-    std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(trackball_canvas->getModel(), trackball_canvas->getModel()->getDataPath() + "/featurePP.png"));
+    std::shared_ptr<FeatureGuided> share_feature_model(new FeatureGuided(trackball_canvas->getModel(), trackball_canvas->getModel()->getDataPath()));
 
     source_vector_canvas->setFeatureModel(share_feature_model);
     source_vector_viewer->deleteDispObj(source_vector_canvas.get());
@@ -234,5 +237,80 @@ void DispModuleHandler::runNormalCompute()
 
 void DispModuleHandler::runDetailSynthesis()
 {
-  alg_handler->doDetailSynthesis();
+  //alg_handler->doDetailSynthesis();
+
+  // now used to test PorjICP
+  //source_vector_viewer->updateSourceField(2);
+  //alg_handler->doProjICP();
+  //updateCanvas();
+  //source_vector_viewer->updateGLOutside();
+
+  // new trial from 11/10/2015 for large feature reg
+  alg_handler->doLargeFeatureReg();
+}
+
+void DispModuleHandler::toggleMainViewMode(int state)
+{
+  // it's a QComboBox here
+  if (state == 1)
+  {
+    main_canvas_viewer->setInteractionMode(MainViewer::TAG_PLANE);
+    main_canvas_viewer->clearPreviousInteractionInfo();
+    main_canvas_viewer->updateBuffer();
+    main_canvas_viewer->updateGLOutside();
+
+  }
+  else if (state == 0)
+  {
+    main_canvas_viewer->setInteractionMode(MainViewer::STATIC);
+    main_canvas_viewer->clearPreviousInteractionInfo();
+    main_canvas_viewer->updateBuffer();
+    main_canvas_viewer->updateGLOutside();
+  }
+}
+
+void DispModuleHandler::resetCamera()
+{
+  trackball_viewer->resetCamera();
+}
+
+// set distance attenuation in scalar field computation
+void DispModuleHandler::setSFieldDistAttenuation()
+{
+  // coefficient range [0, 10]
+  target_vector_viewer->updateSourceField(1);
+  target_vector_viewer->updateScalarFieldTexture();
+}
+
+void DispModuleHandler::setShowTrackball()
+{
+  int state = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowTrackball");
+  trackball_viewer->setShowTrackball((state == 0 ? false : true));
+  trackball_viewer->updateGLOutside();
+}
+
+void DispModuleHandler::setSFieldPara(int set_type)
+{
+  target_vector_viewer->updateSourceField(set_type);
+  target_vector_viewer->updateScalarFieldTexture();
+  source_vector_viewer->updateGLOutside();
+}
+
+void DispModuleHandler::setMainCanvasRenderMode()
+{
+  source_vector_viewer->updateSourceField(2);
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
+  main_canvas_viewer->updateCanvasRenderMode();
+  main_canvas_viewer->updateGLOutside();
+}
+
+void DispModuleHandler::runLFRegNonRigid()
+{
+  alg_handler->doLargeFeatureReg(1);
+  updateCanvas();
+  source_vector_viewer->updateSourceField(2);
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
+  std::cout << "bug test.\n";
 }

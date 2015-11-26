@@ -11,7 +11,11 @@
 
 class Shape;
 class ShapeCrest;
+class ShapePlane;
 class Bound;
+namespace LG {
+class PolygonMesh;
+}
 
 class Model
 {
@@ -26,6 +30,7 @@ public:
   Bound* getBoundBox();
   //std::shared_ptr<Shape> getShape();
   //std::shared_ptr<ShapeCrest> getShapeCrest();
+  LG::PolygonMesh* getPolygonMesh();
   std::string getDataPath();
   std::string getOutputPath();
 
@@ -49,6 +54,7 @@ public:
   const NormalList& getShapeNormalList();
   const NormalList& getShapeFaceNormal();
   const STLVectorf& getShapeColorList();
+  const STLVectorf& getShapeFaceColorList();
   const AdjList& getShapeVertexShareFaces();
   const AdjList& getShapeVertexAdjList();
   const AdjList& getShapeFaceAdjList();
@@ -70,11 +76,20 @@ public:
   void getCameraOri(float camera_ori[3]);
   void getProjRay(float proj_ray[3], int x, int y);
   bool getProjectPt(float object_coord[3], float &winx, float &winy);
+  bool getProjectPt(const int vid, float& winx, float& winy);
   void getUnprojectVec(Vector3f& vec);
+  void getProjectionMatrix(Matrix4f& proj_mat_out);
+
+  // get info from ShapePlane
+  void addTaggedPlane(int x, int y);
+  void clearTaggedPlanes();
+  void getTaggedPlaneVertices(std::vector<STLVectori>& vertices);
+  void getPlaneVertices(std::vector<STLVectori>& vertices);
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
   std::shared_ptr<ShapeCrest> shape_crest;
+  std::shared_ptr<ShapePlane> shape_plane;
 
   // file system data
   std::string data_path;

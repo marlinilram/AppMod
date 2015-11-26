@@ -24,7 +24,7 @@ public:
 
   virtual bool display();
   void drawBackground();
-  void drawInfo();
+  void drawInfo(double z_scale = 1);
   void passCameraInfo(GLfloat modelview[16], GLfloat projection[16], GLint viewport[4]);
   virtual void setGLProperty();
   virtual Bound* getBoundBox();
@@ -37,6 +37,7 @@ public:
   void drawModelEdge();
   void drawShapeCrest();
   void drawPrimitiveImg();
+  void updateVisibleEdge();
   void sketchShader();
   void renderNImage();
   void nmsShader();
@@ -50,6 +51,11 @@ public:
   inline void setEdgeThreshold(float value) { edge_threshold = value; };
   inline void setUseFlat(int state) { use_flat = (state == 0) ? 0 : 1; };
   inline void setShowBackground(int state) { show_background_img = (state == 0) ? false : true; };
+  void setCanvasRenderMode();
+
+  // pass interaction info
+  void passTagPlanePos(int x, int y);
+  void clearInteractionInfo();
 
 private:
   std::shared_ptr<Model> model;
@@ -57,6 +63,7 @@ private:
   std::unique_ptr<QGLShaderProgram> basic_shader;
   std::unique_ptr<QGLShaderProgram> edge_detect_shader;
   std::unique_ptr<QGLShaderProgram> sketch_shader;
+  std::unique_ptr<QGLShaderProgram> lf_update_shader;
 
   std::unique_ptr<QGLBuffer> vertex_buffer;
   std::unique_ptr<QGLBuffer> face_buffer;
@@ -93,6 +100,8 @@ private:
 
   float edge_threshold;
   int use_flat;
+
+  int render_with_model_transform;
 
 private:
   MainCanvas(const MainCanvas&);

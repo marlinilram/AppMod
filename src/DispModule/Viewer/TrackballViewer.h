@@ -24,6 +24,7 @@ public:
 
   void setGLActors(std::vector<GLActor>& actors);
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
+  inline void setShowTrackball(bool state) { show_trackball = state; };
   
 protected:
   virtual void draw();
@@ -38,13 +39,14 @@ private:
   void mousePressEvent(QMouseEvent *e);
   void mouseMoveEvent(QMouseEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
-  void syncCamera();
+  void syncCamera(int sync_type = 1);
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
 
 private:
   bool sync_camera;
   bool wireframe_;
+  bool show_trackball;
 
   std::vector<GLActor> actors;
   bool is_draw_actors;

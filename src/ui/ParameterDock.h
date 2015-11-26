@@ -18,6 +18,7 @@ public:
 
   void setDispModules(std::shared_ptr<DispModuleHandler> modules);
   void initFeatureRender();
+  void setInitPara();
 
 private slots:
   void setFeatureRender(int state);
@@ -26,10 +27,25 @@ private slots:
   void showAllLines(int state);
   void showProjCrsp(int state);
   void setInteractiveProjAlign(int state);
+  void setInteractiveMainView(int state);
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
   void runDetailSynthesis();
+  void setDistAttenuation(int val);
+  void setShowTrackball(int state);
+
+  void setSFieldRad(double val);
+  void setSFieldExpa(double val);
+  void setSFieldExpb(double val);
+  void setSFieldParaw(double val);
+  void setSFieldWinCenter(int val);
+  void setSFieldWinWidth(int val);
+  void setSFieldType(int val);
+  void setMainRenderMode(int state);
+
+  void setLFRegMethod(int state);
+  void runLFRegNonRigid();
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;

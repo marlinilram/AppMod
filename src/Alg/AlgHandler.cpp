@@ -2,11 +2,17 @@
 #include "ProjOptimize.h"
 #include "NormalTransfer.h"
 #include "DetailSynthesis.h"
+#include "ProjICP.h"
+#include "LargeFeatureReg.h"
 #include "FeatureGuided.h"
 #include "Model.h"
 
+#include "ParameterMgr.h"
+
 AlgHandler::AlgHandler()
 {
+  feature_model = nullptr;
+  shape_model = nullptr;
   init();
 }
 
@@ -20,10 +26,8 @@ void AlgHandler::init()
   proj_optimize.reset(new ProjOptimize);
   normal_transfer.reset(new NormalTransfer);
   detail_synthesis.reset(new DetailSynthesis);
-
-
-  feature_model = nullptr;
-  shape_model = nullptr;
+  proj_icp.reset(new ProjICP);
+  lf_reg.reset(new LargeFeatureReg);
   decomp_img.reset(new DecompImg);
 }
 
@@ -35,6 +39,7 @@ void AlgHandler::setFeatureModel(std::shared_ptr<FeatureGuided> model)
 void AlgHandler::setShapeModel(std::shared_ptr<Model> model)
 {
   shape_model = model;
+  init();
 }
 
 bool AlgHandler::workable()
@@ -122,4 +127,33 @@ void AlgHandler::doDetailSynthesis()
 {
 
   detail_synthesis->testMeshPara(shape_model);
+}
+
+void AlgHandler::doProjICP()
+{
+  if (!workable())
+  {
+    return;
+  }
+
+  proj_icp->buildCrsp(feature_model);
+}
+
+void AlgHandler::doLargeFeatureReg(int reg_type)
+{
+  if (!workable())
+  {
+    return;
+  }
+
+  lf_reg->setFeatureModel(feature_model.get());
+  if (reg_type == 0)
+  {
+    lf_reg->runReg(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));
+  }
+  else if (reg_type == 1)
+  {
+    lf_reg->runRegNonRigid(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));
+  }
+  //lf_reg->testNlopt();
 }
