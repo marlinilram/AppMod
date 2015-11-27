@@ -162,6 +162,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
 
   model->updateShape(new_vertex_list);
   // map new texture
+  model->updateColor(); // this is for build uv coordinates
   model->updateSHColor();
 
   std::cout << "Update geometry finished...\n";

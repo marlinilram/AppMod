@@ -134,6 +134,22 @@ void MainCanvasViewer::setBackgroundImage(QString fname)
   doneCurrent();
 }
 
+void MainCanvasViewer::setReflectanceImage(QString fname)
+{
+  makeCurrent();
+
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* main_canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (main_canvas)
+    {
+      main_canvas->setReflectanceImage(fname);
+    }
+  }
+
+  doneCurrent();
+}
+
 void MainCanvasViewer::updateBuffer()
 {
   makeCurrent();

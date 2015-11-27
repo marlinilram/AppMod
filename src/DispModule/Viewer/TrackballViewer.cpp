@@ -16,6 +16,7 @@ TrackballViewer::TrackballViewer(QWidget *widget)
   is_draw_actors = true;
   show_trackball = false;
   play_lightball = false;
+  is_draw_actors = false;
 }
 
 TrackballViewer::~TrackballViewer()

@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 #include <QString>
+#include <QImage>
 
 class Model;
 class QGLShaderProgram;
@@ -46,6 +47,8 @@ public:
   void setSketchFBO();
 
   void setBackgroundImage(QString fname);
+  void setReflectanceImage(QString fname);
+  void setTextureImage(QImage& glImg, GLuint& texture);
 
   std::string getFilePath();
 
@@ -72,6 +75,7 @@ private:
   std::unique_ptr<QGLBuffer> color_buffer;
   std::unique_ptr<QGLBuffer> sketch_vertex_buffer;
   std::unique_ptr<QGLBuffer> vertex_crest_buffer;
+  std::unique_ptr<QGLBuffer> uv_buffer;
 
   GLuint offscr_color;
   GLuint offscr_depth;
@@ -86,6 +90,7 @@ private:
   GLuint nms_depth;
 
   GLuint background_texture;
+  GLuint reflect_texture;
 
   GLenum num_vertex;
   GLenum num_face;

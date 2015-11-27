@@ -50,6 +50,7 @@ DispModuleHandler::DispModuleHandler(QWidget* parent)
 
 void DispModuleHandler::loadModel(std::shared_ptr<Model> model, std::string model_file_path)
 {
+  cur_file_path = model_file_path;
   trackball_canvas->setModel(model);
   trackball_viewer->deleteDispObj(trackball_canvas.get());
   trackball_viewer->addDispObj(trackball_canvas.get());
@@ -211,6 +212,7 @@ void DispModuleHandler::runNormalTransfer()
 {
   alg_handler->doNormalTransfer();
   trackball_viewer->setGLActors(alg_handler->getGLActors());
+  main_canvas_viewer->setReflectanceImage(QString::fromStdString(cur_file_path + "/reflectance.png"));
   updateCanvas();
 }
 

@@ -68,6 +68,8 @@ public:
 
   std::shared_ptr<AlgHandler> alg_handler;
 
+  std::string cur_file_path;
+
 private:
   DispModuleHandler(const DispModuleHandler&);
   void operator = (const DispModuleHandler&);

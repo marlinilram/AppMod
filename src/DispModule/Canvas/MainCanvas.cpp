@@ -71,6 +71,8 @@ void MainCanvas::setShaderProgram()
   color_buffer->create();
   normal_buffer.reset(new QGLBuffer);
   normal_buffer->create();
+  uv_buffer.reset(new QGLBuffer);
+  uv_buffer->create();
   vertex_crest_buffer.reset(new QGLBuffer);
   vertex_crest_buffer->create();
 
@@ -113,6 +115,7 @@ void MainCanvas::updateModelBuffer()
   const STLVectorf& color_list  = model->getShapeColorList();
   const STLVectorf& face_color_list = model->getShapeFaceColorList();
   const Edges&      crest_edge = model->getShapeCrestEdge();
+  const STLVectorf& uv_list = model->getShapeUVCoord();
 
   //// duplicate the vertex for face color
   //FaceList new_face_list;
@@ -198,6 +201,11 @@ void MainCanvas::updateModelBuffer()
   normal_buffer->write(0, &normal_list[0], num_vertex * 3 * sizeof(GLfloat));
   normal_buffer->release();
 
+  uv_buffer->bind();
+  uv_buffer->allocate(num_vertex * 2 * sizeof(GLfloat));
+  uv_buffer->write(0, &uv_list[0], num_vertex * 2 * sizeof(GLfloat));
+  uv_buffer->release();
+
   vertex_crest_buffer->bind();
   vertex_crest_buffer->allocate(num_vertex * 1 * sizeof(GLfloat));
   vertex_crest_buffer->write(0, &v_crest[0], num_vertex * 1 * sizeof(GLfloat));
@@ -225,8 +233,34 @@ void MainCanvas::updateModelColorBuffer()
   }
 }
 
+void MainCanvas::setTextureImage(QImage& glImg, GLuint& texture)
+{
+  // Bind the img texture...
+  // Enable GL textures  
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  if(glIsTexture(texture)) std::cout<<"gen texture ok..\n";
+  else std::cout << "gen texture failed...\n";
+
+  // Nice texture coordinate interpolation
+  glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+  glTexImage2D(GL_TEXTURE_2D, 0, 4, glImg.width(), glImg.height(), 0,
+    GL_RGBA, GL_UNSIGNED_BYTE, glImg.bits());
+
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+
+  if (glGetError() != 0)
+  {
+    std::cout<<"GL Error in setting background image\n";
+  }
+}
+
 void MainCanvas::setBackgroundImage(QString fname)
 {
+  std::cout << "Initialize background texture and other frame buffer object." << std::endl;
   QImage img(fname);
 
   if (img.isNull())
@@ -254,27 +288,7 @@ void MainCanvas::setBackgroundImage(QString fname)
 
   QImage glImg = QGLWidget::convertToGLFormat(img);  // flipped 32bit RGBA
 
-  // Bind the img texture...
-  // Enable GL textures  
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glGenTextures(1, &background_texture);
-  glBindTexture(GL_TEXTURE_2D, background_texture);
-
-  if(glIsTexture(background_texture)) std::cout<<"gen background texture ok..\n";
-  else std::cout << "gen background texture failed...\n";
-
-  // Nice texture coordinate interpolation
-  glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
-  glTexImage2D(GL_TEXTURE_2D, 0, 4, glImg.width(), glImg.height(), 0,
-    GL_RGBA, GL_UNSIGNED_BYTE, glImg.bits());
-
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-
-  if (glGetError() != 0)
-  {
-    std::cout<<"GL Error in setting background image\n";
-  }
+  setTextureImage(glImg, background_texture);
 
   show_background_img = true;
 
@@ -284,6 +298,25 @@ void MainCanvas::setBackgroundImage(QString fname)
 
   setFBO();
   setSketchFBO();
+
+  std::cout << "Initialization finished." << std::endl;
+}
+
+void MainCanvas::setReflectanceImage(QString fname)
+{
+  std::cout << "Initialize Reflectance texture." << std::endl;
+  QImage img(fname);
+
+  if (img.isNull())
+  {
+    qWarning("Unable to load file, unsupported file format");
+    return;
+  }
+
+  QImage glImg = QGLWidget::convertToGLFormat(img);  // flipped 32bit RGBA
+  setTextureImage(glImg, reflect_texture);
+
+  std::cout << "Initialization finished." << std::endl;
 }
 
 void MainCanvas::setFBO()
@@ -424,6 +457,15 @@ void MainCanvas::drawModel()
   basic_shader->setAttributeBuffer("normal", GL_FLOAT, 0, 3, 0);
   basic_shader->enableAttributeArray("normal");
   normal_buffer->release();
+
+  basic_shader->setUniformValue("reflect_texture", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, reflect_texture);
+
+  uv_buffer->bind();
+  basic_shader->setAttributeBuffer("uv", GL_FLOAT, 0, 2, 0);
+  basic_shader->enableAttributeArray("uv");
+  uv_buffer->release();
 
   vertex_crest_buffer->bind();
   basic_shader->setAttributeBuffer("vCrestTag", GL_FLOAT, 0, 1, 0);

@@ -436,12 +436,13 @@ void Model::updateColor()
 {
   // set color from photo to shape
   // or using UV coordinate
-  cv::Mat reflectance;
-  cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
-  reflectance = reflectance / 255.0;
+  //cv::Mat reflectance;
+  //cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
+  //reflectance = reflectance / 255.0;
 
   const VertexList& vertex_list = shape->getVertexList();
-  STLVectorf color_list(vertex_list.size(), 0.0f);
+  STLVectorf uv_list = shape->getUVCoord();
+  //STLVectorf color_list(vertex_list.size(), 0.0f);
   float pt[3];
   float winx;
   float winy;
@@ -451,15 +452,14 @@ void Model::updateColor()
     pt[1] = vertex_list[3 * i + 1];
     pt[2] = vertex_list[3 * i + 2];
     this->getProjectPt(pt, winx, winy);
-    winy = winy < 0 ? 0 : (winy >= reflectance.rows ? reflectance.rows - 1 : winy);
-    winx = winx < 0 ? 0 : (winx >= reflectance.cols ? reflectance.cols - 1 : winx);
-    cv::Vec3f c = reflectance.at<cv::Vec3f>(winy, winx);
-    color_list[3 * i + 0] = c[2];
-    color_list[3 * i + 1] = c[1];
-    color_list[3 * i + 2] = c[0];
+    winy = winy < 0 ? 0 : (winy >= photo.rows ? photo.rows - 1 : winy);
+    winx = winx < 0 ? 0 : (winx >= photo.cols ? photo.cols - 1 : winx);
+    uv_list[2 * i + 0] = winx / photo.cols; // x
+    uv_list[2 * i + 1] = (photo.rows - winy) / photo.rows; // y
   }
 
-  shape->setColorList(color_list);
+  //shape->setColorList(color_list);
+  shape->setUVCoord(uv_list);
 }
 
 void Model::updateSHColor()
@@ -467,9 +467,9 @@ void Model::updateSHColor()
   //VertexList vlist = shape->getVertexList();
   //shape->updateShape(vlist);
   //reflectance from barron need to normalize by its maximum
-  cv::Mat reflectance;
-  cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
-  reflectance = reflectance / 255.0;
+  //cv::Mat reflectance;
+  //cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
+  //reflectance = reflectance / 255.0;
   cv::Mat SHLightCoeffs;
   cv::FileStorage fs(data_path + "/SHLight.xml", cv::FileStorage::READ);
   fs["SHLight"] >> SHLightCoeffs;
@@ -485,7 +485,7 @@ void Model::updateSHColor()
   Matrix3f mirror_x = Matrix3f::Identity(); mirror_x(1, 1) = -1;
   Matrix4f lb_model_view = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("Lightball:cameraTransform");
   Matrix3f cam_rot = (lb_model_view.block(0, 0, 3, 3));// * m_modelview.block(0, 0, 3, 3).inverse()).inverse();
-  std::cout << l_coeffs[0] << l_coeffs[1] << l_coeffs[2] << std::endl;
+  //std::cout << l_coeffs[0] << l_coeffs[1] << l_coeffs[2] << std::endl;
 
   rotateSH(cam_rot, l_coeffs[0], l_coeffs[0]);
   rotateSH(cam_rot, l_coeffs[1], l_coeffs[1]);
@@ -496,18 +496,18 @@ void Model::updateSHColor()
   STLVectorf color_list(vertex_list.size(), 0.0f);
   LG::PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeffs = shape->getPolygonMesh()->vertex_attribute<STLVectorf>("v:SHShadowCoeffs");
   int numFunctions = shadowCoeffs[LG::PolygonMesh::Vertex(0)].size();
-  float pt[3];
-  float winx;
-  float winy;
+  //float pt[3];
+  //float winx;
+  //float winy;
   for (size_t i = 0; i < vertex_list.size() / 3; ++i)
   {
-    pt[0] = vertex_list[3 * i + 0];
-    pt[1] = vertex_list[3 * i + 1];
-    pt[2] = vertex_list[3 * i + 2];
-    this->getProjectPt(pt, winx, winy);
-    winy = winy < 0 ? 0 : (winy >= reflectance.rows ? reflectance.rows - 1 : winy);
-    winx = winx < 0 ? 0 : (winx >= reflectance.cols ? reflectance.cols - 1 : winx);
-    cv::Vec3f c = reflectance.at<cv::Vec3f>(winy, winx);
+    //pt[0] = vertex_list[3 * i + 0];
+    //pt[1] = vertex_list[3 * i + 1];
+    //pt[2] = vertex_list[3 * i + 2];
+    //this->getProjectPt(pt, winx, winy);
+    //winy = winy < 0 ? 0 : (winy >= reflectance.rows ? reflectance.rows - 1 : winy);
+    //winx = winx < 0 ? 0 : (winx >= reflectance.cols ? reflectance.cols - 1 : winx);
+    //cv::Vec3f c = reflectance.at<cv::Vec3f>(winy, winx);
     std::vector<float> brightness(3, 0);
     std::vector<float>& cur_shadowCoeff = shadowCoeffs[LG::PolygonMesh::Vertex(int(i))];
     for (int j = 0; j < numFunctions; ++j)
@@ -516,9 +516,9 @@ void Model::updateSHColor()
       brightness[1] += cur_shadowCoeff[j] * l_coeffs[1][j];
       brightness[2] += cur_shadowCoeff[j] * l_coeffs[2][j];
     }
-    color_list[3 * i + 0] = c[2] * exp(brightness[0]);
-    color_list[3 * i + 1] = c[1] * exp(brightness[1]);
-    color_list[3 * i + 2] = c[0] * exp(brightness[2]);
+    color_list[3 * i + 0] = exp(brightness[0]);
+    color_list[3 * i + 1] = exp(brightness[1]);
+    color_list[3 * i + 2] = exp(brightness[2]);
   }
   shape->setColorList(color_list);
 
