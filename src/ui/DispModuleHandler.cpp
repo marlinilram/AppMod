@@ -314,3 +314,9 @@ void DispModuleHandler::runLFRegNonRigid()
   target_vector_viewer->updateGLOutside();
   std::cout << "bug test.\n";
 }
+
+void DispModuleHandler::changeToLightball()
+{
+  trackball_viewer->toggleLightball();
+  updateCanvas();
+}

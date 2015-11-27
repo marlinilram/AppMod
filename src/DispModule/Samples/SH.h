@@ -12,6 +12,8 @@
 #ifndef SH_H
 #define SH_H
 
+#include "Eigen\Eigen"
+
 //Evaluate an Associated Legendre Polynomial P(l, m) at x
 double P(int l, int m, double x);
 
@@ -20,6 +22,9 @@ double K(int l, int m);
 
 //Sample a spherical harmonic basis function Y(l, m) at a point on the unit sphere
 double SH(int l, int m, double theta, double phi);
+
+void SHRotationMatrix(Eigen::MatrixXf& mat_out, float sin_alph, float cos_alph);
+void rotateSH(Eigen::Matrix3f& rot_mat, Eigen::VectorXf& coef_in, Eigen::VectorXf& coef_out);
 
 
 //Calculate n!

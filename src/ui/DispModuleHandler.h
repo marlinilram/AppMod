@@ -51,6 +51,7 @@ public:
   void setSFieldPara(int set_type = 1);
   void setMainCanvasRenderMode();
   void runLFRegNonRigid();
+  void changeToLightball();
 
 public slots:
   void updateGeometryInteractive();

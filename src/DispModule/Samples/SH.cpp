@@ -99,3 +99,48 @@ int Factorial(int n)
 
 	return result;
 }
+
+void SHRotationMatrix(Eigen::MatrixXf& mat_out, float sin_alph, float cos_alph)
+{
+  mat_out = Eigen::MatrixXf::Zero(9, 9);
+  mat_out(0, 0) = mat_out(2, 2) = mat_out(6, 6) = 1;
+  mat_out(1, 1) = mat_out(3, 3) = mat_out(5, 5) = mat_out(7, 7) = cos_alph;
+  mat_out(1, 3) = mat_out(5, 7) = sin_alph;
+  mat_out(3, 1) = mat_out(7, 5) = -sin_alph;
+  mat_out(4, 4) = mat_out(8, 8) = 2 * cos_alph * cos_alph - 1;
+  mat_out(4, 8) = 2 * sin_alph * cos_alph;
+  mat_out(8, 4) = -2 * sin_alph * cos_alph;
+}
+
+void rotateSH(Eigen::Matrix3f& rot_mat, Eigen::VectorXf& coef_in, Eigen::VectorXf& coef_out)
+{
+  // only deal with 2nd order (3 band) coefficients now
+
+  // first compute alpha, beta and gamma from rot_mat
+  double cos_beta = rot_mat(2, 2);
+  double sin_beta = sqrt(1 - cos_beta * cos_beta);
+  double cos_alph = fabs(sin_beta) < 1e-4 ? rot_mat(1, 1) : (rot_mat(2, 0) / sin_beta);
+  double sin_alph = fabs(sin_beta) < 1e-4 ? -rot_mat(1, 0) : (rot_mat(2, 1) / sin_beta);
+  double cos_gamm = fabs(sin_beta) < 1e-4 ? 1 : (-rot_mat(0, 2) / sin_beta);
+  double sin_gamm = fabs(sin_beta) < 1e-4 ? 0 : (rot_mat(1, 2) / sin_beta);
+
+  Eigen::MatrixXf X_pos_90 = Eigen::MatrixXf::Zero(9, 9);
+  Eigen::MatrixXf X_neg_90 = Eigen::MatrixXf::Zero(9, 9);
+  Eigen::MatrixXf Z_alph = Eigen::MatrixXf::Zero(9, 9);
+  Eigen::MatrixXf Z_beta = Eigen::MatrixXf::Zero(9, 9);
+  Eigen::MatrixXf Z_gamm = Eigen::MatrixXf::Zero(9, 9);
+  Eigen::MatrixXf Z_neg_90 = Eigen::MatrixXf::Zero(9, 9);
+
+  X_neg_90(0, 0) = X_neg_90(1, 2) = X_neg_90(3, 3) = X_neg_90(4, 7) = 1;
+  X_neg_90(2, 1) = X_neg_90(5, 5) = X_neg_90(7, 4) = -1;
+  X_neg_90(6, 6) = -0.5; X_neg_90(8, 8) = 0.5;
+  X_neg_90(6, 8) = X_neg_90(8, 6) = -sqrt(3) / 2;
+
+  X_pos_90 = X_neg_90.transpose();
+  SHRotationMatrix(Z_alph, sin_alph, cos_alph);
+  SHRotationMatrix(Z_beta, sin_beta, cos_beta);
+  SHRotationMatrix(Z_gamm, sin_gamm, cos_gamm);
+  SHRotationMatrix(Z_neg_90, 1, 0);
+  coef_out = Z_gamm * X_neg_90 * Z_beta * X_pos_90 * Z_alph * coef_in;
+}
+

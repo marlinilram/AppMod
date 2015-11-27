@@ -6,12 +6,16 @@
 #include <QKeyEvent>
 #include "Model.h"
 #include "ShapeCrest.h"
+#include "ParameterMgr.h"
+#include <QGLViewer/manipulatedFrame.h>
 
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {
   wireframe_ = false;
   is_draw_actors = true;
+  show_trackball = false;
+  play_lightball = false;
 }
 
 TrackballViewer::~TrackballViewer()
@@ -140,6 +144,21 @@ void TrackballViewer::setWheelandMouse()
 
   // Add custom mouse bindings description (see mousePressEvent())
   setMouseBindingDescription(Qt::NoModifier, Qt::RightButton, "Opens a camera path context menu");
+
+  setManipulatedFrame(new qglviewer::ManipulatedFrame());
+}
+
+void TrackballViewer::toggleLightball()
+{
+  play_lightball = (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0 ? false : true);
+  if (play_lightball)
+  {
+    setMouseBinding(Qt::NoModifier, Qt::LeftButton, FRAME, ROTATE);
+  }
+  else
+  {
+    setMouseBinding(Qt::NoModifier, Qt::LeftButton, CAMERA, ROTATE);
+  }
 }
 
 void TrackballViewer::updateBuffer()
@@ -152,6 +171,22 @@ void TrackballViewer::updateBuffer()
     if (trackball_canvas)
     {
       trackball_canvas->updateModelBuffer();
+    }
+  }
+
+  doneCurrent();
+}
+
+void TrackballViewer::updateColorBuffer()
+{
+  makeCurrent();
+
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+    if (trackball_canvas)
+    {
+      trackball_canvas->updateModelColorBuffer();
     }
   }
 
@@ -292,9 +327,14 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
   //      camera()->playPath(menuMap[action]);
   //}
   //else
+  //if (!lightball_mode)
   {
     QGLViewer::mousePressEvent(e);
     sync_camera = true;
+  }
+  //else if (lightball_mode)
+  {
+
   }
 }
 
@@ -354,15 +394,29 @@ void TrackballViewer::syncCamera(int sync_type)
 {
   if(main_canvas_viewer)
   {
-    GLdouble m[16];
-    camera()->getModelViewMatrix(m);
-    main_canvas_viewer->camera()->setFromModelViewMatrix(m);
-    main_canvas_viewer->setSceneCenter(sceneCenter());
-    main_canvas_viewer->setSceneRadius(sceneRadius());
-    main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
-    main_canvas_viewer->camera()->setFieldOfView(camera()->fieldOfView());
-    main_canvas_viewer->updateGLOutside();
-    main_canvas_viewer->syncCameraToModel();
+    if (!play_lightball)
+    {
+      GLdouble m[16];
+      camera()->getModelViewMatrix(m);
+      main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+      main_canvas_viewer->setSceneCenter(sceneCenter());
+      main_canvas_viewer->setSceneRadius(sceneRadius());
+      main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
+      main_canvas_viewer->camera()->setFieldOfView(camera()->fieldOfView());
+      main_canvas_viewer->updateGLOutside();
+      main_canvas_viewer->syncCameraToModel();
+    }
+    else
+    {
+      //GLfloat m[16];
+      //camera()->getModelViewMatrix(m);
+      Eigen::Map<const Eigen::Matrix4d>temp(manipulatedFrame()->matrix(), 4, 4);
+      LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("Lightball:cameraTransform") = temp.cast<float>();
+      main_canvas_viewer->updateColorBuffer(); 
+      main_canvas_viewer->updateGLOutside();
+      updateColorBuffer();
+      updateGLOutside();
+    }
 
     //std::cout << "Trackball: znear " << camera()->zNear() << "\tzfar " << camera()->zFar() << "\tfocal " << camera()->focusDistance() << "\tradius " << camera()->sceneRadius() << "\n";
     //std::cout << "Trackball scene center: " << camera()->sceneCenter().x << " " << camera()->sceneCenter().y << " " << camera()->sceneCenter().z <<"\n";

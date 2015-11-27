@@ -32,6 +32,7 @@ public:
   void setModel(std::shared_ptr<Model> model);
   void setModel(std::string path, std::string name);
   void updateModelBuffer();
+  void updateModelColorBuffer();
   void setShaderProgram();
   void drawModel();
   void drawModelEdge();

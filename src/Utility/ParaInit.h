@@ -23,6 +23,9 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("LFeature:registerMethod", 11);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("SnapShot:SaveToFile", 1);
+
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("TrackballView:ShowLightball", 0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<Matrix4f>("Lightball:cameraTransform", Matrix4f::Identity());
 }
 
 #endif

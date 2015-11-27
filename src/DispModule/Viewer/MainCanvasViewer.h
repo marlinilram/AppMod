@@ -23,6 +23,7 @@ public:
   void getSnapShot();
   void setBackgroundImage(QString fname);
   void updateBuffer();
+  void updateColorBuffer();
   void setGLActors(std::vector<GLActor>& actors);
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
   void syncCameraToModel();

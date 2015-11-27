@@ -203,7 +203,7 @@ void DecompImg::buildMask(std::shared_ptr<Model> model)
   {
     for (int j = 0; j < primitive_img.cols; ++j)
     {
-      if (primitive_img.at<int>(i, j) < 0 || visited.at<uchar>)
+     // if (primitive_img.at<int>(i, j) < 0 || visited.at<uchar>)
     }
   }
 }

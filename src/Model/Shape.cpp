@@ -3,6 +3,10 @@
 #include "KDTreeWrapper.h"
 #include "PolygonMesh.h"
 
+#include "Ray.h"
+#include "SAMPLE.h"
+#include "GenerateSamples.h"
+
 #include <set>
 #include <fstream>
 
@@ -112,15 +116,16 @@ void Shape::setColorList(STLVectorf& colorList)
     colors[vit] = Vec3(colorList[3 * vit.idx() + 0], colorList[3 * vit.idx() + 1], colorList[3 * vit.idx() + 2]);
   }
 
-  color_list.resize(3 * poly_mesh->n_vertices());
-  //PolygonMesh::Vertex_attribute<Vec3> colors = poly_mesh->vertex_attribute<Vec3>("v:colors");
-  for (auto vit : poly_mesh->vertices())
-  {
-    const Vec3& color = colors[vit];
-    color_list[3 * vit.idx() + 0] = color[0];
-    color_list[3 * vit.idx() + 1] = color[1];
-    color_list[3 * vit.idx() + 2] = color[2];
-  } // this will update the internal variable color_list from poly_mesh
+  color_list = colorList;
+  //color_list.resize(3 * poly_mesh->n_vertices());
+  ////PolygonMesh::Vertex_attribute<Vec3> colors = poly_mesh->vertex_attribute<Vec3>("v:colors");
+  //for (auto vit : poly_mesh->vertices())
+  //{
+  //  const Vec3& color = colors[vit];
+  //  color_list[3 * vit.idx() + 0] = color[0];
+  //  color_list[3 * vit.idx() + 1] = color[1];
+  //  color_list[3 * vit.idx() + 2] = color[2];
+  //} // this will update the internal variable color_list from poly_mesh
 }
 
 void Shape::setFaceColorList(STLVectorf& facecolorList)
@@ -658,6 +663,8 @@ void Shape::updateShape(VertexList& new_vertex_list)
   computeBounds();
 
   buildKDTree();
+
+  computeShadowSHCoeffs();
 }
 
 void Shape::getFaceCenter(int f_id, float p[3])
@@ -669,4 +676,64 @@ void Shape::getFaceCenter(int f_id, float p[3])
   p[0] = vertex_list[3 * v0 + 0] / 3 + vertex_list[3 * v1 + 0] / 3 + vertex_list[3 * v2 + 0] / 3;
   p[1] = vertex_list[3 * v0 + 1] / 3 + vertex_list[3 * v1 + 1] / 3 + vertex_list[3 * v2 + 1] / 3;
   p[2] = vertex_list[3 * v0 + 2] / 3 + vertex_list[3 * v1 + 2] / 3 + vertex_list[3 * v2 + 2] / 3;
+}
+
+void Shape::computeShadowSHCoeffs()
+{
+  // only called when the shape is changed
+
+  // 1. initialize BSPTree
+  std::cout << "Initialize BSPTree.\n";
+  std::shared_ptr<Ray> ray(new Ray);
+  ray->passModel(vertex_list, face_list);
+
+  // 2. generate direction samples
+  std::cout << "Generate samples.\n";
+  int sqrtNumSamples = 50;
+  int numSamples = sqrtNumSamples * sqrtNumSamples;
+  std::vector<SAMPLE> samples(numSamples);
+  GenerateSamples(sqrtNumSamples, 3, &samples[0]);
+
+  // 3. compute coeffs
+  std::cout << "Compute SH Coefficients.\n";
+  int numBand = 3;
+  int numFunctions = numBand * numBand;
+  PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeff = poly_mesh->vertex_attribute<STLVectorf>("v:SHShadowCoeffs");
+  PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+  float perc = 0;
+  for (auto i : poly_mesh->vertices())
+  {
+    shadowCoeff[i].resize(numFunctions, 0.0f);
+    for (int k = 0; k < numSamples; ++k)
+    {
+      double dot = (double)samples[k].direction.dot(v_normals[i]);
+
+      if (dot > 0.0)
+      {
+        //Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
+        //Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
+        //if (ray->intersectModel(ray_start, ray_end))
+        {
+          for (int l = 0; l < numFunctions; ++l)
+          {
+            shadowCoeff[i][l] += dot * samples[k].shValues[l];
+          }
+        }
+      }
+    }
+
+    // rescale
+    for (int l = 0; l < numFunctions; ++l)
+    {
+      shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
+    }
+
+    float cur_perc = (float)i.idx() / poly_mesh->n_vertices();
+    if (cur_perc - perc >= 0.05)
+    {
+      perc = cur_perc;
+      std::cout << perc << "...";
+    }
+  }
+  std::cout << "Compute SH coefficients finished.\n";
 }

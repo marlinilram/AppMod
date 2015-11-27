@@ -95,11 +95,12 @@ void AlgHandler::doInteractiveProjOptimize()
 
 void AlgHandler::doNormalTransfer()
 {
-  if (!workable())
+  if (!shape_model)//!shape_model
   {
     return;
   }
 
+  //shape_model->updateSHColor();
   normal_transfer->prepareNewNormal(shape_model);
   actors.clear();
   std::vector<GLActor> temp_actors;

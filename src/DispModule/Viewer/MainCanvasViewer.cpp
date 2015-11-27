@@ -150,6 +150,22 @@ void MainCanvasViewer::updateBuffer()
   doneCurrent();
 }
 
+void MainCanvasViewer::updateColorBuffer()
+{
+  makeCurrent();
+
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    MainCanvas* main_canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
+    if (main_canvas)
+    {
+      main_canvas->updateModelColorBuffer();
+    }
+  }
+
+  doneCurrent();
+}
+
 void MainCanvasViewer::drawActors()
 {
   for (decltype(actors.size()) i = 0; i < actors.size(); ++i)

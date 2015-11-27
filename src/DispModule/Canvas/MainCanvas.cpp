@@ -1,5 +1,6 @@
 #include "MainCanvas.h"
 #include "Model.h"
+#include "PolygonMesh.h"
 
 #include "YMLHandler.h"
 #include "Colormap.h"
@@ -113,35 +114,62 @@ void MainCanvas::updateModelBuffer()
   const STLVectorf& face_color_list = model->getShapeFaceColorList();
   const Edges&      crest_edge = model->getShapeCrestEdge();
 
-  // duplicate the vertex for face color
-  FaceList new_face_list;
-  VertexList new_vertex_list;
-  NormalList new_normal_list;
-  STLVectorf new_color_list;
-  for (size_t i = 0; i < face_list.size(); ++i)
-  {
-    new_face_list.push_back(int(i));
-    for (int j = 0; j < 3; ++j)
-    {
-      new_vertex_list.push_back(vertex_list[3 * face_list[i] + j]);
-      new_normal_list.push_back(normal_list[3 * face_list[i] + j]);
-    }
-  }
-  for (size_t i = 0; i < face_list.size() / 3; ++i)
-  {
-    for (int j = 0; j < 3; ++j)
-    {
-      // for each vertex
-      for (int k = 0; k < 3; ++k)
-      {
-        new_color_list.push_back(face_color_list[3 * i + k]);
-      }
-    }
-  }
-  std::cout << "new vertex size: " << new_vertex_list.size() << "\tnew color size: " << new_color_list.size() << std::endl;
+  //// duplicate the vertex for face color
+  //FaceList new_face_list;
+  //VertexList new_vertex_list;
+  //NormalList new_normal_list;
+  //STLVectorf new_color_list;
+  //for (size_t i = 0; i < face_list.size(); ++i)
+  //{
+  //  new_face_list.push_back(int(i));
+  //  for (int j = 0; j < 3; ++j)
+  //  {
+  //    new_vertex_list.push_back(vertex_list[3 * face_list[i] + j]);
+  //    new_normal_list.push_back(normal_list[3 * face_list[i] + j]);
+  //  }
+  //}
+  //for (size_t i = 0; i < face_list.size() / 3; ++i)
+  //{
+  //  for (int j = 0; j < 3; ++j)
+  //  {
+  //    // for each vertex
+  //    for (int k = 0; k < 3; ++k)
+  //    {
+  //      new_color_list.push_back(face_color_list[3 * i + k]);
+  //    }
+  //  }
+  //}
+  //std::cout << "new vertex size: " << new_vertex_list.size() << "\tnew color size: " << new_color_list.size() << std::endl;
 
-  num_vertex = GLenum(new_vertex_list.size() / 3);
-  num_face   = GLenum(new_face_list.size() / 3);
+  //LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
+  //LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_normals = poly_mesh->vertex_attribute<LG::Vec3>("v:normal");
+  //LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
+  //VertexList vertex_list;
+  //NormalList normal_list;
+  //STLVectorf color_list;
+  //FaceList face_list;
+  //for (auto vit : poly_mesh->vertices())
+  //{
+  //  LG::Vec3 pt = poly_mesh->position(vit);
+  //  LG::Vec3 n = v_normals[vit];
+  //  LG::Vec3 c = v_colors[vit];
+  //  for (int i = 0; i < 3; ++i)
+  //  {
+  //    vertex_list.push_back(pt[i]);
+  //    normal_list.push_back(n[i]);
+  //    color_list.push_back(c[i]);
+  //  }
+  //}
+  //for (auto fit : poly_mesh->faces())
+  //{
+  //  for (auto vfc : poly_mesh->vertices(fit))
+  //  {
+  //    face_list.push_back(size_t(vfc.idx()));
+  //  }
+  //}
+
+  num_vertex = GLenum(vertex_list.size() / 3);
+  num_face   = GLenum(face_list.size() / 3);
 
   std::vector<GLfloat> v_crest(num_vertex, 0.0);
   //for (size_t i = 0; i < crest_edge.size(); ++i)
@@ -152,27 +180,43 @@ void MainCanvas::updateModelBuffer()
 
   vertex_buffer->bind();
   vertex_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  vertex_buffer->write(0, &new_vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
+  vertex_buffer->write(0, &vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
   vertex_buffer->release();
 
   face_buffer->bind();
   face_buffer->allocate(num_face * 3 * sizeof(GLuint));
-  face_buffer->write(0, &new_face_list[0], num_face * 3 * sizeof(GLuint));
+  face_buffer->write(0, &face_list[0], num_face * 3 * sizeof(GLuint));
   face_buffer->release();
 
   color_buffer->bind();
   color_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  color_buffer->write(0, &new_color_list[0], num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->write(0, &color_list[0], num_vertex * 3 * sizeof(GLfloat));
   color_buffer->release();
 
   normal_buffer->bind();
   normal_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  normal_buffer->write(0, &new_normal_list[0], num_vertex * 3 * sizeof(GLfloat));
+  normal_buffer->write(0, &normal_list[0], num_vertex * 3 * sizeof(GLfloat));
   normal_buffer->release();
 
   vertex_crest_buffer->bind();
   vertex_crest_buffer->allocate(num_vertex * 1 * sizeof(GLfloat));
   vertex_crest_buffer->write(0, &v_crest[0], num_vertex * 1 * sizeof(GLfloat));
+
+  GLenum error_code = glGetError();
+  if (error_code != 0)
+  {
+    std::cout<<"MainCanvas: GL Error in getting model. Error Code: " << error_code << "\n";
+  }
+}
+
+void MainCanvas::updateModelColorBuffer()
+{
+  model->updateSHColor();
+  const STLVectorf& color_list  = model->getShapeColorList();
+  color_buffer->bind();
+  color_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->write(0, &color_list[0], num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->release();
 
   GLenum error_code = glGetError();
   if (error_code != 0)

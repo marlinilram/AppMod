@@ -78,6 +78,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QCheckBox" name="Show_Light_CheckBox">
+               <property name="text">
+                <string>Show Light</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QSlider" name="edgeThresholdSlider">
                <property name="value">
                 <number>75</number>
@@ -523,8 +530,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>293</width>
-         <height>775</height>
+         <width>98</width>
+         <height>28</height>
         </rect>
        </property>
        <attribute name="label">
