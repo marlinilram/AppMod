@@ -12,6 +12,7 @@ class SynthesisTool;
 class Shape;
 class CurveGuidedVectorField;
 class GLActor;
+class KevinVectorField;
 
 class DetailSynthesis
 {
@@ -31,6 +32,7 @@ private:
   std::shared_ptr<MeshParameterization> mesh_para;
   std::shared_ptr<SynthesisTool>        syn_tool;
   std::shared_ptr<CurveGuidedVectorField> curve_guided_vector_field;
+  std::shared_ptr<KevinVectorField> kevin_vector_field;
   cv::Mat displacement_map;
   std::vector<cv::Mat> src_feature_map;
   std::vector<cv::Mat> tar_feature_map;

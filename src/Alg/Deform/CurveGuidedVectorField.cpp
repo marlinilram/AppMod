@@ -12,9 +12,12 @@ typedef Cholmod_matrix<double>			CMatrix;
 
 CurveGuidedVectorField::CurveGuidedVectorField()
 {
-  actors.push_back(GLActor(ML_POINT, 5.0f));
+  actors.push_back(GLActor(ML_POINT, 3.0f));
   actors.push_back(GLActor(ML_MESH, 1.0f));
   actors.push_back(GLActor(ML_LINE, 2.0f));
+  actors[0].clearElement();
+  actors[1].clearElement();
+  actors[2].clearElement();
 }
 
 CurveGuidedVectorField::~CurveGuidedVectorField()
@@ -36,11 +39,12 @@ void CurveGuidedVectorField::computeVectorField(std::shared_ptr<Model> model)
   {
     constrained_vertices_mark[i] = 0;
   }
-  for(int i = 0; i < 5; i ++)  // use only one line
+  for(int i = 0; i < 3; i ++)  // use only one line
   {
-    for(int j = 0; j < allCurves[i].size(); j ++)
+    for(int j = 0; j < allCurves[i].size() - 1; j ++)
     {
       constrained_vertices_mark[allCurves[i][j]] = 1;
+      actors[0].addElement(vertex[3 * allCurves[i][j]], vertex[3 * allCurves[i][j] + 1], vertex[3 * allCurves[i][j] + 2], 1.0, 1.0, 1.0);
     }
   }
 
@@ -51,34 +55,40 @@ void CurveGuidedVectorField::computeVectorField(std::shared_ptr<Model> model)
   {
     Pb[i] << 0, 0, 0;
   }
-  for(int i = 0; i < 5; i ++)  // use only one line
+  for(int i = 0; i < 3; i ++)  // use only one line
   {
     for(int j = 0; j < allCurves[i].size(); j ++)
     {
       int pid1, pid2;
-      pid1 = j - 1 > 0 ? j - 1 : 0;
-      pid2 = j + 1 < allCurves[i].size() - 1 ? j + 1 : allCurves[i].size() - 1;
+      //pid1 = j - 1 > 0 ? j - 1 : 0;
+      //pid2 = j + 1 < allCurves[i].size() - 1 ? j + 1 : allCurves[i].size() - 1;
       float v1_x, v1_y, v1_z, v2_x, v2_y, v2_z, vertex_x, vertex_y, vertex_z, norm;
-      v1_x = vertex[3 * allCurves[i][pid1]];
-      v1_y = vertex[3 * allCurves[i][pid1] + 1];
-      v1_z = vertex[3 * allCurves[i][pid1] + 2];
-      v2_x = vertex[3 * allCurves[i][pid2]];
-      v2_y = vertex[3 * allCurves[i][pid2] + 1];
-      v2_z = vertex[3 * allCurves[i][pid2] + 2];
-      vertex_x = v2_x - v1_x;
-      vertex_y = v2_y - v1_y;
-      vertex_z = v2_z - v1_z;
-      norm = sqrt(vertex_x * vertex_x + vertex_y * vertex_y + vertex_z * vertex_z);
-      vertex_x /= norm;
-      vertex_y /= norm;
-      vertex_z /= norm;
-      if(!(norm > 0 && norm < 1))
+      if(j != allCurves[i].size() - 1)
       {
-        Pb[allCurves[i][j]] << 0, 0, 0;
-      }
-      else
-      {
+        pid1 = j;
+        pid2 = j + 1;
+        v1_x = vertex[3 * allCurves[i][pid1]];
+        v1_y = vertex[3 * allCurves[i][pid1] + 1];
+        v1_z = vertex[3 * allCurves[i][pid1] + 2];
+        v2_x = vertex[3 * allCurves[i][pid2]];
+        v2_y = vertex[3 * allCurves[i][pid2] + 1];
+        v2_z = vertex[3 * allCurves[i][pid2] + 2];
+        vertex_x = v2_x - v1_x;
+        vertex_y = v2_y - v1_y;
+        vertex_z = v2_z - v1_z;
+        norm = sqrt(vertex_x * vertex_x + vertex_y * vertex_y + vertex_z * vertex_z);
+        vertex_x /= norm;
+        vertex_y /= norm;
+        vertex_z /= norm;
         Pb[allCurves[i][j]] << vertex_x * 1.0e8, vertex_y * 1.0e8, vertex_z * 1.0e8;
+        /*if(!(norm > 0 && norm < 1))
+        {
+          Pb[allCurves[i][j]] << 0, 0, 0;
+        }
+        else
+        {
+          Pb[allCurves[i][j]] << vertex_x * 1.0e8, vertex_y * 1.0e8, vertex_z * 1.0e8;
+        }*/
       }
     }
   }
@@ -99,7 +109,7 @@ void CurveGuidedVectorField::computeVectorField(std::shared_ptr<Model> model)
   cholmod_common c;
   cholmod_start(&c);
   CMatrix *SM = new CMatrix(vertex.size() / 3, true, &c);
-  for(; vit != vend; vit ++)
+  for(; vit != vend; ++ vit)
   {
     wi_sum = 0.0;
     int vi = (*vit).idx();
@@ -108,7 +118,8 @@ void CurveGuidedVectorField::computeVectorField(std::shared_ptr<Model> model)
     do
     {
       int vj = mesh->to_vertex(*hec).idx();
-      double wij = laplacian_cot[mesh->edge(*hec)];
+      //double wij = laplacian_cot[mesh->edge(*hec)];
+      double wij = 1;
       wi_sum += wij;
       SM->set_coef(vi, vj, -wij);
     }while(++hec != hec_end);
@@ -201,22 +212,30 @@ void CurveGuidedVectorField::computeVectorField(std::shared_ptr<Model> model)
   for(int i = 0; i < vector_field.size(); i ++)
   {
     float norm = sqrt(vector_field[i].x() * vector_field[i].x() + vector_field[i].y() * vector_field[i].y() + vector_field[i].z() * vector_field[i].z());
+    if(norm == 0)
+    {
+      vector_field[i] << vector_field[i].x() * 1.0e20, vector_field[i].y() * 1.0e20, vector_field[i].z()  * 1.0e20;
+      norm = sqrt(vector_field[i].x() * vector_field[i].x() + vector_field[i].y() * vector_field[i].y() + vector_field[i].z() * vector_field[i].z());
+    }
+    if(norm > std::numeric_limits<float>::max())
+    {
+      vector_field[i] << vector_field[i].x() / 1.0e20, vector_field[i].y() / 1.0e20, vector_field[i].z() / 1.0e20;
+      norm = sqrt(vector_field[i].x() * vector_field[i].x() + vector_field[i].y() * vector_field[i].y() + vector_field[i].z() * vector_field[i].z());
+    }
     vector_field[i] << vector_field[i].x() / norm, vector_field[i].y() / norm, vector_field[i].z() / norm;
   }
 
   // --------------------- project the vector field onto the surface tangent planes ---------------------
-  projectVectorField(model, 0.2, 0.3);
+  projectVectorField(model, 0.02, 0.03);
 
   // --------------------- put vector field into the GLActor in order to display ---------------------
-  actors[0].clearElement();
-  actors[1].clearElement();
-  actors[2].clearElement();
   for(int i = 0; i < vertex.size() / 3; i ++)
   {
     Vector3f start;
     start << vertex[3 * i], vertex[3 * i + 1], vertex[3 * i + 2];
     Vector3f end;
     end = start + vector_field[i];
+    actors[0].addElement(start.x(), start.y(), start.z(), 1.0, 0.0, 0.0);
     actors[2].addElement(start.x(), start.y(), start.z(), 0.0, 0.0, 0.0);
     actors[2].addElement(end.x(), end.y(), end.z(), 0.0, 0.0, 0.0);
   }

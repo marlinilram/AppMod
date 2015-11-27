@@ -280,6 +280,14 @@ void Shape::buildFaceAdj()
     face_adjlist.push_back(cur_adj);
   }
 
+ /* LG::PolygonMesh::Halfedge_around_face_circulator hfc, hfce;
+  LG::PolygonMesh::Face_iterator fit;
+  hfc = hfce = poly_mesh->halfedges(LG::PolygonMesh::Face(1));
+  do
+  {
+    LG::PolygonMesh::Vertex v = poly_mesh->to_vertex(*hfc);
+  } while (++hfc != hfce);*/
+
   //std::ofstream f_debug("face_adj.txt");
   //if (f_debug)
   //{

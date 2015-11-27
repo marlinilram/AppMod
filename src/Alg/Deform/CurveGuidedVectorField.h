@@ -5,7 +5,7 @@
 #include <memory>
 
 class Model;
-class ARAP;
+//class ARAP;
 class GLActor;
 
 class CurveGuidedVectorField

@@ -9,6 +9,7 @@
 #include "SynthesisTool.h"
 #include "CurveGuidedVectorField.h"
 #include "GLActor.h"
+#include "KevinVectorField.h"
 
 DetailSynthesis::DetailSynthesis()
 {
@@ -326,11 +327,15 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
 
 void DetailSynthesis::computeVectorField(std::shared_ptr<Model> model)
 {
-  curve_guided_vector_field.reset(new CurveGuidedVectorField);
-  curve_guided_vector_field->computeVectorField(model);
+  /*curve_guided_vector_field.reset(new CurveGuidedVectorField);
+  curve_guided_vector_field->computeVectorField(model);*/
+  kevin_vector_field.reset(new KevinVectorField);
+  kevin_vector_field->init(model);
+  kevin_vector_field->compute_s_hvf();
   actors.clear();
   std::vector<GLActor> temp_actors;
-  curve_guided_vector_field->getDrawableActors(temp_actors);
+  //curve_guided_vector_field->getDrawableActors(temp_actors);
+  kevin_vector_field->getDrawableActors(temp_actors);
   for (size_t i = 0; i < temp_actors.size(); ++i)
   {
     actors.push_back(temp_actors[i]);
