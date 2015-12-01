@@ -67,7 +67,7 @@ void LargeFeatureReg::runReg(int method_id)
   }
   else if (SField_type == 2)
   {
-    opt.set_max_objective(LFReg::efunc, this);
+    opt.set_min_objective(LFReg::efunc, this);
   }
 
   // set stop criteria
@@ -81,6 +81,7 @@ void LargeFeatureReg::runReg(int method_id)
   try{
     result = opt.optimize(x0, maxf);
   }catch (std::exception& e){  std::cerr << "exception caught: " << e.what() << '\n'; }
+  std::cout << "NLopt Stop Result: " << result << std::endl;
   Matrix4f& cur_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   cur_transform = 
     (Eigen::Translation3f(x0[0], x0[1], x0[2])
@@ -133,20 +134,30 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
 
   // start point
   PolygonMesh* mesh = feature_model->source_model->getPolygonMesh();
-  Matrix4f& cur_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+  Matrix4f cur_transform = Matrix4f::Identity();
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform") == 1)
+  {
+    cur_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+  }
   MatrixXf v_with_transform = cur_transform * (MatrixXf(4, mesh->n_vertices()) << 
                                                 Eigen::Map<const MatrixXf>(&feature_model->source_model->getShapeVertexList()[0], 3, mesh->n_vertices()),
                                                 Eigen::RowVectorXf::Ones(mesh->n_vertices())).finished();
   P_init = v_with_transform.block(0, 0, 3, mesh->n_vertices());
+  // init ARAP term
   ARAP_R.resize(mesh->n_vertices(), Matrix3f::Identity());
   updateARAPLMatrix(ARAP_L_matrix);
-  lamd_ARAP = 0.5;
-
+  lamd_ARAP = 1;//0.1;//1;
+  // init flat term
   P_plane_proj = P_init;
   updateFlatCoefs(flat_coefs);
   feature_model->source_model->getPlaneVertices(flat_vertices);
   P_plane_proj_new.resize(flat_vertices.size());
-  lamd_flat = 0.5;
+  lamd_flat = 0.1;//2;//2;
+  // init data term
+  feature_model->source_model->getProjectionMatrix(vpPMV_mat);
+  lamd_data = 0.5 * feature_model->curve_scale;
+  // init SField term
+  lamd_SField = 0.01;
 
   int x_dim = 3 * mesh->n_vertices();
   std::vector<double> x0;
@@ -157,6 +168,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
     x0.push_back(P_init(2, i));
   }
   //x0[x_dim - 1] = 1.0; // scale start from 1
+  updateDataCrsp(x0);
 
   double start_func_val = this->energyFuncNonRigid(x0);
   //std::cout << "Start f(x): " << start_func_val << std::endl;
@@ -201,20 +213,28 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
   }
   else if (SField_type == 2)
   {
-    opt.set_max_objective(LFReg::efuncNonRigid, this);
+    opt.set_min_objective(LFReg::efuncNonRigid, this);
   }
 
   // set stop criteria
-  opt.set_ftol_rel(0.001);
+  opt.set_ftol_rel(0.0001);
   opt.set_xtol_rel(0.001);
   opt.set_maxtime(60);
 
   // get result
   double maxf;
   nlopt::result result;
+  n_iter = 0;
   try{
     result = opt.optimize(x0, maxf);
-  }catch (std::exception& e){  std::cerr << "exception caught: " << e.what() << '\n'; }
+  }
+  catch (std::exception& e)
+  {  
+    std::cerr << "exception caught: " << e.what(); 
+    std::cout << "\tlast value: " << opt.last_optimum_value() << "\tlast result: " << opt.last_optimize_result() << std::endl;
+  }
+  
+  std::cout << "NLopt Stop Result: " << result << std::endl;
   for (size_t i = 0; i < mesh->n_vertices(); ++i)
   {
     P_init(0, i) = x0[3 * i + 0];

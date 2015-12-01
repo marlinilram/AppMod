@@ -11,6 +11,8 @@
 
 AlgHandler::AlgHandler()
 {
+  feature_model = nullptr;
+  shape_model = nullptr;
   init();
 }
 
@@ -26,11 +28,6 @@ void AlgHandler::init()
   detail_synthesis.reset(new DetailSynthesis);
   proj_icp.reset(new ProjICP);
   lf_reg.reset(new LargeFeatureReg);
-
-
-
-  feature_model = nullptr;
-  shape_model = nullptr;
   decomp_img.reset(new DecompImg);
 }
 
@@ -42,6 +39,7 @@ void AlgHandler::setFeatureModel(std::shared_ptr<FeatureGuided> model)
 void AlgHandler::setShapeModel(std::shared_ptr<Model> model)
 {
   shape_model = model;
+  init();
 }
 
 bool AlgHandler::workable()
@@ -97,11 +95,12 @@ void AlgHandler::doInteractiveProjOptimize()
 
 void AlgHandler::doNormalTransfer()
 {
-  if (!workable())
+  if (!shape_model)//!shape_model
   {
     return;
   }
 
+  //shape_model->updateSHColor();
   normal_transfer->prepareNewNormal(shape_model);
   actors.clear();
   std::vector<GLActor> temp_actors;

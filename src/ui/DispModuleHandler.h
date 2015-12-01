@@ -51,6 +51,7 @@ public:
   void setSFieldPara(int set_type = 1);
   void setMainCanvasRenderMode();
   void runLFRegNonRigid();
+  void changeToLightball();
   void doSynthesis();
 
 public slots:
@@ -67,6 +68,8 @@ public:
   std::shared_ptr<VectorFieldViewer> source_vector_viewer, target_vector_viewer;
 
   std::shared_ptr<AlgHandler> alg_handler;
+
+  std::string cur_file_path;
 
 private:
   DispModuleHandler(const DispModuleHandler&);

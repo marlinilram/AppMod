@@ -16,29 +16,34 @@ namespace LFReg {
   {
     LargeFeatureReg* lf_reg = (LargeFeatureReg*)func_data;
 
-    double fx0 = 0;
-    double fx0_SField = 0;
-    fx0_SField = lf_reg->energyScalarField(x); // to estimate grad of SField
-    fx0 += fx0_SField;
-    fx0 += lf_reg->lamd_ARAP * lf_reg->energyARAP(x);
-    fx0 += lf_reg->lamd_flat * lf_reg->energyFlatNew(x);
+    double fx0_SField = lf_reg->lamd_SField * lf_reg->energyScalarField(x); // to estimate grad of SField
+    double fx0_ARAP = lf_reg->lamd_ARAP * lf_reg->energyARAP(x);
+    double fx0_flat = lf_reg->lamd_flat * lf_reg->energyFlatNew(x);
+    double fx0_data = lf_reg->lamd_data * lf_reg->energyDataTerm(x);
+    double fx0 = fx0_SField + fx0_ARAP + fx0_flat + fx0_data;
+    std::cout << "SField: " << fx0_SField << "\tARAP: " << fx0_ARAP << "\tflat: " << fx0_flat << "\tdata: " << fx0_data << std::endl;
 
 
     grad.resize(x.size());
-    std::vector<double> cppx;
+    std::vector<double> SField_grad;
     std::vector<double> ARAP_grad;
     std::vector<double> flat_grad;
+    std::vector<double> data_grad;
+    lf_reg->updateScalarFieldGrad(x, SField_grad);
     lf_reg->updateARAPGrad(x, ARAP_grad);
     lf_reg->updateFlatGradNew(x, flat_grad);
+    lf_reg->updateDataTermGrad(x, data_grad);
 
     for (size_t i = 0; i < x.size(); ++i)
     {
-      cppx = x;
+      //cppx = x;
 
-      double step = 0.01;
+      //double step = 0.01;
 
-      cppx[i] += step;
-      grad[i] = ((lf_reg->energyScalarField(cppx) - fx0_SField) / step) + lf_reg->lamd_ARAP * ARAP_grad[i] + lf_reg->lamd_flat * flat_grad[i];
+      //cppx[i] += step;
+      //((lf_reg->lamd_SField * lf_reg->energyScalarField(cppx) - fx0_SField) / step)
+      //lf_reg->lamd_SField * SField_grad[i]
+      grad[i] = lf_reg->lamd_SField * SField_grad[i] + lf_reg->lamd_ARAP * ARAP_grad[i] + lf_reg->lamd_flat * flat_grad[i] + lf_reg->lamd_data * data_grad[i];
     }
 
     //std::cout << "f(X) = " << fx0 << std::endl;
@@ -51,12 +56,16 @@ double LargeFeatureReg::energyFuncNonRigid(const std::vector<double>& X)
   double energy = 0;
 
   // energy for Scalar Field
-  energy += energyScalarField(X);
+  energy += lamd_SField * energyScalarField(X);
 
   // energy for As Rigid As Possible
   energy += lamd_ARAP * energyARAP(X);
 
   // energy for local flatness
+  energy += lamd_flat * energyFlatNew(X);
+
+  // energy for data term
+  energy += lamd_data * energyDataTerm(X);
 
   return energy;
 }
@@ -82,6 +91,30 @@ double LargeFeatureReg::energyScalarField(const std::vector<double>& X)
     curves.push_back(curve);
   }
   return feature_model->target_scalar_field->curveIntegrate(curves, feature_model);
+}
+
+void LargeFeatureReg::updateScalarFieldGrad(const std::vector<double>& X, std::vector<double>& grad)
+{
+  grad.resize(X.size(), 0.0);
+  const std::vector<STLVectori>& crest_lines = feature_model->source_model->getShapeVisbleCrestLine();
+  for (size_t i = 0; i < crest_lines.size(); ++i)
+  {
+    for (size_t j = 0; j < crest_lines[i].size(); ++j)
+    {
+      int vid = crest_lines[i][j];
+      Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * vid + 0], X[3 * vid + 1], X[3 * vid + 2], 1.0);
+      double2 n_curve_pt = (double2(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) + feature_model->curve_translate - double2(0.5, 0.5)) * feature_model->curve_scale + double2(0.5, 0.5);
+      double field_grad_x, field_grad_y;
+      feature_model->target_scalar_field->getDistanceMapGrad(n_curve_pt, field_grad_x, field_grad_y);
+      grad[3 * vid + 0] = field_grad_x * (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])
+                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 0) - v_proj[1] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3]);
+      grad[3 * vid + 1] = field_grad_x * (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])
+                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
+      grad[3 * vid + 2] = field_grad_x * (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])
+                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
+    }
+  }
+  //std::cout << std::endl;
 }
 
 double LargeFeatureReg::energyARAP(const std::vector<double>& X)
@@ -421,5 +454,59 @@ void LargeFeatureReg::updateFlatGradNew(const std::vector<double>& X, std::vecto
       grad[3 * flat_vertices[i][j] + 1] += 2 * (X[3 * flat_vertices[i][j] + 1] - P_plane_proj_new[i](1, j));
       grad[3 * flat_vertices[i][j] + 2] += 2 * (X[3 * flat_vertices[i][j] + 2] - P_plane_proj_new[i](2, j));
     }
+  }
+}
+
+void LargeFeatureReg::updateDataCrsp(const std::vector<double>& X)
+{
+  // 1. update the source curves based on new X
+  CURVES src_new_curves = feature_model->source_curves;
+  for (size_t i = 0; i < src_new_curves.size(); ++i)
+  {
+    for (size_t j = 0; j < src_new_curves[i].size(); ++j)
+    {
+      int vid = feature_model->src_vid_mapper[STLPairii(int(i), int(j))];      
+      Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * vid + 0], X[3 * vid + 1], X[3 * vid + 2], 1.0);
+      src_new_curves[i][j] = double2(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]);
+    }
+  }
+  
+  // 2. find correspondence
+  data_crsp.clear();
+  feature_model->BuildClosestPtPair(src_new_curves, data_crsp);
+}
+
+double LargeFeatureReg::energyDataTerm(const std::vector<double>& X)
+{
+  //updateDataCrsp(X);
+
+  double sum = 0.0;
+  for (auto i : data_crsp)
+  {
+    Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * i.first + 0], X[3 * i.first + 1], X[3 * i.first + 2], 1.0);
+    Vector2f diff = Vector2f(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) - i.second.first;
+    sum += diff.squaredNorm() - pow(diff.dot(i.second.second), 2); // point to line distance
+  }
+  return sum;
+}
+
+void LargeFeatureReg::updateDataTermGrad(const std::vector<double>& X, std::vector<double>& grad)
+{
+  grad.resize(X.size(), 0.0);
+  for (auto i : data_crsp)
+  {
+    int vid = i.first;
+    Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * vid + 0], X[3 * vid + 1], X[3 * vid + 2], 1.0);
+    Vector2f diff = Vector2f(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) - i.second.first;
+    Vector2f dpdx, dpdy, dpdz;
+    dpdx[0] = (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3]);
+    dpdx[1] = (v_proj[3] * vpPMV_mat(1, 0) - v_proj[1] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3]);
+    dpdy[0] = (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
+    dpdy[1] = (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
+    dpdz[0] = (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
+    dpdz[1] = (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
+    grad[3 * vid + 0] = 2 * diff.dot(dpdx) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdx));
+    grad[3 * vid + 1] = 2 * diff.dot(dpdy) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdy));
+    grad[3 * vid + 2] = 2 * diff.dot(dpdz) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdz)); 
   }
 }

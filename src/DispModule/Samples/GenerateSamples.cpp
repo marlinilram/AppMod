@@ -25,12 +25,12 @@ bool GenerateSamples(int sqrtNumSamples, int numBands, SAMPLE * samples)
     //Create space for the SH values in each sample
     for(int i=0; i<numSamples; ++i)
     {
-        samples[i].shValues=new double[numFunctions];
-        if(!samples[i].shValues)
-        {
-            LOG::Instance()->OutputError("Unable to allocate space for SH values in samples");
-            return false;
-        }
+        samples[i].shValues.resize(numFunctions);
+        //if(!samples[i].shValues)
+        //{
+        //    LOG::Instance()->OutputError("Unable to allocate space for SH values in samples");
+        //    return false;
+        //}
     }
 
     int index=0;
@@ -57,11 +57,11 @@ bool GenerateSamples(int sqrtNumSamples, int numBands, SAMPLE * samples)
                                         float(sin(theta)*sin(phi)),
                                         float(cos(theta));
 
-            light_all += std::to_string(theta) +
-                " " + std::to_string(phi) +
-                " " + std::to_string(Light(theta, phi, 0)) + 
-                " " + std::to_string(Light(theta, phi, 1)) + 
-                " " + std::to_string(Light(theta, phi, 2)) + "\n";
+            //light_all += std::to_string(theta) +
+            //    " " + std::to_string(phi) +
+            //    " " + std::to_string(Light(theta, phi, 0)) + 
+            //    " " + std::to_string(Light(theta, phi, 1)) + 
+            //    " " + std::to_string(Light(theta, phi, 2)) + "\n";
 
             //Compute SH coefficients for this sample
             for(int l=0; l<numBands; ++l)
@@ -78,7 +78,7 @@ bool GenerateSamples(int sqrtNumSamples, int numBands, SAMPLE * samples)
         }
     }
 
-    LOG::Instance()->OutputMisc(light_all.c_str());
+    //LOG::Instance()->OutputMisc(light_all.c_str());
 
     return true;
 }

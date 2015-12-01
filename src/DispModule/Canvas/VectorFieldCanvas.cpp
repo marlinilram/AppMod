@@ -636,8 +636,9 @@ bool VectorFieldCanvas::displaySourceCrspList()
   feature_model->NormalizedTargetCurves(target_curves);
   std::vector<std::pair<int, int> >& src_crsp_list = feature_model->src_crsp_list;
   std::vector<std::pair<int, int> >& tar_crsp_list = feature_model->tar_crsp_list;
-  std::map<STLPairii, double2>& user_correct_crsp_map = feature_model->user_correct_crsp_map;
-  std::map<STLPairii, double2>::iterator map_iter;
+  std::map<std::pair<int, int>, int>& src_vid_mapper= feature_model->getSrcVidMapper();
+  std::map<int, double2>& user_correct_crsp_map = feature_model->user_correct_crsp_map;
+  std::map<int, double2>::iterator map_iter;
 
   if (src_crsp_list.size() != tar_crsp_list.size())
   {
@@ -656,7 +657,7 @@ bool VectorFieldCanvas::displaySourceCrspList()
     glBegin(GL_LINES);
     double2 pos_src = source_curves[src_crsp_list[i].first][src_crsp_list[i].second];
     double2 pos_tar;
-    map_iter = user_correct_crsp_map.find(src_crsp_list[i]);
+    map_iter = user_correct_crsp_map.find(src_vid_mapper[src_crsp_list[i]]); // TODO
     if (map_iter == user_correct_crsp_map.end())
     {
       pos_tar = target_curves[tar_crsp_list[i].first][tar_crsp_list[i].second];
@@ -666,6 +667,25 @@ bool VectorFieldCanvas::displaySourceCrspList()
       pos_tar = map_iter->second;
       feature_model->NormalizedPts(pos_tar);
     }
+    glVertex3f( pos_src.x,pos_src.y, 0 ) ;
+    glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
+    glEnd();
+
+    glBegin(GL_POINTS);
+    glVertex3f( pos_src.x,pos_src.y, 0 ) ;
+    glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
+    glEnd();
+  }
+
+  glColor4f( 0.75f, 0.75f, 0.75f, 0.1f );
+  for (auto i : user_correct_crsp_map)
+  {
+    glBegin(GL_LINES);
+    double2 pos_src;
+    feature_model->getNormalizedProjPt(i.first, pos_src);
+    double2 pos_tar = i.second;
+    feature_model->NormalizedPts(pos_tar);
+
     glVertex3f( pos_src.x,pos_src.y, 0 ) ;
     glVertex3f( pos_tar.x,pos_tar.y, 0 ) ;
     glEnd();

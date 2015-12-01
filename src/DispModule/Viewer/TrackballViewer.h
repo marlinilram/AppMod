@@ -20,7 +20,9 @@ public:
   void setSourceVectorViewer(std::shared_ptr<VectorFieldViewer> viewer);
   void setTargetVectorViewer(std::shared_ptr<VectorFieldViewer> viewer);
   void updateBuffer();
+  void updateColorBuffer();
   void resetCamera();
+  void toggleLightball();
 
   void setGLActors(std::vector<GLActor>& actors);
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
@@ -39,7 +41,7 @@ private:
   void mousePressEvent(QMouseEvent *e);
   void mouseMoveEvent(QMouseEvent *e);
   void mouseReleaseEvent(QMouseEvent *e);
-  void syncCamera();
+  void syncCamera(int sync_type = 1);
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
 
@@ -47,9 +49,11 @@ private:
   bool sync_camera;
   bool wireframe_;
   bool show_trackball;
+  bool play_lightball;
 
   std::vector<GLActor> actors;
   bool is_draw_actors;
+
 
 private:
   std::shared_ptr<MainCanvasViewer> main_canvas_viewer;

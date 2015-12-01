@@ -22,12 +22,14 @@ ParameterDock::ParameterDock()
   connect(SField_rad_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldRad(double)));
   connect(SField_a_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpa(double)));
   connect(SField_b_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpb(double)));
+  connect(SField_w_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldParaw(double)));
   connect(SField_WinCenter_Slider, SIGNAL(valueChanged(int)), this, SLOT(setSFieldWinCenter(int)));
   connect(SField_WinWidth_Slider, SIGNAL(valueChanged(int)), this, SLOT(setSFieldWinWidth(int)));
   connect(Main_Render_Mode_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setMainRenderMode(int)));
   connect(LFReg_Method_SpinBox, SIGNAL(valueChanged(int)), this, SLOT(setLFRegMethod(int)));
   connect(SField_Type_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setSFieldType(int)));
   connect(LFReg_NonRigid_PushButton, SIGNAL(clicked()), this, SLOT(runLFRegNonRigid()));
+  connect(Show_Light_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(changeToLightball(int)));
   connect(Synthesis_PushButton, SIGNAL(clicked()), this, SLOT(doSynthesis()));;
 
   // set feature render mode
@@ -145,12 +147,18 @@ void ParameterDock::setSFieldRad(double val)
 void ParameterDock::setSFieldExpa(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a") = val;
-  disp_modules->setSFieldPara();
+  disp_modules->setSFieldPara(4);
 }
 
 void ParameterDock::setSFieldExpb(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b") = val;
+  disp_modules->setSFieldPara(4);
+}
+
+void ParameterDock::setSFieldParaw(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:w") = val;
   disp_modules->setSFieldPara();
 }
 
@@ -180,6 +188,7 @@ void ParameterDock::setLFRegMethod(int state)
 void ParameterDock::setSFieldType(int val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:Type") = val;
+  disp_modules->setSFieldPara(1);
 }
 
 void ParameterDock::runLFRegNonRigid()
@@ -187,7 +196,11 @@ void ParameterDock::runLFRegNonRigid()
   disp_modules->runLFRegNonRigid();
 }
 
-void ParameterDock::doSynthesis()
+void ParameterDock::changeToLightball(int state)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") = state;
+  disp_modules->changeToLightball();
+}void ParameterDock::doSynthesis()
 {
   disp_modules->doSynthesis();
 }

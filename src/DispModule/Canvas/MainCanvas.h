@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 #include <QString>
+#include <QImage>
 
 class Model;
 class QGLShaderProgram;
@@ -24,7 +25,7 @@ public:
 
   virtual bool display();
   void drawBackground();
-  void drawInfo();
+  void drawInfo(double z_scale = 1);
   void passCameraInfo(GLfloat modelview[16], GLfloat projection[16], GLint viewport[4]);
   virtual void setGLProperty();
   virtual Bound* getBoundBox();
@@ -32,6 +33,7 @@ public:
   void setModel(std::shared_ptr<Model> model);
   void setModel(std::string path, std::string name);
   void updateModelBuffer();
+  void updateModelColorBuffer();
   void setShaderProgram();
   void drawModel();
   void drawModelEdge();
@@ -45,6 +47,8 @@ public:
   void setSketchFBO();
 
   void setBackgroundImage(QString fname);
+  void setReflectanceImage(QString fname);
+  void setTextureImage(QImage& glImg, GLuint& texture);
 
   std::string getFilePath();
 
@@ -71,6 +75,7 @@ private:
   std::unique_ptr<QGLBuffer> color_buffer;
   std::unique_ptr<QGLBuffer> sketch_vertex_buffer;
   std::unique_ptr<QGLBuffer> vertex_crest_buffer;
+  std::unique_ptr<QGLBuffer> uv_buffer;
 
   GLuint offscr_color;
   GLuint offscr_depth;
@@ -85,6 +90,7 @@ private:
   GLuint nms_depth;
 
   GLuint background_texture;
+  GLuint reflect_texture;
 
   GLenum num_vertex;
   GLenum num_face;

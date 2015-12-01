@@ -14,8 +14,6 @@ class FeatureLine;
 class ScalarField;
 class KDTreeWrapper;
 class tele2d;
-typedef std::vector<std::vector<double2> > CURVES;
-typedef             std::vector<double2>   CURVE;
 // suppose the HIST contains 8 + 1 + 2 elements
 // 8 for directions, 1 for scalar and 2 for pos (x, y)
 typedef             std::vector<double>    HIST;
@@ -65,6 +63,7 @@ public:
   void BuildClosestPtPair();
   void GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list);
   void setUserCrspPair(double start[2], double end[2]);
+  void BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<Vector2f, Vector2f> >& data_crsp); // data_crsp stores corresponding vid-pixel pair
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
   void ExtractSrcCurves(const cv::Mat& source, CURVES& curves);
@@ -72,20 +71,10 @@ public:
     int cur_row, int cur_col,
     std::vector<std::vector<bool>>& visited_table,
     std::vector<double2>& curve);
+  void AnalyzeTargetRelationship();
 
-  static CURVES ReorganizeCurves(CURVES& curves, float sp_rate);
-  static CURVES SplitCurve(std::vector<double2> curve);
-  static std::vector<double2> ConnectCurves(
-    std::vector<double2> curve0, std::vector<double2> curve1,
-    int endtag0, int endtag1);
-  static double CurveLength(std::vector<double2>& curve);
-  static double PartCurveLength(std::vector<double2>& curve, int sp_id);
-  static void EliminateRedundancy(CURVES& curves);
-  static void NormalizedCurves(CURVES& curves);
-  static void NormalizedCurves(CURVES& curves, double2 translate, double scale);
-  static void NormalizedCurve(CURVE& curve, double2 translate, double scale);
-  static void DenormalizedCurve(CURVE& curve, double2 translate, double scale);
-  static void NormalizePara(CURVES& curves, double2& translate, double& scale);
+  inline std::map<std::pair<int, int>, int>& getSrcVidMapper() { return src_vid_mapper; };
+  void getNormalizedProjPt(const int vid, double2& proj_pos);
 
 public:
 
@@ -95,7 +84,7 @@ public:
 
   std::vector<std::pair<int, int> > src_crsp_list;
   std::vector<std::pair<int, int> > tar_crsp_list;
-  std::map<STLPairii, double2> user_correct_crsp_map;
+  std::map<int, double2> user_correct_crsp_map;
 
   int user_constrained_src_v; // the index of v in model
   double2 user_constrained_tar_p; // target screen position
@@ -105,6 +94,7 @@ private:
   friend class ProjICP;
   friend class LargeFeatureReg;
   friend class ScalarField;
+  friend class LargeFeatureCrsp;
 
   std::shared_ptr<Model> source_model;
   cv::Mat target_img;
@@ -117,6 +107,10 @@ private:
   double2 curve_translate;
   double curve_scale;
   float edge_threshold; // threshold for edge detection
+  std::map<std::pair<int, int>, int> src_vid_mapper; // map from curve id to vertex id
+  std::vector<std::set<int> > tar_relationship;
+  std::vector<Vector2f>       tar_avg_direction;
+  std::vector<Vector2f>       src_avg_direction;
 
   std::shared_ptr<KDTreeWrapper> source_KDTree;
   std::shared_ptr<KDTreeWrapper> target_KDTree;

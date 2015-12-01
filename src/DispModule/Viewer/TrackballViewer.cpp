@@ -6,12 +6,17 @@
 #include <QKeyEvent>
 #include "Model.h"
 #include "ShapeCrest.h"
+#include "ParameterMgr.h"
+#include <QGLViewer/manipulatedFrame.h>
 
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {
   wireframe_ = false;
   is_draw_actors = true;
+  show_trackball = false;
+  play_lightball = false;
+  is_draw_actors = false;
 }
 
 TrackballViewer::~TrackballViewer()
@@ -141,6 +146,21 @@ void TrackballViewer::setWheelandMouse()
 
   // Add custom mouse bindings description (see mousePressEvent())
   setMouseBindingDescription(Qt::NoModifier, Qt::RightButton, "Opens a camera path context menu");
+
+  setManipulatedFrame(new qglviewer::ManipulatedFrame());
+}
+
+void TrackballViewer::toggleLightball()
+{
+  play_lightball = (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0 ? false : true);
+  if (play_lightball)
+  {
+    setMouseBinding(Qt::NoModifier, Qt::LeftButton, FRAME, ROTATE);
+  }
+  else
+  {
+    setMouseBinding(Qt::NoModifier, Qt::LeftButton, CAMERA, ROTATE);
+  }
 }
 
 void TrackballViewer::updateBuffer()
@@ -153,6 +173,22 @@ void TrackballViewer::updateBuffer()
     if (trackball_canvas)
     {
       trackball_canvas->updateModelBuffer();
+    }
+  }
+
+  doneCurrent();
+}
+
+void TrackballViewer::updateColorBuffer()
+{
+  makeCurrent();
+
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+    if (trackball_canvas)
+    {
+      trackball_canvas->updateModelColorBuffer();
     }
   }
 
@@ -180,7 +216,7 @@ void TrackballViewer::resetCamera()
   float y_span = (scene_bounds->maxY - scene_bounds->minY) / 2;
   float z_span = (scene_bounds->maxZ - scene_bounds->minZ) / 2;
   float scene_radius = sqrt(x_span * x_span + y_span * y_span + z_span * z_span);
-  scene_radius *= 1.5;
+  //scene_radius *= 1.5;
 
   setSceneRadius(scene_radius);
   camera()->fitSphere(scene_center, scene_radius);
@@ -195,9 +231,6 @@ void TrackballViewer::resetCamera()
 
   // set the scene in MainCanvasViewer
   syncCamera();
-  main_canvas_viewer->setSceneCenter(sceneCenter());
-  main_canvas_viewer->setSceneRadius(sceneRadius());
-  main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
 }
 
 void TrackballViewer::drawCornerAxis()
@@ -296,13 +329,14 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
   //      camera()->playPath(menuMap[action]);
   //}
   //else
+  //if (!lightball_mode)
   {
     QGLViewer::mousePressEvent(e);
     sync_camera = true;
-    if(sync_camera)
-    {
-      syncCamera();
-    }
+  }
+  //else if (lightball_mode)
+  {
+
   }
 }
 
@@ -311,32 +345,80 @@ void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
   QGLViewer::mouseMoveEvent(e);
   if(sync_camera)
   {
-    syncCamera();
+    syncCamera(0); // mouse move event don't sync the vector field viewer to decrease lagecy
   }
 }
 
 void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
 {
   QGLViewer::mouseReleaseEvent(e);
+  if(sync_camera)
+  {
+    syncCamera();
+  }
   sync_camera = false;
 }
 
 void TrackballViewer::wheelEvent(QWheelEvent* e)
 {
-  QGLViewer::wheelEvent(e);
-  
-  syncCamera();
+  if (e->modifiers() ==  Qt::ShiftModifier)
+  {
+    qreal cur_fov = camera()->fieldOfView();
+    qreal cur_fd = camera()->focusDistance();
+    std::cout << "Current FOV: " << cur_fov << "\t";
+    if (e->delta() > 0)
+    {
+      camera()->setFieldOfView(cur_fov + 0.0175);
+    }
+    else
+    {
+      camera()->setFieldOfView(cur_fov - 0.0175);
+    }
+    //std::cout << "angle delta: " << e->delta() << std::endl;
+    // set FOV
+    camera()->setFocusDistance(cur_fd);
+    syncCamera(0);
+    std::cout << camera()->position()[0] << " " << camera()->position()[1] << " "  << camera()->position()[2] << std::endl;
+    updateGLOutside();
+    GLdouble m[16];
+    camera()->getProjectionMatrix(m);
+    Eigen::Map<Eigen::Matrix4d>proj(m, 4, 4);
+    std::cout<< proj << std::endl;
+  }
+  else
+  {
+    QGLViewer::wheelEvent(e);
+    syncCamera();
+  }
 }
 
-void TrackballViewer::syncCamera()
+void TrackballViewer::syncCamera(int sync_type)
 {
   if(main_canvas_viewer)
   {
-    GLdouble m[16];
-    camera()->getModelViewMatrix(m);
-    main_canvas_viewer->camera()->setFromModelViewMatrix(m);
-    main_canvas_viewer->updateGLOutside();
-    main_canvas_viewer->syncCameraToModel();
+    if (!play_lightball)
+    {
+      GLdouble m[16];
+      camera()->getModelViewMatrix(m);
+      main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+      main_canvas_viewer->setSceneCenter(sceneCenter());
+      main_canvas_viewer->setSceneRadius(sceneRadius());
+      main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
+      main_canvas_viewer->camera()->setFieldOfView(camera()->fieldOfView());
+      main_canvas_viewer->updateGLOutside();
+      main_canvas_viewer->syncCameraToModel();
+    }
+    else
+    {
+      //GLfloat m[16];
+      //camera()->getModelViewMatrix(m);
+      Eigen::Map<const Eigen::Matrix4d>temp(manipulatedFrame()->matrix(), 4, 4);
+      LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("Lightball:cameraTransform") = temp.cast<float>();
+      main_canvas_viewer->updateColorBuffer(); 
+      main_canvas_viewer->updateGLOutside();
+      updateColorBuffer();
+      updateGLOutside();
+    }
 
     //std::cout << "Trackball: znear " << camera()->zNear() << "\tzfar " << camera()->zFar() << "\tfocal " << camera()->focusDistance() << "\tradius " << camera()->sceneRadius() << "\n";
     //std::cout << "Trackball scene center: " << camera()->sceneCenter().x << " " << camera()->sceneCenter().y << " " << camera()->sceneCenter().z <<"\n";
@@ -344,14 +426,17 @@ void TrackballViewer::syncCamera()
     //std::cout << "Maincanvas scene center: " << main_canvas_viewer->camera()->sceneCenter().x << " " << main_canvas_viewer->camera()->sceneCenter().y << " " << main_canvas_viewer->camera()->sceneCenter().z <<"\n";
   }
 
-  if (source_vector_viewer)
+  if (sync_type == 1)
   {
-    source_vector_viewer->updateSourceField();
-    source_vector_viewer->updateScalarFieldTexture();
-  }
-  if (target_vector_viewer)
-  {
-    target_vector_viewer->updateScalarFieldTexture();
+    if (source_vector_viewer)
+    {
+      source_vector_viewer->updateSourceField();
+      source_vector_viewer->updateScalarFieldTexture();
+    }
+    if (target_vector_viewer)
+    {
+      target_vector_viewer->updateScalarFieldTexture();
+    }
   }
 }
 

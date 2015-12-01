@@ -6,6 +6,7 @@ in vec3 vs_normal;
 in vec3 vs_eye_normal;
 in vec4 vs_pos;
 in float vs_CrestTag;
+in vec2 vs_uv;
 
 out vec4 fragColor;
 
@@ -13,6 +14,7 @@ uniform float fMeshSize;
 uniform int renderMode;
 uniform vec3 L;
 uniform float threshold;
+uniform sampler2D reflect_texture;
 
 float edgeFactor(){
     float d = fwidth(vs_CrestTag);
@@ -43,7 +45,8 @@ void main(void)
     //}
     break;
 	case 3:
-		fragColor = vs_color;
+    vec4 texton = texture2D( reflect_texture, vs_uv);
+		fragColor = vs_color * texton;
 		fragColor[3] = (gl_PrimitiveID)/(fMeshSize);
 		break;
 	case 0:

@@ -50,6 +50,7 @@ DispModuleHandler::DispModuleHandler(QWidget* parent)
 
 void DispModuleHandler::loadModel(std::shared_ptr<Model> model, std::string model_file_path)
 {
+  cur_file_path = model_file_path;
   trackball_canvas->setModel(model);
   trackball_viewer->deleteDispObj(trackball_canvas.get());
   trackball_viewer->addDispObj(trackball_canvas.get());
@@ -60,6 +61,8 @@ void DispModuleHandler::loadModel(std::shared_ptr<Model> model, std::string mode
   main_canvas_viewer->addDispObj(main_canvas.get());
   main_canvas_viewer->setBackgroundImage(QString::fromStdString(model_file_path + "/photo.png"));
   main_canvas_viewer->updateGLOutside();
+
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform") = Matrix4f::Identity();
 
   alg_handler->setShapeModel(model);
 }
@@ -209,6 +212,7 @@ void DispModuleHandler::runNormalTransfer()
 {
   alg_handler->doNormalTransfer();
   trackball_viewer->setGLActors(alg_handler->getGLActors());
+  main_canvas_viewer->setReflectanceImage(QString::fromStdString(cur_file_path + "/reflectance.png"));
   updateCanvas();
 }
 
@@ -291,6 +295,7 @@ void DispModuleHandler::setSFieldPara(int set_type)
 {
   target_vector_viewer->updateSourceField(set_type);
   target_vector_viewer->updateScalarFieldTexture();
+  source_vector_viewer->updateGLOutside();
 }
 
 void DispModuleHandler::setMainCanvasRenderMode()
@@ -309,10 +314,15 @@ void DispModuleHandler::runLFRegNonRigid()
   source_vector_viewer->updateSourceField(2);
   source_vector_viewer->updateGLOutside();
   target_vector_viewer->updateGLOutside();
+  std::cout << "bug test.\n";
   /*trackball_viewer->setGLActors(alg_handler->getGLActors());
   updateCanvas();*/
 }
-
+void DispModuleHandler::changeToLightball()
+{
+  trackball_viewer->toggleLightball();
+  updateCanvas();
+}
 void DispModuleHandler::doSynthesis()
 {
   alg_handler->doDetailSynthesis();

@@ -31,6 +31,7 @@ void ScalarField::initPara()
   dist_attenuation = LG::GlobalParameterMgr::GetInstance()->get_parameter<float>("SField:DistAttenuation");
   para_a = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
   para_b = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
+  para_w = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:w");
 
   win_width = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinWidth");
   win_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:WinCenter");
@@ -157,7 +158,7 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
         // to normalize the distance and saliency
         // saliency need to multiply the scale
         // para_a control the importance
-        tree_data.push_back((float)((para_a / (1 - para_a + 1e-3)) / scale * feature_model->target_edges_sp_sl[i][j]));
+        tree_data.push_back((float)((para_w / (1 - para_w + 1e-3)) / scale * feature_model->target_edges_sp_sl[i][j]));
         ++ n_pts;
       }
     }
@@ -200,7 +201,7 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
       }
       else if (SField_type == 1)
       {
-        pos[2] = para_a / (1 - para_a + 1e-3) / scale;
+        pos[2] = para_w / (1 - para_w + 1e-3) / scale;
         tuned_kdTree->nearestPt(1, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
       }
       float cur_dist = std::numeric_limits<float>::min();
@@ -270,13 +271,24 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
     }
   }
 
+  // if SField_type == 2, we invert the value to make it compatible with optimization
+  if (SField_type == 2)
+  {
+    for (int i = 0; i < resolution * resolution; ++i)
+    {
+      distance_map[i] = 1 - distance_map[i];
+    }
+  }
+
   f_debug.close();
 
   std::cout << "max val: " << max_val << "\tmin val: " << min_val << "\n";
 
-  cv::Mat temp_img(resolution, resolution, CV_32FC1, &distance_map[0]);
-  cv::Mat tempp_img;
-  cv::flip(temp_img, tempp_img, 0);
+  updateDistanceMapGrad();
+
+  //cv::Mat temp_img(resolution, resolution, CV_32FC1, &distance_map[0]);
+  //cv::Mat tempp_img;
+  //cv::flip(temp_img, tempp_img, 0);
   //cv::imshow("distance_map map", tempp_img);
 }
 
@@ -300,4 +312,52 @@ double ScalarField::curveIntegrate(std::vector<std::vector<double2> >& curves, F
   }
   //std::cout << "curve integrate: " << integ << std::endl;
   return integ;
+}
+
+void ScalarField::updateDistanceMapGrad()
+{
+  cv::Mat dist_img = cv::Mat(resolution, resolution, CV_32FC1, &distance_map[0]).clone();
+  distance_map_grad_x.resize(distance_map.size(), 0);
+  distance_map_grad_y.resize(distance_map.size(), 0);
+  cv::Mat grad_x(resolution, resolution, CV_32FC1, &distance_map_grad_x[0]);
+  cv::Mat grad_y(resolution, resolution, CV_32FC1, &distance_map_grad_y[0]);
+  //cv::Mat abs_grad_x, abs_grad_y;
+  //Scharr( src_gray, grad_x, ddepth, 1, 0, scale, delta, BORDER_DEFAULT );
+  cv::Sobel( dist_img, grad_x, CV_32F, 1, 0, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+  //cv::convertScaleAbs( grad_x, abs_grad_x );
+  /// Gradient Y
+  //Scharr( src_gray, grad_y, ddepth, 0, 1, scale, delta, BORDER_DEFAULT );
+  cv::Sobel( dist_img, grad_y, CV_32F, 0, 1, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+  //cv::convertScaleAbs( grad_y, abs_grad_y );
+  //abs_grad_y = cv::abs(grad_y);
+
+  //cv::Mat gmag = dist_img.clone();
+  //for (int i = 0; i < gmag.rows; ++i)
+  //{
+  //  for (int j = 0; j < gmag.cols; ++j)
+  //  {
+  //    gmag.at<float>(i, j) = sqrt(pow(grad_x.at<float>(i, j), 2) + pow(grad_y.at<float>(i, j), 2));
+  //  }
+  //}
+
+  //cv::flip(gmag, gmag, 0);
+  //cv::imshow("gmag", gmag);
+  //cv::imwrite("gmag.png", 255 * gmag);
+}
+
+void ScalarField::getDistanceMapGrad(double2& n_curve_pt, double& grad_x, double& grad_y)
+{
+  int field_j = int(n_curve_pt.x * resolution);
+  int field_i = int(n_curve_pt.y * resolution);
+  if (field_j >= resolution || field_i >= resolution || field_j < 0 || field_i < 0)
+  {
+    grad_x = 0;
+    grad_y = 0;
+    //std::cout<<"warning.";
+    return;
+  }
+  field_j = (field_j < 0) ? 0 : ((field_j >= resolution) ? (resolution - 1) : field_j);
+  field_i = (field_i < 0) ? 0 : ((field_i >= resolution) ? (resolution - 1) : field_i);
+  grad_x = distance_map_grad_x[field_i * resolution + field_j];
+  grad_y = distance_map_grad_y[field_i * resolution + field_j];
 }

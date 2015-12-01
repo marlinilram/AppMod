@@ -63,6 +63,9 @@ void ShapePlane::flatSurface(std::set<int>& surface, int f_id, float ref_normal[
   face_cos += shape->getFaceNormal()[3 * f_id + 0] * ref_normal[0];
   face_cos += shape->getFaceNormal()[3 * f_id + 1] * ref_normal[1];
   face_cos += shape->getFaceNormal()[3 * f_id + 2] * ref_normal[2];
+  //ref_normal[0] = shape->getFaceNormal()[3 * f_id + 0];
+  //ref_normal[1] = shape->getFaceNormal()[3 * f_id + 1];
+  //ref_normal[2] = shape->getFaceNormal()[3 * f_id + 2];
   if (face_cos < 0.95)
   {
     return;
@@ -114,6 +117,7 @@ void ShapePlane::addTaggedPlane(int f_id)
 
   tagged_planes[flat_id] = true;
   STLVectorf color_list = shape->getColorList();
+  STLVectorf face_color_list = shape->getFaceColorList();
   //for (size_t i = 0; i < flats.size(); ++i)
   //{
     QColor color = 
@@ -122,24 +126,28 @@ void ShapePlane::addTaggedPlane(int f_id)
     for (auto j : flat_surfaces[flat_id])
     {
       // j is face id
-      int v0 = shape->getFaceList()[3 * j + 0];
-      int v1 = shape->getFaceList()[3 * j + 1];
-      int v2 = shape->getFaceList()[3 * j + 2];
+      //int v0 = shape->getFaceList()[3 * j + 0];
+      //int v1 = shape->getFaceList()[3 * j + 1];
+      //int v2 = shape->getFaceList()[3 * j + 2];
 
-      color_list[3 * v0 + 0] = color.redF();
-      color_list[3 * v0 + 1] = color.greenF();
-      color_list[3 * v0 + 2] = color.blueF();
+      //color_list[3 * v0 + 0] = color.redF();
+      //color_list[3 * v0 + 1] = color.greenF();
+      //color_list[3 * v0 + 2] = color.blueF();
 
-      color_list[3 * v1 + 0] = color.redF();
-      color_list[3 * v1 + 1] = color.greenF();
-      color_list[3 * v1 + 2] = color.blueF();
+      //color_list[3 * v1 + 0] = color.redF();
+      //color_list[3 * v1 + 1] = color.greenF();
+      //color_list[3 * v1 + 2] = color.blueF();
 
-      color_list[3 * v2 + 0] = color.redF();
-      color_list[3 * v2 + 1] = color.greenF();
-      color_list[3 * v2 + 2] = color.blueF();
+      //color_list[3 * v2 + 0] = color.redF();
+      //color_list[3 * v2 + 1] = color.greenF();
+      //color_list[3 * v2 + 2] = color.blueF();
+      face_color_list[3 * j + 0] = color.redF();
+      face_color_list[3 * j + 1] = color.greenF();
+      face_color_list[3 * j + 2] = color.blueF();
     }
   //}
-  shape->setColorList(color_list);
+  //shape->setColorList(color_list);
+  shape->setFaceColorList(face_color_list);
   //std::cout<<"set new color for flat face.\n";
 }
 

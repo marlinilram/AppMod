@@ -57,12 +57,13 @@ void MainWindow::loadModel()
     model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
 
     std::shared_ptr<Model> share_model(new Model(model_file_path, model_file_name));
-
     disp_modules->loadModel(share_model, model_file_path);
 
     setOptParatoModel();
 
+    LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SnapShot:SaveToFile") = 0;
     this->snapShot();
+    LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SnapShot:SaveToFile") = 1;
     /*share_model->getNormalImage();
     cv::imshow("Normal_image",share_model->normal_image);*/
 
