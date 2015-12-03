@@ -355,7 +355,7 @@ void MainWindow::deleteLastLine_Source()
 
 void MainWindow::deleteLastLine_Target()
 {
-  disp_modules->deleteLastCrspLine_Target();
+  //disp_modules->deleteLastCrspLine_Target();
 }
 
 void MainWindow::showToolBox()

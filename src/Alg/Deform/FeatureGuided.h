@@ -33,6 +33,13 @@ public:
   void updateSourceField(int update_type = 0);
   void updateDistSField();
   std::shared_ptr<KDTreeWrapper> getSourceKDTree();
+  std::shared_ptr<KDTreeWrapper> getTargetKDTree();
+  std::map<int, std::pair<int, int> >& getSourceKDTreeMapper();
+  std::map<int, std::pair<int, int> >& getTargetKDTreeMapper();
+  CURVES& getSourceCurves();
+  CURVES& getTargetCurves();
+  inline double getCurveScale() { return curve_scale; };
+  inline double2 getCurveTranslate() { return curve_translate; };
 
   inline std::shared_ptr<tele2d> GetTeleRegister() { return source_tele_register; };
   inline std::shared_ptr<tele2d> GetTargetTeleRegister() { return target_tele_register; };
@@ -47,7 +54,7 @@ public:
   void BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDTree_data);
   void BuildSourceEdgeKDTree();
   void BuildTargetEdgeKDTree();
-  void BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree);
+  void BuildEdgeKDTree(CURVES& curves, std::map<int, std::pair<int, int> >& id_mapper, std::shared_ptr<KDTreeWrapper> kdTree);
   void GetSourceNormalizePara(double2& translate, double& scale);
   void GetFittedCurves(CURVES& curves);
   void CalculateHists(
@@ -89,6 +96,8 @@ public:
   int user_constrained_src_v; // the index of v in model
   double2 user_constrained_tar_p; // target screen position
 
+  std::vector<int> user_marked_crsp;
+
 private:
   
   friend class ProjICP;
@@ -114,7 +123,9 @@ private:
 
   std::shared_ptr<KDTreeWrapper> source_KDTree;
   std::shared_ptr<KDTreeWrapper> target_KDTree;
-  std::map<int, std::pair<int, int> > kdtree_id_mapper; // map from kdtree it to curves id
+  std::map<int, std::pair<int, int> > kdtree_id_mapper; // map from target kdtree id to curves id
+  std::map<int, std::pair<int, int> > kdtree_id_mapper_source;
+  //std::map<int, std::pair<int, int> > kdtree_id_mapper_target;
 
   std::shared_ptr<tele2d> source_tele_register;
   std::shared_ptr<tele2d> target_tele_register;

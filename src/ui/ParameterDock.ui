@@ -24,11 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-53</y>
          <width>276</width>
-         <height>803</height>
-         <width>324</width>
-         <height>784</height>
+         <height>876</height>
         </rect>
        </property>
        <attribute name="label">
@@ -242,6 +240,20 @@
             <widget class="QCheckBox" name="checkBox_8">
              <property name="text">
               <string>Show Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_10">
+             <property name="text">
+              <string>Show User Marked Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_11">
+             <property name="text">
+              <string>Show All Curves Points</string>
              </property>
             </widget>
            </item>
@@ -541,8 +553,6 @@
          <y>0</y>
          <width>98</width>
          <height>28</height>
-         <width>271</width>
-         <height>801</height>
         </rect>
        </property>
        <attribute name="label">
