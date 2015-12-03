@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "Shape.h"
+#include "Sphere.h"
 #include "PolygonMesh.h"
 #include "ShapeCrest.h"
 #include "ShapePlane.h"
@@ -9,6 +10,8 @@
 #include "obj_writer.h"
 #include <time.h>
 #include <QDir>
+
+#include "SH.h"
 
 #include "ParameterMgr.h"
 #include "Colormap.h"
@@ -91,6 +94,11 @@ bool Model::loadOBJ(const std::string name, const std::string path)
 
   shape.reset(new Shape());
   shape->init(shapes[0].mesh.positions, shapes[0].mesh.indices, shapes[0].mesh.texcoords);
+
+  Vector3f shape_center;
+  shape->getBoundbox()->getCenter(shape_center.data());
+  float shape_radius = shape->getBoundbox()->getRadius() / 2;
+  lighting_ball.reset(new Sphere(shape_center, shape_radius, 50, 30));
 
   return true;
 }
@@ -199,14 +207,22 @@ float Model::getModelAvgEdgeLength()
 
 void Model::passCameraPara(float c_modelview[16], float c_projection[16], int c_viewport[4])
 {
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
+  {
+    m_modelview = Eigen::Map<Eigen::Matrix4f>(c_modelview, 4, 4);
 
-  m_modelview = Eigen::Map<Eigen::Matrix4f>(c_modelview, 4, 4);
+    m_projection = Eigen::Map<Eigen::Matrix4f>(c_projection, 4, 4);
 
-  m_projection = Eigen::Map<Eigen::Matrix4f>(c_projection, 4, 4);
+    m_inv_modelview_projection = (m_projection*m_modelview).inverse();
 
-  m_inv_modelview_projection = (m_projection*m_modelview).inverse();
-
-  m_viewport = Eigen::Map<Eigen::Vector4i>(c_viewport, 4, 1);
+    m_viewport = Eigen::Map<Eigen::Vector4i>(c_viewport, 4, 1);
+  }
+  else
+  {
+    lighting_ball->model_view = Eigen::Map<Eigen::Matrix4f>(c_modelview, 4, 4);
+  }
+  //std::cout << "Model: \n" << m_modelview << std::endl;
+  //std::cout << "Lightball: \n" << lighting_ball->model_view << std::endl;
 }
 
 void Model::getProjectionMatrix(Matrix4f& proj_mat_out)
@@ -356,6 +372,10 @@ void Model::getUnprojectVec(Vector3f& vec)
   // transform the vector in camera coordinate to model coordinate
   vec = (m_projection*m_modelview).block(0, 0, 3, 3).inverse() * vec;
   //vec = m_modelview.block(0, 0, 3, 3).inverse() * vec;
+
+  //std::cout << m_modelview.block(0, 0, 3, 3) << std::endl;
+  //std::cout << m_modelview.block(0, 0, 3, 3).determinant() << std::endl;
+  //system("pause");
 }
 
 // get information from Shape
@@ -416,12 +436,13 @@ void Model::updateColor()
 {
   // set color from photo to shape
   // or using UV coordinate
-  cv::Mat reflectance;
-  cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
-  reflectance = reflectance / 255.0;
+  //cv::Mat reflectance;
+  //cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
+  //reflectance = reflectance / 255.0;
 
   const VertexList& vertex_list = shape->getVertexList();
-  STLVectorf color_list(vertex_list.size(), 0.0f);
+  STLVectorf uv_list = shape->getUVCoord();
+  //STLVectorf color_list(vertex_list.size(), 0.0f);
   float pt[3];
   float winx;
   float winy;
@@ -431,15 +452,91 @@ void Model::updateColor()
     pt[1] = vertex_list[3 * i + 1];
     pt[2] = vertex_list[3 * i + 2];
     this->getProjectPt(pt, winx, winy);
-    winy = winy < 0 ? 0 : (winy >= reflectance.rows ? reflectance.rows - 1 : winy);
-    winx = winx < 0 ? 0 : (winx >= reflectance.cols ? reflectance.cols - 1 : winx);
-    cv::Vec3f c = reflectance.at<cv::Vec3f>(winy, winx);
-    color_list[3 * i + 0] = c[2];
-    color_list[3 * i + 1] = c[1];
-    color_list[3 * i + 2] = c[0];
+    winy = winy < 0 ? 0 : (winy >= photo.rows ? photo.rows - 1 : winy);
+    winx = winx < 0 ? 0 : (winx >= photo.cols ? photo.cols - 1 : winx);
+    uv_list[2 * i + 0] = winx / photo.cols; // x
+    uv_list[2 * i + 1] = (photo.rows - winy) / photo.rows; // y
   }
 
+  //shape->setColorList(color_list);
+  shape->setUVCoord(uv_list);
+}
+
+void Model::updateSHColor()
+{
+  //VertexList vlist = shape->getVertexList();
+  //shape->updateShape(vlist);
+  //reflectance from barron need to normalize by its maximum
+  //cv::Mat reflectance;
+  //cv::imread(data_path + "/reflectance.png").convertTo(reflectance, CV_32FC3);
+  //reflectance = reflectance / 255.0;
+  cv::Mat SHLightCoeffs;
+  cv::FileStorage fs(data_path + "/SHLight.xml", cv::FileStorage::READ);
+  fs["SHLight"] >> SHLightCoeffs;
+
+  std::vector<VectorXf> l_coeffs(3, VectorXf(9));
+  for (int i = 0; i < 9; ++i)
+  {
+    for (int j = 0; j < 3; ++j)
+    {
+      l_coeffs[j][i] = (SHLightCoeffs.at<float>(i, j));
+    }
+  }
+  Matrix3f mirror_x = Matrix3f::Identity(); mirror_x(1, 1) = -1;
+  Matrix4f lb_model_view = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("Lightball:cameraTransform");
+  Matrix3f cam_rot = (lb_model_view.block(0, 0, 3, 3));// * m_modelview.block(0, 0, 3, 3).inverse()).inverse();
+  //std::cout << l_coeffs[0] << l_coeffs[1] << l_coeffs[2] << std::endl;
+
+  rotateSH(cam_rot, l_coeffs[0], l_coeffs[0]);
+  rotateSH(cam_rot, l_coeffs[1], l_coeffs[1]);
+  rotateSH(cam_rot, l_coeffs[2], l_coeffs[2]);
+
+
+  const VertexList& vertex_list = shape->getVertexList();
+  STLVectorf color_list(vertex_list.size(), 0.0f);
+  LG::PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeffs = shape->getPolygonMesh()->vertex_attribute<STLVectorf>("v:SHShadowCoeffs");
+  int numFunctions = shadowCoeffs[LG::PolygonMesh::Vertex(0)].size();
+  //float pt[3];
+  //float winx;
+  //float winy;
+  for (size_t i = 0; i < vertex_list.size() / 3; ++i)
+  {
+    //pt[0] = vertex_list[3 * i + 0];
+    //pt[1] = vertex_list[3 * i + 1];
+    //pt[2] = vertex_list[3 * i + 2];
+    //this->getProjectPt(pt, winx, winy);
+    //winy = winy < 0 ? 0 : (winy >= reflectance.rows ? reflectance.rows - 1 : winy);
+    //winx = winx < 0 ? 0 : (winx >= reflectance.cols ? reflectance.cols - 1 : winx);
+    //cv::Vec3f c = reflectance.at<cv::Vec3f>(winy, winx);
+    std::vector<float> brightness(3, 0);
+    std::vector<float>& cur_shadowCoeff = shadowCoeffs[LG::PolygonMesh::Vertex(int(i))];
+    for (int j = 0; j < numFunctions; ++j)
+    {
+      brightness[0] += cur_shadowCoeff[j] * l_coeffs[0][j];
+      brightness[1] += cur_shadowCoeff[j] * l_coeffs[1][j];
+      brightness[2] += cur_shadowCoeff[j] * l_coeffs[2][j];
+    }
+    color_list[3 * i + 0] = exp(brightness[0]);
+    color_list[3 * i + 1] = exp(brightness[1]);
+    color_list[3 * i + 2] = exp(brightness[2]);
+  }
   shape->setColorList(color_list);
+
+  LG::PolygonMesh* lb_mesh = lighting_ball->getPolygonMesh();
+  LG::PolygonMesh::Vertex_attribute<STLVectorf> lb_shadowCoeffs = lb_mesh->vertex_attribute<STLVectorf>("v:SHShadowCoeffs");
+  LG::PolygonMesh::Vertex_attribute<LG::Vec3> lb_colors = lb_mesh->vertex_attribute<LG::Vec3>("v:colors");
+  for (auto vit : lb_mesh->vertices())
+  {
+    std::vector<float> brightness(3, 0);
+    std::vector<float>& cur_shadowCoeff = lb_shadowCoeffs[vit];
+    for (int j = 0; j < numFunctions; ++j)
+    {
+      brightness[0] += cur_shadowCoeff[j] * l_coeffs[0][j];
+      brightness[1] += cur_shadowCoeff[j] * l_coeffs[1][j];
+      brightness[2] += cur_shadowCoeff[j] * l_coeffs[2][j];
+    }
+    lb_colors[vit] = LG::Vec3(exp(brightness[0]), exp(brightness[1]), exp(brightness[2]));
+  }
 }
 
 // get information from ShapeCrest
@@ -484,5 +581,12 @@ void Model::getPlaneVertices(std::vector<STLVectori>& vertices)
 
 LG::PolygonMesh* Model::getPolygonMesh()
 {
-  return shape->getPolygonMesh();
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
+  {
+    return shape->getPolygonMesh();
+  }
+  else
+  {
+    return lighting_ball->getPolygonMesh();
+  }
 }

@@ -27,6 +27,7 @@ public:
   void setShaderProgram();
   void drawModel();
   void updateModelBuffer();
+  void updateModelColorBuffer();
 
   std::string getFilePath();
 
@@ -43,6 +44,7 @@ private:
   GLenum num_face;
 
   int render_mode;
+  int use_flat;
 
 private:
   TrackballCanvas(const TrackballCanvas&);

@@ -14,6 +14,7 @@
 #define SAMPLE_H
 
 #include "Eigen\Eigen"
+#include <vector>
 
 class SAMPLE
 {
@@ -26,16 +27,12 @@ public:
     Eigen::Vector3f direction;
 
     //Values of each SH function at this point
-    double * shValues;
+    std::vector<double> shValues;
 
     SAMPLE():shValues(NULL)
     {}
     ~SAMPLE()
-    {
-        if(shValues)
-            delete [] shValues;
-        shValues=NULL;
-    }
+    {}
 };
 
 #endif

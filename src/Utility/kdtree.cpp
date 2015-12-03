@@ -108,6 +108,7 @@ namespace kdtree {
   // destructor
   KDTree::~KDTree() {
     delete root;
+    std::cout << "deleted a KDTree.\n";
   }
   
   // building routines

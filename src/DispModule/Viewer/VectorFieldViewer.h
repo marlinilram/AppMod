@@ -41,6 +41,7 @@ protected:
   virtual void init();
   void drawLine();
   void drawAllLines();
+  void drawSelectedLine();
   //virtual void postSelection(const QPoint& point);
 
 private:
@@ -51,6 +52,7 @@ private:
   bool is_drawLine;
   bool is_drawAllLines;
   std::vector<double2> line;
+  std::vector<double2> selected_line;
 
   int selected_v_id;
   double user_start[2];

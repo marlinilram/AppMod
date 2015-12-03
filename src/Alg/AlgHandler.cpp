@@ -95,11 +95,12 @@ void AlgHandler::doInteractiveProjOptimize()
 
 void AlgHandler::doNormalTransfer()
 {
-  if (!workable())
+  if (!shape_model)//!shape_model
   {
     return;
   }
 
+  //shape_model->updateSHColor();
   normal_transfer->prepareNewNormal(shape_model);
   actors.clear();
   std::vector<GLActor> temp_actors;
@@ -125,8 +126,21 @@ void AlgHandler::doNormalCompute()
 
 void AlgHandler::doDetailSynthesis()
 {
+  /*detail_synthesis->testMeshPara(shape_model);
+  shape_model->exportOBJ(0);
+  doNormalTransfer();
+  shape_model->exportOBJ(0);*/
 
-  detail_synthesis->testMeshPara(shape_model);
+  /*detail_synthesis->startDetailSynthesis(shape_model);*/
+
+  detail_synthesis->computeVectorField(shape_model);
+  actors.clear();
+  std::vector<GLActor> temp_actors;
+  detail_synthesis->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
 }
 
 void AlgHandler::doProjICP()

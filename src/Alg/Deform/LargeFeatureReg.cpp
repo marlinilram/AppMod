@@ -275,4 +275,5 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
     log_fname = feature_model->source_model->getDataPath() + "/LFRegMLEqNonRigidLog.txt";
   }
   LOG::Instance(log_fname.c_str())->OutputMisc(log_stream.str().c_str());
+
 }

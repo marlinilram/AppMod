@@ -25,11 +25,21 @@ void main(void)
 	if (use_flat == 1)
 	{
 		vec3 n = computeFaceNormal(vViewPos);
-		gl_FragColor = vec4( .5 * ( 1. + n.x ), .5 * ( 1. + n.y ), gl_FragCoord.z, 1. );
+		fragColor = vec4( .5 * ( 1. + n.x ), .5 * ( 1. + n.y ), gl_FragCoord.z, 1. );
 	}
 	else
 	{
-		gl_FragColor = vec4( .5 * ( 1. + vs_normal.x ), .5 * ( 1. + vs_normal.y ), gl_FragCoord.z, 1. );
+    switch (renderMode)
+    {
+    case 3:
+        fragColor = vs_color;
+        fragColor[3] = (gl_PrimitiveID)/(fMeshSize);
+        break;
+    default:
+        fragColor = vec4( .5 * ( 1. + vs_normal.x ), .5 * ( 1. + vs_normal.y ), gl_FragCoord.z, 1. );
+        break;
+    }
+		
 	}
 	
 	

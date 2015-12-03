@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>311</width>
-    <height>867</height>
+    <height>893</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-53</y>
          <width>276</width>
-         <height>803</height>
+         <height>876</height>
         </rect>
        </property>
        <attribute name="label">
@@ -74,6 +74,13 @@
                </property>
                <property name="checked">
                 <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="Show_Light_CheckBox">
+               <property name="text">
+                <string>Show Light</string>
                </property>
               </widget>
              </item>
@@ -233,6 +240,20 @@
             <widget class="QCheckBox" name="checkBox_8">
              <property name="text">
               <string>Show Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_10">
+             <property name="text">
+              <string>Show User Marked Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_11">
+             <property name="text">
+              <string>Show All Curves Points</string>
              </property>
             </widget>
            </item>
@@ -445,6 +466,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="Synthesis_PushButton">
+             <property name="text">
+              <string>Do Synthesis</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
              <item>
               <widget class="QPushButton" name="DetailSynthesis_PushButton">
@@ -523,8 +551,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>293</width>
-         <height>775</height>
+         <width>98</width>
+         <height>28</height>
         </rect>
        </property>
        <attribute name="label">

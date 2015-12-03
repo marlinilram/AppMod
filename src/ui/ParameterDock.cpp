@@ -29,6 +29,8 @@ ParameterDock::ParameterDock()
   connect(LFReg_Method_SpinBox, SIGNAL(valueChanged(int)), this, SLOT(setLFRegMethod(int)));
   connect(SField_Type_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setSFieldType(int)));
   connect(LFReg_NonRigid_PushButton, SIGNAL(clicked()), this, SLOT(runLFRegNonRigid()));
+  connect(Show_Light_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(changeToLightball(int)));
+  connect(Synthesis_PushButton, SIGNAL(clicked()), this, SLOT(doSynthesis()));;
 
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
@@ -192,4 +194,13 @@ void ParameterDock::setSFieldType(int val)
 void ParameterDock::runLFRegNonRigid()
 {
   disp_modules->runLFRegNonRigid();
+}
+
+void ParameterDock::changeToLightball(int state)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") = state;
+  disp_modules->changeToLightball();
+}void ParameterDock::doSynthesis()
+{
+  disp_modules->doSynthesis();
 }
