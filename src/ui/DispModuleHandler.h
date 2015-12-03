@@ -52,6 +52,7 @@ public:
   void setMainCanvasRenderMode();
   void runLFRegNonRigid();
   void changeToLightball();
+  void doSynthesis();
 
 public slots:
   void updateGeometryInteractive();

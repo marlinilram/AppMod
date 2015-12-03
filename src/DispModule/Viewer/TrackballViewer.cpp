@@ -54,12 +54,13 @@ void TrackballViewer::draw()
     }
   }
 
-  drawCornerAxis();
+
   if (is_draw_actors)
   {
-    glClear(GL_DEPTH_BUFFER_BIT);
+    //glClear(GL_DEPTH_BUFFER_BIT);
     drawActors();
   }
+  drawCornerAxis();
 }
 
 void TrackballViewer::init()

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>311</width>
-    <height>867</height>
+    <height>893</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-53</y>
          <width>276</width>
-         <height>803</height>
+         <height>876</height>
         </rect>
        </property>
        <attribute name="label">
@@ -244,6 +244,20 @@
             </widget>
            </item>
            <item>
+            <widget class="QCheckBox" name="checkBox_10">
+             <property name="text">
+              <string>Show User Marked Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_11">
+             <property name="text">
+              <string>Show All Curves Points</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <item>
               <widget class="QLabel" name="label_3">
@@ -448,6 +462,13 @@
             <widget class="QPushButton" name="NormalCompute_PushButton">
              <property name="text">
               <string>Do Normal Computing</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="Synthesis_PushButton">
+             <property name="text">
+              <string>Do Synthesis</string>
              </property>
             </widget>
            </item>

@@ -315,10 +315,17 @@ void DispModuleHandler::runLFRegNonRigid()
   source_vector_viewer->updateGLOutside();
   target_vector_viewer->updateGLOutside();
   std::cout << "bug test.\n";
+  /*trackball_viewer->setGLActors(alg_handler->getGLActors());
+  updateCanvas();*/
 }
-
 void DispModuleHandler::changeToLightball()
 {
   trackball_viewer->toggleLightball();
+  updateCanvas();
+}
+void DispModuleHandler::doSynthesis()
+{
+  alg_handler->doDetailSynthesis();
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
   updateCanvas();
 }

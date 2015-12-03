@@ -44,13 +44,15 @@ public:
   bool displayHistMatchPts();
   bool displaySourceCrspList();
   bool displayTargetCrspList();
+  bool displayUserCrsp();
+  bool displayAllCurvesPoints();
 
   void setScalarField();
   void updateSourceField(int update_type = 0);
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
 
-  void addConstrainedLines(std::vector<double2>& line);
+  void addConstrainedLines(std::vector<double2>& line, std::vector<double2>& selectedLine);
   void deleteLastLine();
   std::shared_ptr<FeatureLine> getFeatureLine(); 
   void setConstrainedPair(double start[2], double end[2]);
@@ -71,6 +73,8 @@ protected:
   std::vector<bool> vis_paras;
 
   VectorField::RENDERMODE render_mode;
+
+  int crsp_oder;
 
 private:
   VectorFieldCanvas(const VectorFieldCanvas&);
