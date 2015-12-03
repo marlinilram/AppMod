@@ -27,6 +27,7 @@ void VectorFieldViewer::draw()
 
   glClear(GL_DEPTH_BUFFER_BIT);
   drawLine();
+  drawSelectedLine();
 
   if (is_drawAllLines)
   {
@@ -128,7 +129,8 @@ void VectorFieldViewer::mousePressEvent(QMouseEvent *e)
       point.x = res[0];
       point.y = res[1];
       line.push_back(point);
-      std::cout << "The UnprojectedCoordinates of the selected point is :" << point.x << "," << point.y << std::endl;
+
+      //std::cout << "The UnprojectedCoordinates of the selected point is :" << point.x << "," << point.y << std::endl;
     }
     else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
     {
@@ -203,10 +205,12 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
         VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
         if (canvas)
         {
-          canvas->addConstrainedLines(line);
+          canvas->addConstrainedLines(line, selected_line);          
         }
       }
+      updateGLOutside();
       line.clear();
+      selected_line.clear();
     }
     else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
     {
@@ -255,11 +259,27 @@ void VectorFieldViewer::drawLine()
 {
   if(line.size() > 1)
   {
+    glLineWidth(2);
     glBegin(GL_LINE_STRIP);
     for(int i = 0;i  < line.size();i ++)
     {
       glColor3f(0,1,0);
       glVertex3f(line[i].x,line[i].y,0);
+    }
+    glEnd();
+  } 
+}
+
+void VectorFieldViewer::drawSelectedLine()
+{
+  if(selected_line.size() > 1)
+  {
+    glLineWidth(5);
+    glBegin(GL_LINE_STRIP);
+    for(int i = 0;i  < selected_line.size();i ++)
+    {
+      glColor3f(1,0,0);
+      glVertex3f(selected_line[i].x,selected_line[i].y,0);
     }
     glEnd();
   } 

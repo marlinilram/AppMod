@@ -35,6 +35,7 @@ private slots:
   void setDistAttenuation(int val);
   void setShowTrackball(int state);
   void changeToLightball(int state);
+  void doSynthesis();
 
   void setSFieldRad(double val);
   void setSFieldExpa(double val);
