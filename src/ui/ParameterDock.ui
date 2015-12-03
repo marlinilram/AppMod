@@ -24,7 +24,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-53</y>
+         <y>0</y>
          <width>276</width>
          <height>876</height>
         </rect>
@@ -200,6 +200,9 @@
              <property name="text">
               <string>Show Overlay Curves</string>
              </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item>
@@ -208,7 +211,7 @@
               <string>Show Source Scalar Field</string>
              </property>
              <property name="checked">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -240,6 +243,9 @@
             <widget class="QCheckBox" name="checkBox_8">
              <property name="text">
               <string>Show Crsp</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>

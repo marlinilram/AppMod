@@ -616,8 +616,11 @@ void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line, std::vec
       selectedLine = normalized_target_curves[curves_id];
       if(crsp_oder == 2)
       {
+        feature_model->user_define_curve_crsp.insert(std::pair<int, int>(feature_model->user_marked_crsp.back(), curves_id));
         feature_model->user_marked_crsp.push_back(curves_id);
         crsp_oder = 1;
+        // update crsp now
+        feature_model->updateSourceField(4);
       }
       else
       {

@@ -150,7 +150,9 @@ void FeatureGuided::updateSourceVectorField()
   this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
 
-  std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
+  //std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
+  this->user_define_curve_crsp.clear();
+  this->user_marked_crsp.clear();
 }
 
 void FeatureGuided::updateScalarField()

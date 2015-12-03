@@ -96,7 +96,8 @@ public:
   int user_constrained_src_v; // the index of v in model
   double2 user_constrained_tar_p; // target screen position
 
-  std::vector<int> user_marked_crsp;
+  std::vector<int> user_marked_crsp; // store user define curve correspondences, src_id, tar_id, src_id, tar_id, etc.
+  std::set<std::pair<int, int> > user_define_curve_crsp;
 
 private:
   

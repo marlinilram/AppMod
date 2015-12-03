@@ -69,7 +69,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   std::vector<double> paras(3, 0);
   paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
   paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
-  std::map<CurvePt, CrspCurvePt> crsp_map;
+  std::map<CurvePt, CrspCurvePt> crsp_map; // key is source curve point as pair<int, int>, value is target curve point and their score
   std::map<CurvePt, CrspCurvePt>::iterator crsp_map_it;
   std::map<CurvePt, CurvePt> crsp;
   for (size_t i = 0; i < n_tar_curves.size(); ++i)
@@ -85,7 +85,8 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
         //if (CurvesUtility::closestPtInCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, target_scalar_field->matching_map, target_scalar_field->resolution, 0.3))
         if (CurvesUtility::closestPtFromSaliencyCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, score, paras))
         {
-          if (fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) < 0.9 ) continue;
+          if (fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) < 0.9 
+            && feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_i, i)) == feature_model->user_define_curve_crsp.end()) continue;
           if (crsp_map_out.find(CurvePt(src_i, src_j)) != crsp_map_out.end()) continue;
 
           crsp_map_it = crsp_map.find(CurvePt(src_i, src_j));
@@ -253,7 +254,9 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
         if (crsp_map_it != crsp_map.end())
         {
           int tar_i = crsp_map_it->second.first.first;
-          if (feature_model->tar_relationship[i.second.first].find(tar_i) != feature_model->tar_relationship[i.second.first].end())
+          
+          if (feature_model->tar_relationship[i.second.first].find(tar_i) != feature_model->tar_relationship[i.second.first].end()
+            || feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_curve_id, tar_i)) != feature_model->user_define_curve_crsp.end())
           {
             crsp_map_out[CurvePt(src_curve_id, int(j))] = crsp_map_it->second;
           }
