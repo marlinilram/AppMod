@@ -96,8 +96,19 @@ double LargeFeatureReg::energyFunc(const std::vector<double>& X)
     }
     curves.push_back(curve);
   }
-  
-  return feature_model->target_scalar_field->curveIntegrate(curves, feature_model);
+
+  double curve_integrate = feature_model->target_scalar_field->curveIntegrate(curves, feature_model);
+  //return curve_integrate;
+
+  double sum = 0.0;
+  for (auto i : data_crsp)
+  {
+    Vector4f v_proj = vpPMV_mat * cur_transform * Vector4f(vertex_list[3 * i.first + 0], vertex_list[3 * i.first + 1], vertex_list[3 * i.first + 2], 1.0);
+    Vector2f diff = Vector2f(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) - i.second.first;
+    sum += diff.squaredNorm() - pow(diff.dot(i.second.second), 2); // point to line distance
+  }
+
+  return lamd_SField * curve_integrate + lamd_data * sum;
 }
 
 double LargeFeatureReg::modelRadius()

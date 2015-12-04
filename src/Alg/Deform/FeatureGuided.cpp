@@ -214,6 +214,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
     model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   }
   src_vid_mapper.clear();
+  src_rev_vid_mapp.clear();
   std::vector<double2> curve;
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
@@ -231,6 +232,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
       source_model->getProjectPt(v.data(), winx, winy);
       curve.push_back(double2(winx, source.rows - winy));
       src_vid_mapper[std::pair<int, int>(i, j)] = crest_lines[i][j];
+      src_rev_vid_mapp[crest_lines[i][j]] = std::pair<int, int>(i, j);
     }
     curves.push_back(curve);
   }

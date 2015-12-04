@@ -719,6 +719,7 @@ bool VectorFieldCanvas::displaySourceCrspList()
   std::vector<std::pair<int, int> >& src_crsp_list = feature_model->src_crsp_list;
   std::vector<std::pair<int, int> >& tar_crsp_list = feature_model->tar_crsp_list;
   std::map<std::pair<int, int>, int>& src_vid_mapper= feature_model->getSrcVidMapper();
+  std::map<int, std::pair<int, int> >& src_rev_vid_mapper = feature_model->getSrcRevVidMapper();
   std::map<int, double2>& user_correct_crsp_map = feature_model->user_correct_crsp_map;
   std::map<int, double2>::iterator map_iter;
 
@@ -760,11 +761,13 @@ bool VectorFieldCanvas::displaySourceCrspList()
   }
 
   glColor4f( 0.75f, 0.75f, 0.75f, 0.1f );
+  std::pair<int, int> cur_src_curve_id;
   for (auto i : user_correct_crsp_map)
   {
     glBegin(GL_LINES);
-    double2 pos_src;
-    feature_model->getNormalizedProjPt(i.first, pos_src);
+    cur_src_curve_id = src_rev_vid_mapper[i.first];
+    double2 pos_src = source_curves[cur_src_curve_id.first][cur_src_curve_id.second];
+    //feature_model->getNormalizedProjPt(i.first, pos_src);
     double2 pos_tar = i.second;
     feature_model->NormalizedPts(pos_tar);
 

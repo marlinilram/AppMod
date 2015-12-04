@@ -262,6 +262,9 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
           }
           // TODO if tar_i not in the core curve's relationship
           // but user define it corresponding to the source curve
+          // don't push them into final crsp_map_out
+          // first cache them from crsp_map
+          // then later we
         }
       }
     }
