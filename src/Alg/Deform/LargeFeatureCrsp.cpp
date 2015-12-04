@@ -111,30 +111,55 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   // refine the correspondences
   // 1. keep the most confidential target curve
 
-  std::map<int, std::map<int, std::vector<CurvePt> > > s_t_cnt_map;
-  std::map<int, std::map<int, std::vector<CurvePt> > >::iterator cnt_map_it;
-  std::map<int, std::vector<CurvePt> >::iterator cnt_it;
-  for (auto i : crsp)
+  std::map<int, std::map<int, int > > s_t_cnt_map;
+  std::map<int, std::map<int, int > >::iterator cnt_map_it;
+  std::map<int, int>::iterator cnt_it;
+
+  for (auto i : crsp_map)
   {
+    // i.first.first is source curve id
+    // i.second.first.first is target curve id
     cnt_map_it = s_t_cnt_map.find(i.first.first);
     if (cnt_map_it != s_t_cnt_map.end())
     {
-      cnt_it = cnt_map_it->second.find(i.second.first);
+      cnt_it = cnt_map_it->second.find(i.second.first.first);
       if (cnt_it != cnt_map_it->second.end())
       {
-        cnt_it->second.push_back(CurvePt(i.first.second, i.second.second));
+        cnt_it->second += 1;
       }
       else
       {
-        cnt_map_it->second[i.second.first] = std::vector<CurvePt>(1, CurvePt(i.first.second, i.second.second));
+        cnt_map_it->second[i.second.first.first] = 1;
       }
     }
     else
     {
-      s_t_cnt_map[i.first.first] = std::map<int, std::vector<CurvePt> >();
-      s_t_cnt_map[i.first.first][i.second.first] = std::vector<CurvePt>(1, CurvePt(i.first.second, i.second.second));
+      s_t_cnt_map[i.first.first] = std::map<int, int>();
+      s_t_cnt_map[i.first.first][i.second.first.first] = 1;
     }
   }
+
+  //for (auto i : crsp)
+  //{
+  //  cnt_map_it = s_t_cnt_map.find(i.first.first);
+  //  if (cnt_map_it != s_t_cnt_map.end())
+  //  {
+  //    cnt_it = cnt_map_it->second.find(i.second.first);
+  //    if (cnt_it != cnt_map_it->second.end())
+  //    {
+  //      cnt_it->second.push_back(CurvePt(i.first.second, i.second.second));
+  //    }
+  //    else
+  //    {
+  //      cnt_map_it->second[i.second.first] = std::vector<CurvePt>(1, CurvePt(i.first.second, i.second.second));
+  //    }
+  //  }
+  //  else
+  //  {
+  //    s_t_cnt_map[i.first.first] = std::map<int, std::vector<CurvePt> >();
+  //    s_t_cnt_map[i.first.first][i.second.first] = std::vector<CurvePt>(1, CurvePt(i.first.second, i.second.second));
+  //  }
+  //}
 
   // cache best source curve to the target curve
   std::map<int, std::pair<int, int> > t_s_cnt_map;
@@ -148,7 +173,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
       // corresponding curve point std::vector<int, int>& = j.second
       // a corresponding pair is (i.first, j.second[k].first) and (j.first, j.second[k].second)
 
-      int cnt = j.second.size();
+      int cnt = j.second;
       t_s_cnt_it = t_s_cnt_map.find(j.first);
       if (t_s_cnt_it != t_s_cnt_map.end())
       {
@@ -165,10 +190,56 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   }
 
   // save result
-  typedef std::set<std::pair<int, int> > CrspCurvePtSet;
-  std::map<int, std::pair<int, CrspCurvePtSet > > src_core_crsp; // key is the source curve id, first of pair is target curve id, each pair in set is sample id in source curve and target curve
-  int cnt = 0;
-  crsp.clear();
+  //typedef std::set<std::pair<int, int> > CrspCurvePtSet;
+  //std::map<int, std::pair<int, CrspCurvePtSet > > src_core_crsp; // key is the source curve id, first of pair is target curve id, each pair in set is sample id in source curve and target curve
+  //int cnt = 0;
+  //crsp.clear();
+  //for (auto i : s_t_cnt_map)
+  //{
+  //  // find the best target
+  //  int best_target = -1;
+  //  int best_target_cnt = std::numeric_limits<int>::min();
+  //  for (auto j : i.second)
+  //  {
+  //    cnt = j.second.size();
+  //    if (cnt > best_target_cnt)
+  //    {
+  //      best_target_cnt = j.second.size();
+  //      best_target = j.first;
+  //    }
+  //  }
+
+  //  // save the best crsp
+  //  // if the best target curve also has its best source curve than we confirm it
+  //  t_s_cnt_it = t_s_cnt_map.find(best_target);
+  //  if (t_s_cnt_it != t_s_cnt_map.end())
+  //  {
+  //    if (i.first == t_s_cnt_it->second.first)
+  //    {
+  //      //std::cout << "best curve correspondence has " << i.second[best_target].size() << " pairs." << std::endl;
+  //      src_core_crsp[i.first] = std::pair<int, CrspCurvePtSet>(best_target, CrspCurvePtSet());
+  //      std::pair<int, CrspCurvePtSet>& best_pair_set = src_core_crsp[i.first];
+  //      for (auto j : i.second[best_target])
+  //      {
+  //        // save info for crsp_map_out
+  //        crsp[CurvePt(i.first, j.first)] = CurvePt(best_target, j.second);
+  //        crsp_map_out[CurvePt(i.first, j.first)] = crsp_map[CurvePt(i.first, j.first)];
+  //        tar_curve_mark[best_target] = false;
+
+  //        // save info to src_core_crsp
+  //        best_pair_set.second.insert(j);
+  //      }
+  //    }
+  //  }
+  //  else
+  //  {
+  //    std::cout << "The best target curve isn't found in the t_s_cnt_map." << std::endl;
+  //  }
+  //}
+
+  // pruning based on Curve-to-Curve crsp
+  std::map<int, int> curve_crsp;
+  std::map<int, int>::iterator curve_crsp_it;
   for (auto i : s_t_cnt_map)
   {
     // find the best target
@@ -176,99 +247,95 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
     int best_target_cnt = std::numeric_limits<int>::min();
     for (auto j : i.second)
     {
-      cnt = j.second.size();
-      if (cnt > best_target_cnt)
+      if (j.second > best_target_cnt)
       {
-        best_target_cnt = j.second.size();
+        best_target_cnt = j.second;
         best_target = j.first;
       }
     }
 
-    // save the best crsp
-    // if the best target curve also has its best source curve than we confirm it
     t_s_cnt_it = t_s_cnt_map.find(best_target);
-    if (t_s_cnt_it != t_s_cnt_map.end())
+    if (t_s_cnt_it != t_s_cnt_map.end() && t_s_cnt_it->second.first == i.first)
     {
-      if (i.first == t_s_cnt_it->second.first)
-      {
-        //std::cout << "best curve correspondence has " << i.second[best_target].size() << " pairs." << std::endl;
-        src_core_crsp[i.first] = std::pair<int, CrspCurvePtSet>(best_target, CrspCurvePtSet());
-        std::pair<int, CrspCurvePtSet>& best_pair_set = src_core_crsp[i.first];
-        for (auto j : i.second[best_target])
-        {
-          // save info for crsp_map_out
-          crsp[CurvePt(i.first, j.first)] = CurvePt(best_target, j.second);
-          crsp_map_out[CurvePt(i.first, j.first)] = crsp_map[CurvePt(i.first, j.first)];
-          tar_curve_mark[best_target] = false;
-
-          // save info to src_core_crsp
-          best_pair_set.second.insert(j);
-        }
-      }
-    }
-    else
-    {
-      std::cout << "The best target curve isn't found in the t_s_cnt_map." << std::endl;
+      curve_crsp[i.first] = best_target;
     }
   }
+
+  for (auto i : crsp_map)
+  {
+    int src_cur_id = i.first.first;
+    int tar_cur_id = i.second.first.first;
+    curve_crsp_it = curve_crsp.find(src_cur_id);
+
+    if (curve_crsp_it == curve_crsp.end()) continue;
+    int best_tar_cur_id = curve_crsp_it->second;
+
+    if (tar_cur_id == best_tar_cur_id
+      || feature_model->tar_relationship[best_tar_cur_id].find(tar_cur_id) != feature_model->tar_relationship[best_tar_cur_id].end()
+      || feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_cur_id, tar_cur_id)) != feature_model->user_define_curve_crsp.end())
+    {
+      crsp_map_out[i.first] = i.second;
+    }
+  }
+
 
   // extend possible new correspondences from the core target curve for each source curve
-  std::map<int, std::pair<int, CrspCurvePtSet > >::iterator src_core_crsp_it;
-  std::map<CurvePt, CrspCurvePt> ext_crsp_map;
-  std::map<CurvePt, CrspCurvePt>::iterator ext_crsp_it;
-  paras[0] = paras[1]; paras[1] = paras[2];
-  for (auto i : src_core_crsp)
-  {
-    // for source curve i.first, search possible new correspondences
-    int src_curve_id = i.first;
-    for (size_t j = 0; j < n_src_curves[src_curve_id].size(); ++j)
-    {
-      // only samples that are not in src_core_crsp need to be considered
-      if (crsp.find(CurvePt(src_curve_id, int(j))) == crsp.end())
-      {
-        // search closest target sample for this source sample
-        //int tar_i = -1;
-        //int tar_j = -1;
-        //double score = 0.0;
-        //CurvesUtility::closestPtInSaliencyCurves(n_src_curves[src_curve_id][j], n_tar_curves, feature_model->target_edges_sp_sl, tar_i, tar_j, score, paras);
-        // now check if this target sample should be accepted
-        // criteria 1: the target curve it belongs to is compatible with the core target curve
-        // criteria 2: this s_to_t pair is better than the current s_to_t pair, i.e. the dis is larger than the current one
-        //if (feature_model->tar_relationship[i.second.first].find(tar_i) != feature_model->tar_relationship[i.second.first].end())
-        //{
-        //  ext_crsp_it = ext_crsp_map.find(CurvePt(src_curve_id, j));
-        //  if (ext_crsp_it != ext_crsp_map.end())
-        //  {
-        //    if (score > ext_crsp_it->second.second)
-        //    {
-        //      ext_crsp_it->second = CrspCurvePt(CurvePt(tar_i, tar_j), score);
-        //    }
-        //  }
-        //  else
-        //  {
-        //    ext_crsp_map[CurvePt(src_curve_id, int(j))] = CrspCurvePt(CurvePt(tar_i, tar_j), score);
-        //  }
-        //}
+  //std::map<int, std::pair<int, CrspCurvePtSet > >::iterator src_core_crsp_it;
+  //std::map<CurvePt, CrspCurvePt> ext_crsp_map;
+  //std::map<CurvePt, CrspCurvePt>::iterator ext_crsp_it;
+  //paras[0] = paras[1]; paras[1] = paras[2];
+  //for (auto i : src_core_crsp)
+  //{
+  //  // for source curve i.first, search possible new correspondences
+  //  int src_curve_id = i.first;
+  //  for (size_t j = 0; j < n_src_curves[src_curve_id].size(); ++j)
+  //  {
+  //    // only samples that are not in src_core_crsp need to be considered
+  //    if (crsp.find(CurvePt(src_curve_id, int(j))) == crsp.end())
+  //    {
+  //      // search closest target sample for this source sample
+  //      //int tar_i = -1;
+  //      //int tar_j = -1;
+  //      //double score = 0.0;
+  //      //CurvesUtility::closestPtInSaliencyCurves(n_src_curves[src_curve_id][j], n_tar_curves, feature_model->target_edges_sp_sl, tar_i, tar_j, score, paras);
+  //      // now check if this target sample should be accepted
+  //      // criteria 1: the target curve it belongs to is compatible with the core target curve
+  //      // criteria 2: this s_to_t pair is better than the current s_to_t pair, i.e. the dis is larger than the current one
+  //      //if (feature_model->tar_relationship[i.second.first].find(tar_i) != feature_model->tar_relationship[i.second.first].end())
+  //      //{
+  //      //  ext_crsp_it = ext_crsp_map.find(CurvePt(src_curve_id, j));
+  //      //  if (ext_crsp_it != ext_crsp_map.end())
+  //      //  {
+  //      //    if (score > ext_crsp_it->second.second)
+  //      //    {
+  //      //      ext_crsp_it->second = CrspCurvePt(CurvePt(tar_i, tar_j), score);
+  //      //    }
+  //      //  }
+  //      //  else
+  //      //  {
+  //      //    ext_crsp_map[CurvePt(src_curve_id, int(j))] = CrspCurvePt(CurvePt(tar_i, tar_j), score);
+  //      //  }
+  //      //}
 
-        crsp_map_it = crsp_map.find(CurvePt(src_curve_id, int(j)));
-        if (crsp_map_it != crsp_map.end())
-        {
-          int tar_i = crsp_map_it->second.first.first;
-          
-          if (feature_model->tar_relationship[i.second.first].find(tar_i) != feature_model->tar_relationship[i.second.first].end()
-            || feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_curve_id, tar_i)) != feature_model->user_define_curve_crsp.end())
-          {
-            crsp_map_out[CurvePt(src_curve_id, int(j))] = crsp_map_it->second;
-          }
-          // TODO if tar_i not in the core curve's relationship
-          // but user define it corresponding to the source curve
-          // don't push them into final crsp_map_out
-          // first cache them from crsp_map
-          // then later we
-        }
-      }
-    }
-  }
+  //      crsp_map_it = crsp_map.find(CurvePt(src_curve_id, int(j)));
+  //      if (crsp_map_it != crsp_map.end())
+  //      {
+  //        int tar_i = crsp_map_it->second.first.first;
+  //        
+  //        if (feature_model->tar_relationship[i.second.first].find(tar_i) != feature_model->tar_relationship[i.second.first].end()
+  //          || feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_curve_id, tar_i)) != feature_model->user_define_curve_crsp.end())
+  //        {
+  //          crsp_map_out[CurvePt(src_curve_id, int(j))] = crsp_map_it->second;
+  //        }
+  //        // TODO if tar_i not in the core curve's relationship
+  //        // but user define it corresponding to the source curve
+  //        // don't push them into final crsp_map_out
+  //        // first cache them from crsp_map
+  //        // then later we
+  //      }
+  //    }
+  //  }
+  //}
 
   // save the ext_crsp_map to crsp_map_out
   //for (auto i : ext_crsp_map)
