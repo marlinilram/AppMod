@@ -21,7 +21,8 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
 {
   shape = in_shape;
   buildCandidates();
-  mergeCandidates();
+  mergeCandidates(crest_edges, crest_lines);
+  buildEdgeLineMapper();
   //crestCode.reset(new CrestCode);
   //crestCode->setShape(in_shape);
   //crestCode_lines = crestCode->getCrestLines();
@@ -111,75 +112,75 @@ void ShapeCrest::buildCandidates()
   }
 }
 
-void ShapeCrest::mergeCandidates()
+void ShapeCrest::mergeCandidates(std::vector<Edge> vis_edges, std::vector<std::vector<int>>& vis_lines)
 {
-  for (size_t i = 0; i < crest_edges.size(); ++i)
+  for (size_t i = 0; i < vis_edges.size(); ++i)
   {
     STLVectori temp_edges;
-    temp_edges.push_back(crest_edges[i].first);
-    temp_edges.push_back(crest_edges[i].second);
-    crest_lines.push_back(temp_edges);
+    temp_edges.push_back(vis_edges[i].first);
+    temp_edges.push_back(vis_edges[i].second);
+    vis_lines.push_back(temp_edges);
   }
   // merge connected edge
   int tag = 0;
   size_t i = 0;
-  while (i < crest_lines.size())
+  while (i < vis_lines.size())
   {
-    int start = crest_lines[i][0];
-    int end   = crest_lines[i][crest_lines[i].size() - 1];
+    int start = vis_lines[i][0];
+    int end   = vis_lines[i][vis_lines[i].size() - 1];
 
-    for (size_t j = i + 1; j < crest_lines.size(); ++j)
+    for (size_t j = i + 1; j < vis_lines.size(); ++j)
     {
-      int cur_start = crest_lines[j][0];
-      int cur_end   = crest_lines[j][crest_lines[j].size() - 1];
+      int cur_start = vis_lines[j][0];
+      int cur_end   = vis_lines[j][vis_lines[j].size() - 1];
 
       // four types
       if (start == cur_start)
       {
-        int start_n = crest_lines[i][1]; // the next v_id from start
-        int cur_start_n = crest_lines[j][1]; // the next v_id from start
+        int start_n = vis_lines[i][1]; // the next v_id from start
+        int cur_start_n = vis_lines[j][1]; // the next v_id from start
         if (connectable(start, start_n, cur_start_n))
         {
-          std::reverse(crest_lines[j].begin(), crest_lines[j].end());
-          crest_lines[i].insert(crest_lines[i].begin(), crest_lines[j].begin(), crest_lines[j].end() - 1);
-          crest_lines.erase(crest_lines.begin() + j);
+          std::reverse(vis_lines[j].begin(), vis_lines[j].end());
+          vis_lines[i].insert(vis_lines[i].begin(), vis_lines[j].begin(), vis_lines[j].end() - 1);
+          vis_lines.erase(vis_lines.begin() + j);
           tag = 1;
           break;
         }
       }
       else if (start == cur_end)
       {
-        int start_n = crest_lines[i][1]; // the next v_id from start
-        int cur_end_p = crest_lines[j][crest_lines[j].size() - 2];
+        int start_n = vis_lines[i][1]; // the next v_id from start
+        int cur_end_p = vis_lines[j][vis_lines[j].size() - 2];
         if (connectable(start, start_n, cur_end_p))
         {
-          crest_lines[i].insert(crest_lines[i].begin(), crest_lines[j].begin(), crest_lines[j].end() - 1);
-          crest_lines.erase(crest_lines.begin() + j);
+          vis_lines[i].insert(vis_lines[i].begin(), vis_lines[j].begin(), vis_lines[j].end() - 1);
+          vis_lines.erase(vis_lines.begin() + j);
           tag = 1;
           break;
         }
       }
       else if (end == cur_start)
       {
-        int end_p = crest_lines[i][crest_lines[i].size() - 2];
-        int cur_start_n = crest_lines[j][1]; // the next v_id from start
+        int end_p = vis_lines[i][vis_lines[i].size() - 2];
+        int cur_start_n = vis_lines[j][1]; // the next v_id from start
         if (connectable(end, end_p, cur_start_n))
         {
-          crest_lines[i].insert(crest_lines[i].end(), crest_lines[j].begin() + 1, crest_lines[j].end());
-          crest_lines.erase(crest_lines.begin() + j);
+          vis_lines[i].insert(vis_lines[i].end(), vis_lines[j].begin() + 1, vis_lines[j].end());
+          vis_lines.erase(vis_lines.begin() + j);
           tag = 1;
           break;
         }
       }
       else if (end == cur_end)
       {
-        int end_p = crest_lines[i][crest_lines[i].size() - 2];
-        int cur_end_p = crest_lines[j][crest_lines[j].size() - 2];
+        int end_p = vis_lines[i][vis_lines[i].size() - 2];
+        int cur_end_p = vis_lines[j][vis_lines[j].size() - 2];
         if (connectable(end, end_p, cur_end_p))
         {
-          std::reverse(crest_lines[j].begin(), crest_lines[j].end());
-          crest_lines[i].insert(crest_lines[i].end(), crest_lines[j].begin() + 1, crest_lines[j].end());
-          crest_lines.erase(crest_lines.begin() + j);
+          std::reverse(vis_lines[j].begin(), vis_lines[j].end());
+          vis_lines[i].insert(vis_lines[i].end(), vis_lines[j].begin() + 1, vis_lines[j].end());
+          vis_lines.erase(vis_lines.begin() + j);
           tag = 1;
           break;
         }
@@ -227,15 +228,18 @@ bool ShapeCrest::connectable(int v_start, int v_ori_n, int v_cur_n)
 
 void ShapeCrest::computeVisible(std::set<int>& vis_faces)
 {
-  std::vector<Edge> crest_edges_cache = crest_edges;
-  std::vector<STLVectori> crest_lines_cache = crest_lines;
+  /*std::vector<Edge> crest_edges_cache = crest_edges;
+  std::vector<STLVectori> crest_lines_cache = crest_lines;*/
   const STLVectori& edge_connectivity = shape->getEdgeConnectivity();
 
-  crest_edges.clear();
-  crest_lines.clear();
+  /*crest_edges.clear();
+  crest_lines.clear();*/
   int inner_index[6] = {0, 1, 1, 2, 2, 0};
   std::set<int>::iterator it;
   size_t i = 0;
+  std::map<int, std::vector<Edge> >::iterator visible_edges_it;
+  visible_edges.clear();
+  visible_lines.clear();
   for (it = candidates.begin(); it != candidates.end(); ++it)
   {
     int f_0 = (*it) / 3;
@@ -243,20 +247,54 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
 
     if (vis_faces.find(f_0) != vis_faces.end() || vis_faces.find(f_1) != vis_faces.end())
     {
-      crest_edges.push_back(crest_edges_cache[i]);
+      int curve_id = edge_line_mapper[crest_edges[i]];
+      visible_edges_it = visible_edges.find(curve_id);
+      if (visible_edges_it != visible_edges.end())
+      {
+        visible_edges[curve_id].push_back(crest_edges[i]);
+      }
+      else
+      {
+        visible_edges[curve_id] = std::vector<Edge>();
+        visible_edges[curve_id].push_back(crest_edges[i]);
+      }
+      
+      /*crest_edges.push_back(crest_edges_cache[i]);*/
     }
 
     ++i;
   }
+  visible_global_mapper.clear();
+  global_visible_mapper.clear();
+  std::vector<std::vector<int>> temp_visible_lines;
+  int vis_line_count = 0;
+  for(auto i : visible_edges)
+  {
+    temp_visible_lines.clear();
+    mergeCandidates(i.second, temp_visible_lines);
+    for(size_t j = 0; j < temp_visible_lines.size(); j ++)
+    {
+      visible_lines.push_back(temp_visible_lines[j]);
+      visible_global_mapper[vis_line_count] = i.first;
+      global_visible_mapper[i.first].push_back(vis_line_count);
+      vis_line_count ++;
+    }
+  }
+  //mergeCandidates();
 
-  mergeCandidates();
+  /*visible_edges = crest_edges;
+  visible_lines = crest_lines;*/
 
-  visible_edges = crest_edges;
-  visible_lines = crest_lines;
+  /*crest_edges = crest_edges_cache;
+  crest_lines = crest_lines_cache;*/
 
-  crest_edges = crest_edges_cache;
-  crest_lines = crest_lines_cache;
-
+  // build the mapper for visible crest lines to the whole crest lines
+  /*visible_global_mapper.clear();
+  for(size_t i = 0; i < visible_lines.size(); i ++)
+  {
+    visible_global_mapper[i] = edge_line_mapper[std::pair<int, int>(visible_lines[i][0], visible_lines[i][1])];
+  }*/
+  //std::cout << "Updating visible_line_mapper finished.\n " ;
   return;
 }
 
@@ -293,3 +331,18 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
 //    sum += crestLinesPoints[i].size();*/
 //}
 
+void ShapeCrest::buildEdgeLineMapper()
+{
+  edge_line_mapper.clear();
+  for(size_t i = 0; i < crest_lines.size(); i ++)
+  {
+    for(size_t j = 0; j < crest_lines[i].size() - 1; j ++)
+    {
+      int start = crest_lines[i][j];
+      int end = crest_lines[i][j + 1];
+      edge_line_mapper[std::pair<int, int>(start, end)] = i;
+      edge_line_mapper[std::pair<int, int>(end, start)] = i;
+    }
+  }
+
+}

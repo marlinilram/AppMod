@@ -165,7 +165,7 @@ void FeatureGuided::updateSourceField(int update_type)
   {
     this->updateSourceVectorField();
     this->updateScalarField();
-
+    this->BuildSourceEdgeKDTree();
     this->BuildClosestPtPair();
   }
   else if (update_type == 1)
@@ -650,4 +650,51 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
   {
     crsp_list.push_back(std::pair<int ,double2>(i.first, i.second));
   }
+}
+
+void FeatureGuided::updateUserMarkedCurves()
+{
+  if(!user_marked_crsp.empty())
+  {
+    if(user_marked_crsp.size() % 2 != 0)
+    {
+      for(size_t i = 0; i < user_marked_crsp.size() - 1; i = i + 2)
+      {
+        global_user_marked_crsp.insert(std::pair<int, int>(user_marked_crsp[i], user_marked_crsp[i + 1]));
+      }
+    }
+    else
+    {
+      for(size_t i = 0; i < user_marked_crsp.size(); i = i + 2)
+      {
+        global_user_marked_crsp.insert(std::pair<int, int>(user_marked_crsp[i], user_marked_crsp[i + 1]));
+      }
+    }
+  }
+}
+
+void FeatureGuided::locateMarkedCurves()
+{
+  this->updateUserMarkedCurves();
+  marked_source_curves.clear();
+  marked_target_curves.clear();
+  for(std::set<std::pair<int, int>>::iterator it = global_user_marked_crsp.begin(); it != global_user_marked_crsp.end(); it ++)
+  {
+    std::vector<int> tmp = source_model->getGlobalVisibleMapper()[(*it).first];
+    for(size_t i = 0; i < tmp.size(); i ++)
+    {
+      marked_source_curves.push_back(tmp[i]);
+    }
+    marked_target_curves.push_back((*it).second);
+  }
+}
+
+std::map<int, int>& FeatureGuided::getVisibleGlobalMapper()
+{
+  return source_model->getVisbleGlobalMapper();
+}
+
+std::map<int, std::vector<int>>& FeatureGuided::getGlobalVisibleMapper()
+{
+  return source_model->getGlobalVisibleMapper();
 }
