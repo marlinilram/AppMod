@@ -659,6 +659,7 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
 
 void FeatureGuided::updateUserMarkedCurves()
 {
+  global_user_marked_crsp.clear();
   if(!user_marked_crsp.empty())
   {
     if(user_marked_crsp.size() % 2 != 0)
