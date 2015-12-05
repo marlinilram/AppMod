@@ -102,9 +102,10 @@ public:
   double2 user_constrained_tar_p; // target screen position
 
   std::vector<int> user_marked_crsp;  // source & target curves user has marked 
-  std::set<std::pair<int, int>> global_user_marked_crsp; // all source & target curves user has marked for each stage (source curves are stored using the original crest lines id)
+  std::set<std::pair<int, int> > global_user_marked_crsp; // all source & target curves user has marked for each stage (source curves are stored using the original crest lines id)
   std::vector<int> marked_source_curves; // all source curves user has marked for each stage (source curves are stored using the source curves id)
   std::vector<int> marked_target_curves; // all target curves user has marked for each stage
+  //std::set<std::pair<int, int> > user_define_curve_crsp;
 
 private:
   

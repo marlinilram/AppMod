@@ -151,8 +151,8 @@ void FeatureGuided::updateSourceVectorField()
   this->source_tele_register->setInputField();
 
   //std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
-  this->user_define_curve_crsp.clear();
-  this->user_marked_crsp.clear();
+  //this->user_define_curve_crsp.clear();
+  //this->user_marked_crsp.clear();
 }
 
 void FeatureGuided::updateScalarField()
@@ -188,6 +188,7 @@ void FeatureGuided::updateSourceField(int update_type)
   }
   else if (update_type == 4)
   {
+    this->locateMarkedCurves();
     this->BuildClosestPtPair();
   }
 }

@@ -66,6 +66,8 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
 {
   // find corresponding points in source curves
   // guarantee that the found correspondences are two-sided closest
+  // get the visible crest line (source curve) to global crest line mapper, for history user interaction information
+  std::map<int, int>& vis_global_mapper = feature_model->getVisibleGlobalMapper(); 
   std::vector<double> paras(3, 0);
   paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
   paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
@@ -86,7 +88,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
         if (CurvesUtility::closestPtFromSaliencyCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, score, paras))
         {
           if (fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) < 0.9 
-            && feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_i, i)) == feature_model->user_define_curve_crsp.end()) continue;
+            && feature_model->global_user_marked_crsp.find(std::pair<int, int>(vis_global_mapper[src_i], i)) == feature_model->global_user_marked_crsp.end()) continue;
           if (crsp_map_out.find(CurvePt(src_i, src_j)) != crsp_map_out.end()) continue;
 
           crsp_map_it = crsp_map.find(CurvePt(src_i, src_j));
@@ -272,7 +274,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
 
     if (tar_cur_id == best_tar_cur_id
       || feature_model->tar_relationship[best_tar_cur_id].find(tar_cur_id) != feature_model->tar_relationship[best_tar_cur_id].end()
-      || feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_cur_id, tar_cur_id)) != feature_model->user_define_curve_crsp.end())
+      || feature_model->global_user_marked_crsp.find(std::pair<int, int>(vis_global_mapper[src_cur_id], tar_cur_id)) != feature_model->global_user_marked_crsp.end())
     {
       crsp_map_out[i.first] = i.second;
     }
