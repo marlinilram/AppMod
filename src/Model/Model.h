@@ -62,6 +62,8 @@ public:
   const AdjList& getShapeFaceAdjList();
   const STLVectori& getShapeEdgeConnectivity();
   void getShapeFaceCenter(int f_id, float p[3]);
+  std::map<int, int>& getVisbleGlobalMapper();
+  std::map<int, std::vector<int>>& getGlobalVisibleMapper();
 
   // get information from ShapeCrest
   const std::vector<Edge>& getShapeCrestEdge();

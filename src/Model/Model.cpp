@@ -590,3 +590,13 @@ LG::PolygonMesh* Model::getPolygonMesh()
     return lighting_ball->getPolygonMesh();
   }
 }
+
+std::map<int, int>& Model::getVisbleGlobalMapper()
+{
+  return shape_crest->visible_global_mapper;
+}
+
+std::map<int, std::vector<int>>& Model::getGlobalVisibleMapper()
+{
+  return shape_crest->global_visible_mapper;
+}
