@@ -278,7 +278,7 @@ void VectorFieldViewer::drawSelectedLine()
     glBegin(GL_LINE_STRIP);
     for(int i = 0;i  < selected_line.size();i ++)
     {
-      glColor3f(1,0,0);
+      glColor3f(0.5,0,0.5);
       glVertex3f(selected_line[i].x,selected_line[i].y,0);
     }
     glEnd();

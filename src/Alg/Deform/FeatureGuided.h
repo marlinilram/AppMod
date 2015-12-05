@@ -84,6 +84,10 @@ public:
   inline std::map<int, std::pair<int, int> >& getSrcRevVidMapper() { return src_rev_vid_mapp; };
   void getNormalizedProjPt(const int vid, double2& proj_pos);
 
+  void updateUserMarkedCurves();
+  void locateMarkedCurves();
+  std::map<int, int>& getVisibleGlobalMapper();
+  std::map<int, std::vector<int>>& getGlobalVisibleMapper();
 public:
 
   // user defined feature line
@@ -97,8 +101,10 @@ public:
   int user_constrained_src_v; // the index of v in model
   double2 user_constrained_tar_p; // target screen position
 
-  std::vector<int> user_marked_crsp; // store user define curve correspondences, src_id, tar_id, src_id, tar_id, etc.
-  std::set<std::pair<int, int> > user_define_curve_crsp;
+  std::vector<int> user_marked_crsp;  // source & target curves user has marked 
+  std::set<std::pair<int, int>> global_user_marked_crsp; // all source & target curves user has marked for each stage (source curves are stored using the original crest lines id)
+  std::vector<int> marked_source_curves; // all source curves user has marked for each stage (source curves are stored using the source curves id)
+  std::vector<int> marked_target_curves; // all target curves user has marked for each stage
 
 private:
   

@@ -21,9 +21,10 @@ public:
   const std::vector<STLVectori>& getCrestCodeLine();
   
   void buildCandidates();
-  void mergeCandidates();
+  void mergeCandidates(std::vector<Edge> vis_edges, std::vector<std::vector<int>>& vis_lines);
   bool connectable(int v_start, int v_ori_n, int v_cur_n);
   void computeVisible(std::set<int>& vis_faces);
+  void buildEdgeLineMapper();
 
   void setCrestCode(std::shared_ptr<CrestCode> in_crestCode);
   /*std::vector<std::vector<Vector3f>>& getCrestLinesPoints(){ return crestLinesPoints; };
@@ -33,10 +34,14 @@ public:
 public:
   std::vector<Edge> crest_edges;
   std::vector<STLVectori> crest_lines;
+  std::map<std::pair<int, int>, int> edge_line_mapper; //global mapper
+  std::map<int, int> visible_global_mapper;
+  std::map<int, std::vector<int>> global_visible_mapper;
 
   std::vector<STLVectori> crestCode_lines;
 
-  std::vector<Edge> visible_edges;
+  //std::vector<Edge> visible_edges;
+  std::map<int, std::vector<Edge>> visible_edges;
   std::vector<STLVectori> visible_lines;
 
   STLVectorf edge_dihedral; // store dihedral angle for all edges
