@@ -676,6 +676,8 @@ void VectorFieldCanvas::deleteLastLine()
     crsp_oder = 1;
   }
   feature_model->user_marked_crsp.pop_back();
+  feature_model->global_user_marked_crsp.clear();
+  feature_model->updateUserMarkedCurves();
   std::cout << "Delete the last user masked curves!" << std::endl;
 }
 
