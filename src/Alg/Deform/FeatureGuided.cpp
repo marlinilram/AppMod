@@ -150,7 +150,9 @@ void FeatureGuided::updateSourceVectorField()
   this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
 
-  std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
+  //std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
+  //this->user_define_curve_crsp.clear();
+  //this->user_marked_crsp.clear();
 }
 
 void FeatureGuided::updateScalarField()
@@ -186,6 +188,7 @@ void FeatureGuided::updateSourceField(int update_type)
   }
   else if (update_type == 4)
   {
+    this->locateMarkedCurves();
     this->BuildClosestPtPair();
   }
 }
@@ -212,6 +215,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
     model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   }
   src_vid_mapper.clear();
+  src_rev_vid_mapp.clear();
   std::vector<double2> curve;
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
@@ -229,6 +233,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
       source_model->getProjectPt(v.data(), winx, winy);
       curve.push_back(double2(winx, source.rows - winy));
       src_vid_mapper[std::pair<int, int>(i, j)] = crest_lines[i][j];
+      src_rev_vid_mapp[crest_lines[i][j]] = std::pair<int, int>(i, j);
     }
     curves.push_back(curve);
   }
@@ -654,6 +659,7 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
 
 void FeatureGuided::updateUserMarkedCurves()
 {
+  global_user_marked_crsp.clear();
   if(!user_marked_crsp.empty())
   {
     if(user_marked_crsp.size() % 2 != 0)
