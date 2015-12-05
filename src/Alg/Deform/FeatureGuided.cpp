@@ -116,6 +116,7 @@ void FeatureGuided::initRegister()
   target_vector_field_lines.reset(new FeatureLine);
   source_KDTree.reset(new KDTreeWrapper);
   target_KDTree.reset(new KDTreeWrapper);
+  BuildSourceEdgeKDTree();
   BuildTargetEdgeKDTree();
 
   source_scalar_field.reset(new ScalarField(100, 2));
@@ -149,7 +150,9 @@ void FeatureGuided::updateSourceVectorField()
   this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
 
-  std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
+  //std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
+  this->user_define_curve_crsp.clear();
+  this->user_marked_crsp.clear();
 }
 
 void FeatureGuided::updateScalarField()
@@ -164,7 +167,7 @@ void FeatureGuided::updateSourceField(int update_type)
   {
     this->updateSourceVectorField();
     this->updateScalarField();
-
+    this->BuildSourceEdgeKDTree();
     this->BuildClosestPtPair();
   }
   else if (update_type == 1)
@@ -175,6 +178,7 @@ void FeatureGuided::updateSourceField(int update_type)
   else if (update_type == 2)
   {
     this->updateSourceVectorField();
+    this->BuildSourceEdgeKDTree();
     this->BuildClosestPtPair();
   }
   else if (update_type == 3)
@@ -210,6 +214,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
     model_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   }
   src_vid_mapper.clear();
+  src_rev_vid_mapp.clear();
   std::vector<double2> curve;
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
@@ -227,6 +232,7 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
       source_model->getProjectPt(v.data(), winx, winy);
       curve.push_back(double2(winx, source.rows - winy));
       src_vid_mapper[std::pair<int, int>(i, j)] = crest_lines[i][j];
+      src_rev_vid_mapp[crest_lines[i][j]] = std::pair<int, int>(i, j);
     }
     curves.push_back(curve);
   }
@@ -468,34 +474,59 @@ std::shared_ptr<KDTreeWrapper> FeatureGuided::getSourceKDTree()
   return this->source_KDTree;
 }
 
-void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree)
+std::shared_ptr<KDTreeWrapper> FeatureGuided::getTargetKDTree()
+{
+  return this->target_KDTree;
+}
+
+void FeatureGuided::BuildEdgeKDTree(CURVES& curves, std::map<int, std::pair<int, int> >& id_mapper, std::shared_ptr<KDTreeWrapper> kdTree)
 {
   std::vector<float> data;
-  kdtree_id_mapper.clear();
+  id_mapper.clear();
   size_t n_pts = 0;
   for (size_t i = 0; i < curves.size(); ++i)
   {
     for (size_t j = 0; j < curves[i].size(); ++j)
     {
+      /*if(i == 0)
+        std::cout << "x: " << curves[i][j].x << " , " << "y: " << curves[i][j].y << std::endl;*/
       data.push_back((float)curves[i][j].x);
       data.push_back((float)curves[i][j].y);
-      kdtree_id_mapper[n_pts] = std::pair<int, int>(i, j);
+      id_mapper[n_pts] = std::pair<int, int>(i, j);
       ++ n_pts;
     }
   }
-
-
   kdTree->initKDTree(data, n_pts, 2);
 }
 
 void FeatureGuided::BuildSourceEdgeKDTree()
 {
-  BuildEdgeKDTree(source_curves, source_KDTree);
+  BuildEdgeKDTree(source_curves, kdtree_id_mapper_source, source_KDTree);
 }
 
 void FeatureGuided::BuildTargetEdgeKDTree()
 {
-  BuildEdgeKDTree(target_curves, target_KDTree);
+  BuildEdgeKDTree(target_curves, kdtree_id_mapper, target_KDTree);
+}
+
+std::map<int, std::pair<int, int> >& FeatureGuided::getSourceKDTreeMapper()
+{
+  return this->kdtree_id_mapper_source;
+}
+
+std::map<int, std::pair<int, int> >& FeatureGuided::getTargetKDTreeMapper()
+{
+  return this->kdtree_id_mapper;
+}
+
+CURVES& FeatureGuided::getSourceCurves()
+{
+  return this->source_curves;
+}
+
+CURVES& FeatureGuided::getTargetCurves()
+{
+  return this->target_curves;
 }
 
 void FeatureGuided::setNormalizePara()
@@ -623,4 +654,51 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
   {
     crsp_list.push_back(std::pair<int ,double2>(i.first, i.second));
   }
+}
+
+void FeatureGuided::updateUserMarkedCurves()
+{
+  if(!user_marked_crsp.empty())
+  {
+    if(user_marked_crsp.size() % 2 != 0)
+    {
+      for(size_t i = 0; i < user_marked_crsp.size() - 1; i = i + 2)
+      {
+        global_user_marked_crsp.insert(std::pair<int, int>(user_marked_crsp[i], user_marked_crsp[i + 1]));
+      }
+    }
+    else
+    {
+      for(size_t i = 0; i < user_marked_crsp.size(); i = i + 2)
+      {
+        global_user_marked_crsp.insert(std::pair<int, int>(user_marked_crsp[i], user_marked_crsp[i + 1]));
+      }
+    }
+  }
+}
+
+void FeatureGuided::locateMarkedCurves()
+{
+  this->updateUserMarkedCurves();
+  marked_source_curves.clear();
+  marked_target_curves.clear();
+  for(std::set<std::pair<int, int>>::iterator it = global_user_marked_crsp.begin(); it != global_user_marked_crsp.end(); it ++)
+  {
+    std::vector<int> tmp = source_model->getGlobalVisibleMapper()[(*it).first];
+    for(size_t i = 0; i < tmp.size(); i ++)
+    {
+      marked_source_curves.push_back(tmp[i]);
+    }
+    marked_target_curves.push_back((*it).second);
+  }
+}
+
+std::map<int, int>& FeatureGuided::getVisibleGlobalMapper()
+{
+  return source_model->getVisbleGlobalMapper();
+}
+
+std::map<int, std::vector<int>>& FeatureGuided::getGlobalVisibleMapper()
+{
+  return source_model->getGlobalVisibleMapper();
 }

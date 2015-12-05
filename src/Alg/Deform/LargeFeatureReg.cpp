@@ -19,6 +19,13 @@ void LargeFeatureReg::runReg(int method_id)
   std::cout << "begin Large Feature Rigid Registration" << std::endl;
   unsigned time1 = clock();
 
+  // init the data term (correspondences)
+  feature_model->BuildClosestPtPair(feature_model->source_curves, data_crsp);
+  feature_model->source_model->getProjectionMatrix(vpPMV_mat);
+  lamd_data = 0.5 * feature_model->curve_scale;
+  // init SField term
+  lamd_SField = 0.1;
+
   // start point
   int x_dim = 6;
   std::vector<double> x0(x_dim, 0.0);
@@ -275,4 +282,5 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
     log_fname = feature_model->source_model->getDataPath() + "/LFRegMLEqNonRigidLog.txt";
   }
   LOG::Instance(log_fname.c_str())->OutputMisc(log_stream.str().c_str());
+
 }

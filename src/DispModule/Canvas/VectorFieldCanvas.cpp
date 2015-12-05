@@ -39,6 +39,8 @@ VectorFieldCanvas::VectorFieldCanvas()
   u_max = 1.0;
   v_max = 1.0;
   ratio = 1.0;
+
+  crsp_oder = 1;
 }
 
 VectorFieldCanvas::~VectorFieldCanvas()
@@ -74,6 +76,14 @@ bool VectorFieldCanvas::display()
     if (vis_paras[8])
     {
       this->displaySourceCrspList();
+    }
+    if (vis_paras[10])
+    {
+      this->displayUserCrsp();
+    }
+    if (vis_paras[11])
+    {
+      this->displayAllCurvesPoints();
     }
   }
   else if (render_mode == VectorField::TARGET_MODE)
@@ -348,9 +358,9 @@ bool VectorFieldCanvas::displaySourceCurves()
   this->feature_model->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
   glLineWidth(2);
-  if (render_mode == VectorField::TARGET_MODE)
+  if (render_mode == VectorField::SOURCE_MODE)      
   {
-    glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;
+    glColor4f( 1.0f, 1.0f, 1.0f, alpha ) ;
   }
   else if(render_mode == VectorField::TARGET_MODE)
   {
@@ -360,6 +370,7 @@ bool VectorFieldCanvas::displaySourceCurves()
   for (int i = 0; i < source_curves.size(); ++i)
   {
     glBegin(GL_LINE_STRIP);
+
     for (int j = 0; j < source_curves[i].size(); ++j)
     {
       double2 pos = source_curves[i][j];
@@ -556,7 +567,7 @@ void VectorFieldCanvas::updateSourceField(int update_type)
   feature_model->updateSourceField(update_type);
 }
 
-void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line)
+void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line, std::vector<double2>& selectedLine)
 {
   if (!feature_model)
   {
@@ -566,8 +577,58 @@ void VectorFieldCanvas::addConstrainedLines(std::vector<double2>& line)
   if(render_mode == VectorField::SOURCE_MODE)
   {
     feature_model->source_vector_field_lines->lines.push_back(line);
-    std::cout << "Current number of constrained lines in source: "
-      << feature_model->source_vector_field_lines->lines.size() << std::endl;
+    /*std::cout << "Current number of constrained lines in source: "
+      << feature_model->source_vector_field_lines->lines.size() << std::endl;*/
+    CURVES normalized_source_curves, normalized_target_curves;
+    feature_model->NormalizedSourceCurves(normalized_source_curves);
+    feature_model->NormalizedTargetCurves(normalized_target_curves);
+    double2 middle_point = line[int(line.size() / 2)];
+    middle_point = (middle_point - double2(0.5, 0.5)) / (feature_model->getCurveScale()) + double2(0.5, 0.5) - (feature_model->getCurveTranslate());
+    //std::cout << "denormalized point: " << middle_point.x << "\t" << middle_point.y << std::endl;
+    std::shared_ptr<KDTreeWrapper> source_KDTree = feature_model->getSourceKDTree();
+    std::shared_ptr<KDTreeWrapper> target_KDTree = feature_model->getTargetKDTree();
+    int source_pt_id,target_pt_id; 
+    float source_dis,target_dis;
+    std::vector<float> pt, pt2;
+    pt.push_back(middle_point.x);
+    pt.push_back(middle_point.y);
+    pt2 = pt;
+    source_KDTree->nearestPt(pt, source_pt_id, source_dis);
+    target_KDTree->nearestPt(pt2, target_pt_id, target_dis);
+    int curves_id;
+    if(source_dis < target_dis)
+    {
+      curves_id = feature_model->getSourceKDTreeMapper()[source_pt_id].first;
+      selectedLine = normalized_source_curves[curves_id];
+      if(crsp_oder == 1)
+      {
+        int original_source_curve_id;
+        original_source_curve_id = feature_model->getVisibleGlobalMapper()[curves_id];
+        feature_model->user_marked_crsp.push_back(original_source_curve_id);
+        crsp_oder = 2;
+      }
+      else
+      {
+        std::cout << "You should mark target curves this time!" << std::endl;
+      }
+    }
+    else
+    {
+      curves_id = feature_model->getTargetKDTreeMapper()[target_pt_id].first;
+      selectedLine = normalized_target_curves[curves_id];
+      if(crsp_oder == 2)
+      {
+        feature_model->user_define_curve_crsp.insert(std::pair<int, int>(feature_model->user_marked_crsp.back(), curves_id));
+        feature_model->user_marked_crsp.push_back(curves_id);
+        crsp_oder = 1;
+        // update crsp now
+        feature_model->updateSourceField(4);
+      }
+      else
+      {
+        std::cout << "You should mark source curves this time!" << std::endl;
+      }
+    }
   }
   else
   {
@@ -584,7 +645,7 @@ void VectorFieldCanvas::deleteLastLine()
     return;
   }
 
-  if(render_mode == VectorField::SOURCE_MODE)
+  /*if(render_mode == VectorField::SOURCE_MODE)
   {
     feature_model->source_vector_field_lines->lines.pop_back();
     std::cout << "Delete the last constrained line of source. Current number: "
@@ -595,7 +656,30 @@ void VectorFieldCanvas::deleteLastLine()
     feature_model->target_vector_field_lines->lines.pop_back();
     std::cout << "Delete the last constrained line of target. Current number: "
               << feature_model->target_vector_field_lines->lines.size() << std::endl;
+  }*/
+
+  /*if(render_mode == VectorField::SOURCE_MODE)
+  {
+    feature_model->user_marked_crsp.pop_back();
+    crsp_oder = 1;
+    std::cout << "Delete the last user marked source curves!" << std::endl;
   }
+  else
+  {
+    feature_model->user_marked_crsp.pop_back();
+    crsp_oder = 2;
+    std::cout << "Delete the last user marked target curves!" << std::endl;
+  }*/
+  if(feature_model->user_marked_crsp.size() % 2 == 0)
+  {
+    crsp_oder = 2;
+  }
+  else
+  {
+    crsp_oder = 1;
+  }
+  feature_model->user_marked_crsp.pop_back();
+  std::cout << "Delete the last user masked curves!" << std::endl;
 }
 
 std::shared_ptr<FeatureLine> VectorFieldCanvas::getFeatureLine()
@@ -637,6 +721,7 @@ bool VectorFieldCanvas::displaySourceCrspList()
   std::vector<std::pair<int, int> >& src_crsp_list = feature_model->src_crsp_list;
   std::vector<std::pair<int, int> >& tar_crsp_list = feature_model->tar_crsp_list;
   std::map<std::pair<int, int>, int>& src_vid_mapper= feature_model->getSrcVidMapper();
+  std::map<int, std::pair<int, int> >& src_rev_vid_mapper = feature_model->getSrcRevVidMapper();
   std::map<int, double2>& user_correct_crsp_map = feature_model->user_correct_crsp_map;
   std::map<int, double2>::iterator map_iter;
 
@@ -678,11 +763,13 @@ bool VectorFieldCanvas::displaySourceCrspList()
   }
 
   glColor4f( 0.75f, 0.75f, 0.75f, 0.1f );
+  std::pair<int, int> cur_src_curve_id;
   for (auto i : user_correct_crsp_map)
   {
     glBegin(GL_LINES);
-    double2 pos_src;
-    feature_model->getNormalizedProjPt(i.first, pos_src);
+    cur_src_curve_id = src_rev_vid_mapper[i.first];
+    double2 pos_src = source_curves[cur_src_curve_id.first][cur_src_curve_id.second];
+    //feature_model->getNormalizedProjPt(i.first, pos_src);
     double2 pos_tar = i.second;
     feature_model->NormalizedPts(pos_tar);
 
@@ -717,5 +804,87 @@ bool VectorFieldCanvas::displayTargetCrspList()
   }
   glEnd();
 
+  return true;
+}
+
+bool VectorFieldCanvas::displayUserCrsp()
+{
+  feature_model->locateMarkedCurves();
+  CURVES source_curves, target_curves;
+  feature_model->NormalizedSourceCurves(source_curves);
+  feature_model->NormalizedTargetCurves(target_curves);
+  for(size_t i = 0; i < feature_model->marked_source_curves.size(); i ++)
+  {
+    glLineWidth(5);
+    glBegin(GL_LINE_STRIP);
+    for(size_t j = 0; j < source_curves[feature_model->marked_source_curves[i]].size(); j ++)
+    {
+      glColor3f(1,0,0);
+      glVertex3f(source_curves[feature_model->marked_source_curves[i]][j].x, source_curves[feature_model->marked_source_curves[i]][j].y, 0);
+    }
+    glEnd();
+  }
+
+  for(size_t i = 0; i < feature_model->marked_target_curves.size(); i ++)
+  {
+    glLineWidth(5);
+    glBegin(GL_LINE_STRIP);
+    for(size_t j = 0; j < target_curves[feature_model->marked_target_curves[i]].size(); j ++)
+    {
+      glColor3f(1,1,0);
+      glVertex3f(target_curves[feature_model->marked_target_curves[i]][j].x, target_curves[feature_model->marked_target_curves[i]][j].y, 0);
+    }
+    glEnd();
+  }
+
+  if(feature_model->user_marked_crsp.size() % 2 != 0)
+  {
+    int id = feature_model->user_marked_crsp[feature_model->user_marked_crsp.size() - 1];
+    std::vector<int> last_line = feature_model->getGlobalVisibleMapper()[id];
+    for(size_t i = 0; i < last_line.size(); i ++)
+    {
+      glLineWidth(5);
+      glBegin(GL_LINE_STRIP);
+      for(size_t j = 0; j < source_curves[last_line[i]].size(); j ++)
+      {
+        glColor3f(1,0,0);
+        glVertex3f(source_curves[last_line[i]][j].x, source_curves[last_line[i]][j].y, 0);
+      }
+      glEnd();
+    }
+  }
+  return true;
+}
+
+bool VectorFieldCanvas::displayAllCurvesPoints()
+{
+  CURVES source_curves, target_curves;
+  this->feature_model->NormalizedSourceCurves(source_curves);
+  this->feature_model->NormalizedTargetCurves(target_curves);
+  glColor3f(1,0,1);
+  glPointSize(5);
+  glBegin(GL_POINTS);
+  for(int i = 0; i < source_curves.size(); ++ i)
+  {
+    for (int j = 0; j < source_curves[i].size(); ++j)
+    {
+      double2 pos = source_curves[i][j];
+      glVertex3f( pos.x,pos.y, 0 ) ;
+    }
+  }
+  glEnd();
+
+  /*glColor3f(0,1,1);
+  glPointSize(5);
+  glBegin(GL_POINTS);
+  for(int i = 0; i < target_curves.size(); ++ i)
+  {
+    for (int j = 0; j < target_curves[i].size(); ++j)
+    {
+      double2 pos = target_curves[i][j];
+      glVertex3f( pos.x,pos.y, 0 ) ;
+    }
+  }
+  glEnd();*/
   return true;
 }

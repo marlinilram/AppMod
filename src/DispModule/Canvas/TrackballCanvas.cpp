@@ -1,13 +1,17 @@
 #include "TrackballCanvas.h"
 #include "Model.h"
 
+#include "PolygonMesh.h"
+#include "ParameterMgr.h"
+
 #include <QGLShader>
 #include <QGLBuffer>
 
 
 TrackballCanvas::TrackballCanvas()
 {
-  render_mode = 5;
+  render_mode = 3;
+  use_flat = 1;
 }
 
 TrackballCanvas::~TrackballCanvas()
@@ -40,8 +44,8 @@ void TrackballCanvas::setModel(std::shared_ptr<Model> shared_model)
 void TrackballCanvas::setShaderProgram()
 {
   basic_shader.reset(new QGLShaderProgram);
-  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.frag");
-  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/vertexShader.vert");
+  basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/edge.frag");
+  basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/edge.vert");
   basic_shader->link();
 }
 
@@ -52,6 +56,7 @@ void TrackballCanvas::drawModel()
   basic_shader->setUniformValue("fMeshSize", GLfloat(num_face));
   basic_shader->setUniformValue("L", QVector3D(-0.4082, -0.4082, 0.8165));
   basic_shader->setUniformValue("renderMode", GLint(render_mode));
+  basic_shader->setUniformValue("use_flat", GLint(use_flat));
 
   color_buffer->bind();
   basic_shader->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
@@ -94,10 +99,45 @@ void TrackballCanvas::drawModel()
 
 void TrackballCanvas::updateModelBuffer()
 {
-  const VertexList& vertex_list = model->getShapeVertexList();
-  const FaceList&   face_list   = model->getShapeFaceList();
-  const NormalList& normal_list = model->getShapeNormalList();
-  const STLVectorf& color_list  = model->getShapeColorList();
+  //const VertexList& vertex_list = model->getShapeVertexList();
+  //const FaceList&   face_list   = model->getShapeFaceList();
+  //const NormalList& normal_list = model->getShapeNormalList();
+  //const STLVectorf& color_list  = model->getShapeColorList();
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
+  {
+    use_flat = 1;
+  }
+  else 
+  {
+    use_flat = 0;
+  }
+
+  LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
+  LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_normals = poly_mesh->vertex_attribute<LG::Vec3>("v:normal");
+  LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
+  VertexList vertex_list;
+  NormalList normal_list;
+  STLVectorf color_list;
+  FaceList face_list;
+  for (auto vit : poly_mesh->vertices())
+  {
+    LG::Vec3 pt = poly_mesh->position(vit);
+    LG::Vec3 n = v_normals[vit];
+    LG::Vec3 c = v_colors[vit];
+    for (int i = 0; i < 3; ++i)
+    {
+      vertex_list.push_back(pt[i]);
+      normal_list.push_back(n[i]);
+      color_list.push_back(c[i]);
+    }
+  }
+  for (auto fit : poly_mesh->faces())
+  {
+    for (auto vfc : poly_mesh->vertices(fit))
+    {
+      face_list.push_back(size_t(vfc.idx()));
+    }
+  }
 
   num_vertex = GLenum(vertex_list.size() / 3);
   num_face   = GLenum(face_list.size() / 3);
@@ -135,6 +175,33 @@ void TrackballCanvas::updateModelBuffer()
     std::cout<<"TrackballCanvas: GL Error in getting model\n";
   }
 }
+
+void TrackballCanvas::updateModelColorBuffer()
+{
+  LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
+  LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
+  STLVectorf color_list;
+  for (auto vit : poly_mesh->vertices())
+  {
+    LG::Vec3 c = v_colors[vit];
+    for (int i = 0; i < 3; ++i)
+    {
+      color_list.push_back(c[i]);
+    }
+  }
+
+  color_buffer->bind();
+  color_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->write(0, &color_list[0], num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->release();
+
+  GLenum error_code = glGetError();
+  if (error_code != 0)
+  {
+    std::cout<<"MainCanvas: GL Error in getting model. Error Code: " << error_code << "\n";
+  }
+}
+
 
 std::string TrackballCanvas::getFilePath()
 {

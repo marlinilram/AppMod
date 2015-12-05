@@ -19,6 +19,8 @@ public:
   //inline cv::Mat& getNormal(){ return normal_from_shading; };
   void getDrawableActors(std::vector<GLActor>& actors);
 
+  void buildMask(std::shared_ptr<Model> model);
+
 private:
   //std::shared_ptr<Model> model;
   std::vector<GLActor> actors;

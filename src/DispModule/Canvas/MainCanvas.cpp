@@ -1,5 +1,6 @@
 #include "MainCanvas.h"
 #include "Model.h"
+#include "PolygonMesh.h"
 
 #include "YMLHandler.h"
 #include "Colormap.h"
@@ -70,6 +71,8 @@ void MainCanvas::setShaderProgram()
   color_buffer->create();
   normal_buffer.reset(new QGLBuffer);
   normal_buffer->create();
+  uv_buffer.reset(new QGLBuffer);
+  uv_buffer->create();
   vertex_crest_buffer.reset(new QGLBuffer);
   vertex_crest_buffer->create();
 
@@ -112,36 +115,64 @@ void MainCanvas::updateModelBuffer()
   const STLVectorf& color_list  = model->getShapeColorList();
   const STLVectorf& face_color_list = model->getShapeFaceColorList();
   const Edges&      crest_edge = model->getShapeCrestEdge();
+  const STLVectorf& uv_list = model->getShapeUVCoord();
 
-  // duplicate the vertex for face color
-  FaceList new_face_list;
-  VertexList new_vertex_list;
-  NormalList new_normal_list;
-  STLVectorf new_color_list;
-  for (size_t i = 0; i < face_list.size(); ++i)
-  {
-    new_face_list.push_back(int(i));
-    for (int j = 0; j < 3; ++j)
-    {
-      new_vertex_list.push_back(vertex_list[3 * face_list[i] + j]);
-      new_normal_list.push_back(normal_list[3 * face_list[i] + j]);
-    }
-  }
-  for (size_t i = 0; i < face_list.size() / 3; ++i)
-  {
-    for (int j = 0; j < 3; ++j)
-    {
-      // for each vertex
-      for (int k = 0; k < 3; ++k)
-      {
-        new_color_list.push_back(face_color_list[3 * i + k]);
-      }
-    }
-  }
-  std::cout << "new vertex size: " << new_vertex_list.size() << "\tnew color size: " << new_color_list.size() << std::endl;
+  //// duplicate the vertex for face color
+  //FaceList new_face_list;
+  //VertexList new_vertex_list;
+  //NormalList new_normal_list;
+  //STLVectorf new_color_list;
+  //for (size_t i = 0; i < face_list.size(); ++i)
+  //{
+  //  new_face_list.push_back(int(i));
+  //  for (int j = 0; j < 3; ++j)
+  //  {
+  //    new_vertex_list.push_back(vertex_list[3 * face_list[i] + j]);
+  //    new_normal_list.push_back(normal_list[3 * face_list[i] + j]);
+  //  }
+  //}
+  //for (size_t i = 0; i < face_list.size() / 3; ++i)
+  //{
+  //  for (int j = 0; j < 3; ++j)
+  //  {
+  //    // for each vertex
+  //    for (int k = 0; k < 3; ++k)
+  //    {
+  //      new_color_list.push_back(face_color_list[3 * i + k]);
+  //    }
+  //  }
+  //}
+  //std::cout << "new vertex size: " << new_vertex_list.size() << "\tnew color size: " << new_color_list.size() << std::endl;
 
-  num_vertex = GLenum(new_vertex_list.size() / 3);
-  num_face   = GLenum(new_face_list.size() / 3);
+  //LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
+  //LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_normals = poly_mesh->vertex_attribute<LG::Vec3>("v:normal");
+  //LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
+  //VertexList vertex_list;
+  //NormalList normal_list;
+  //STLVectorf color_list;
+  //FaceList face_list;
+  //for (auto vit : poly_mesh->vertices())
+  //{
+  //  LG::Vec3 pt = poly_mesh->position(vit);
+  //  LG::Vec3 n = v_normals[vit];
+  //  LG::Vec3 c = v_colors[vit];
+  //  for (int i = 0; i < 3; ++i)
+  //  {
+  //    vertex_list.push_back(pt[i]);
+  //    normal_list.push_back(n[i]);
+  //    color_list.push_back(c[i]);
+  //  }
+  //}
+  //for (auto fit : poly_mesh->faces())
+  //{
+  //  for (auto vfc : poly_mesh->vertices(fit))
+  //  {
+  //    face_list.push_back(size_t(vfc.idx()));
+  //  }
+  //}
+
+  num_vertex = GLenum(vertex_list.size() / 3);
+  num_face   = GLenum(face_list.size() / 3);
 
   std::vector<GLfloat> v_crest(num_vertex, 0.0);
   //for (size_t i = 0; i < crest_edge.size(); ++i)
@@ -152,23 +183,28 @@ void MainCanvas::updateModelBuffer()
 
   vertex_buffer->bind();
   vertex_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  vertex_buffer->write(0, &new_vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
+  vertex_buffer->write(0, &vertex_list[0], num_vertex * 3 * sizeof(GLfloat));
   vertex_buffer->release();
 
   face_buffer->bind();
   face_buffer->allocate(num_face * 3 * sizeof(GLuint));
-  face_buffer->write(0, &new_face_list[0], num_face * 3 * sizeof(GLuint));
+  face_buffer->write(0, &face_list[0], num_face * 3 * sizeof(GLuint));
   face_buffer->release();
 
   color_buffer->bind();
   color_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  color_buffer->write(0, &new_color_list[0], num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->write(0, &color_list[0], num_vertex * 3 * sizeof(GLfloat));
   color_buffer->release();
 
   normal_buffer->bind();
   normal_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
-  normal_buffer->write(0, &new_normal_list[0], num_vertex * 3 * sizeof(GLfloat));
+  normal_buffer->write(0, &normal_list[0], num_vertex * 3 * sizeof(GLfloat));
   normal_buffer->release();
+
+  uv_buffer->bind();
+  uv_buffer->allocate(num_vertex * 2 * sizeof(GLfloat));
+  uv_buffer->write(0, &uv_list[0], num_vertex * 2 * sizeof(GLfloat));
+  uv_buffer->release();
 
   vertex_crest_buffer->bind();
   vertex_crest_buffer->allocate(num_vertex * 1 * sizeof(GLfloat));
@@ -181,8 +217,50 @@ void MainCanvas::updateModelBuffer()
   }
 }
 
+void MainCanvas::updateModelColorBuffer()
+{
+  model->updateSHColor();
+  const STLVectorf& color_list  = model->getShapeColorList();
+  color_buffer->bind();
+  color_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->write(0, &color_list[0], num_vertex * 3 * sizeof(GLfloat));
+  color_buffer->release();
+
+  GLenum error_code = glGetError();
+  if (error_code != 0)
+  {
+    std::cout<<"MainCanvas: GL Error in getting model. Error Code: " << error_code << "\n";
+  }
+}
+
+void MainCanvas::setTextureImage(QImage& glImg, GLuint& texture)
+{
+  // Bind the img texture...
+  // Enable GL textures  
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  if(glIsTexture(texture)) std::cout<<"gen texture ok..\n";
+  else std::cout << "gen texture failed...\n";
+
+  // Nice texture coordinate interpolation
+  glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+  glTexImage2D(GL_TEXTURE_2D, 0, 4, glImg.width(), glImg.height(), 0,
+    GL_RGBA, GL_UNSIGNED_BYTE, glImg.bits());
+
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+
+  if (glGetError() != 0)
+  {
+    std::cout<<"GL Error in setting background image\n";
+  }
+}
+
 void MainCanvas::setBackgroundImage(QString fname)
 {
+  std::cout << "Initialize background texture and other frame buffer object." << std::endl;
   QImage img(fname);
 
   if (img.isNull())
@@ -210,27 +288,7 @@ void MainCanvas::setBackgroundImage(QString fname)
 
   QImage glImg = QGLWidget::convertToGLFormat(img);  // flipped 32bit RGBA
 
-  // Bind the img texture...
-  // Enable GL textures  
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glGenTextures(1, &background_texture);
-  glBindTexture(GL_TEXTURE_2D, background_texture);
-
-  if(glIsTexture(background_texture)) std::cout<<"gen background texture ok..\n";
-  else std::cout << "gen background texture failed...\n";
-
-  // Nice texture coordinate interpolation
-  glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
-  glTexImage2D(GL_TEXTURE_2D, 0, 4, glImg.width(), glImg.height(), 0,
-    GL_RGBA, GL_UNSIGNED_BYTE, glImg.bits());
-
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-
-  if (glGetError() != 0)
-  {
-    std::cout<<"GL Error in setting background image\n";
-  }
+  setTextureImage(glImg, background_texture);
 
   show_background_img = true;
 
@@ -240,6 +298,25 @@ void MainCanvas::setBackgroundImage(QString fname)
 
   setFBO();
   setSketchFBO();
+
+  std::cout << "Initialization finished." << std::endl;
+}
+
+void MainCanvas::setReflectanceImage(QString fname)
+{
+  std::cout << "Initialize Reflectance texture." << std::endl;
+  QImage img(fname);
+
+  if (img.isNull())
+  {
+    qWarning("Unable to load file, unsupported file format");
+    return;
+  }
+
+  QImage glImg = QGLWidget::convertToGLFormat(img);  // flipped 32bit RGBA
+  setTextureImage(glImg, reflect_texture);
+
+  std::cout << "Initialization finished." << std::endl;
 }
 
 void MainCanvas::setFBO()
@@ -380,6 +457,15 @@ void MainCanvas::drawModel()
   basic_shader->setAttributeBuffer("normal", GL_FLOAT, 0, 3, 0);
   basic_shader->enableAttributeArray("normal");
   normal_buffer->release();
+
+  basic_shader->setUniformValue("reflect_texture", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, reflect_texture);
+
+  uv_buffer->bind();
+  basic_shader->setAttributeBuffer("uv", GL_FLOAT, 0, 2, 0);
+  basic_shader->enableAttributeArray("uv");
+  uv_buffer->release();
 
   vertex_crest_buffer->bind();
   basic_shader->setAttributeBuffer("vCrestTag", GL_FLOAT, 0, 1, 0);

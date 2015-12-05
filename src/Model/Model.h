@@ -10,6 +10,7 @@
 #include "BasicHeader.h"
 
 class Shape;
+class Sphere;
 class ShapeCrest;
 class ShapePlane;
 class Bound;
@@ -37,6 +38,7 @@ public:
   //
   void updateShape(VertexList& new_vertex_list);
   void updateColor();
+  void updateSHColor();
 
   // get information from renderer
   inline cv::Mat &getRImg(){ return r_img; };
@@ -60,6 +62,8 @@ public:
   const AdjList& getShapeFaceAdjList();
   const STLVectori& getShapeEdgeConnectivity();
   void getShapeFaceCenter(int f_id, float p[3]);
+  std::map<int, int>& getVisbleGlobalMapper();
+  std::map<int, std::vector<int>>& getGlobalVisibleMapper();
 
   // get information from ShapeCrest
   const std::vector<Edge>& getShapeCrestEdge();
@@ -88,6 +92,7 @@ public:
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
+  std::shared_ptr<Sphere> lighting_ball;
   std::shared_ptr<ShapeCrest> shape_crest;
   std::shared_ptr<ShapePlane> shape_plane;
 

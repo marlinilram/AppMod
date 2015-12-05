@@ -33,6 +33,13 @@ public:
   void updateSourceField(int update_type = 0);
   void updateDistSField();
   std::shared_ptr<KDTreeWrapper> getSourceKDTree();
+  std::shared_ptr<KDTreeWrapper> getTargetKDTree();
+  std::map<int, std::pair<int, int> >& getSourceKDTreeMapper();
+  std::map<int, std::pair<int, int> >& getTargetKDTreeMapper();
+  CURVES& getSourceCurves();
+  CURVES& getTargetCurves();
+  inline double getCurveScale() { return curve_scale; };
+  inline double2 getCurveTranslate() { return curve_translate; };
 
   inline std::shared_ptr<tele2d> GetTeleRegister() { return source_tele_register; };
   inline std::shared_ptr<tele2d> GetTargetTeleRegister() { return target_tele_register; };
@@ -47,7 +54,7 @@ public:
   void BuildDispMap(const cv::Mat& source, kdtree::KDTreeArray& KDTree_data);
   void BuildSourceEdgeKDTree();
   void BuildTargetEdgeKDTree();
-  void BuildEdgeKDTree(CURVES& curves, std::shared_ptr<KDTreeWrapper> kdTree);
+  void BuildEdgeKDTree(CURVES& curves, std::map<int, std::pair<int, int> >& id_mapper, std::shared_ptr<KDTreeWrapper> kdTree);
   void GetSourceNormalizePara(double2& translate, double& scale);
   void GetFittedCurves(CURVES& curves);
   void CalculateHists(
@@ -74,8 +81,13 @@ public:
   void AnalyzeTargetRelationship();
 
   inline std::map<std::pair<int, int>, int>& getSrcVidMapper() { return src_vid_mapper; };
+  inline std::map<int, std::pair<int, int> >& getSrcRevVidMapper() { return src_rev_vid_mapp; };
   void getNormalizedProjPt(const int vid, double2& proj_pos);
 
+  void updateUserMarkedCurves();
+  void locateMarkedCurves();
+  std::map<int, int>& getVisibleGlobalMapper();
+  std::map<int, std::vector<int>>& getGlobalVisibleMapper();
 public:
 
   // user defined feature line
@@ -88,6 +100,11 @@ public:
 
   int user_constrained_src_v; // the index of v in model
   double2 user_constrained_tar_p; // target screen position
+
+  std::vector<int> user_marked_crsp;  // source & target curves user has marked 
+  std::set<std::pair<int, int>> global_user_marked_crsp; // all source & target curves user has marked for each stage (source curves are stored using the original crest lines id)
+  std::vector<int> marked_source_curves; // all source curves user has marked for each stage (source curves are stored using the source curves id)
+  std::vector<int> marked_target_curves; // all target curves user has marked for each stage
 
 private:
   
@@ -108,13 +125,16 @@ private:
   double curve_scale;
   float edge_threshold; // threshold for edge detection
   std::map<std::pair<int, int>, int> src_vid_mapper; // map from curve id to vertex id
+  std::map<int, std::pair<int, int> > src_rev_vid_mapp; // map from vertex id to curve id
   std::vector<std::set<int> > tar_relationship;
   std::vector<Vector2f>       tar_avg_direction;
   std::vector<Vector2f>       src_avg_direction;
 
   std::shared_ptr<KDTreeWrapper> source_KDTree;
   std::shared_ptr<KDTreeWrapper> target_KDTree;
-  std::map<int, std::pair<int, int> > kdtree_id_mapper; // map from kdtree it to curves id
+  std::map<int, std::pair<int, int> > kdtree_id_mapper; // map from target kdtree id to curves id
+  std::map<int, std::pair<int, int> > kdtree_id_mapper_source;
+  //std::map<int, std::pair<int, int> > kdtree_id_mapper_target;
 
   std::shared_ptr<tele2d> source_tele_register;
   std::shared_ptr<tele2d> target_tele_register;
