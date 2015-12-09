@@ -144,6 +144,29 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
       }
     }
   }
+  std::map<CurvePt, CrspCurvePt> t_s_crsp_map;
+  std::map<CurvePt, CrspCurvePt>::iterator it;
+  for(auto i : crsp_map)
+  {
+    it = t_s_crsp_map.find(i.second.first);
+    if(it != t_s_crsp_map.end())
+    {
+      if(i.second.second > it->second.second)
+      {
+        it->second = CrspCurvePt(i.first, i.second.second);
+      }
+    }
+    else
+    {
+      t_s_crsp_map[i.second.first] = CrspCurvePt(i.first, i.second.second);
+    }
+  }
+  crsp_map.clear();
+  for(auto i : t_s_crsp_map)
+  {
+    crsp_map[i.second.first] = CrspCurvePt(i.first, i.second.second);
+  }
+  
   //crsp_map_out = crsp_map;return;
   // refine the correspondences
   // 1. keep the most confidential target curve
