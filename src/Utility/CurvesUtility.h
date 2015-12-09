@@ -42,7 +42,7 @@ void DenormalizedCurve(CURVE& curve, double2 translate, double scale);
 void NormalizePara(CURVES& curves, double2& translate, double& scale);
 
 void CurveSpTwoSideDist(std::vector<std::vector<double2> >& edges_sp_len, CURVES& curves);
-void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& curves, cv::Mat& saliency_img);
+void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& curves, cv::Mat& saliency_img, std::vector<double>& edges_average_sp_sl);
 
 CURVE SmoothCurve(CURVE& curve_in, int win_size = 3);
 CURVES SmoothCurves(CURVES& curves_in, int win_size = 3);

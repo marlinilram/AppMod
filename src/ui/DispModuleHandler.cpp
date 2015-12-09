@@ -329,3 +329,17 @@ void DispModuleHandler::doSynthesis()
   trackball_viewer->setGLActors(alg_handler->getGLActors());
   updateCanvas();
 }
+
+void DispModuleHandler::updateShapeCrest()
+{
+  trackball_viewer->updateShapeCrest();
+  main_canvas_viewer->updateGLOutside();
+  source_vector_viewer->updateSourceField(0);
+  target_vector_viewer->updateGLOutside();
+}
+
+void DispModuleHandler::updateTargetCurves()
+{
+  //source_vector_viewer->updateSourceField(5);
+  source_vector_viewer->updateGLOutside();
+}

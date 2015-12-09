@@ -487,7 +487,7 @@ void CurveSpTwoSideDist(std::vector<std::vector<double2> >& edges_sp_len, CURVES
   }
 }
 
-void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& curves, cv::Mat& saliency_img)
+void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& curves, cv::Mat& saliency_img, std::vector<double>& edges_average_sp_sl)
 {
   for (size_t i = 0; i < curves.size(); ++i)
   {
@@ -524,6 +524,16 @@ void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& cur
       }
     }
     f_debug.close();
+  }
+
+  for(size_t i = 0; i < edges_sp_sl.size(); i ++)
+  {
+    double sum = 0.0;
+    for(size_t j = 0; j < edges_sp_sl[i].size(); j ++)
+    {
+      sum += edges_sp_sl[i][j];
+    }
+    edges_average_sp_sl.push_back(sum / (edges_sp_sl[i].size() - 1));
   }
 }
 

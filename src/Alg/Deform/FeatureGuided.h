@@ -88,6 +88,8 @@ public:
   void locateMarkedCurves();
   std::map<int, int>& getVisibleGlobalMapper();
   std::map<int, std::vector<int>>& getGlobalVisibleMapper();
+  std::vector<double>& getEdgesAverageSpSl();
+
 public:
 
   // user defined feature line
@@ -119,6 +121,7 @@ private:
   cv::Mat target_edge_saliency;
   std::vector<std::vector<double2>> target_edges_sp_len; // attribute storing the length to each end of this edge for each edge sample point
   std::vector<std::vector<double> > target_edges_sp_sl;
+  std::vector<double> target_edges_average_sp_sl;
 
   CURVES source_curves;
   CURVES target_curves;

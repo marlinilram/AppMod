@@ -70,6 +70,7 @@ public:
   const std::vector<STLVectori>& getShapeCrestLine();
   const std::vector<STLVectori>& getShapeVisbleCrestLine();
   void computeShapeCrestVisible(std::set<int>& vis_faces);
+  void updateShapeCrest();
 
   // some computations utility of Model
   float getModelAvgEdgeLength();

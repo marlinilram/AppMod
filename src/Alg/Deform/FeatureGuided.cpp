@@ -191,6 +191,11 @@ void FeatureGuided::updateSourceField(int update_type)
     this->locateMarkedCurves();
     this->BuildClosestPtPair();
   }
+  else if (update_type == 5)
+  {
+    this->updateSourceVectorField();
+    this->updateScalarField();
+  }
 }
 
 void FeatureGuided::updateDistSField()
@@ -285,7 +290,7 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
   CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, curves);
 
   target_edges_sp_sl.clear();
-  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, curves, target_edge_saliency);
+  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, curves, target_edge_saliency, target_edges_average_sp_sl);
 
   AnalyzeTargetRelationship();
 
@@ -703,4 +708,9 @@ std::map<int, int>& FeatureGuided::getVisibleGlobalMapper()
 std::map<int, std::vector<int>>& FeatureGuided::getGlobalVisibleMapper()
 {
   return source_model->getGlobalVisibleMapper();
+}
+
+std::vector<double>& FeatureGuided::getEdgesAverageSpSl()
+{
+  return this->target_edges_average_sp_sl;
 }

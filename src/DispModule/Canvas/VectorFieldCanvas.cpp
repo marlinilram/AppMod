@@ -6,6 +6,7 @@
 #include "Colormap.h"
 #include "Bound.h"
 #include "KDTreeWrapper.h"
+#include "ParameterMgr.h"
 
 #include "opencv2/contrib/contrib.hpp"
 
@@ -336,15 +337,19 @@ bool VectorFieldCanvas::displayTargetCurves()
   {
     glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;    
   }
+  double threshold = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold");
   for (int i = 0; i < target_curves.size(); ++i)
   {
-    glBegin(GL_LINE_STRIP);
-    for (int j = 0; j < target_curves[i].size(); ++j)
+    if(feature_model->getEdgesAverageSpSl()[i] > threshold)
     {
-      double2 pos = target_curves[i][j];
-      glVertex3f( pos.x,pos.y, 0 ) ;
-    }
+      glBegin(GL_LINE_STRIP);
+      for (int j = 0; j < target_curves[i].size(); ++j)
+      {
+        double2 pos = target_curves[i][j];
+        glVertex3f( pos.x,pos.y, 0 ) ;
+      }
       glEnd();
+    }
   }
   return true;
 }
