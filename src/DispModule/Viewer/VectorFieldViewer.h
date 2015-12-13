@@ -12,7 +12,8 @@ namespace VectorField
   {
     DRAW_CRSP_LINE = 0,
     SELECT_POINT = 1,
-    CORRECT_CRSP = 2
+    CORRECT_CRSP = 2,
+    DELETE_TARGET_CURVES = 3
   };
 };
 
@@ -51,12 +52,15 @@ private:
 
   bool is_drawLine;
   bool is_drawAllLines;
+  bool delete_target_mode;
   std::vector<double2> line;
   std::vector<double2> selected_line;
 
   int selected_v_id;
   double user_start[2];
   double user_end[2];
+
+  Matrix4f proj_mat_out;
 
   VectorField::INTERACTIONMODE interaction_mode;
 };

@@ -600,3 +600,12 @@ std::map<int, std::vector<int>>& Model::getGlobalVisibleMapper()
 {
   return shape_crest->global_visible_mapper;
 }
+
+void Model::updateShapeCrest()
+{
+  shape_crest->crest_edges.clear();
+  shape_crest->crest_lines.clear();
+  shape_crest->buildCandidates();
+  shape_crest->mergeCandidates(shape_crest->crest_edges, shape_crest->crest_lines);
+  shape_crest->buildEdgeLineMapper();
+}

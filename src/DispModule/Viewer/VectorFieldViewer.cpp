@@ -11,6 +11,7 @@ VectorFieldViewer::VectorFieldViewer(QWidget* widget)
 {
   is_drawAllLines = false;
   is_drawLine = false;
+  delete_target_mode = false;
 
   interaction_mode = VectorField::DRAW_CRSP_LINE;
   selected_v_id = -1;
@@ -23,6 +24,42 @@ VectorFieldViewer::~VectorFieldViewer()
 
 void VectorFieldViewer::draw()
 {
+  if(delete_target_mode == true)
+  {
+    //startScreenCoordinatesSystem(true);
+    for (size_t i = 0; i < dispObjects.size(); ++i)
+    {
+      VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+      if (canvas)
+      {
+        int w = this->width();
+        int h = this->height();
+        canvas->deleteTargetCurves(line, w, h, proj_mat_out);
+       /* CURVES target_curves;
+        canvas->getTargetCurves(target_curves);
+        std::vector<std::vector<std::pair<int, int>>> target_curves_screen;
+        target_curves_screen.resize(target_curves.size());
+        for(size_t i = 0; i < target_curves.size(); i ++)
+        {
+          target_curves_screen[i].resize(target_curves[i].size());
+          for(size_t j = 0; j < target_curves[i].size(); j ++)
+          {
+            qreal src[3], res[3];
+            src[0] = target_curves[i][j].x;
+            src[1] = target_curves[i][j].y;
+            src[2] = 0;
+            camera()->getProjectedCoordinatesOf(src, res);
+            target_curves_screen[i][j].first = int(res[0]);
+            target_curves_screen[i][j].second = int(res[1]);
+          }
+        }*/
+      }
+    }
+    line.clear();
+    //stopScreenCoordinatesSystem();
+    delete_target_mode = false;
+  }
+  
   BasicViewer::draw();
 
   glClear(GL_DEPTH_BUFFER_BIT);
@@ -35,6 +72,8 @@ void VectorFieldViewer::draw()
     drawAllLines();
 
   }
+  
+  
 }
 
 void VectorFieldViewer::init()
@@ -123,7 +162,7 @@ void VectorFieldViewer::mousePressEvent(QMouseEvent *e)
     src[2] = 0.5;
     camera()->getUnprojectedCoordinatesOf(src,res);
 
-    if (interaction_mode == VectorField::DRAW_CRSP_LINE)
+    if (interaction_mode == VectorField::DRAW_CRSP_LINE || interaction_mode == VectorField::DELETE_TARGET_CURVES)
     {
       is_drawLine = true;
       double2 point;
@@ -151,7 +190,7 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
 {
 
   int handled = 0;
-  if (interaction_mode == VectorField::DRAW_CRSP_LINE)
+  if (interaction_mode == VectorField::DRAW_CRSP_LINE || interaction_mode == VectorField::DELETE_TARGET_CURVES)
   {
     if(is_drawLine)
     {
@@ -212,6 +251,39 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
       updateGLOutside();
       line.clear();
       selected_line.clear();
+    }
+    else if (interaction_mode == VectorField::DELETE_TARGET_CURVES)
+    {
+      is_drawLine = false;
+      delete_target_mode = true;
+     
+      GLfloat modelview[16];
+      GLfloat projection[16];
+      GLint viewport[4];
+      camera()->getModelViewMatrix(modelview);
+      camera()->getProjectionMatrix(projection);
+      camera()->getViewport(viewport);
+      proj_mat_out.setZero();
+      /*proj_mat_out(0, 0) = m_viewport(2) / 2;
+      proj_mat_out(0, 3) = m_viewport(0) + m_viewport(2) / 2;
+      proj_mat_out(1, 1) = -m_viewport(3) / 2;
+      proj_mat_out(1, 3) = -m_viewport(3) / 2;*/
+      proj_mat_out(0, 0) = viewport[2] / 2;
+      proj_mat_out(0, 3) = viewport[0] + viewport[2] / 2;
+      proj_mat_out(1, 1) = -viewport[3] / 2;
+      proj_mat_out(1, 3) = -viewport[3] / 2;
+      proj_mat_out(3, 3) = 1.0;
+
+      Matrix4f m_modelview;
+      Matrix4f m_projection;
+
+      m_modelview = Eigen::Map<Eigen::Matrix4f>(modelview, 4, 4);
+      m_projection = Eigen::Map<Eigen::Matrix4f>(projection, 4, 4);
+
+      proj_mat_out = proj_mat_out * m_projection * m_modelview;
+      
+
+      updateGLOutside();
     }
     else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)
     {

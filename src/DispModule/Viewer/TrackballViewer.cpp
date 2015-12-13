@@ -509,3 +509,15 @@ void TrackballViewer::setGLActors(std::vector<GLActor>& actors)
 //    }
 //  }
 //}
+
+void TrackballViewer::updateShapeCrest()
+{
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+    if (trackball_canvas)
+    {
+      trackball_canvas->getModel()->updateShapeCrest();
+    }
+  }
+}

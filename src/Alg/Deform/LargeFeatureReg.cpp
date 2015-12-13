@@ -150,21 +150,21 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
                                                 Eigen::Map<const MatrixXf>(&feature_model->source_model->getShapeVertexList()[0], 3, mesh->n_vertices()),
                                                 Eigen::RowVectorXf::Ones(mesh->n_vertices())).finished();
   P_init = v_with_transform.block(0, 0, 3, mesh->n_vertices());
+
   // init ARAP term
   ARAP_R.resize(mesh->n_vertices(), Matrix3f::Identity());
   updateARAPLMatrix(ARAP_L_matrix);
-  lamd_ARAP = 1;//0.1;//1;
+  lamd_ARAP = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_ARAP");
   // init flat term
   P_plane_proj = P_init;
   updateFlatCoefs(flat_coefs);
   feature_model->source_model->getPlaneVertices(flat_vertices);
   P_plane_proj_new.resize(flat_vertices.size());
-  lamd_flat = 0.1;//2;//2;
+  lamd_flat = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_flat");
   // init data term
   feature_model->source_model->getProjectionMatrix(vpPMV_mat);
-  lamd_data = 0.5 * feature_model->curve_scale;
-  // init SField term
-  lamd_SField = 0.01;
+  lamd_data = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_data") * feature_model->curve_scale;
+  lamd_SField = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_SField");
 
   int x_dim = 3 * mesh->n_vertices();
   std::vector<double> x0;
