@@ -94,6 +94,7 @@ private:
 
   GLenum num_vertex;
   GLenum num_face;
+  GLenum num_crest_edges;
 
   int width, height;
   float ratio, u_max, v_max;

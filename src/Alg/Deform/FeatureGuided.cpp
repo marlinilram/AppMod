@@ -39,13 +39,14 @@ void FeatureGuided::initTargetImage(std::string targetFile)
 
 void FeatureGuided::initRegister()
 {
+  // Important! need to call initTarRegister() first
+  this->initTarRegister();
+  this->initSrcRegister();
+
   // extract edges from souce image and target image
-  this->source_curves.clear();
-  this->target_curves.clear();
-  this->edge_threshold = 0.9;
-  this->ExtractSrcCurves(source_model->getEdgeImg(), this->source_curves);
-  this->edge_threshold = 0.01;
-  this->ExtractCurves(this->target_img, this->target_curves);
+
+  
+
 
   // output curves
   //std::ofstream f_debug(source_model->getDataPath() + "/source_curve.txt");
@@ -74,11 +75,64 @@ void FeatureGuided::initRegister()
   //  f_debug.close();
   //}
 
-  this->setNormalizePara();
-  CURVES temp_source_curves;
+
+  
+
+  //source_scalar_field->computeVariationMap();
+  //target_scalar_field->computeDistanceMap(this);
+  //target_scalar_field->computeVariationMap();
+  //target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
+  this->updateDistSField();
+
+  this->BuildClosestPtPair();
+}
+
+void FeatureGuided::initTarRegister(int type)
+{
+  if (type == 0)
+  {
+    this->target_curves.clear();
+    this->edge_threshold = 0.01;
+    this->ExtractCurves(this->target_img, this->target_curves);
+    this->setNormalizePara();
+  }
+  else if (type == 1)
+  {
+    // do nothing update the rest of target related things
+  }
+
   CURVES temp_target_curves;
-  this->NormalizedSourceCurves(temp_source_curves);
   this->NormalizedTargetCurves(temp_target_curves);
+
+  // init target tele2d
+  std::vector<std::vector<int>> group(1);
+  std::vector<int2> endps;
+  for (int i = 0; i < this->target_curves.size(); ++i)
+  {
+    group[0].push_back(i);
+    endps.push_back(int2(1, 0));
+  }
+  this->target_tele_register.reset(new tele2d(100, 0.02, 1));
+  this->target_tele_register->init(temp_target_curves, group, endps);
+  this->target_tele_register->setInputField();
+
+  target_vector_field_lines.reset(new FeatureLine);
+  target_KDTree.reset(new KDTreeWrapper);
+  BuildTargetEdgeKDTree();
+
+  target_scalar_field.reset(new ScalarField(300, 50));
+  target_scalar_field->setTeleRegister(target_tele_register);
+}
+
+void FeatureGuided::initSrcRegister()
+{
+
+  this->source_curves.clear();
+  this->edge_threshold = 0.9;
+  this->ExtractSrcCurves(source_model->getEdgeImg(), this->source_curves);
+
+  CURVES temp_source_curves;
+  this->NormalizedSourceCurves(temp_source_curves);
 
   // init source tele2d
   std::vector<std::vector<int>> group(1);
@@ -92,17 +146,7 @@ void FeatureGuided::initRegister()
   this->source_tele_register->init(temp_source_curves, group, endps);
   this->source_tele_register->setInputField();
 
-  // init target tele2d
-  group[0].clear();
-  endps.clear();
-  for (int i = 0; i < this->target_curves.size(); ++i)
-  {
-    group[0].push_back(i);
-    endps.push_back(int2(1, 0));
-  }
-  this->target_tele_register.reset(new tele2d(100, 0.02, 1));
-  this->target_tele_register->init(temp_target_curves, group, endps);
-  this->target_tele_register->setInputField();
+
 
   // init source distance map
   //this->BuildDispMap(source_img, source_KDTree_data);
@@ -113,23 +157,13 @@ void FeatureGuided::initRegister()
 
   // Search correspondences
   source_vector_field_lines.reset(new FeatureLine);
-  target_vector_field_lines.reset(new FeatureLine);
   source_KDTree.reset(new KDTreeWrapper);
-  target_KDTree.reset(new KDTreeWrapper);
   BuildSourceEdgeKDTree();
-  BuildTargetEdgeKDTree();
+  
+
 
   source_scalar_field.reset(new ScalarField(100, 2));
-  target_scalar_field.reset(new ScalarField(300, 50));
   source_scalar_field->setTeleRegister(source_tele_register);
-  target_scalar_field->setTeleRegister(target_tele_register);
-  //source_scalar_field->computeVariationMap();
-  //target_scalar_field->computeDistanceMap(this);
-  //target_scalar_field->computeVariationMap();
-  //target_scalar_field->computeMatchingMap(source_tele_register->vector_field);
-  this->updateDistSField();
-
-  this->BuildClosestPtPair();
 }
 
 void FeatureGuided::updateSourceVectorField()
@@ -151,8 +185,8 @@ void FeatureGuided::updateSourceVectorField()
   this->source_tele_register->setInputField();
 
   //std::cout << "curve integrate: " << this->target_scalar_field->curveIntegrate(this->source_curves, this) << std::endl;
-  this->user_define_curve_crsp.clear();
-  this->user_marked_crsp.clear();
+  //this->user_define_curve_crsp.clear();
+  //this->user_marked_crsp.clear();
 }
 
 void FeatureGuided::updateScalarField()
@@ -188,6 +222,17 @@ void FeatureGuided::updateSourceField(int update_type)
   }
   else if (update_type == 4)
   {
+    this->locateMarkedCurves();
+    this->BuildClosestPtPair();
+  }
+  else if (update_type == 5)
+  {
+    this->updateSourceVectorField();
+    this->updateScalarField();
+  }
+  else if (update_type == 6)
+  {
+    this->updateDistSField();
     this->BuildClosestPtPair();
   }
 }
@@ -284,7 +329,7 @@ void FeatureGuided::ExtractCurves(const cv::Mat& source, CURVES& curves)
   CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, curves);
 
   target_edges_sp_sl.clear();
-  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, curves, target_edge_saliency);
+  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, curves, target_edge_saliency, target_edges_average_sp_sl);
 
   AnalyzeTargetRelationship();
 
@@ -372,6 +417,7 @@ void FeatureGuided::AnalyzeTargetRelationship()
   double dir_th = 0.9; // cosine
   double end_th = 7; // pixel length
   double end_th_extra = 11;
+  tar_relationship.clear();
   tar_relationship.resize(tar_avg_direction.size(), std::set<int>());
   for (size_t i = 0; i < tar_relationship.size(); ++i)
   {
@@ -658,6 +704,7 @@ void FeatureGuided::GetCurrentCrspList(std::vector<std::pair<int, double2> >& cr
 
 void FeatureGuided::updateUserMarkedCurves()
 {
+  global_user_marked_crsp.clear();
   if(!user_marked_crsp.empty())
   {
     if(user_marked_crsp.size() % 2 != 0)
@@ -701,4 +748,34 @@ std::map<int, int>& FeatureGuided::getVisibleGlobalMapper()
 std::map<int, std::vector<int>>& FeatureGuided::getGlobalVisibleMapper()
 {
   return source_model->getGlobalVisibleMapper();
+}
+
+std::vector<double>& FeatureGuided::getEdgesAverageSpSl()
+{
+  return this->target_edges_average_sp_sl;
+}
+
+void FeatureGuided::deleteTargetCurves(std::vector<int>& deleted_tags)
+{
+  // delete all tags curves
+  CURVES new_tar_curves;
+  for (size_t i = 0; i < deleted_tags.size(); ++i)
+  {
+     if (deleted_tags[i] == 0)
+     {
+        new_tar_curves.push_back(target_curves[i]);
+     }
+  }
+
+  target_curves.swap(new_tar_curves);
+
+  target_edges_sp_len.clear();
+  CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, target_curves);
+
+  target_edges_sp_sl.clear();
+  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, target_curves, target_edge_saliency, target_edges_average_sp_sl);
+
+  AnalyzeTargetRelationship();
+
+  this->initTarRegister(1);
 }

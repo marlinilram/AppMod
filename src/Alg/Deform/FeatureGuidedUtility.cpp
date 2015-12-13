@@ -7,6 +7,7 @@
 #include "CurvesUtility.h"
 #include "UtilityHeader.h"
 #include "RandSample.h"
+#include "ParameterMgr.h"
 
 void FeatureGuided::GetUserCrspPair(CURVES& curves, float sample_density)
 {
@@ -515,7 +516,17 @@ void FeatureGuided::getNormalizedProjPt(const int vid, double2& proj_pos)
 {
   float winx, winy;
   source_model->getProjectPt(vid, winx, winy);
-  proj_pos.x = winx;
-  proj_pos.y = target_img.rows - winy;
-  proj_pos = ( proj_pos + curve_translate - double2(0.5, 0.5 ) ) * curve_scale + double2(0.5, 0.5 );
+  Matrix4f vpPMV_mat;
+  source_model->getProjectionMatrix(vpPMV_mat);
+  Matrix4f cur_transform = Matrix4f::Identity();
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform") == 1)
+  {
+    cur_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+  }
+  const std::vector<float> v_list = source_model->getShapeVertexList();
+  Vector4f v_pos(v_list[3 * vid + 0], v_list[3 * vid + 1], v_list[3 * vid + 2], 1.0f);
+  v_pos = vpPMV_mat * cur_transform * v_pos;
+  proj_pos.x = v_pos[0] / v_pos[3];
+  proj_pos.y = v_pos[1] / v_pos[3];
+  proj_pos = ( proj_pos + curve_translate - double2(0.5, 0.5) ) * curve_scale + double2(0.5, 0.5);
 }

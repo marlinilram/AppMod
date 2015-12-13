@@ -28,6 +28,8 @@ public:
 
   void initTargetImage(std::string targetFile);
   void initRegister();
+  void initSrcRegister();
+  void initTarRegister(int type = 0);
   void updateSourceVectorField();
   void updateScalarField();
   void updateSourceField(int update_type = 0);
@@ -88,6 +90,9 @@ public:
   void locateMarkedCurves();
   std::map<int, int>& getVisibleGlobalMapper();
   std::map<int, std::vector<int>>& getGlobalVisibleMapper();
+  std::vector<double>& getEdgesAverageSpSl();
+  void deleteTargetCurves(std::vector<int>& deleted_tags);
+
 public:
 
   // user defined feature line
@@ -102,9 +107,10 @@ public:
   double2 user_constrained_tar_p; // target screen position
 
   std::vector<int> user_marked_crsp;  // source & target curves user has marked 
-  std::set<std::pair<int, int>> global_user_marked_crsp; // all source & target curves user has marked for each stage (source curves are stored using the original crest lines id)
+  std::set<std::pair<int, int> > global_user_marked_crsp; // all source & target curves user has marked for each stage (source curves are stored using the original crest lines id)
   std::vector<int> marked_source_curves; // all source curves user has marked for each stage (source curves are stored using the source curves id)
   std::vector<int> marked_target_curves; // all target curves user has marked for each stage
+  //std::set<std::pair<int, int> > user_define_curve_crsp;
 
 private:
   
@@ -118,6 +124,7 @@ private:
   cv::Mat target_edge_saliency;
   std::vector<std::vector<double2>> target_edges_sp_len; // attribute storing the length to each end of this edge for each edge sample point
   std::vector<std::vector<double> > target_edges_sp_sl;
+  std::vector<double> target_edges_average_sp_sl;
 
   CURVES source_curves;
   CURVES target_curves;

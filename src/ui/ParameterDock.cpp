@@ -31,6 +31,12 @@ ParameterDock::ParameterDock()
   connect(LFReg_NonRigid_PushButton, SIGNAL(clicked()), this, SLOT(runLFRegNonRigid()));
   connect(Show_Light_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(changeToLightball(int)));
   connect(Synthesis_PushButton, SIGNAL(clicked()), this, SLOT(doSynthesis()));;
+  connect(lamd_ARAP_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdARAP(double)));
+  connect(lamd_flat_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdFlat(double)));
+  connect(lamd_data_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdData(double)));
+  connect(lamd_SField_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdSField(double)));
+  connect(source_curves_t1_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSourceCurvesThreshold(double)));
+  connect(target_curves_t2_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setTargetCurvesThreshold(double)));
 
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
@@ -200,7 +206,41 @@ void ParameterDock::changeToLightball(int state)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") = state;
   disp_modules->changeToLightball();
-}void ParameterDock::doSynthesis()
+}
+
+void ParameterDock::doSynthesis()
 {
   disp_modules->doSynthesis();
+}
+
+void ParameterDock::setLamdARAP(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_ARAP") = val;
+}
+
+void ParameterDock::setLamdFlat(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_flat") = val;
+}
+
+void ParameterDock::setLamdData(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_data") = val;
+}
+
+void ParameterDock::setLamdSField(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_SField") = val;
+}
+
+void ParameterDock::setSourceCurvesThreshold(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("ShapCrest:source_curves_threshhold") = val;
+  disp_modules->updateShapeCrest();
+}
+
+void ParameterDock::setTargetCurvesThreshold(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold") = val;
+  disp_modules->updateTargetCurves();
 }

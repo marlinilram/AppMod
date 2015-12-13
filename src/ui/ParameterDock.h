@@ -45,6 +45,12 @@ private slots:
   void setSFieldWinWidth(int val);
   void setSFieldType(int val);
   void setMainRenderMode(int state);
+  void setLamdARAP(double val);
+  void setLamdFlat(double val);
+  void setLamdData(double val);
+  void setLamdSField(double val);
+  void setSourceCurvesThreshold(double val);
+  void setTargetCurvesThreshold(double val);
 
   void setLFRegMethod(int state);
   void runLFRegNonRigid();

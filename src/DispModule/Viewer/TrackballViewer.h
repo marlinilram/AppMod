@@ -27,6 +27,7 @@ public:
   void setGLActors(std::vector<GLActor>& actors);
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
   inline void setShowTrackball(bool state) { show_trackball = state; };
+  void updateShapeCrest();
   
 protected:
   virtual void draw();

@@ -27,6 +27,7 @@ MainCanvas::~MainCanvas()
 
 bool MainCanvas::display()
 {
+  updateVisibleEdge();
   drawPrimitiveImg();
 
   if (use_flat)
@@ -73,7 +74,7 @@ void MainCanvas::setShaderProgram()
   normal_buffer->create();
   uv_buffer.reset(new QGLBuffer);
   uv_buffer->create();
-  vertex_crest_buffer.reset(new QGLBuffer);
+  vertex_crest_buffer.reset(new QGLBuffer(QGLBuffer::IndexBuffer));
   vertex_crest_buffer->create();
 
   basic_shader.reset(new QGLShaderProgram);
@@ -171,15 +172,18 @@ void MainCanvas::updateModelBuffer()
   //  }
   //}
 
+  std::vector<GLuint> v_crest;
+  for (size_t i = 0; i < crest_edge.size(); ++i)
+  {
+    v_crest.push_back(crest_edge[i].first);
+    v_crest.push_back(crest_edge[i].second);
+    //v_crest[crest_edge[i].first] = 1.0f;
+    //v_crest[crest_edge[i].second] = 1.0f;
+  }
+
   num_vertex = GLenum(vertex_list.size() / 3);
   num_face   = GLenum(face_list.size() / 3);
-
-  std::vector<GLfloat> v_crest(num_vertex, 0.0);
-  //for (size_t i = 0; i < crest_edge.size(); ++i)
-  //{
-  //  v_crest[crest_edge[i].first] = 1.0f;
-  //  v_crest[crest_edge[i].second] = 1.0f;
-  //}
+  num_crest_edges = GLenum(v_crest.size() / 2);
 
   vertex_buffer->bind();
   vertex_buffer->allocate(num_vertex * 3 * sizeof(GLfloat));
@@ -207,8 +211,9 @@ void MainCanvas::updateModelBuffer()
   uv_buffer->release();
 
   vertex_crest_buffer->bind();
-  vertex_crest_buffer->allocate(num_vertex * 1 * sizeof(GLfloat));
-  vertex_crest_buffer->write(0, &v_crest[0], num_vertex * 1 * sizeof(GLfloat));
+  vertex_crest_buffer->allocate(v_crest.size() * sizeof(GLuint));
+  vertex_crest_buffer->write(0, &v_crest[0], v_crest.size() * sizeof(GLuint));
+  vertex_crest_buffer->release();
 
   GLenum error_code = glGetError();
   if (error_code != 0)
@@ -462,10 +467,10 @@ void MainCanvas::drawModel()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, reflect_texture);
 
-  uv_buffer->bind();
-  basic_shader->setAttributeBuffer("uv", GL_FLOAT, 0, 2, 0);
-  basic_shader->enableAttributeArray("uv");
-  uv_buffer->release();
+  //uv_buffer->bind();
+  //basic_shader->setAttributeBuffer("uv", GL_FLOAT, 0, 2, 0);
+  //basic_shader->enableAttributeArray("uv");
+  //uv_buffer->release();
 
   vertex_crest_buffer->bind();
   basic_shader->setAttributeBuffer("vCrestTag", GL_FLOAT, 0, 1, 0);
@@ -1045,9 +1050,9 @@ void MainCanvas::updateVisibleEdge()
   
   lf_update_shader->bind();
 
-  lf_update_shader->setUniformValue("fMeshSize", GLfloat(num_face));
-  Matrix4f& tmp_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
-  lf_update_shader->setUniformValue("rigidTransform", QMatrix4x4(tmp_transform.data()).transposed());
+  lf_update_shader->setUniformValue("renderMode", GLint(0)); // fill mode, put all alpha channel with 0
+  //Matrix4f& tmp_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
+  //lf_update_shader->setUniformValue("rigidTransform", QMatrix4x4(tmp_transform.data()).transposed());
 
   vertex_buffer->bind();
   //shaderProgram->setAttributeArray("vertex", vertices.constData());
@@ -1059,12 +1064,21 @@ void MainCanvas::updateVisibleEdge()
   glDrawElements(GL_TRIANGLES, num_face * 3, GL_UNSIGNED_INT, (void*)0);
   face_buffer->release();
 
+  lf_update_shader->setUniformValue("renderMode", GLint(1)); // draw edge mode, put all alpha channel with the edge id
+  lf_update_shader->setUniformValue("fElementSize", GLfloat(num_crest_edges));
+  face_buffer->bind();
+  glDrawElements(GL_POINTS, num_face * 3, GL_UNSIGNED_INT, (void*)0);
+  face_buffer->release();
+
   lf_update_shader->disableAttributeArray("vertex");
   lf_update_shader->release();
 
   glReadBuffer(GL_COLOR_ATTACHMENT0);
   glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
+  cv::flip(primitive_ID_img, primitive_ID_img, 0);
 
   std::set<int> vis_faces;
   for (int i = 0; i < width * height; ++i)

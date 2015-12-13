@@ -161,7 +161,6 @@ void AlgHandler::doLargeFeatureReg(int reg_type)
   }
 
   lf_reg->setFeatureModel(feature_model.get());
-  feature_model->updateUserMarkedCurves();
   if (reg_type == 0)
   {
     lf_reg->runReg(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));

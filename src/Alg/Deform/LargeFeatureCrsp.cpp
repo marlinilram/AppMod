@@ -66,6 +66,8 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
 {
   // find corresponding points in source curves
   // guarantee that the found correspondences are two-sided closest
+  // get the visible crest line (source curve) to global crest line mapper, for history user interaction information
+  std::map<int, int>& vis_global_mapper = feature_model->getVisibleGlobalMapper(); 
   std::vector<double> paras(3, 0);
   paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
   paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
@@ -74,7 +76,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   std::map<CurvePt, CurvePt> crsp;
   for (size_t i = 0; i < n_tar_curves.size(); ++i)
   {
-    if (tar_curve_mark[i])
+    //if (tar_curve_mark[i])
     {
       for (size_t j = 0; j < n_tar_curves[i].size(); ++j)
       {
@@ -85,9 +87,10 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
         //if (CurvesUtility::closestPtInCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, target_scalar_field->matching_map, target_scalar_field->resolution, 0.3))
         if (CurvesUtility::closestPtFromSaliencyCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, score, paras))
         {
-          if (fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) < 0.9 
-            && feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_i, i)) == feature_model->user_define_curve_crsp.end()) continue;
-          if (crsp_map_out.find(CurvePt(src_i, src_j)) != crsp_map_out.end()) continue;
+          //if (feature_model->global_user_marked_crsp.find(std::pair<int, int>(vis_global_mapper[src_i], i)) == feature_model->global_user_marked_crsp.end()) continue;
+          //if (crsp_map_out.find(CurvePt(src_i, src_j)) != crsp_map_out.end()) continue;
+
+          score *= fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) ;
 
           crsp_map_it = crsp_map.find(CurvePt(src_i, src_j));
           if (crsp_map_it != crsp_map.end())
@@ -107,7 +110,65 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
       }
     }
   }
+  //for (size_t i = 0; i < n_src_curves.size(); ++i)
+  //{
+  //  //if (tar_curve_mark[i])
+  //  {
+  //    for (size_t j = 0; j < n_src_curves[i].size(); ++j)
+  //    {
+  //      int tar_i = -1;
+  //      int tar_j = -1;
+  //      double score = 0.0;
+  //      //paras[0] = feature_model->target_edges_sp_sl[i][j];
+  //      //if (CurvesUtility::closestPtInCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, dis, target_scalar_field->matching_map, target_scalar_field->resolution, 0.3))
+  //      if (CurvesUtility::closestPtInSaliencyCurves(n_src_curves[i][j], n_tar_curves, feature_model->target_edges_sp_sl, tar_i, tar_j, score, paras))
+  //      {
+  //        //if (fabs(feature_model->src_avg_direction[i].dot(feature_model->tar_avg_direction[tar_i])) < 0.9 
+  //        //  && feature_model->global_user_marked_crsp.find(std::pair<int, int>(vis_global_mapper[i], tar_i)) == feature_model->global_user_marked_crsp.end()) continue;
+  //        //if (crsp_map_out.find(CurvePt(src_i, src_j)) != crsp_map_out.end()) continue;
 
+  //        crsp_map_it = crsp_map.find(CurvePt(i, j));
+  //        if (crsp_map_it != crsp_map.end())
+  //        {
+  //          if (score > crsp_map_it->second.second)
+  //          {
+  //            crsp_map_it->second = CrspCurvePt(CurvePt(int(tar_i), int(tar_j)), score);
+  //            crsp[CurvePt(i, j)] = CurvePt(int(tar_i), int(tar_j));
+  //          }
+  //        }
+  //        else
+  //        {
+  //          crsp_map[CurvePt(i, j)] = CrspCurvePt(CurvePt(int(tar_i), int(tar_j)), score);
+  //          crsp[CurvePt(i, j)] = CurvePt(int(tar_i), int(tar_j));
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
+  //std::map<CurvePt, CrspCurvePt> t_s_crsp_map;
+  //std::map<CurvePt, CrspCurvePt>::iterator it;
+  //for(auto i : crsp_map)
+  //{
+  //  it = t_s_crsp_map.find(i.second.first);
+  //  if(it != t_s_crsp_map.end())
+  //  {
+  //    if(i.second.second > it->second.second)
+  //    {
+  //      it->second = CrspCurvePt(i.first, i.second.second);
+  //    }
+  //  }
+  //  else
+  //  {
+  //    t_s_crsp_map[i.second.first] = CrspCurvePt(i.first, i.second.second);
+  //  }
+  //}
+  //crsp_map.clear();
+  //for(auto i : t_s_crsp_map)
+  //{
+  //  crsp_map[i.second.first] = CrspCurvePt(i.first, i.second.second);
+  //}
+  
+  //crsp_map_out = crsp_map;return;
   // refine the correspondences
   // 1. keep the most confidential target curve
 
@@ -265,19 +326,65 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   {
     int src_cur_id = i.first.first;
     int tar_cur_id = i.second.first.first;
-    curve_crsp_it = curve_crsp.find(src_cur_id);
 
+    if (feature_model->global_user_marked_crsp.find(std::pair<int, int>(vis_global_mapper[src_cur_id], tar_cur_id)) != feature_model->global_user_marked_crsp.end())
+    {
+      crsp_map_out[i.first] = i.second;
+      continue;
+    }
+
+    curve_crsp_it = curve_crsp.find(src_cur_id);
     if (curve_crsp_it == curve_crsp.end()) continue;
     int best_tar_cur_id = curve_crsp_it->second;
 
     if (tar_cur_id == best_tar_cur_id
-      || feature_model->tar_relationship[best_tar_cur_id].find(tar_cur_id) != feature_model->tar_relationship[best_tar_cur_id].end()
-      || feature_model->user_define_curve_crsp.find(std::pair<int, int>(src_cur_id, tar_cur_id)) != feature_model->user_define_curve_crsp.end())
+      || feature_model->tar_relationship[best_tar_cur_id].find(tar_cur_id) != feature_model->tar_relationship[best_tar_cur_id].end())
     {
       crsp_map_out[i.first] = i.second;
     }
   }
 
+  std::map<int, std::vector<int>>& global_vis_mapper = feature_model->getGlobalVisibleMapper(); 
+  for(auto i : feature_model->global_user_marked_crsp)
+  {
+    std::map<CurvePt, CrspCurvePt> s_t_map;
+    std::map<CurvePt, CrspCurvePt>::iterator s_t_map_it;
+    CURVES src_curves;
+    std::vector<int> source_curves = global_vis_mapper[i.first];
+    std::vector<int> id;
+    for(size_t k = 0; k < source_curves.size(); k ++)
+    {
+      src_curves.push_back(n_src_curves[source_curves[k]]);
+      id.push_back(source_curves[k]);
+    }
+    for(size_t j = 0; j < n_tar_curves[i.second].size(); ++j)
+    {
+      int src_i = -1;
+      int src_j = -1;
+      double score = 0.0;
+      paras[0] = feature_model->target_edges_sp_sl[i.second][j];
+      if (CurvesUtility::closestPtFromSaliencyCurves(n_tar_curves[i.second][j], src_curves, src_i, src_j, score, paras))
+      {
+        src_i = id[src_i];
+        s_t_map_it = s_t_map.find(CurvePt(src_i, src_j));
+        if (s_t_map_it != s_t_map.end())
+        {
+          if (score > s_t_map_it->second.second)
+          {
+            s_t_map_it->second = CrspCurvePt(CurvePt(int(i.second), int(j)), score);
+          }
+        }
+        else
+        {
+          s_t_map[CurvePt(src_i, src_j)] = CrspCurvePt(CurvePt(int(i.second), int(j)), score);
+        }
+      }
+    }
+    for(auto k : s_t_map)
+    {
+      crsp_map_out[k.first] = k.second;
+    }
+  }
 
   // extend possible new correspondences from the core target curve for each source curve
   //std::map<int, std::pair<int, CrspCurvePtSet > >::iterator src_core_crsp_it;

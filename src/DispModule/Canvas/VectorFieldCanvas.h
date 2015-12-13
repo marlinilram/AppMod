@@ -48,14 +48,17 @@ public:
   bool displayAllCurvesPoints();
 
   void setScalarField();
+  void setFBO();
   void updateSourceField(int update_type = 0);
 
   void setRenderMode(VectorField::RENDERMODE mode) { render_mode = mode; };
 
   void addConstrainedLines(std::vector<double2>& line, std::vector<double2>& selectedLine);
+  void deleteTargetCurves(std::vector<double2>& line, int& w, int& h, Matrix4f& proj_mat_out);
   void deleteLastLine();
   std::shared_ptr<FeatureLine> getFeatureLine(); 
   void setConstrainedPair(double start[2], double end[2]);
+  void getTargetCurves(CURVES& target_curves);
 
 protected:
   std::shared_ptr<FeatureGuided> feature_model;
@@ -67,6 +70,12 @@ protected:
   float u_max;
   float v_max;
   float ratio;
+
+  GLuint offscr_color;
+  GLuint offscr_depth;
+  GLuint offscr_fbo;
+
+  int width, height;
 
   std::unique_ptr<Bound> bound;
 
