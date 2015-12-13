@@ -153,7 +153,7 @@ bool closestPtInSaliencyCurves(double2& src_pt, std::vector<std::vector<double2>
     {
       double2 diff = src_pt - tar_curves[i][j];
       double cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
-      cur_score = pow(tar_sl[i][j], paras[0]) / pow(cur_score + 0.0001, paras[1]);
+      cur_score = pow(tar_sl[i][j], paras[1]) / pow(cur_score + 0.0001, paras[2]);
       if (cur_score > dis)
       {
         tar_i = int(i);

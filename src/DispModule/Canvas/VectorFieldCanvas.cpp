@@ -64,10 +64,10 @@ bool VectorFieldCanvas::display()
     }
     if (vis_paras[2])
     {
-      this->displaySourceCurves();
+      this->displayTargetCurves();
       if (vis_paras[9])
       {
-        this->displayTargetCurves();
+        this->displaySourceCurves();
       }
     }
     if (vis_paras[4])
@@ -560,6 +560,7 @@ void VectorFieldCanvas::setScalarField()
 void VectorFieldCanvas::setGLProperty()
 {
   this->setScalarField();
+  //this->setFBO();
 }
 
 void VectorFieldCanvas::setVisualizationParas(std::vector<bool>& paras)
@@ -727,6 +728,7 @@ bool VectorFieldCanvas::displaySourceCrspList()
   std::vector<std::pair<int, int> >& tar_crsp_list = feature_model->tar_crsp_list;
   std::map<std::pair<int, int>, int>& src_vid_mapper= feature_model->getSrcVidMapper();
   std::map<int, std::pair<int, int> >& src_rev_vid_mapper = feature_model->getSrcRevVidMapper();
+  std::map<int, std::pair<int, int> >::iterator src_rev_vid_iter;
   std::map<int, double2>& user_correct_crsp_map = feature_model->user_correct_crsp_map;
   std::map<int, double2>::iterator map_iter;
 
@@ -772,9 +774,17 @@ bool VectorFieldCanvas::displaySourceCrspList()
   for (auto i : user_correct_crsp_map)
   {
     glBegin(GL_LINES);
-    cur_src_curve_id = src_rev_vid_mapper[i.first];
-    double2 pos_src = source_curves[cur_src_curve_id.first][cur_src_curve_id.second];
-    //feature_model->getNormalizedProjPt(i.first, pos_src);
+    src_rev_vid_iter = src_rev_vid_mapper.find(i.first);
+    double2 pos_src;
+    if (src_rev_vid_iter != src_rev_vid_mapper.end())
+    {
+      cur_src_curve_id = src_rev_vid_iter->second;
+      pos_src = source_curves[cur_src_curve_id.first][cur_src_curve_id.second];
+    }
+    else
+    {
+      feature_model->getNormalizedProjPt(i.first, pos_src);
+    }
     double2 pos_tar = i.second;
     feature_model->NormalizedPts(pos_tar);
 
@@ -891,4 +901,100 @@ bool VectorFieldCanvas::displayAllCurvesPoints()
   }
   glEnd();*/
   return true;
+}
+
+void VectorFieldCanvas::deleteTargetCurves(std::vector<double2>& line, int& w, int& h, Matrix4f& proj_mat_out)
+{
+  width = w;
+  height = h;
+  this->setFBO();
+  cv::Mat primitive_buffer;
+  primitive_buffer.create(height, width, CV_32FC1);
+  glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glColor4f(0,0,0,0.5);
+  //glPolygonMode(GL_FRONT, GL_FILL);
+  glBegin(GL_TRIANGLE_FAN);
+  for(size_t i = 0; i < line.size(); i ++)
+  {
+    double2 pos = line[i];
+    //glVertex2i(int(width * pos.x), int(height * pos.y));
+    glVertex3f(pos.x, pos.y, 0.0);
+  }
+  glEnd();
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, (float*)primitive_buffer.data);
+  cv::Mat tmp;
+  tmp.create(height, width, CV_32FC1);
+  tmp = primitive_buffer.clone();
+  for(int i = 0; i < width; i ++)
+  {
+    for(int j = 0; j < height; j ++)
+    {
+      primitive_buffer.at<float>(j, i) = tmp.at<float>(height - 1 - j, i); 
+    }
+  }
+  cv::imshow("buffer_alpha", primitive_buffer);
+  CURVES target_curves;
+  this->feature_model->NormalizedTargetCurves(target_curves);
+  std::vector<int> deleted_tags(target_curves.size(), 0);
+  for(size_t i = 0; i < target_curves.size(); i ++)
+  {
+    for(size_t j = 0; j < target_curves[i].size(); j ++)
+    {
+      MatrixXf target_curves_point(4, 1) , screen_point;
+      target_curves_point << target_curves[i][j].x, target_curves[i][j].y, 0, 1;
+      screen_point = proj_mat_out * target_curves_point;
+      std::pair<int, int> screen_pos(int(screen_point(0, 0) / screen_point(3, 0)), int(screen_point(1, 0) / screen_point(3, 0)));
+      if(screen_pos.first < 0 || screen_pos.first >= width || screen_pos.second < 0 || screen_pos.second >= height)
+      {
+        continue;
+      }
+      else
+      {
+        if(primitive_buffer.at<float>(height - 1 - screen_pos.second, screen_pos.first) == 0.5)
+        {
+          deleted_tags[i] = 1;
+          break;
+        }
+      }
+    }
+  }
+  this->feature_model->deleteTargetCurves(deleted_tags);
+  feature_model->updateSourceField(6);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
+
+void VectorFieldCanvas::setFBO()
+{
+  glGenFramebuffers(1, &offscr_fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+  glGenRenderbuffers(1, &offscr_color);
+  glBindRenderbuffer(GL_RENDERBUFFER, offscr_color);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA32F, width, height);
+
+  glGenRenderbuffers(1, &offscr_depth);
+  glBindRenderbuffer(GL_RENDERBUFFER, offscr_depth);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, width, height);
+
+  // attach color and depth textures to fbo
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, offscr_color);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, offscr_depth);
+
+  static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+  glDrawBuffers(1, draw_buffers);
+
+  GLenum framebuffer_status;
+  framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE)
+    std::cout << "set offscreen frame buffer object failed\n";
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void VectorFieldCanvas::getTargetCurves(CURVES& target_curves)
+{
+  this->feature_model->NormalizedTargetCurves(target_curves);
 }

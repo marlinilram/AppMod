@@ -28,6 +28,8 @@ public:
 
   void initTargetImage(std::string targetFile);
   void initRegister();
+  void initSrcRegister();
+  void initTarRegister(int type = 0);
   void updateSourceVectorField();
   void updateScalarField();
   void updateSourceField(int update_type = 0);
@@ -89,6 +91,7 @@ public:
   std::map<int, int>& getVisibleGlobalMapper();
   std::map<int, std::vector<int>>& getGlobalVisibleMapper();
   std::vector<double>& getEdgesAverageSpSl();
+  void deleteTargetCurves(std::vector<int>& deleted_tags);
 
 public:
 

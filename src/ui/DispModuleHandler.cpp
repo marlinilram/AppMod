@@ -187,6 +187,11 @@ void DispModuleHandler::toggleVectorFieldMode(int state)
     source_vector_viewer->setInteractionMode(VectorField::CORRECT_CRSP);
     disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
   }
+  else if (state == 3)
+  {
+    source_vector_viewer->setInteractionMode(VectorField::DELETE_TARGET_CURVES);
+    disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
+  }
 }
 
 void DispModuleHandler::updateGeometryInteractive()
@@ -335,6 +340,7 @@ void DispModuleHandler::updateShapeCrest()
   trackball_viewer->updateShapeCrest();
   main_canvas_viewer->updateGLOutside();
   source_vector_viewer->updateSourceField(0);
+  source_vector_viewer->updateGLOutside();
   target_vector_viewer->updateGLOutside();
 }
 
