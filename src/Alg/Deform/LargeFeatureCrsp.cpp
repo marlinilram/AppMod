@@ -109,7 +109,6 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
       }
     }
   }
-
   // refine the correspondences
   // 1. keep the most confidential target curve
 
@@ -267,14 +266,19 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   {
     int src_cur_id = i.first.first;
     int tar_cur_id = i.second.first.first;
-    curve_crsp_it = curve_crsp.find(src_cur_id);
 
+    if (feature_model->global_user_marked_crsp.find(std::pair<int, int>(vis_global_mapper[src_cur_id], tar_cur_id)) != feature_model->global_user_marked_crsp.end())
+    {
+      crsp_map_out[i.first] = i.second;
+      continue;
+    }
+
+    curve_crsp_it = curve_crsp.find(src_cur_id);
     if (curve_crsp_it == curve_crsp.end()) continue;
     int best_tar_cur_id = curve_crsp_it->second;
 
     if (tar_cur_id == best_tar_cur_id
-      || feature_model->tar_relationship[best_tar_cur_id].find(tar_cur_id) != feature_model->tar_relationship[best_tar_cur_id].end()
-      || feature_model->global_user_marked_crsp.find(std::pair<int, int>(vis_global_mapper[src_cur_id], tar_cur_id)) != feature_model->global_user_marked_crsp.end())
+      || feature_model->tar_relationship[best_tar_cur_id].find(tar_cur_id) != feature_model->tar_relationship[best_tar_cur_id].end())
     {
       crsp_map_out[i.first] = i.second;
     }

@@ -33,6 +33,7 @@ void VectorFieldViewer::draw()
   {
     glClear(GL_DEPTH_BUFFER_BIT);
     drawAllLines();
+
   }
 }
 
