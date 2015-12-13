@@ -3,6 +3,7 @@
 #include "Shape.h"
 #include "CrestCode.h"
 #include "KDTreeWrapper.h"
+#include "ParameterMgr.h"
 
 #include <set>
 #include <fstream>
@@ -94,9 +95,10 @@ void ShapeCrest::buildCandidates()
   candidates.clear();
   crest_edges.clear();
   int inner_index[6] = {0, 1, 1, 2, 2, 0};
+  double threshold = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("ShapCrest:source_curves_threshhold");
   for (size_t i = 0; i < edge_dihedral.size(); ++i)
   {
-    if (edge_dihedral[i] < 0.75)
+    if (edge_dihedral[i] < threshold)
     {
       if (candidates.find(edge_connectivity[i]) == candidates.end())
       {
@@ -112,7 +114,7 @@ void ShapeCrest::buildCandidates()
   }
 }
 
-void ShapeCrest::mergeCandidates(std::vector<Edge> vis_edges, std::vector<std::vector<int>>& vis_lines)
+void ShapeCrest::mergeCandidates(std::vector<Edge>& vis_edges, std::vector<std::vector<int>>& vis_lines)
 {
   for (size_t i = 0; i < vis_edges.size(); ++i)
   {

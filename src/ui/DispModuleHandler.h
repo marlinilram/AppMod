@@ -53,6 +53,8 @@ public:
   void runLFRegNonRigid();
   void changeToLightball();
   void doSynthesis();
+  void updateShapeCrest();
+  void updateTargetCurves();
 
 public slots:
   void updateGeometryInteractive();
