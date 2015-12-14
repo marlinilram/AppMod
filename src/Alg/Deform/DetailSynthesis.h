@@ -29,6 +29,9 @@ public:
   void getDrawableActors(std::vector<GLActor>& actors);
 
 private:
+  void computeNormalizedHeight();
+
+private:
   std::shared_ptr<MeshParameterization> mesh_para;
   std::shared_ptr<SynthesisTool>        syn_tool;
   std::shared_ptr<CurveGuidedVectorField> curve_guided_vector_field;

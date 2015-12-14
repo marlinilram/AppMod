@@ -176,12 +176,12 @@ void DetailSynthesis::computeFeatureMap(std::vector<cv::Mat>& feature_map, bool 
       pt.resize(2);
       pt[0] = float(x) / resolution;
       pt[1] = float(y) / resolution;
-      kdTree->nearestPt(pt,pt_id);
+      kdTree->nearestPt(pt,pt_id); // pt has been modified
       std::vector<int> adjFaces = adjFaces_list[pt_id];
       int face_id;
       float point[3];
-      point[0] = pt[0];
-      point[1] = pt[1];
+      point[0] = float(x) / resolution;//pt[0];
+      point[1] = float(y) / resolution;;//pt[1];
       point[2] = 0;
       float lambda[3];
       int id1,id2,id3;
