@@ -55,7 +55,7 @@ private:
   void computeFaceNormal();
   void computeVertexNormal();
   void computeEdgeConnectivity();
-  void computeShadowSHCoeffs();
+  void computeShadowSHCoeffs(int num_band = 3);
 
 private:
   // PolygonMesh

@@ -29,7 +29,7 @@ public:
   void exportOBJ(int cur_iter);
 
   Bound* getBoundBox();
-  //std::shared_ptr<Shape> getShape();
+  //std::shared_ptr<Shape> getShape() { return shape; };
   //std::shared_ptr<ShapeCrest> getShapeCrest();
   LG::PolygonMesh* getPolygonMesh();
   std::string getDataPath();

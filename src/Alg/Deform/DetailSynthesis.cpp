@@ -10,6 +10,9 @@
 #include "CurveGuidedVectorField.h"
 #include "GLActor.h"
 #include "KevinVectorField.h"
+#include "PolygonMesh.h"
+
+using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
@@ -27,6 +30,152 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
 
   mesh_para->doMeshParameterization(model);
 }
+
+
+void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
+{
+  // compute feature
+  // 1. normalized height
+  // 2. surface normal 
+  // 3. multi-scale solid angle curvature, not implemented yet
+  // 4. directional occlusion
+
+  ShapeUtility::computeNormalizedHeight(model);
+  ShapeUtility::computeDirectionalOcclusion(model);
+
+  PolygonMesh* poly_mesh = model->getPolygonMesh();
+  PolygonMesh::Vertex_attribute<Scalar> normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
+  PolygonMesh::Vertex_attribute<STLVectorf> directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
+  PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+
+  std::vector<std::vector<float> > vertex_feature_list(model->getShapeVertexList().size(), std::vector<float>());
+  for (auto vit : poly_mesh->vertices())
+  {
+    vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
+    vertex_feature_list[vit.idx()].push_back(v_normals[vit][0]);
+    vertex_feature_list[vit.idx()].push_back(v_normals[vit][1]);
+    vertex_feature_list[vit.idx()].push_back(v_normals[vit][2]);
+    for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
+    {
+      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]);
+    }
+  }
+
+  computeFeatureMap(src_feature_map, vertex_feature_list, TRUE);
+  computeFeatureMap(tar_feature_map, vertex_feature_list, FALSE);
+}
+
+void DetailSynthesis::computeFeatureMap(std::vector<cv::Mat>& feature_map, std::vector<std::vector<float> >& feature_list, bool is_src)
+{
+  resolution = 500;
+  int dim_feature = feature_list[0].size();
+  for(int i = 0; i < dim_feature; i ++)
+  {
+    feature_map.push_back(cv::Mat(resolution, resolution, CV_32FC1));
+  }
+  /*feature_map = cv::Mat(resolution, resolution, CV_32FC3);*/
+  /*int dims[3] = { resolution, resolution, 3};
+  feature_map.create(3, dims, CV_32F);*/
+  std::shared_ptr<Shape> shape;
+  std::shared_ptr<KDTreeWrapper> kdTree;
+  STLVectori v_set;
+  if(is_src)
+  {
+    shape = mesh_para->cut_shape;
+    kdTree = mesh_para->kdTree_UV;
+    v_set = mesh_para->vertex_set;
+  }
+  else
+  {
+    shape = mesh_para->cut_shape_hidden;
+    kdTree = mesh_para->kdTree_UV_hidden;
+    v_set = mesh_para->vertex_set_hidden;
+  }
+  AdjList adjFaces_list = shape->getVertexShareFaces();
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      int pt_id;
+      std::vector<float> pt;
+      pt.resize(2);
+      pt[0] = float(x) / resolution;
+      pt[1] = float(y) / resolution;
+      kdTree->nearestPt(pt,pt_id); // pt has been modified
+      std::vector<int> adjFaces = adjFaces_list[pt_id];
+      int face_id;
+      float point[3];
+      point[0] = float(x) / resolution;//pt[0];
+      point[1] = float(y) / resolution;;//pt[1];
+      point[2] = 0;
+      float lambda[3];
+      int id1,id2,id3;
+      for(size_t i = 0; i < adjFaces.size(); i ++)
+      {
+        float l[3];
+        int v1_id,v2_id,v3_id;
+        float v1[3],v2[3],v3[3];
+        v1_id = (shape->getFaceList())[3 * adjFaces[i]];
+        v2_id = (shape->getFaceList())[3 * adjFaces[i] + 1];
+        v3_id = (shape->getFaceList())[3 * adjFaces[i] + 2];
+        v1[0] = (shape->getUVCoord())[2 * v1_id];
+        v1[1] = (shape->getUVCoord())[2 * v1_id + 1];
+        v1[2] = 0;
+        v2[0] = (shape->getUVCoord())[2 * v2_id];
+        v2[1] = (shape->getUVCoord())[2 * v2_id + 1];
+        v2[2] = 0;
+        v3[0] = (shape->getUVCoord())[2 * v3_id];
+        v3[1] = (shape->getUVCoord())[2 * v3_id + 1];
+        v3[2] = 0;
+        ShapeUtility::computeBaryCentreCoord(point,v1,v2,v3,l);
+        if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+        {
+          face_id = i;
+          lambda[0] = l[0];
+          lambda[1] = l[1];
+          lambda[2] = l[2];
+          id1 = v1_id;
+          id2 = v2_id;
+          id3 = v3_id;
+        }
+      }
+      
+      // put feature into feature map from feature_list
+      for (int i = 0; i < dim_feature; ++i)
+      {
+        feature_map[i].at<float>(x,y) = lambda[0] * feature_list[id1][i] + lambda[1] * feature_list[id2][i] + lambda[2] * feature_list[id3][i];
+      }
+
+
+      /*float v1_normal_original_mesh[3],v2_normal_original_mesh[3],v3_normal_original_mesh[3];
+      v1_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * v_set[id1]];
+      v1_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * v_set[id1] + 1];
+      v1_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * v_set[id1] + 2];
+      v2_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * v_set[id2]];
+      v2_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * v_set[id2] + 1];
+      v2_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * v_set[id2] + 2];
+      v3_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * v_set[id3]];
+      v3_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * v_set[id3] + 1];
+      v3_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * v_set[id3] + 2];*/
+
+      /*feature_map.at<float>(x,y,0) = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
+      feature_map.at<float>(x,y,1) = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
+      feature_map.at<float>(x,y,2) = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
+      /*feature_map.at<cv::Vec3f>(x,y)[0] = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
+      feature_map.at<cv::Vec3f>(x,y)[1] = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
+      feature_map.at<cv::Vec3f>(x,y)[2] = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
+      /*feature_map[0].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
+      feature_map[1].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
+      feature_map[2].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
+    }
+  }
+}
+
+void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
+{
+
+}
+
 
 void DetailSynthesis::computeDisplacementMap(std::shared_ptr<Model> model)
 {
@@ -141,104 +290,6 @@ void DetailSynthesis::computeDisplacementMap(std::shared_ptr<Model> model)
   applyDisplacementMap(mesh_para->vertex_set, mesh_para->cut_shape, model, displacement_map);
 }
 
-void DetailSynthesis::computeFeatureMap(std::vector<cv::Mat>& feature_map, bool is_src)
-{
-  resolution = 500;
-  for(int i = 0; i < 3; i ++)
-  {
-    feature_map.push_back(cv::Mat(resolution, resolution, CV_32FC1));
-  }
-  /*feature_map = cv::Mat(resolution, resolution, CV_32FC3);*/
-  /*int dims[3] = { resolution, resolution, 3};
-  feature_map.create(3, dims, CV_32F);*/
-  std::shared_ptr<Shape> shape;
-  std::shared_ptr<KDTreeWrapper> kdTree;
-  STLVectori v_set;
-  if(is_src)
-  {
-    shape = mesh_para->cut_shape;
-    kdTree = mesh_para->kdTree_UV;
-    v_set = mesh_para->vertex_set;
-  }
-  else
-  {
-    shape = mesh_para->cut_shape_hidden;
-    kdTree = mesh_para->kdTree_UV_hidden;
-    v_set = mesh_para->vertex_set_hidden;
-  }
-  AdjList adjFaces_list = shape->getVertexShareFaces();
-  for(int x = 0; x < resolution; x ++)
-  {
-    for(int y = 0; y < resolution; y ++)
-    {
-      int pt_id;
-      std::vector<float> pt;
-      pt.resize(2);
-      pt[0] = float(x) / resolution;
-      pt[1] = float(y) / resolution;
-      kdTree->nearestPt(pt,pt_id); // pt has been modified
-      std::vector<int> adjFaces = adjFaces_list[pt_id];
-      int face_id;
-      float point[3];
-      point[0] = float(x) / resolution;//pt[0];
-      point[1] = float(y) / resolution;;//pt[1];
-      point[2] = 0;
-      float lambda[3];
-      int id1,id2,id3;
-      for(size_t i = 0; i < adjFaces.size(); i ++)
-      {
-        float l[3];
-        int v1_id,v2_id,v3_id;
-        float v1[3],v2[3],v3[3];
-        v1_id = (shape->getFaceList())[3 * adjFaces[i]];
-        v2_id = (shape->getFaceList())[3 * adjFaces[i] + 1];
-        v3_id = (shape->getFaceList())[3 * adjFaces[i] + 2];
-        v1[0] = (shape->getUVCoord())[2 * v1_id];
-        v1[1] = (shape->getUVCoord())[2 * v1_id + 1];
-        v1[2] = 0;
-        v2[0] = (shape->getUVCoord())[2 * v2_id];
-        v2[1] = (shape->getUVCoord())[2 * v2_id + 1];
-        v2[2] = 0;
-        v3[0] = (shape->getUVCoord())[2 * v3_id];
-        v3[1] = (shape->getUVCoord())[2 * v3_id + 1];
-        v3[2] = 0;
-        ShapeUtility::computeBaryCentreCoord(point,v1,v2,v3,l);
-        if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
-        {
-          face_id = i;
-          lambda[0] = l[0];
-          lambda[1] = l[1];
-          lambda[2] = l[2];
-          id1 = v1_id;
-          id2 = v2_id;
-          id3 = v3_id;
-        }
-      }
-      
-      float v1_normal_original_mesh[3],v2_normal_original_mesh[3],v3_normal_original_mesh[3];
-      v1_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * v_set[id1]];
-      v1_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * v_set[id1] + 1];
-      v1_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * v_set[id1] + 2];
-      v2_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * v_set[id2]];
-      v2_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * v_set[id2] + 1];
-      v2_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * v_set[id2] + 2];
-      v3_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * v_set[id3]];
-      v3_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * v_set[id3] + 1];
-      v3_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * v_set[id3] + 2];
-
-      /*feature_map.at<float>(x,y,0) = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
-      feature_map.at<float>(x,y,1) = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
-      feature_map.at<float>(x,y,2) = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
-      /*feature_map.at<cv::Vec3f>(x,y)[0] = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
-      feature_map.at<cv::Vec3f>(x,y)[1] = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
-      feature_map.at<cv::Vec3f>(x,y)[2] = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
-      feature_map[0].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
-      feature_map[1].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
-      feature_map[2].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];
-    }
-  }
-}
-
 void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> model, cv::Mat disp_map)
 {
   VertexList vertex_check;
@@ -310,19 +361,19 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   cv::Mat tar_detail = (syn_tool->getTargetDetail())[0];
   applyDisplacementMap(mesh_para->vertex_set_hidden, mesh_para->cut_shape_hidden, model, tar_detail);*/
 
-  cv::Mat inputImage;
-  inputImage = cv::imread("sample06.png");
-  /*cv::Mat grayImage = cv::Mat(inputImage.size().height,inputImage.size().width,CV_32FC1);
-  cv::cvtColor(inputImage,grayImage,CV_BGR2GRAY);*/
-  inputImage.convertTo(inputImage,CV_32FC1);
-  double min,max;
-  cv::minMaxLoc(inputImage,&min,&max);
-  cv::imshow("input", (inputImage - min) / (max - min));
-  syn_tool.reset(new SynthesisTool);
-  syn_tool->doImageSynthesis(inputImage);
-  cv::Mat tar_detail = (syn_tool->getTargetDetail())[0];
-  cv::minMaxLoc(tar_detail,&min,&max);
-  cv::imshow("result", (tar_detail - min) / (max - min));
+  //cv::Mat inputImage;
+  //inputImage = cv::imread("sample06.png");
+  ///*cv::Mat grayImage = cv::Mat(inputImage.size().height,inputImage.size().width,CV_32FC1);
+  //cv::cvtColor(inputImage,grayImage,CV_BGR2GRAY);*/
+  //inputImage.convertTo(inputImage,CV_32FC1);
+  //double min,max;
+  //cv::minMaxLoc(inputImage,&min,&max);
+  //cv::imshow("input", (inputImage - min) / (max - min));
+  //syn_tool.reset(new SynthesisTool);
+  //syn_tool->doImageSynthesis(inputImage);
+  //cv::Mat tar_detail = (syn_tool->getTargetDetail())[0][0];
+  //cv::minMaxLoc(tar_detail,&min,&max);
+  //cv::imshow("result", (tar_detail - min) / (max - min));
 }
 
 void DetailSynthesis::computeVectorField(std::shared_ptr<Model> model)

@@ -23,7 +23,7 @@ public:
 	~Ray(){};
 
 	bool intersectModel(Eigen::Vector3d &ray_start, Eigen::Vector3d &ray_end);
-	void passModel(std::vector<float> &vertices, std::vector<unsigned int> &faces);
+	void passModel(const std::vector<float> &vertices, const std::vector<unsigned int> &faces);
 
 public:
 	vtkSmartPointer< vtkModifiedBSPTree > bsptree;

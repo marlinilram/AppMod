@@ -1,6 +1,17 @@
 #include "ShapeUtility.h"
 #include "BasicHeader.h"
 
+#include "Model.h"
+#include "Shape.h"
+#include "PolygonMesh.h"
+#include "Bound.h"
+
+#include "Ray.h"
+#include "SAMPLE.h"
+#include "GenerateSamples.h"
+
+using namespace LG;
+
 namespace ShapeUtility
 {
   void computeBaryCentreCoord(float pt[3], float v0[3], float v1[3], float v2[3], float lambd[3])
@@ -28,4 +39,81 @@ namespace ShapeUtility
     lambd[0] = 1.0f - lambd[1] - lambd[2];
 
   }
+
+  void computeNormalizedHeight(std::shared_ptr<Model> model)
+  {
+    Bound* boundbox = model->getBoundBox();
+    PolygonMesh* mesh = model->getPolygonMesh();
+    PolygonMesh::Vertex_attribute<Scalar> normalized_height = mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
+
+    for (auto vit : mesh->vertices())
+    {
+      normalized_height[vit] = (mesh->position(vit)[2] - boundbox->minZ) / (boundbox->maxZ - boundbox->minZ);
+    }
+  }
+
+  void computeDirectionalOcclusion(std::shared_ptr<Model> model)
+  {
+    // only called when the shape is changed
+
+    // 1. initialize BSPTree
+    int num_band = 2;
+    std::cout << "Initialize BSPTree.\n";
+    std::shared_ptr<Ray> ray(new Ray);
+    ray->passModel(model->getShapeVertexList(), model->getShapeFaceList());
+
+    // 2. generate direction samples
+    std::cout << "Generate samples.\n";
+    int sqrtNumSamples = 50;
+    int numSamples = sqrtNumSamples * sqrtNumSamples;
+    std::vector<SAMPLE> samples(numSamples);
+    GenerateSamples(sqrtNumSamples, num_band, &samples[0]);
+
+    // 3. compute coeffs
+    std::cout << "Compute Directional Occlusion Feature.\n";
+    int numBand = num_band;
+    int numFunctions = numBand * numBand;
+    Bound* bound = model->getBoundBox();
+    PolygonMesh* poly_mesh = model->getPolygonMesh();
+    PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeff = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
+    PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+    float perc = 0;
+    for (auto i : poly_mesh->vertices())
+    {
+      shadowCoeff[i].clear();
+      shadowCoeff[i].resize(numFunctions, 0.0f);
+      for (int k = 0; k < numSamples; ++k)
+      {
+        double dot = (double)samples[k].direction.dot(v_normals[i]);
+
+        if (dot > 0.0)
+        {
+          Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
+          Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
+          if (ray->intersectModel(ray_start, ray_end))
+          {
+            for (int l = 0; l < numFunctions; ++l)
+            {
+              shadowCoeff[i][l] += dot * samples[k].shValues[l];
+            }
+          }
+        }
+      }
+
+      // rescale
+      for (int l = 0; l < numFunctions; ++l)
+      {
+        shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
+      }
+
+      float cur_perc = (float)i.idx() / poly_mesh->n_vertices();
+      if (cur_perc - perc >= 0.05)
+      {
+        perc = cur_perc;
+        std::cout << perc << "...";
+      }
+    }
+    std::cout << "Compute Directional Occlusion Feature finished.\n";
+  }
+
 }
