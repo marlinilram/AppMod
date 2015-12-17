@@ -28,7 +28,7 @@ private:
   void prepareCutShape(std::shared_ptr<Model> model, FaceList& f_list, STLVectori& v_set, std::shared_ptr<Shape>& shape);
   void findBoundary(std::shared_ptr<Shape> shape, STLVectori& b_loop);
   void fillHoles(std::set<int>& visible_faces, const AdjList& f_adjList);
-  std::set<int> findConnectedFaces(int f_id, std::vector<bool>& visited, const std::set<int>& visible_faces, const AdjList& adj_list);
+  void findConnectedFaces(int f_id, std::set<int>& connected_faces, const std::set<int>& visible_faces, const AdjList& adj_list);
   void connectedComponents(std::vector<std::set<int> >& components, const std::set<int>& visible_faces, const AdjList& adj_list);
   int findLargestComponent(const std::vector<std::set<int> >& components);
 

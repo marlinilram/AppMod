@@ -1,4 +1,4 @@
-#include "TrackballCanvas.h"
+#include "SynthesisCanvas.h"
 #include "Model.h"
 
 #include "PolygonMesh.h"
@@ -7,41 +7,39 @@
 #include <QGLShader>
 #include <QGLBuffer>
 
-
-TrackballCanvas::TrackballCanvas()
+SynthesisCanvas::SynthesisCanvas()
 {
-  render_mode = 3;
-  use_flat = 1;
+  render_mode = 5;
 }
 
-TrackballCanvas::~TrackballCanvas()
+SynthesisCanvas::~SynthesisCanvas()
 {
 
 }
 
-bool TrackballCanvas::display()
+bool SynthesisCanvas::display()
 {
   drawModel();
   return true;
 }
 
-void TrackballCanvas::setGLProperty()
+void SynthesisCanvas::setGLProperty()
 {
   updateModelBuffer();
   setShaderProgram();
 }
 
-Bound* TrackballCanvas::getBoundBox()
+Bound* SynthesisCanvas::getBoundBox()
 {
   return model->getBoundBox();
 }
 
-void TrackballCanvas::setModel(std::shared_ptr<Model> shared_model)
+void SynthesisCanvas::setModel(std::shared_ptr<Model> shared_model)
 {
   model = shared_model;
 }
 
-void TrackballCanvas::setShaderProgram()
+void SynthesisCanvas::setShaderProgram()
 {
   basic_shader.reset(new QGLShaderProgram);
   basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/edge.frag");
@@ -49,14 +47,14 @@ void TrackballCanvas::setShaderProgram()
   basic_shader->link();
 }
 
-void TrackballCanvas::drawModel()
+void SynthesisCanvas::drawModel()
 {
   basic_shader->bind();
 
   basic_shader->setUniformValue("fMeshSize", GLfloat(num_face));
   basic_shader->setUniformValue("L", QVector3D(-0.4082, -0.4082, 0.8165));
   basic_shader->setUniformValue("renderMode", GLint(render_mode));
-  basic_shader->setUniformValue("use_flat", GLint(use_flat));
+  //basic_shader->setUniformValue("use_flat", GLint(use_flat));
 
   color_buffer->bind();
   basic_shader->setAttributeBuffer("color", GL_FLOAT, 0, 3, 0);
@@ -105,21 +103,8 @@ void TrackballCanvas::drawModel()
   basic_shader->release();
 }
 
-void TrackballCanvas::updateModelBuffer()
+void SynthesisCanvas::updateModelBuffer()
 {
-  //const VertexList& vertex_list = model->getShapeVertexList();
-  //const FaceList&   face_list   = model->getShapeFaceList();
-  //const NormalList& normal_list = model->getShapeNormalList();
-  //const STLVectorf& color_list  = model->getShapeColorList();
-  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
-  {
-    use_flat = 1;
-  }
-  else 
-  {
-    use_flat = 0;
-  }
-
   LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
   LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_normals = poly_mesh->vertex_attribute<LG::Vec3>("v:normal");
   LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
@@ -180,11 +165,11 @@ void TrackballCanvas::updateModelBuffer()
 
   if (glGetError() != 0)
   {
-    std::cout<<"TrackballCanvas: GL Error in getting model\n";
+    std::cout<<"SynthesisCanvas: GL Error in getting model\n";
   }
 }
 
-void TrackballCanvas::updateModelColorBuffer()
+void SynthesisCanvas::updateModelColorBuffer()
 {
   LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
   LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
@@ -206,12 +191,11 @@ void TrackballCanvas::updateModelColorBuffer()
   GLenum error_code = glGetError();
   if (error_code != 0)
   {
-    std::cout<<"TrackballCanvas: GL Error in getting model. Error Code: " << error_code << "\n";
+    std::cout<<"SynthesisCanvas: GL Error in getting model. Error Code: " << error_code << "\n";
   }
 }
 
-
-std::string TrackballCanvas::getFilePath()
+std::string SynthesisCanvas::getFilePath()
 {
   return model->getDataPath();
 }

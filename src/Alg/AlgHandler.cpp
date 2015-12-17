@@ -42,6 +42,11 @@ void AlgHandler::setShapeModel(std::shared_ptr<Model> model)
   init();
 }
 
+void AlgHandler::setSynthesisModel(std::shared_ptr<Model> model)
+{
+  synthesis_model = model;
+}
+
 bool AlgHandler::workable()
 {
   if (!feature_model || !shape_model)
@@ -135,7 +140,7 @@ void AlgHandler::doDetailSynthesis()
   doNormalTransfer();
   shape_model->exportOBJ(0);*/
 
-  /*detail_synthesis->startDetailSynthesis(shape_model);*/
+  detail_synthesis->startDetailSynthesis(shape_model);
 
   //detail_synthesis->computeVectorField(shape_model);
   actors.clear();

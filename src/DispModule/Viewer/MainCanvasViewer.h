@@ -32,6 +32,8 @@ public:
   inline void setInteractionMode(MainViewer::INTERACTIONMODE mode) { interaction_mode = mode; };
   void clearPreviousInteractionInfo();
   void updateCanvasRenderMode();
+  void setSynthesisReflectance();
+
 
 private:
   void mouseReleaseEvent(QMouseEvent *e);

@@ -76,6 +76,8 @@ void MainCanvas::setShaderProgram()
   uv_buffer->create();
   vertex_crest_buffer.reset(new QGLBuffer(QGLBuffer::IndexBuffer));
   vertex_crest_buffer->create();
+  vertex_syn_texture_buffer.reset(new QGLBuffer);
+  vertex_syn_texture_buffer->create();
 
   basic_shader.reset(new QGLShaderProgram);
   basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/fragmentShader.frag");
@@ -117,6 +119,10 @@ void MainCanvas::updateModelBuffer()
   const STLVectorf& face_color_list = model->getShapeFaceColorList();
   const Edges&      crest_edge = model->getShapeCrestEdge();
   const STLVectorf& uv_list = model->getShapeUVCoord();
+
+  LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
+  LG::PolygonMesh::Vertex_attribute<int> syn_texture_tag = poly_mesh->vertex_attribute<int>("v:syn_texture_tag");
+
 
   //// duplicate the vertex for face color
   //FaceList new_face_list;
@@ -181,6 +187,12 @@ void MainCanvas::updateModelBuffer()
     //v_crest[crest_edge[i].second] = 1.0f;
   }
 
+  std::vector<GLfloat> v_syn_texture_tag; // used to store syn texture tag
+  for (auto vit : poly_mesh->vertices())
+  {
+    v_syn_texture_tag.push_back(syn_texture_tag[vit]);
+  }
+
   num_vertex = GLenum(vertex_list.size() / 3);
   num_face   = GLenum(face_list.size() / 3);
   num_crest_edges = GLenum(v_crest.size() / 2);
@@ -214,6 +226,11 @@ void MainCanvas::updateModelBuffer()
   vertex_crest_buffer->allocate(v_crest.size() * sizeof(GLuint));
   vertex_crest_buffer->write(0, &v_crest[0], v_crest.size() * sizeof(GLuint));
   vertex_crest_buffer->release();
+
+  vertex_syn_texture_buffer->bind();
+  vertex_syn_texture_buffer->allocate(v_syn_texture_tag.size() * sizeof(GLfloat));
+  vertex_syn_texture_buffer->write(0, &v_syn_texture_tag[0], v_syn_texture_tag.size() * sizeof(GLfloat));
+  vertex_syn_texture_buffer->release();
 
   GLenum error_code = glGetError();
   if (error_code != 0)
@@ -322,6 +339,28 @@ void MainCanvas::setReflectanceImage(QString fname)
   setTextureImage(glImg, reflect_texture);
 
   std::cout << "Initialization finished." << std::endl;
+}
+
+void MainCanvas::setSynthesisReflectance()
+{
+  std::cout << "Initialize Synthesis and Original Reflectance texture." << std::endl;
+  
+  cv::Mat temp = model->getOriRImg() * 255;
+  cv::Mat ref_img;
+  temp.convertTo(ref_img, CV_8UC3);
+  cv::cvtColor(ref_img, ref_img, CV_BGR2RGB);
+  QImage ori_ref((const uchar *) ref_img.data, ref_img.cols, ref_img.rows, ref_img.step, QImage::Format_RGB888);
+  QImage gl_ori_ref = QGLWidget::convertToGLFormat(ori_ref);
+  setTextureImage(gl_ori_ref, reflect_texture);
+  ori_ref.save(QString::fromStdString(model->getDataPath() + "/ori_ref.png"));
+
+  temp = model->getSynRImg() * 255;
+  temp.convertTo(ref_img, CV_8UC3);
+  cv::cvtColor(ref_img, ref_img, CV_BGR2RGB);
+  QImage syn_ref((const uchar *) ref_img.data, ref_img.cols, ref_img.rows, ref_img.step, QImage::Format_RGB888);
+  QImage gl_syn_ref = QGLWidget::convertToGLFormat(ori_ref);
+  setTextureImage(gl_syn_ref, synthesis_reflect_texture);
+  syn_ref.save(QString::fromStdString(model->getDataPath() + "/syn_ref.png"));
 }
 
 void MainCanvas::setFBO()
@@ -467,15 +506,24 @@ void MainCanvas::drawModel()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, reflect_texture);
 
-  //uv_buffer->bind();
-  //basic_shader->setAttributeBuffer("uv", GL_FLOAT, 0, 2, 0);
-  //basic_shader->enableAttributeArray("uv");
-  //uv_buffer->release();
+  basic_shader->setUniformValue("syn_reflect_texture", 1);
+  glActiveTexture(GL_TEXTURE0 + 1);
+  glBindTexture(GL_TEXTURE_2D, synthesis_reflect_texture);
+
+  uv_buffer->bind();
+  basic_shader->setAttributeBuffer("uv", GL_FLOAT, 0, 2, 0);
+  basic_shader->enableAttributeArray("uv");
+  uv_buffer->release();
 
   vertex_crest_buffer->bind();
   basic_shader->setAttributeBuffer("vCrestTag", GL_FLOAT, 0, 1, 0);
   basic_shader->enableAttributeArray("vCrestTag");
   vertex_crest_buffer->release();
+
+  vertex_syn_texture_buffer->bind();
+  basic_shader->setAttributeBuffer("vSynTextureTag", GL_FLOAT, 0, 1, 0);
+  basic_shader->enableAttributeArray("vSynTextureTag");
+  vertex_syn_texture_buffer->release();
 
   //glDrawElements(GL_TRIANGLES, 3 * num_faces, GL_UNSIGNED_INT, faces);
 

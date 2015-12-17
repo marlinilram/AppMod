@@ -9,6 +9,7 @@ in vec4 color;
 in vec3 normal;
 in float vCrestTag;
 in vec2 uv;
+in float vSynTextureTag;
 
 out vec4 vs_color;
 out vec3 vs_normal;
@@ -16,6 +17,7 @@ out vec3 vs_eye_normal;
 out vec4 vs_pos;
 out float vs_CrestTag;
 out vec2 vs_uv;
+out float vs_SynTextureTag;
 
 void main(void)
 {
@@ -26,5 +28,6 @@ void main(void)
 	vs_pos = vertex;
   vs_CrestTag = vCrestTag;
   vs_uv = uv;
+  vs_SynTextureTag = vSynTextureTag;
 }
 //! [0]

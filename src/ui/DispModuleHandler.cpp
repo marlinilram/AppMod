@@ -2,9 +2,11 @@
 #include "MainCanvasViewer.h"
 #include "TrackballViewer.h"
 #include "VectorFieldViewer.h"
+#include "SynthesisViewer.h"
 #include "MainCanvas.h"
 #include "TrackballCanvas.h"
 #include "VectorFieldCanvas.h"
+#include "SynthesisCanvas.h"
 #include "ParameterMgr.h"
 
 #include "Model.h"
@@ -20,12 +22,19 @@ DispModuleHandler::DispModuleHandler(QWidget* parent)
   QGridLayout *gridLayout_3;
   gridLayout_3 = new QGridLayout(parent);
   gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
+  
   main_canvas_viewer.reset(new MainCanvasViewer(parent));
   main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
   gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
+  
   trackball_viewer.reset(new TrackballViewer(parent));
   trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
-  gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 2);
+  gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 1);
+
+  synthesis_viewer.reset(new SynthesisViewer(parent));
+  synthesis_viewer->setObjectName(QStringLiteral("synthesis_viewer"));
+  gridLayout_3->addWidget(synthesis_viewer.get(), 0, 3, 1, 1);
+
   source_vector_viewer.reset(new VectorFieldViewer(parent));
   source_vector_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
   gridLayout_3->addWidget(source_vector_viewer.get(),1,2,1,1);
@@ -38,6 +47,8 @@ DispModuleHandler::DispModuleHandler(QWidget* parent)
   trackball_viewer->setMainCanvasViewer(main_canvas_viewer);
   trackball_viewer->setSourceVectorViewer(source_vector_viewer);
   trackball_viewer->setTargetVectorViewer(target_vector_viewer);
+
+  synthesis_canvas.reset(new SynthesisCanvas);
 
   source_vector_canvas.reset(new VectorFieldCanvas);
   target_vector_canvas.reset(new VectorFieldCanvas);
@@ -65,6 +76,16 @@ void DispModuleHandler::loadModel(std::shared_ptr<Model> model, std::string mode
   LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform") = Matrix4f::Identity();
 
   alg_handler->setShapeModel(model);
+}
+
+void DispModuleHandler::loadSynthesisTarget(std::shared_ptr<Model> model, std::string model_file_path)
+{
+  synthesis_canvas->setModel(model);
+  synthesis_viewer->deleteDispObj(synthesis_canvas.get());
+  synthesis_viewer->addDispObj(synthesis_canvas.get());
+  synthesis_viewer->resetCamera();
+
+  alg_handler->setSynthesisModel(model);
 }
 
 void DispModuleHandler::exportOBJ()
@@ -332,6 +353,7 @@ void DispModuleHandler::doSynthesis()
 {
   alg_handler->doDetailSynthesis();
   trackball_viewer->setGLActors(alg_handler->getGLActors());
+  main_canvas_viewer->setSynthesisReflectance();
   updateCanvas();
 }
 

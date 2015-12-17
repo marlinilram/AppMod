@@ -13,6 +13,8 @@ class TrackballCanvas;
 class TrackballViewer;
 class VectorFieldCanvas;
 class VectorFieldViewer;
+class SynthesisCanvas;
+class SynthesisViewer;
 class AlgHandler;
 class Model;
 
@@ -55,6 +57,7 @@ public:
   void doSynthesis();
   void updateShapeCrest();
   void updateTargetCurves();
+  void loadSynthesisTarget(std::shared_ptr<Model> model, std::string model_file_path);
 
 public slots:
   void updateGeometryInteractive();
@@ -68,6 +71,9 @@ public:
 
   std::shared_ptr<VectorFieldCanvas> source_vector_canvas, target_vector_canvas;
   std::shared_ptr<VectorFieldViewer> source_vector_viewer, target_vector_viewer;
+
+  std::shared_ptr<SynthesisCanvas> synthesis_canvas;
+  std::shared_ptr<SynthesisViewer> synthesis_viewer;
 
   std::shared_ptr<AlgHandler> alg_handler;
 

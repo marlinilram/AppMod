@@ -75,6 +75,7 @@ void MeshParameterization::saveParameterization(std::string file_path, std::shar
 
   obj_shape.mesh.positions = shape->getVertexList();
   obj_shape.mesh.indices = shape->getFaceList();
+  obj_shape.mesh.texcoords = shape->getUVCoord();
   shapes.pop_back();
   shapes.push_back(obj_shape);
   if(is_hidden)
@@ -472,25 +473,22 @@ float MeshParameterization::computeWij(const float *p1, const float *p2, const f
   return ((alpha_cos/sqrt(1-alpha_cos*alpha_cos))+(beta_cos/sqrt(1-beta_cos*beta_cos)))/2;
 }
 
-std::set<int> MeshParameterization::findConnectedFaces(int f_id, std::vector<bool>& visited, const std::set<int>& visible_faces, const AdjList& adj_list)
+void MeshParameterization::findConnectedFaces(int f_id, std::set<int>& connected_faces, const std::set<int>& visible_faces, const AdjList& adj_list)
 {
-  if (visited[f_id])
+  if (connected_faces.find(f_id) != connected_faces.end())
   {
-    return std::set<int>();
+    return;
   }
 
-  std::set<int> connected_faces;
   connected_faces.insert(f_id);
-  visited[f_id] = true;
   for (size_t i = 0; i < adj_list[f_id].size(); ++i)
   {
     if (visible_faces.find(adj_list[f_id][i]) != visible_faces.end())
     {
-      std::set<int> cur_connected_faces = this->findConnectedFaces(adj_list[f_id][i], visited, visible_faces, adj_list);
-      connected_faces.insert(cur_connected_faces.begin(), cur_connected_faces.end());
+      this->findConnectedFaces(adj_list[f_id][i], connected_faces, visible_faces, adj_list);
     }
   }
-  return connected_faces;
+  return;
 }
 
 void MeshParameterization::connectedComponents(std::vector<std::set<int> >& components, const std::set<int>& visible_faces, const AdjList& adj_list)
@@ -515,8 +513,7 @@ void MeshParameterization::connectedComponents(std::vector<std::set<int> >& comp
     else
     {
       component.clear();
-      std::vector<bool> visited_cache(adj_list.size(), false);
-      component = this->findConnectedFaces(i, visited_cache, visible_faces, adj_list);
+      this->findConnectedFaces(i, component, visible_faces, adj_list);
       if (component.size() > 0)
       {
         components.push_back(component);

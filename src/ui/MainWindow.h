@@ -41,6 +41,7 @@ private slots:
     void deleteLastLine_Source();
     void deleteLastLine_Target();
     void showToolBox();
+    void loadSynthesisTarget();
 
 private:
     //Viewer *viewer;
