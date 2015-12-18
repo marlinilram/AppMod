@@ -783,11 +783,28 @@ void FeatureGuided::deleteTargetCurves(std::vector<int>& deleted_tags)
 
   target_curves.swap(new_tar_curves);
 
+  target_edges_sp_sl.clear();
+  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, target_curves, target_edge_saliency, target_edges_average_sp_sl);
+
   target_edges_sp_len.clear();
   CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, target_curves);
 
-  target_edges_sp_sl.clear();
-  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, target_curves, target_edge_saliency, target_edges_average_sp_sl);
+  AnalyzeTargetRelationship();
+
+  this->initTarRegister(1);
+}
+
+void FeatureGuided::addTargetCurves(std::vector<double2>& add_curve)
+{
+  if (add_curve.size() > 0)
+  {
+    target_curves.push_back(add_curve);
+    target_edges_sp_sl.push_back(std::vector<double>(add_curve.size(), 1.0));
+    target_edges_average_sp_sl.push_back(1.0);
+  }
+
+  target_edges_sp_len.clear();
+  CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, target_curves);
 
   AnalyzeTargetRelationship();
 

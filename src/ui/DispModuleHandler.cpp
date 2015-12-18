@@ -192,6 +192,11 @@ void DispModuleHandler::toggleVectorFieldMode(int state)
     source_vector_viewer->setInteractionMode(VectorField::DELETE_TARGET_CURVES);
     disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
   }
+  else if (state == 4)
+  {
+    source_vector_viewer->setInteractionMode(VectorField::ADD_TARGET_CURVES);
+    disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
+  }
 }
 
 void DispModuleHandler::updateGeometryInteractive()

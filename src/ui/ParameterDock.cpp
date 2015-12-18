@@ -38,6 +38,7 @@ ParameterDock::ParameterDock()
   connect(source_curves_t1_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSourceCurvesThreshold(double)));
   connect(target_curves_t2_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setTargetCurvesThreshold(double)));
   connect(SField_c_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpc(double)));
+  connect(SField_d_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpd(double)));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -165,6 +166,12 @@ void ParameterDock::setSFieldExpb(double val)
 void ParameterDock::setSFieldExpc(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:c") = val;
+  disp_modules->setSFieldPara(4);
+}
+
+void ParameterDock::setSFieldExpd(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:d") = val;
   disp_modules->setSFieldPara(4);
 }
 

@@ -56,6 +56,7 @@ public:
   void addConstrainedLines(std::vector<double2>& line, std::vector<double2>& selectedLine);
   void deleteTargetCurves(std::vector<double2>& line, int& w, int& h, Matrix4f& proj_mat_out);
   void deleteLastLine();
+  void addTargetCurves(std::vector<double2>& line);
   std::shared_ptr<FeatureLine> getFeatureLine(); 
   void setConstrainedPair(double start[2], double end[2]);
   void getTargetCurves(CURVES& target_curves);

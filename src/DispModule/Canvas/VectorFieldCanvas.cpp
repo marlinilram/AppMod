@@ -7,6 +7,7 @@
 #include "Bound.h"
 #include "KDTreeWrapper.h"
 #include "ParameterMgr.h"
+#include "CurvesUtility.h"
 
 #include "opencv2/contrib/contrib.hpp"
 
@@ -942,7 +943,7 @@ void VectorFieldCanvas::deleteTargetCurves(std::vector<double2>& line, int& w, i
       primitive_buffer.at<float>(j, i) = tmp.at<float>(height - 1 - j, i); 
     }
   }
-  cv::imshow("buffer_alpha", primitive_buffer);
+  //cv::imshow("buffer_alpha", primitive_buffer);
   CURVES target_curves;
   this->feature_model->NormalizedTargetCurves(target_curves);
   std::vector<int> deleted_tags(target_curves.size(), 0);
@@ -1005,4 +1006,11 @@ void VectorFieldCanvas::setFBO()
 void VectorFieldCanvas::getTargetCurves(CURVES& target_curves)
 {
   this->feature_model->NormalizedTargetCurves(target_curves);
+}
+
+void VectorFieldCanvas::addTargetCurves(std::vector<double2>& line)
+{
+  CurvesUtility::DenormalizedCurve(line, feature_model->getCurveTranslate(), feature_model->getCurveScale());
+  feature_model->addTargetCurves(line);
+  feature_model->updateSourceField(6);
 }

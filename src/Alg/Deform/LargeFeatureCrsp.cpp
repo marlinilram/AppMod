@@ -454,6 +454,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   std::vector<double> paras(3, 0);
   paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
   paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
+  double angle_weight = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:c");
   std::map<CurvePt, CrspCurvePt> crsp_map; // key is source curve point as pair<int, int>, value is target curve point and their score
   std::map<CurvePt, CrspCurvePt>::iterator crsp_map_it;
   feature_model->computeAverageTargetCurvesDir();
@@ -468,7 +469,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
       if (CurvesUtility::closestPtFromSaliencyCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, score, paras))
       {
         //score *= fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) ;
-        score *= fabs(feature_model->src_avg_direction[src_i].dot(feature_model->sampled_target_curves_average_dir[i][j])) ;
+        score *= pow(fabs(feature_model->src_avg_direction[src_i].dot(feature_model->sampled_target_curves_average_dir[i][j])), angle_weight) ;
         crsp_map_it = crsp_map.find(CurvePt(src_i, src_j));
         if (crsp_map_it != crsp_map.end())
         {
@@ -640,7 +641,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
         double2 diff = n_src_curves[test_src[j].first][test_src[j].second] - n_tar_curves[test_path[j].first][test_path[j].second];
         double cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
         cur_score = pow(feature_model->target_edges_sp_sl[test_path[j].first][test_path[j].second], paras[1]) / pow(cur_score + 0.0001, paras[2]);
-        cur_score *= fabs(feature_model->src_avg_direction[test_src[j].first].dot(feature_model->sampled_target_curves_average_dir[test_path[j].first][test_path[j].second])) ;
+        cur_score *= pow(fabs(feature_model->src_avg_direction[test_src[j].first].dot(feature_model->sampled_target_curves_average_dir[test_path[j].first][test_path[j].second])), angle_weight) ;
         crsp_map_out[CurvePt(test_src[j])] = CrspCurvePt(test_path[j], cur_score);
       }
     }
@@ -779,6 +780,7 @@ void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, 
   paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
   paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
   double para_c = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:c");
+  double para_d = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:d");
 
   std::vector<std::vector<double>> probability_score;
   probability_score.resize(observations.size());
@@ -806,7 +808,7 @@ void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, 
       }
       cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
       cur_score = pow(paras[0], paras[1]) / pow(cur_score + 0.0001, paras[2]);
-      cur_score *= angle;
+      cur_score *= pow(angle, para_c);
       //probability_score[i].push_back(exp((-0.5) * pow((1 / cur_score), 2))); // the computation method can be modified
       //probability_score[i].push_back(cur_score);
       double cur_pow_score = (0.5) * pow((1 / cur_score), 2);
@@ -855,7 +857,7 @@ void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, 
             probability_continuity_k2j = (hidden_diff.x * hidden_diff.x + hidden_diff.y * hidden_diff.y) / (observation_diff.x * observation_diff.x + observation_diff.y * observation_diff.y);
             //probability_continuity_k2j = exp(-0.5 * pow((probability_continuity_k2j - 1) / 0.05, 2));
             //probability_continuity_k2j = 1;
-            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_c, 2);
+            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_d, 2);
           }
           else
           {
@@ -864,7 +866,7 @@ void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, 
             probability_continuity_k2j = (hidden_diff.x * hidden_diff.x + hidden_diff.y * hidden_diff.y) / (observation_diff.x * observation_diff.x + observation_diff.y * observation_diff.y);
             //probability_continuity_k2j = exp(-0.5 * pow((probability_continuity_k2j - 1) / 0.05, 2));
             //probability_continuity_k2j = 1;
-            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_c, 2);
+            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_d, 2);
           }
           if((probability[k] + probability_continuity_k2j + probability_score[i][j]) < best_path_probability)
           {

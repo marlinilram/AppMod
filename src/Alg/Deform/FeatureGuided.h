@@ -92,6 +92,7 @@ public:
   std::map<int, std::vector<int>>& getGlobalVisibleMapper();
   std::vector<double>& getEdgesAverageSpSl();
   void deleteTargetCurves(std::vector<int>& deleted_tags);
+  void addTargetCurves(std::vector<double2>& add_curve);
   void computeAverageTargetCurvesDir();
 
 public:

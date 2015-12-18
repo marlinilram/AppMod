@@ -41,6 +41,7 @@ private slots:
   void setSFieldExpa(double val);
   void setSFieldExpb(double val);
   void setSFieldExpc(double val);
+  void setSFieldExpd(double val);
   void setSFieldParaw(double val);
   void setSFieldWinCenter(int val);
   void setSFieldWinWidth(int val);
