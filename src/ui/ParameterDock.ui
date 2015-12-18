@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>301</width>
+    <width>342</width>
     <height>917</height>
    </rect>
   </property>
@@ -24,8 +24,8 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-152</y>
-         <width>276</width>
+         <y>0</y>
+         <width>307</width>
          <height>960</height>
         </rect>
        </property>
@@ -345,7 +345,27 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.300000000000000</double>
+                <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_16">
+               <property name="text">
+                <string>c</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_c_doubleSpinBox">
+               <property name="minimum">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.050000000000000</double>
                </property>
               </widget>
              </item>
