@@ -62,6 +62,7 @@ void LargeFeatureCrsp::buildCrsp(std::map<CurvePt, CurvePt>& crsp, CURVES& curve
   }
 }
 
+/*
 void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, std::deque<bool>& tar_curve_mark, CURVES& n_src_curves, CURVES& n_tar_curves)
 {
   // find corresponding points in source curves
@@ -449,4 +450,459 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   //{
   //  //crsp_map_out[i.first] = i.second;
   //}
+}
+*/
+
+void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, std::deque<bool>& tar_curve_mark, CURVES& n_src_curves, CURVES& n_tar_curves)
+{
+  std::map<int, int>& vis_global_mapper = feature_model->getVisibleGlobalMapper(); 
+  std::vector<double> paras(3, 0);
+  paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
+  paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
+  std::map<CurvePt, CrspCurvePt> crsp_map; // key is source curve point as pair<int, int>, value is target curve point and their score
+  std::map<CurvePt, CrspCurvePt>::iterator crsp_map_it;
+  feature_model->computeAverageTargetCurvesDir();
+  for (size_t i = 0; i < n_tar_curves.size(); ++i)
+  {
+    for (size_t j = 0; j < n_tar_curves[i].size(); ++j)
+    {
+      int src_i = -1;
+      int src_j = -1;
+      double score = 0.0;
+      paras[0] = feature_model->target_edges_sp_sl[i][j];
+      if (CurvesUtility::closestPtFromSaliencyCurves(n_tar_curves[i][j], n_src_curves, src_i, src_j, score, paras))
+      {
+        //score *= fabs(feature_model->src_avg_direction[src_i].dot(feature_model->tar_avg_direction[i])) ;
+        score *= fabs(feature_model->src_avg_direction[src_i].dot(feature_model->sampled_target_curves_average_dir[i][j])) ;
+        crsp_map_it = crsp_map.find(CurvePt(src_i, src_j));
+        if (crsp_map_it != crsp_map.end())
+        {
+          if (score > crsp_map_it->second.second)
+          {
+            crsp_map_it->second = CrspCurvePt(CurvePt(int(i), int(j)), score);
+          }
+        }
+        else
+        {
+          crsp_map[CurvePt(src_i, src_j)] = CrspCurvePt(CurvePt(int(i), int(j)), score);
+        }
+      }
+    }
+  }
+
+  /*std::map<CurvePt, CrspCurvePt> crsp_map2;
+  for (size_t i = 0; i < n_src_curves.size(); ++i)
+  {
+    for (size_t j = 0; j < n_src_curves[i].size(); ++j)
+    {
+      int tar_i = -1;
+      int tar_j = -1;
+      double score = 0.0;
+      if (CurvesUtility::closestPtInSaliencyCurves(n_src_curves[i][j], n_tar_curves, feature_model->target_edges_sp_sl, tar_i, tar_j, score, paras))
+      {
+        score *= fabs(feature_model->src_avg_direction[i].dot(feature_model->tar_avg_direction[tar_i])) ;
+        crsp_map_it = crsp_map2.find(CurvePt(tar_i, tar_j));
+        if (crsp_map_it != crsp_map2.end())
+        {
+          if (score > crsp_map_it->second.second)
+          {
+            crsp_map_it->second = CrspCurvePt(CurvePt(int(i), int(j)), score);
+          }
+        }
+        else
+        {
+          crsp_map2[CurvePt(tar_i, tar_j)] = CrspCurvePt(CurvePt(int(i), int(j)), score);
+        }
+      }
+    }
+  }
+  std::map<CurvePt, CrspCurvePt> tmp_crsp_map;
+  for(auto i : crsp_map2)
+  {
+    crsp_map_it = tmp_crsp_map.find(i.second.first);
+    if(crsp_map_it != tmp_crsp_map.end())
+    {
+      if(i.second.second > crsp_map_it->second.second)
+      {
+        crsp_map_it->second = CrspCurvePt(i.first, i.second.second);
+      }
+    }
+    else
+    {
+      tmp_crsp_map[i.second.first] = CrspCurvePt(i.first, i.second.second);
+    }
+  }*/
+  /*for (size_t i = 0; i < n_src_curves.size(); ++i)
+  {
+    for (size_t j = 0; j < n_src_curves[i].size(); ++j)
+    {
+      int tar_i = -1;
+      int tar_j = -1;
+      double score = 0.0;
+      if (CurvesUtility::closestPtInSaliencyCurves(n_src_curves[i][j], n_tar_curves, feature_model->target_edges_sp_sl, tar_i, tar_j, score, paras))
+      {
+        score *= fabs(feature_model->src_avg_direction[i].dot(feature_model->tar_avg_direction[tar_i])) ;
+        crsp_map_it = crsp_map.find(CurvePt(i, j));
+        if (crsp_map_it != crsp_map.end())
+        {
+          if (score > crsp_map_it->second.second)
+          {
+            crsp_map_it->second = CrspCurvePt(CurvePt(int(tar_i), int(tar_j)), score);
+          }
+        }
+        else
+        {
+          crsp_map[CurvePt(i, j)] = CrspCurvePt(CurvePt(int(tar_i), int(tar_j)), score);
+        }
+      }
+    }
+  }*/
+
+  //crsp_map_out = crsp_map; return;
+
+  crsp_map_out.clear();
+  std::vector<std::pair<int, int>> test_tar, test_src, test_path;
+  std::set<std::pair<double, double>> src_pts;
+  std::set<std::pair<double, double>>::iterator src_pts_it;
+  /*test_src.clear();
+  test_tar.clear();
+  std::set<int> tar_id_candidate;*/
+  for(size_t i = 0; i < n_src_curves.size(); i ++)
+  {
+    test_src.clear();
+    test_tar.clear();
+    std::set<int> tar_id_candidate;
+    for(size_t j = 0; j < n_src_curves[i].size(); j ++)
+    {
+      /*if(j != 0 && j != n_src_curves[i].size())
+      {
+        test_src.push_back(std::pair<int, int>(i, j));
+      }*/
+      src_pts_it = src_pts.find(std::pair<double, double>(n_src_curves[i][j].x, n_src_curves[i][j].y));
+      if(src_pts_it == src_pts.end())
+      {
+        test_src.push_back(std::pair<int, int>(i, j));
+        src_pts.insert(std::pair<double, double>(n_src_curves[i][j].x, n_src_curves[i][j].y));
+      }
+      
+      crsp_map_it = crsp_map.find(CurvePt(i, j));
+      if(crsp_map_it != crsp_map.end())
+      {
+        tar_id_candidate.insert(crsp_map_it->second.first.first);
+      }
+      /*crsp_map_it = tmp_crsp_map.find(CurvePt(i, j));
+      if(crsp_map_it != tmp_crsp_map.end())
+      {
+        tar_id_candidate.insert(crsp_map_it->second.first.first);
+      }*/
+    }
+    /*double d1 = 0.0, d2 = 0.0;
+    for(size_t i = 0; i < n_src_curves.size(); i ++)
+    {
+      d2 = 0.0;
+      for(size_t j = 0; j < n_src_curves[i].size(); j ++)
+      {
+        if(j != 0)
+        {
+          double2 diff = n_src_curves[i][j] - n_src_curves[i][j - 1];
+          d2 += sqrt(diff.x * diff.x + diff.y * diff.y);
+        }
+      }
+      d2 /= n_src_curves[i].size() - 1;
+      d1 += d2;
+    }
+    d1 /= n_src_curves.size();*/
+    //double sample_rate = 1 * feature_model->sample_rate;
+
+    for(auto j : tar_id_candidate)
+    {
+      double2 previous_point;
+      for(size_t k = 0; k < n_tar_curves[j].size(); k ++)
+      {
+        if(k == 0)
+        {
+          test_tar.push_back(std::pair<int, int>(j, k));
+          previous_point = n_tar_curves[j][k];
+        }
+        else
+        {
+          double2 current_point;
+          current_point = n_tar_curves[j][k];
+          double2 diff = current_point - previous_point;
+          if(sqrt(diff.x * diff.x + diff.y * diff.y) >= feature_model->src_sample_rate[i])
+          {
+            test_tar.push_back(std::pair<int, int>(j, k));
+            previous_point = n_tar_curves[j][k];
+          }
+        }
+      }
+    }
+    if(test_tar.size() != 0)
+    {
+      solveHMM(test_src, test_tar, test_path, false);
+      for(size_t j = 0; j < test_path.size(); j ++)
+      {
+        double2 diff = n_src_curves[test_src[j].first][test_src[j].second] - n_tar_curves[test_path[j].first][test_path[j].second];
+        double cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
+        cur_score = pow(feature_model->target_edges_sp_sl[test_path[j].first][test_path[j].second], paras[1]) / pow(cur_score + 0.0001, paras[2]);
+        cur_score *= fabs(feature_model->src_avg_direction[test_src[j].first].dot(feature_model->sampled_target_curves_average_dir[test_path[j].first][test_path[j].second])) ;
+        crsp_map_out[CurvePt(test_src[j])] = CrspCurvePt(test_path[j], cur_score);
+      }
+    }
+  }
+
+  /*std::map<CurvePt, CrspCurvePt> t2s_map;
+  for(auto i : crsp_map_out)
+  {
+    crsp_map_it = t2s_map.find(i.second.first);
+    if(crsp_map_it != t2s_map.end())
+    {
+      if(i.second.second > crsp_map_it->second.second)
+      {
+        crsp_map_it->second = CrspCurvePt(i.first, i.second.second);
+      }
+    }
+    else
+    {
+      t2s_map[i.second.first] = CrspCurvePt(i.first, i.second.second);
+    }
+  }
+  crsp_map_out.clear();
+  for(auto i : t2s_map)
+  {
+    crsp_map_out[i.second.first] = CrspCurvePt(i.first, i.second.second); 
+  }*/
+  /*for(auto j : tar_id_candidate)
+  {
+    for(size_t k = 0; k < n_tar_curves[j].size(); k ++)
+    {
+      test_tar.push_back(std::pair<int, int>(j, k));
+    }
+  }
+  solveHMM(test_src, test_tar, test_path, false);
+  for(size_t i = 0; i < test_path.size(); i ++)
+  {
+    crsp_map_out[CurvePt(test_src[i])] = CrspCurvePt(test_path[i], 10);
+  }*/
+  /*std::vector<std::pair<int, int>> test_tar, test_src, test_path;
+  for(size_t i = 0; i < n_tar_curves[10].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(10, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[9].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(9, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[8].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(8, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[7].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(7, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[6].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(6, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[25].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(25, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[29].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(29, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[30].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(30, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[42].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(42, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[44].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(44, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[62].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(62, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[109].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(109, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[187].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(187, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[33].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(33, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[21].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(21, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[27].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(27, i));
+  }
+  for(size_t i = 0; i < n_tar_curves[34].size(); i ++)
+  {
+    test_tar.push_back(std::pair<int, int>(34, i));
+  }
+  
+
+
+  for(size_t i = 0; i < n_src_curves[6].size(); i ++)
+  {
+    test_src.push_back(std::pair<int, int>(6, i));
+  }*/
+
+  /*solveHMM(test_tar, test_src, test_path, true);
+
+  crsp_map_out.clear();
+  for(size_t i = 0; i < test_path.size(); i ++)
+  {
+    crsp_map_out[CurvePt(test_path[i])] = CrspCurvePt(test_tar[i], 10);
+  }*/
+}
+
+
+void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, std::vector<std::pair<int, int>>& hidden, std::vector<std::pair<int, int>>& path, bool is_source_hidden)
+{
+  path.clear();
+  path.resize(observations.size());
+
+  CURVES source_curves, target_curves;
+  this->feature_model->NormalizedSourceCurves(source_curves);
+  this->feature_model->NormalizedTargetCurves(target_curves);
+
+  std::vector<double> paras(3, 0);
+  paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
+  paras[2] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:b");
+  double para_c = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:c");
+
+  std::vector<std::vector<double>> probability_score;
+  probability_score.resize(observations.size());
+  double max = std::numeric_limits<double>::min();
+  for(size_t i = 0; i < observations.size(); i ++)
+  {
+    for(size_t j = 0; j < hidden.size(); j ++)
+    {
+      double cur_score;
+      double angle;
+      double2 diff;
+      if(is_source_hidden)
+      {
+        diff = target_curves[observations[i].first][observations[i].second] - source_curves[hidden[j].first][hidden[j].second];
+        paras[0] = feature_model->target_edges_sp_sl[observations[i].first][observations[i].second];
+        //angle = fabs(feature_model->src_avg_direction[hidden[j].first].dot(feature_model->tar_avg_direction[observations[i].first])) ;
+        angle = fabs(feature_model->src_avg_direction[hidden[j].first].dot(feature_model->sampled_target_curves_average_dir[observations[i].first][observations[i].second])) ;
+      }
+      else
+      {
+        diff = target_curves[hidden[j].first][hidden[j].second] - source_curves[observations[i].first][observations[i].second];
+        paras[0] = feature_model->target_edges_sp_sl[hidden[j].first][hidden[j].second];
+        //angle = fabs(feature_model->src_avg_direction[observations[i].first].dot(feature_model->tar_avg_direction[hidden[j].first])) ;
+        angle = fabs(feature_model->src_avg_direction[observations[i].first].dot(feature_model->sampled_target_curves_average_dir[hidden[j].first][hidden[j].second])) ;
+      }
+      cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
+      cur_score = pow(paras[0], paras[1]) / pow(cur_score + 0.0001, paras[2]);
+      cur_score *= angle;
+      //probability_score[i].push_back(exp((-0.5) * pow((1 / cur_score), 2))); // the computation method can be modified
+      //probability_score[i].push_back(cur_score);
+      double cur_pow_score = (0.5) * pow((1 / cur_score), 2);
+      probability_score[i].push_back(cur_pow_score);
+      /*if (cur_pow_score > max)
+      {
+          max = cur_pow_score;
+      }*/
+    }
+  }
+
+
+  std::vector<std::vector<std::pair<int, int>>> candidate_path;
+  std::vector<double> probability;
+  candidate_path.resize(hidden.size());
+  probability.resize(hidden.size());
+  for(size_t i = 0; i < observations.size(); i ++)
+  {
+    if(i == 0)
+    {
+      for(size_t j = 0; j < hidden.size(); j ++)
+      {
+        probability[j] = probability_score[i][j];
+        candidate_path[j].push_back(hidden[j]);
+      }
+    }
+    else
+    {
+      std::vector<std::vector<std::pair<int, int>>> newest_candidate_path;
+      newest_candidate_path.resize(hidden.size());
+      std::vector<double> newest_probability;
+      newest_probability.resize(hidden.size());
+      for(size_t j = 0; j < hidden.size(); j ++)
+      {
+        size_t best_path = 0;
+        //double best_path_probability = std::numeric_limits<double>::min();
+        double best_path_probability = std::numeric_limits<double>::max();
+        for(size_t k = 0; k < hidden.size(); k ++)
+        {
+          double probability_continuity_k2j;
+          double2 hidden_diff, observation_diff;
+          if(is_source_hidden)
+          {
+            observation_diff = target_curves[observations[i].first][observations[i].second] - target_curves[observations[i - 1].first][observations[i - 1].second];
+            hidden_diff = source_curves[hidden[j].first][hidden[j].second] - source_curves[hidden[k].first][hidden[k].second];
+            probability_continuity_k2j = (hidden_diff.x * hidden_diff.x + hidden_diff.y * hidden_diff.y) / (observation_diff.x * observation_diff.x + observation_diff.y * observation_diff.y);
+            //probability_continuity_k2j = exp(-0.5 * pow((probability_continuity_k2j - 1) / 0.05, 2));
+            //probability_continuity_k2j = 1;
+            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_c, 2);
+          }
+          else
+          {
+            hidden_diff = target_curves[hidden[j].first][hidden[j].second] - target_curves[hidden[k].first][hidden[k].second];
+            observation_diff = source_curves[observations[i].first][observations[i].second] - source_curves[observations[i - 1].first][observations[i - 1].second];
+            probability_continuity_k2j = (hidden_diff.x * hidden_diff.x + hidden_diff.y * hidden_diff.y) / (observation_diff.x * observation_diff.x + observation_diff.y * observation_diff.y);
+            //probability_continuity_k2j = exp(-0.5 * pow((probability_continuity_k2j - 1) / 0.05, 2));
+            //probability_continuity_k2j = 1;
+            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_c, 2);
+          }
+          if((probability[k] + probability_continuity_k2j + probability_score[i][j]) < best_path_probability)
+          {
+            best_path_probability = probability[k] + probability_continuity_k2j + probability_score[i][j];
+            best_path = k;
+          }
+        }
+        newest_candidate_path[j] = (candidate_path[best_path]);
+        newest_candidate_path[j].push_back(hidden[j]);
+        newest_probability[j] = best_path_probability;
+      }
+      for(size_t j = 0; j < candidate_path.size(); j ++)
+      {
+        candidate_path[j] = newest_candidate_path[j];
+        probability[j] = newest_probability[j];
+        /*if(probability[j] == std::numeric_limits<double>::max())
+        {
+          std::cout << "" << std::endl;
+        }*/
+      }
+    }
+  }
+
+  //double max_probability = std::numeric_limits<double>::min();
+  double max_probability = std::numeric_limits<double>::max();
+  size_t path_id;
+  for(size_t i = 0; i < probability.size(); i ++)
+  {
+    if(probability[i] < max_probability)
+    {
+      max_probability = probability[i];
+      path_id = i;
+    }
+  }
+  path = candidate_path[path_id];
 }

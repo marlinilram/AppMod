@@ -888,18 +888,26 @@ bool VectorFieldCanvas::displayAllCurvesPoints()
   }
   glEnd();
 
-  /*glColor3f(0,1,1);
+  int sample_rate = feature_model->average_sourcePts_interval;
+
+  glColor3f(0,1,1);
   glPointSize(5);
   glBegin(GL_POINTS);
   for(int i = 0; i < target_curves.size(); ++ i)
   {
+    int n_cnt = 0;
     for (int j = 0; j < target_curves[i].size(); ++j)
     {
-      double2 pos = target_curves[i][j];
-      glVertex3f( pos.x,pos.y, 0 ) ;
+      if (n_cnt % sample_rate == 0)
+      {
+        double2 pos = target_curves[i][j];
+        glVertex3f( pos.x,pos.y, 0 ) ;
+      }
+      ++ n_cnt;
     }
   }
-  glEnd();*/
+  glEnd();
+
   return true;
 }
 
