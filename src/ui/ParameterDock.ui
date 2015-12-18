@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>301</width>
+    <width>358</width>
     <height>917</height>
    </rect>
   </property>
@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-152</y>
-         <width>276</width>
-         <height>960</height>
+         <y>0</y>
+         <width>323</width>
+         <height>988</height>
         </rect>
        </property>
        <attribute name="label">
@@ -308,7 +308,7 @@
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <layout class="QHBoxLayout" name="horizontalLayout_13">
              <item>
               <widget class="QLabel" name="label_4">
                <property name="text">
@@ -345,7 +345,51 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.300000000000000</double>
+                <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <widget class="QLabel" name="label_16">
+               <property name="text">
+                <string>c</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_c_doubleSpinBox">
+               <property name="minimum">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_17">
+               <property name="text">
+                <string>d</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_d_doubleSpinBox">
+               <property name="minimum">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.050000000000000</double>
                </property>
               </widget>
              </item>
@@ -585,6 +629,11 @@
                <item>
                 <property name="text">
                  <string>Delete Target Curves</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Add Target Curves</string>
                 </property>
                </item>
               </widget>
