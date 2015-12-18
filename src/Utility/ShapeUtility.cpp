@@ -211,6 +211,38 @@ namespace ShapeUtility
     // 1. compute 
   }
 
+  void getNRingFacesAroundVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_id, int v_id, int n_ring)
+  {
+    // first get the center faces around vertex 
+    f_id.clear();
+    for (auto fcc : poly_mesh->faces(PolygonMesh::Vertex(v_id)))
+    {
+      f_id.insert(fcc.idx());
+    }
+
+    std::set<int> cur_ring;
+    std::set<int> last_ring = f_id;
+    std::set<int>::iterator iter;
+    for (int i = 0; i < n_ring; ++i)
+    {
+      for (auto j : last_ring)
+      {
+        for (auto hecc : poly_mesh->halfedges(PolygonMesh::Face(j)))
+        {
+          int cur_f_id = poly_mesh->face(poly_mesh->opposite_halfedge(hecc)).idx();
+          iter = f_id.find(cur_f_id);
+          if (iter == f_id.end())
+          {
+            cur_ring.insert(cur_f_id);
+          }
+        }
+      }
+      f_id.insert(cur_ring.begin(), cur_ring.end());
+      last_ring.swap(cur_ring);
+      cur_ring.clear();
+    }
+  }
+
   void dilateImage(cv::Mat& mat, int max_n_dilate)
   {
     // assume to be single channel float

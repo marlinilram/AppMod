@@ -486,18 +486,33 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   // map the synthesis to model color
   resolution = 512;
   std::vector<std::vector<cv::Mat> >& detail_result = syn_tool->getTargetDetail();
-  detail_result[0][0]; // R
-  detail_result[1][0]; // G
-  detail_result[2][0]; // B
+  //detail_result[0][0]; // R
+  //detail_result[1][0]; // G
+  //detail_result[2][0]; // B
+
+  //cv::Mat load_img = cv::imread(model->getDataPath() + "/syntext/0.9-.png");
+  //cv::Mat syn_ref_ext;
+  //if (load_img.data != NULL)
+  //{
+  //  load_img.convertTo(syn_ref_ext, CV_32FC3);
+  //  syn_ref_ext = syn_ref_ext / 255.0;
+  //}
+  //std::vector<cv::Mat> output_detail_ext(3);
+  //cv::split(syn_ref_ext, &output_detail_ext[0]);
+  //std::vector<std::vector<cv::Mat> > detail_result(3);
+  //detail_result[0].push_back(output_detail_ext[2].clone());
+  //detail_result[1].push_back(output_detail_ext[1].clone());
+  //detail_result[2].push_back(output_detail_ext[0].clone());
+
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
   PolygonMesh::Vertex_attribute<int> syn_texture_tag = poly_mesh->vertex_attribute<int>("v:syn_texture_tag");
 
   cv::Mat tar_detail;
   std::vector<cv::Mat> output_detail;
-  output_detail.push_back(syn_tool->getTargetDetail()[2][0].clone());
-  output_detail.push_back(syn_tool->getTargetDetail()[1][0].clone());
-  output_detail.push_back(syn_tool->getTargetDetail()[0][0].clone());
+  output_detail.push_back(detail_result[2][0].clone());
+  output_detail.push_back(detail_result[1][0].clone());
+  output_detail.push_back(detail_result[0][0].clone());
   cv::merge(&output_detail[0], 3, tar_detail);
   double min,max;
   cv::minMaxLoc(tar_detail,&min,&max);

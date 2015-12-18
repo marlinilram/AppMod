@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <cv.h>
+#include "BasicHeader.h"
 
 struct distance_position
 {
@@ -53,6 +54,8 @@ private:
   std::vector<ImagePyramid> gptar_feature;
   std::vector<ImagePyramid> gpsrc_detail;
   std::vector<ImagePyramid> gptar_detail;
+
+  std::vector<std::vector<Vector2i> > feature_bucket;
 
 private:
   SynthesisTool(const SynthesisTool&);

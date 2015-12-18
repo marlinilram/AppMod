@@ -3,8 +3,12 @@
 
 #include <memory>
 #include <cv.h>
+#include <set>
 
 class Model;
+namespace LG {
+class PolygonMesh;
+}
 
 namespace ShapeUtility
 {
@@ -15,6 +19,8 @@ namespace ShapeUtility
   void computeDirectionalOcclusion(std::shared_ptr<Model> model);
   void computeSymmetry(std::shared_ptr<Model> model);
   void computeRMSCurvature(std::shared_ptr<Model> model);
+
+  void getNRingFacesAroundVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_id, int v_id, int n_ring);
 
   // an image tool
   void dilateImage(cv::Mat& mat, int max_n_dilate);

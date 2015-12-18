@@ -1,8 +1,10 @@
 #include "MeshParameterization.h"
 #include "Model.h"
 #include "Shape.h"
+
 #include "obj_writer.h"
 #include "CurvesUtility.h"
+#include "ShapeUtility.h"
 #include "KDTreeWrapper.h"
 #include "PolygonMesh.h"
 
@@ -36,6 +38,7 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->computeBaryCentericPara(cut_shape, boundary_loop);
   this->saveParameterization(model->getOutputPath(), cut_shape, FALSE);
   
+  this->expandCuteShape(model, hidden_faces);
   this->prepareCutShape(model, cut_face_list_hidden, vertex_set_hidden, cut_shape_hidden);
   this->findBoundary(cut_shape_hidden, boundary_loop_hidden);
   this->computeBaryCentericPara(cut_shape_hidden, boundary_loop_hidden);
@@ -92,7 +95,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
 {
   // detect visible faces
   cv::Mat& primitive_ID_img = model->getPrimitiveIDImg();
-  std::set<int> visible_faces;
+  visible_faces.clear();
   for (int i = 0; i < primitive_ID_img.rows; ++i)
   {
     for (int j = 0; j < primitive_ID_img.cols; ++j)
@@ -161,7 +164,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   }
 
   // get hidden face_list
-  std::set<int> hidden_faces;
+  hidden_faces.clear();
   std::set_difference(full_faces.begin(), full_faces.end(),
                       visible_faces.begin(), visible_faces.end(),
                       std::inserter(hidden_faces, hidden_faces.begin()));
@@ -181,6 +184,36 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   //obj_shape.mesh.indices = cut_face_list;
   //shapes.push_back(obj_shape);
   //WriteObj(model->getOutputPath() + "/cutface.obj", shapes, materials);
+}
+
+void MeshParameterization::expandCuteShape(std::shared_ptr<Model> model, std::set<int>& f_id_set)
+{
+  // expand the boundary
+
+  // first we generate the initial shape
+  this->prepareCutShape(model, cut_face_list_hidden, vertex_set_hidden, cut_shape_hidden);
+  this->findBoundary(cut_shape_hidden, boundary_loop_hidden);
+
+  // now we have the boundary id
+  PolygonMesh* poly_mesh = model->getPolygonMesh();
+  std::set<int> new_f_id;
+  for (auto i : boundary_loop_hidden)
+  {
+    // insert all n-ring neighbor faces around vertex into the f_id_set
+    ShapeUtility::getNRingFacesAroundVertex(poly_mesh, new_f_id, vertex_set_hidden[i], 3);
+    f_id_set.insert(new_f_id.begin(), new_f_id.end());
+    new_f_id.clear();
+  }
+
+  // build face
+  const FaceList& ori_face_list = model->getShapeFaceList();
+  cut_face_list_hidden.clear();
+  for (auto i : f_id_set)
+  {
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 0]);
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 1]);
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 2]);
+  }
 }
 
 void MeshParameterization::prepareCutShape(std::shared_ptr<Model> model, FaceList& f_list, STLVectori& v_set, std::shared_ptr<Shape>& shape)

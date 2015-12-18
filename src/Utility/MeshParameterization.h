@@ -31,6 +31,7 @@ private:
   void findConnectedFaces(int f_id, std::set<int>& connected_faces, const std::set<int>& visible_faces, const AdjList& adj_list);
   void connectedComponents(std::vector<std::set<int> >& components, const std::set<int>& visible_faces, const AdjList& adj_list);
   int findLargestComponent(const std::vector<std::set<int> >& components);
+  void expandCuteShape(std::shared_ptr<Model> model, std::set<int>& f_id_set);
 
   // barycentric parameterization
   void computeBaryCentericPara(std::shared_ptr<Shape>& shape, STLVectori& b_loop);
@@ -49,9 +50,10 @@ private:
 public:
   FaceList cut_face_list; // triplets which store the old vertex id of the faces
   STLVectori vertex_set; // vertex id mapping from new id to old id
-  STLVectori boundary_loop;
+  STLVectori boundary_loop; // boundary vertex id in cut shape
   std::shared_ptr<Shape> cut_shape;
   std::shared_ptr<KDTreeWrapper> kdTree_UV;
+  std::set<int> visible_faces; // face id in original model
 
   NormalList normal_original_mesh;
   VertexList vertex_original_mesh;
@@ -61,6 +63,7 @@ public:
   STLVectori boundary_loop_hidden;
   std::shared_ptr<Shape> cut_shape_hidden;
   std::shared_ptr<KDTreeWrapper> kdTree_UV_hidden; 
+  std::set<int> hidden_faces; // face id in original model
 
 private:
   MeshParameterization(const MeshParameterization&);
