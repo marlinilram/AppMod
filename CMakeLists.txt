@@ -25,7 +25,7 @@ find_package( OpenCV REQUIRED )
 FIND_PATH( BOOST_DIR "boost" )
 
 # LGMESH FILES
-SET( LGMESH_PATH          "C:/Users/Jared/Desktop/Image-2-Shape-folk/LgMesh/LgMeshLib" )
+SET( LGMESH_PATH          "D:/Projects/LgMesh/LgMesh/LgMeshLib" )
 FILE( GLOB LGMESH_SRCS    "${LGMESH_PATH}/core/*.*" "${LGMESH_PATH}/IO/*.*" "${LGMESH_PATH}/Utility/*.*" )
 SET( LGMESH_INCLUDE_DIR   ${LGMESH_PATH}/core/ ${LGMESH_PATH}/IO/ ${LGMESH_PATH}/Utility/ )
 #MESSAGE( STATUS "LGMESH_SRCS:         " ${LGMESH_SRCS} )

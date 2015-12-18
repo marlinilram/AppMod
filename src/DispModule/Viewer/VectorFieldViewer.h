@@ -13,7 +13,8 @@ namespace VectorField
     DRAW_CRSP_LINE = 0,
     SELECT_POINT = 1,
     CORRECT_CRSP = 2,
-    DELETE_TARGET_CURVES = 3
+    DELETE_TARGET_CURVES = 3,
+    ADD_TARGET_CURVES = 4
   };
 };
 

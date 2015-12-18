@@ -7,6 +7,7 @@
 #include "Bound.h"
 #include "KDTreeWrapper.h"
 #include "ParameterMgr.h"
+#include "CurvesUtility.h"
 
 #include "opencv2/contrib/contrib.hpp"
 
@@ -888,18 +889,26 @@ bool VectorFieldCanvas::displayAllCurvesPoints()
   }
   glEnd();
 
-  /*glColor3f(0,1,1);
+  int sample_rate = feature_model->average_sourcePts_interval;
+
+  glColor3f(0,1,1);
   glPointSize(5);
   glBegin(GL_POINTS);
   for(int i = 0; i < target_curves.size(); ++ i)
   {
+    int n_cnt = 0;
     for (int j = 0; j < target_curves[i].size(); ++j)
     {
-      double2 pos = target_curves[i][j];
-      glVertex3f( pos.x,pos.y, 0 ) ;
+      if (n_cnt % sample_rate == 0)
+      {
+        double2 pos = target_curves[i][j];
+        glVertex3f( pos.x,pos.y, 0 ) ;
+      }
+      ++ n_cnt;
     }
   }
-  glEnd();*/
+  glEnd();
+
   return true;
 }
 
@@ -934,7 +943,7 @@ void VectorFieldCanvas::deleteTargetCurves(std::vector<double2>& line, int& w, i
       primitive_buffer.at<float>(j, i) = tmp.at<float>(height - 1 - j, i); 
     }
   }
-  cv::imshow("buffer_alpha", primitive_buffer);
+  //cv::imshow("buffer_alpha", primitive_buffer);
   CURVES target_curves;
   this->feature_model->NormalizedTargetCurves(target_curves);
   std::vector<int> deleted_tags(target_curves.size(), 0);
@@ -997,4 +1006,11 @@ void VectorFieldCanvas::setFBO()
 void VectorFieldCanvas::getTargetCurves(CURVES& target_curves)
 {
   this->feature_model->NormalizedTargetCurves(target_curves);
+}
+
+void VectorFieldCanvas::addTargetCurves(std::vector<double2>& line)
+{
+  CurvesUtility::DenormalizedCurve(line, feature_model->getCurveTranslate(), feature_model->getCurveScale());
+  feature_model->addTargetCurves(line);
+  feature_model->updateSourceField(6);
 }

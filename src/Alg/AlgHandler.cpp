@@ -42,6 +42,11 @@ void AlgHandler::setShapeModel(std::shared_ptr<Model> model)
   init();
 }
 
+void AlgHandler::setSynthesisModel(std::shared_ptr<Model> model)
+{
+  synthesis_model = model;
+}
+
 bool AlgHandler::workable()
 {
   if (!feature_model || !shape_model)
@@ -126,14 +131,18 @@ void AlgHandler::doNormalCompute()
 
 void AlgHandler::doDetailSynthesis()
 {
-  /*detail_synthesis->testMeshPara(shape_model);
-  shape_model->exportOBJ(0);
+  if (!workable())
+  {
+    return;
+  }
+  detail_synthesis->testMeshPara(shape_model);
+  /*shape_model->exportOBJ(0);
   doNormalTransfer();
   shape_model->exportOBJ(0);*/
 
-  /*detail_synthesis->startDetailSynthesis(shape_model);*/
+  //detail_synthesis->startDetailSynthesis(shape_model);
 
-  detail_synthesis->computeVectorField(shape_model);
+  //detail_synthesis->computeVectorField(shape_model);
   actors.clear();
   std::vector<GLActor> temp_actors;
   detail_synthesis->getDrawableActors(temp_actors);

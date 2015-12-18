@@ -1,12 +1,17 @@
 #include "MeshParameterization.h"
 #include "Model.h"
 #include "Shape.h"
+
 #include "obj_writer.h"
 #include "CurvesUtility.h"
+#include "ShapeUtility.h"
 #include "KDTreeWrapper.h"
+#include "PolygonMesh.h"
 
 #include <cv.h>
 #include <set>
+
+using namespace LG;
 
 MeshParameterization::MeshParameterization()
 {
@@ -33,6 +38,7 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->computeBaryCentericPara(cut_shape, boundary_loop);
   this->saveParameterization(model->getOutputPath(), cut_shape, FALSE);
   
+  this->expandCuteShape(model, hidden_faces);
   this->prepareCutShape(model, cut_face_list_hidden, vertex_set_hidden, cut_shape_hidden);
   this->findBoundary(cut_shape_hidden, boundary_loop_hidden);
   this->computeBaryCentericPara(cut_shape_hidden, boundary_loop_hidden);
@@ -72,6 +78,7 @@ void MeshParameterization::saveParameterization(std::string file_path, std::shar
 
   obj_shape.mesh.positions = shape->getVertexList();
   obj_shape.mesh.indices = shape->getFaceList();
+  obj_shape.mesh.texcoords = shape->getUVCoord();
   shapes.pop_back();
   shapes.push_back(obj_shape);
   if(is_hidden)
@@ -88,7 +95,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
 {
   // detect visible faces
   cv::Mat& primitive_ID_img = model->getPrimitiveIDImg();
-  std::set<int> visible_faces;
+  visible_faces.clear();
   for (int i = 0; i < primitive_ID_img.rows; ++i)
   {
     for (int j = 0; j < primitive_ID_img.cols; ++j)
@@ -157,7 +164,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   }
 
   // get hidden face_list
-  std::set<int> hidden_faces;
+  hidden_faces.clear();
   std::set_difference(full_faces.begin(), full_faces.end(),
                       visible_faces.begin(), visible_faces.end(),
                       std::inserter(hidden_faces, hidden_faces.begin()));
@@ -177,6 +184,36 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   //obj_shape.mesh.indices = cut_face_list;
   //shapes.push_back(obj_shape);
   //WriteObj(model->getOutputPath() + "/cutface.obj", shapes, materials);
+}
+
+void MeshParameterization::expandCuteShape(std::shared_ptr<Model> model, std::set<int>& f_id_set)
+{
+  // expand the boundary
+
+  // first we generate the initial shape
+  this->prepareCutShape(model, cut_face_list_hidden, vertex_set_hidden, cut_shape_hidden);
+  this->findBoundary(cut_shape_hidden, boundary_loop_hidden);
+
+  // now we have the boundary id
+  PolygonMesh* poly_mesh = model->getPolygonMesh();
+  std::set<int> new_f_id;
+  for (auto i : boundary_loop_hidden)
+  {
+    // insert all n-ring neighbor faces around vertex into the f_id_set
+    ShapeUtility::getNRingFacesAroundVertex(poly_mesh, new_f_id, vertex_set_hidden[i], 3);
+    f_id_set.insert(new_f_id.begin(), new_f_id.end());
+    new_f_id.clear();
+  }
+
+  // build face
+  const FaceList& ori_face_list = model->getShapeFaceList();
+  cut_face_list_hidden.clear();
+  for (auto i : f_id_set)
+  {
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 0]);
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 1]);
+    cut_face_list_hidden.push_back(ori_face_list[3 * i + 2]);
+  }
 }
 
 void MeshParameterization::prepareCutShape(std::shared_ptr<Model> model, FaceList& f_list, STLVectori& v_set, std::shared_ptr<Shape>& shape)
@@ -388,33 +425,49 @@ void MeshParameterization::mapBoundary(STLVectorf& UV_list, const STLVectori& bo
 
 void MeshParameterization::computeLaplacianWeight(int v_id, std::map<int, float>& weight, std::shared_ptr<Shape> shape)
 {
-  const STLVectori& v_ring = shape->getVertexAdjList()[v_id];
-  const VertexList& vertex_list = shape->getVertexList();
+  //const STLVectori& v_ring = shape->getVertexAdjList()[v_id];
+  //const VertexList& vertex_list = shape->getVertexList();
+  //float wi = 0.0f;
+
+  //for (size_t i = 0; i < v_ring.size(); ++i)
+  //{
+  //  STLVectori share_vertex;
+  //  this->findShareVertex(v_id, v_ring[i], share_vertex, shape);
+
+  //  float wij = 0.0f;
+  //  if (share_vertex.size() == 2) 
+  //  {
+  //    wij = computeWij(&vertex_list[3 * v_id], &vertex_list[3 * v_ring[i]], 
+  //      &vertex_list[3 * share_vertex[0]], &vertex_list[3 * share_vertex[1]]);
+  //  }
+  //  else wij = computeWij(&vertex_list[3 * v_id], &vertex_list[3 * v_ring[i]], &vertex_list[3*share_vertex[0]]);
+
+  //  weight[v_ring[i]] = -wij;
+  //  wi += wij;
+  //}
+  //weight[v_id] = wi;
+
   float wi = 0.0f;
-
-  for (size_t i = 0; i < v_ring.size(); ++i)
+  PolygonMesh* mesh = shape->getPolygonMesh();
+  PolygonMesh::Edge_attribute<Scalar> laplacian_cot = mesh->get_edge_attribute<Scalar>("e:laplacian_cot");
+  PolygonMesh::Halfedge_around_vertex_circulator hec, hec_end;
+  hec = hec_end = mesh->halfedges(PolygonMesh::Vertex(v_id));
+  do 
   {
-    STLVectori share_vertex;
-    this->findShareVertex(v_id, v_ring[i], share_vertex, shape);
-
-    float wij = 0.0f;
-    if (share_vertex.size() == 2) 
-    {
-      wij = computeWij(&vertex_list[3 * v_id], &vertex_list[3 * v_ring[i]], 
-        &vertex_list[3 * share_vertex[0]], &vertex_list[3 * share_vertex[1]]);
-    }
-    else wij = computeWij(&vertex_list[3 * v_id], &vertex_list[3 * v_ring[i]], &vertex_list[3*share_vertex[0]]);
-
-    weight[v_ring[i]] = -wij;
-    wi += wij;
-  }
+    int vj = mesh->to_vertex(*hec).idx();
+    double wij = laplacian_cot[mesh->edge(*hec)];
+    weight[vj] = -(float)wij;
+    wi += (float)wij;
+  } while (++hec != hec_end);
   weight[v_id] = wi;
 }
 
 void MeshParameterization::findShareVertex(int pi, int pj, STLVectori& share_vertex, std::shared_ptr<Shape> shape)
 {
-  const STLVectori& pi_f_ring = shape->getVertexShareFaces()[pi];
-  const STLVectori& pj_f_ring = shape->getVertexShareFaces()[pj];
+  STLVectori pi_f_ring = shape->getVertexShareFaces()[pi];
+  STLVectori pj_f_ring = shape->getVertexShareFaces()[pj];
+  std::sort(pi_f_ring.begin(), pi_f_ring.end());
+  std::sort(pj_f_ring.begin(), pj_f_ring.end());
 
   STLVectori faces;
   std::set_intersection(pi_f_ring.begin(), pi_f_ring.end(), pj_f_ring.begin(), pj_f_ring.end(), back_inserter(faces));
@@ -468,6 +521,7 @@ void MeshParameterization::findConnectedFaces(int f_id, std::set<int>& connected
       this->findConnectedFaces(adj_list[f_id][i], connected_faces, visible_faces, adj_list);
     }
   }
+  return;
 }
 
 void MeshParameterization::connectedComponents(std::vector<std::set<int> >& components, const std::set<int>& visible_faces, const AdjList& adj_list)
@@ -493,7 +547,10 @@ void MeshParameterization::connectedComponents(std::vector<std::set<int> >& comp
     {
       component.clear();
       this->findConnectedFaces(i, component, visible_faces, adj_list);
-      components.push_back(component);
+      if (component.size() > 0)
+      {
+        components.push_back(component);
+      }
     }
   }
 }

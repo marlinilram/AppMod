@@ -11,8 +11,10 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("TrackballView:ShowTrackball", 1);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:rad", 0.04);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:a", 0.7);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:b", 0.3);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:b", 0.5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:w", 0.1);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:c", 1.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:d", 0.05);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:WinWidth", 1.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:WinCenter", 0.5);

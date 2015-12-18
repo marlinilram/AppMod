@@ -49,6 +49,7 @@ public:
   void setBackgroundImage(QString fname);
   void setReflectanceImage(QString fname);
   void setTextureImage(QImage& glImg, GLuint& texture);
+  void setSynthesisReflectance();
 
   std::string getFilePath();
 
@@ -76,6 +77,7 @@ private:
   std::unique_ptr<QGLBuffer> sketch_vertex_buffer;
   std::unique_ptr<QGLBuffer> vertex_crest_buffer;
   std::unique_ptr<QGLBuffer> uv_buffer;
+  std::unique_ptr<QGLBuffer> vertex_syn_texture_buffer;
 
   GLuint offscr_color;
   GLuint offscr_depth;
@@ -91,6 +93,7 @@ private:
 
   GLuint background_texture;
   GLuint reflect_texture;
+  GLuint synthesis_reflect_texture;
 
   GLenum num_vertex;
   GLenum num_face;

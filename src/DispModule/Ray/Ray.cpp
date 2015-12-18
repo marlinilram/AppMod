@@ -62,7 +62,7 @@ bool intersectModel(Eigen::Vector3f &p, Eigen::Vector3f &d, std::vector<float> &
 }
 
 
-void Ray::passModel(std::vector<float> &vertices, std::vector<unsigned int> &faces)
+void Ray::passModel(const std::vector<float> &vertices, const std::vector<unsigned int> &faces)
 {
     std::cout<<"Init Ray class...\n";
 

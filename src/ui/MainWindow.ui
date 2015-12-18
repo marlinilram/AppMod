@@ -44,6 +44,7 @@
      <string>Open</string>
     </property>
     <addaction name="action_Load_Model"/>
+    <addaction name="action_Load_Synthesis_Target"/>
    </widget>
    <widget class="QMenu" name="menuCompute_Pose">
     <property name="title">
@@ -193,6 +194,15 @@
    </property>
    <property name="text">
     <string>Delete Last_Line Of Target</string>
+   </property>
+  </action>
+  <action name="action_Load_Synthesis_Target">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/load_model.png</normaloff>icons/load_model.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load Synthesis Target</string>
    </property>
   </action>
  </widget>

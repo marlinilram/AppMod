@@ -23,6 +23,7 @@ MainWindow::MainWindow()
   connect(action_Tool_Box, SIGNAL(triggered()), this, SLOT(showToolBox()));
   connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
   connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
+  connect(action_Load_Synthesis_Target, SIGNAL(triggered()), this, SLOT(loadSynthesisTarget()));
 
   disp_modules.reset(new DispModuleHandler(centralwidget));
   this->setCentralWidget(centralwidget);
@@ -77,6 +78,23 @@ void MainWindow::loadModel()
     //    gt_model->setRenderer(viewer_img);
     //}
     //coarse_model->setGtModelPtr(gt_model);
+}
+
+void MainWindow::loadSynthesisTarget()
+{
+  QString filter;
+  filter = "obj file (*.obj)";
+
+  QDir dir;
+  QString fileName = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), dir.absolutePath(), filter);
+  if (fileName.isEmpty() == true) return;
+
+  std::string model_file_path = fileName.toStdString();
+  std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
+  model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
+
+  std::shared_ptr<Model> share_model(new Model(model_file_path, model_file_name));
+  disp_modules->loadSynthesisTarget(share_model, model_file_path);
 }
 
 void MainWindow::exportOBJ()

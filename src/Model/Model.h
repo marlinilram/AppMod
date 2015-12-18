@@ -29,7 +29,7 @@ public:
   void exportOBJ(int cur_iter);
 
   Bound* getBoundBox();
-  //std::shared_ptr<Shape> getShape();
+  //std::shared_ptr<Shape> getShape() { return shape; };
   //std::shared_ptr<ShapeCrest> getShapeCrest();
   LG::PolygonMesh* getPolygonMesh();
   std::string getDataPath();
@@ -38,7 +38,9 @@ public:
   //
   void updateShape(VertexList& new_vertex_list);
   void updateColor();
+  void updateColorList(STLVectorf& colorList);
   void updateSHColor();
+  void updateUVCoord(STLVectorf& new_uv_list);
 
   // get information from renderer
   inline cv::Mat &getRImg(){ return r_img; };
@@ -48,6 +50,8 @@ public:
   inline cv::Mat &getRMask() { return mask_rimg; };
   inline cv::Mat &getEdgeImg() { return edge_image; };
   inline cv::Mat &getNImg() { return n_img; };
+  inline cv::Mat &getOriRImg() { return ori_reflectance_img; };
+  inline cv::Mat &getSynRImg() { return synthesis_reflectance_img; };
 
   // get information from Shape
   const VertexList& getShapeVertexList();
@@ -111,6 +115,8 @@ private:
   cv::Mat mask_rimg;
   cv::Mat edge_image;
   cv::Mat photo;
+  cv::Mat ori_reflectance_img;
+  cv::Mat synthesis_reflectance_img;
 
   // camera info
   Matrix4f m_modelview;

@@ -35,10 +35,6 @@ Model::Model(const std::string path, const std::string name)
     return;
   }
 
-  shape_crest.reset(new ShapeCrest());
-  shape_crest->setShape(shape);
-  shape_plane.reset(new ShapePlane());
-  shape_plane->setShape(shape);
   //const std::vector<std::set<int> > flats = shape_plane->getFlats();
   //STLVectorf color_list = shape->getColorList();
   //for (size_t i = 0; i < flats.size(); ++i)
@@ -67,8 +63,24 @@ Model::Model(const std::string path, const std::string name)
   //shape_crest->computeCrestLinesPoints();
 
   // read photo
-  cv::imread(path + "/photo.png").convertTo(photo, CV_32FC3);
-  photo = photo / 255.0;
+  cv::Mat load_img = cv::imread(path + "/photo.png");
+  if (load_img.data != NULL)
+  {
+    load_img.convertTo(photo, CV_32FC3);
+    photo = photo / 255.0;
+
+    shape_crest.reset(new ShapeCrest());
+    shape_crest->setShape(shape);
+    shape_plane.reset(new ShapePlane());
+    shape_plane->setShape(shape);
+  }
+  else
+  {
+    std::cout << "Load Photo.png failed." << std::endl;
+  }
+
+  ori_reflectance_img = cv::Mat::zeros(300, 300, CV_32FC3);
+  synthesis_reflectance_img = cv::Mat::zeros(300, 300, CV_32FC3);
 
   // make an output path
   char time_postfix[50];
@@ -430,6 +442,16 @@ void Model::getShapeFaceCenter(int f_id, float p[3])
 void Model::updateShape(VertexList& new_vertex_list)
 {
   shape->updateShape(new_vertex_list);
+}
+
+void Model::updateUVCoord(STLVectorf& new_uv_list)
+{
+  shape->setUVCoord(new_uv_list);
+}
+
+void Model::updateColorList(STLVectorf& colorList)
+{
+  shape->setColorList(colorList);
 }
 
 void Model::updateColor()

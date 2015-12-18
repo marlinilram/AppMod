@@ -162,7 +162,7 @@ void VectorFieldViewer::mousePressEvent(QMouseEvent *e)
     src[2] = 0.5;
     camera()->getUnprojectedCoordinatesOf(src,res);
 
-    if (interaction_mode == VectorField::DRAW_CRSP_LINE || interaction_mode == VectorField::DELETE_TARGET_CURVES)
+    if (interaction_mode == VectorField::DRAW_CRSP_LINE || interaction_mode == VectorField::DELETE_TARGET_CURVES || interaction_mode == VectorField::ADD_TARGET_CURVES)
     {
       is_drawLine = true;
       double2 point;
@@ -190,7 +190,7 @@ void VectorFieldViewer::mouseMoveEvent(QMouseEvent *e)
 {
 
   int handled = 0;
-  if (interaction_mode == VectorField::DRAW_CRSP_LINE || interaction_mode == VectorField::DELETE_TARGET_CURVES)
+  if (interaction_mode == VectorField::DRAW_CRSP_LINE || interaction_mode == VectorField::DELETE_TARGET_CURVES || interaction_mode == VectorField::ADD_TARGET_CURVES)
   {
     if(is_drawLine)
     {
@@ -283,6 +283,20 @@ void VectorFieldViewer::mouseReleaseEvent(QMouseEvent *e)
       proj_mat_out = proj_mat_out * m_projection * m_modelview;
       
 
+      updateGLOutside();
+    }
+    else if(interaction_mode == VectorField::ADD_TARGET_CURVES)
+    {
+      is_drawLine = false;
+      for (size_t i = 0; i < dispObjects.size(); ++i)
+      {
+        VectorFieldCanvas* canvas = dynamic_cast<VectorFieldCanvas*>(dispObjects[i]);
+        if (canvas)
+        {
+          canvas->addTargetCurves(line);
+        }
+      }
+      line.clear();
       updateGLOutside();
     }
     else if (interaction_mode == VectorField::SELECT_POINT || interaction_mode == VectorField::CORRECT_CRSP)

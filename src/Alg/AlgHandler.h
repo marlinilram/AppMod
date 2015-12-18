@@ -23,6 +23,7 @@ public:
   void init();
   void setFeatureModel(std::shared_ptr<FeatureGuided> model);
   void setShapeModel(std::shared_ptr<Model> model);
+  void setSynthesisModel(std::shared_ptr<Model> model);
   std::vector<GLActor>& getGLActors() { return actors; };
   bool workable();
 
@@ -46,7 +47,8 @@ private:
 
   std::shared_ptr<FeatureGuided> feature_model;
   std::shared_ptr<Model>         shape_model;
-  std::shared_ptr<DecompImg> decomp_img;
+  std::shared_ptr<DecompImg>     decomp_img;
+  std::shared_ptr<Model>         synthesis_model;
 
   // parameters for algorithms
   //float sample_density;

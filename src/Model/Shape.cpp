@@ -686,7 +686,7 @@ void Shape::getFaceCenter(int f_id, float p[3])
   p[2] = vertex_list[3 * v0 + 2] / 3 + vertex_list[3 * v1 + 2] / 3 + vertex_list[3 * v2 + 2] / 3;
 }
 
-void Shape::computeShadowSHCoeffs()
+void Shape::computeShadowSHCoeffs(int num_band)
 {
   // only called when the shape is changed
 
@@ -700,17 +700,18 @@ void Shape::computeShadowSHCoeffs()
   int sqrtNumSamples = 50;
   int numSamples = sqrtNumSamples * sqrtNumSamples;
   std::vector<SAMPLE> samples(numSamples);
-  GenerateSamples(sqrtNumSamples, 3, &samples[0]);
+  GenerateSamples(sqrtNumSamples, num_band, &samples[0]);
 
   // 3. compute coeffs
   std::cout << "Compute SH Coefficients.\n";
-  int numBand = 3;
+  int numBand = num_band;
   int numFunctions = numBand * numBand;
   PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeff = poly_mesh->vertex_attribute<STLVectorf>("v:SHShadowCoeffs");
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
   float perc = 0;
   for (auto i : poly_mesh->vertices())
   {
+    shadowCoeff[i].clear();
     shadowCoeff[i].resize(numFunctions, 0.0f);
     for (int k = 0; k < numSamples; ++k)
     {

@@ -11,6 +11,7 @@ public:
   ~YMLHandler();
 
   static void saveToFile(std::string fPath, std::string fName, cv::Mat &file);
+  static void saveToMat(std::string fPath, std::string fName, cv::Mat &file);
   static void loadToCvMat(std::string fName, cv::Mat &file);
 };
 
