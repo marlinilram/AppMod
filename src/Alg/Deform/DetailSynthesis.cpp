@@ -27,9 +27,15 @@ DetailSynthesis::~DetailSynthesis()
 
 void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
 {
-  mesh_para.reset(new MeshParameterization);
+  cv::FileStorage fs(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  cv::Mat displacement_mat;
+  fs["displacement"] >> displacement_mat;
+  PolygonMesh poly_mesh;
+  ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);
 
-  mesh_para->doMeshParameterization(model);
+  /*mesh_para.reset(new MeshParameterization);
+
+  mesh_para->doMeshParameterization(model);*/
 }
 
 

@@ -10,6 +10,8 @@
 #include "SAMPLE.h"
 #include "GenerateSamples.h"
 
+#include "obj_writer.h"
+
 using namespace LG;
 
 namespace ShapeUtility
@@ -316,5 +318,73 @@ namespace ShapeUtility
       filled_mat_ptr[offset] = 1 + value / n_value;
     }
   }
+
+  void matToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model)
+  {
+    int width = mat.size().width;
+    int height = mat.size().height;
+    Vector3f dir ;
+    dir << 0, 0, -1;
+    shape_model->getUnprojectVec(dir);
+    dir.normalize();
+
+    for(int i = 0; i < width; i ++)
+    {
+      for(int j = 0; j < height; j ++)
+      {
+        Vector3f img_coord, w_coord;
+        img_coord << i, j, 1;
+        shape_model->getWorldCoord(img_coord, w_coord);
+        Vector3f mesh_pt;
+        mesh_pt = w_coord + 0.1 * dir * mat.at<float>(j, i);
+        mesh.add_vertex(Vec3(mesh_pt(0), mesh_pt(1), mesh_pt(2)));
+        //mesh.add_vertex(Vec3(float(i), float(j), 10 * mat.at<float>(j, i)));
+      }
+    }
+    for(int i = 0; i < width - 1; i ++)
+    {
+      for(int j = 0; j < height - 1; j ++)
+      {
+        std::vector<PolygonMesh::Vertex> vertices;
+        vertices.clear();
+        vertices.push_back(PolygonMesh::Vertex(height * i + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j + 1));
+        vertices.push_back(PolygonMesh::Vertex(height * i + j + 1));
+        mesh.add_face(vertices);
+        vertices.clear();
+        vertices.push_back(PolygonMesh::Vertex(height * i + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j + 1));
+        mesh.add_face(vertices);
+      }
+    }
+
+    std::vector<tinyobj::shape_t> shapes;
+    tinyobj::shape_t obj_shape;
+    std::vector<tinyobj::material_t> materials;
+    VertexList vertex_list;
+    vertex_list.clear();
+    for (auto vit : mesh.vertices())
+    {
+      const Vec3& pt = mesh.position(vit);
+      vertex_list.push_back(pt[0]);
+      vertex_list.push_back(pt[1]);
+      vertex_list.push_back(pt[2]);
+    }
+    obj_shape.mesh.positions = vertex_list;
+    FaceList face_list;
+    face_list.clear();
+    for (auto fit : mesh.faces())
+    {
+      for (auto vfc_it : mesh.vertices(fit))
+      {
+        face_list.push_back(vfc_it.idx());
+      }
+    } 
+    obj_shape.mesh.indices = face_list;
+    shapes.push_back(obj_shape);
+    WriteObj(shape_model->getOutputPath() + "/mat2mesh.obj", shapes, materials);
+  }
+
 
 }
