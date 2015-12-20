@@ -828,7 +828,7 @@ void FeatureGuided::computeAverageTargetCurvesDir()
       double2 diff;
       diff = tar_curves[i][j] - tar_curves[i][start];
       double distance = sqrt(diff.x * diff.x + diff.y * diff.y);
-      if(distance < sample_rate && j != tar_curves[i].size() - 1)
+      if(distance < sample_rate && j != (tar_curves[i].size() - 1))
       {
         segment.push_back(j);
       }
@@ -837,6 +837,7 @@ void FeatureGuided::computeAverageTargetCurvesDir()
         segment.push_back(j);
         Vector2f dir;
         dir << diff.x , diff.y;
+        dir.normalize();
         for(size_t k = 0; k < segment.size(); k ++)
         {
           sampled_target_curves_average_dir[i][segment[k]] = dir;

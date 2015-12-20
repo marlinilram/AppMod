@@ -495,6 +495,7 @@ void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& cur
     for (size_t j = 0; j < curves[i].size(); ++j)
     {
       double saliency = 0.0;
+      int n_sample = 0;
       for (int k = -10; k <= 10; ++k)
       {
         int cur_idx = int(j) + k;
@@ -506,9 +507,10 @@ void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& cur
           img_i = img_i < 0 ? 0 : (img_i < saliency_img.rows ? img_i : saliency_img.rows);
           img_j = img_j < 0 ? 0 : (img_j < saliency_img.cols ? img_j : saliency_img.cols);
           saliency += saliency_img.at<float>(img_i, img_j);
+          ++n_sample;
         }
       }
-      temp_edge_sp_sl.push_back(saliency / 21);
+      temp_edge_sp_sl.push_back(saliency / n_sample);
     }
     edges_sp_sl.push_back(temp_edge_sp_sl);
   }

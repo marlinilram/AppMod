@@ -55,6 +55,7 @@ public:
 
   // get information from Shape
   const VertexList& getShapeVertexList();
+  const VertexList& getShapeOriVertexList();
   const FaceList& getShapeFaceList();
   const STLVectorf& getShapeUVCoord();
   const NormalList& getShapeNormalList();
