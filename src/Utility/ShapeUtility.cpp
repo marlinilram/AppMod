@@ -178,7 +178,6 @@ namespace ShapeUtility
       if (n_line == poly_mesh->n_vertices()) 
       {
         std::cout << "Loading finished." << std::endl;
-        return;
       }
       else 
       {
@@ -205,6 +204,25 @@ namespace ShapeUtility
       }
       outFile.close();
       std::cout << "Generating finished." << std::endl;
+    }
+
+    // normalize the value
+    Vector3f mins(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    Vector3f maxs(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+    for (auto vit : poly_mesh->vertices())
+    {
+      Vec3 cur_sym = v_symmetry[vit];
+      if (cur_sym[0] < mins[0]) mins[0] = cur_sym[0];
+      if (cur_sym[0] > maxs[0]) maxs[0] = cur_sym[0];
+      if (cur_sym[1] < mins[1]) mins[1] = cur_sym[1];
+      if (cur_sym[1] > maxs[1]) maxs[1] = cur_sym[1];
+      if (cur_sym[2] < mins[2]) mins[2] = cur_sym[2];
+      if (cur_sym[2] > maxs[2]) maxs[2] = cur_sym[2];
+    }
+    for (auto vit : poly_mesh->vertices())
+    {
+      Vec3 cur_sym = v_symmetry[vit];
+      v_symmetry[vit] = ((cur_sym - mins).array() / (maxs - mins).array()).matrix();
     }
   }
 

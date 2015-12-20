@@ -7,6 +7,7 @@ in vec3 vs_eye_normal;
 in vec4 vs_pos;
 in float vs_CrestTag;
 in vec2 vs_uv;
+in vec2 vs_hidden_uv;
 in float vs_SynTextureTag;
 
 out vec4 fragColor;
@@ -47,14 +48,14 @@ void main(void)
     //}
     break;
 	case 3:
-    if (vs_SynTextureTag <= 0)
+    if (vs_SynTextureTag > 0.0)
     {
-      vec4 texton = texture2D( reflect_texture, vs_uv);
+      vec4 texton = texture2D( syn_reflect_texture, vs_hidden_uv);
 		  fragColor = texton;
     }
-    else if (vs_SynTextureTag > 0)
+    else //    if (vs_SynTextureTag <= 0.0)
     {
-      vec4 texton = texture2D( syn_reflect_texture, vs_uv);
+      vec4 texton = texture2D( reflect_texture, vs_uv);
 		  fragColor = texton;
     }
 		fragColor[3] = (gl_PrimitiveID)/(fMeshSize);

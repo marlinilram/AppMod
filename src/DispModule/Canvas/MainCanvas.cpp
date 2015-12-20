@@ -74,6 +74,8 @@ void MainCanvas::setShaderProgram()
   normal_buffer->create();
   uv_buffer.reset(new QGLBuffer);
   uv_buffer->create();
+  hidden_uv_buffer.reset(new QGLBuffer);
+  hidden_uv_buffer->create();
   vertex_crest_buffer.reset(new QGLBuffer(QGLBuffer::IndexBuffer));
   vertex_crest_buffer->create();
   vertex_syn_texture_buffer.reset(new QGLBuffer);
@@ -122,7 +124,7 @@ void MainCanvas::updateModelBuffer()
 
   LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
   LG::PolygonMesh::Vertex_attribute<int> syn_texture_tag = poly_mesh->vertex_attribute<int>("v:syn_texture_tag");
-
+  LG::PolygonMesh::Vertex_attribute<LG::Vec2> hidden_uv_list = poly_mesh->vertex_attribute<LG::Vec2>("v:hidden_uv");
 
   //// duplicate the vertex for face color
   //FaceList new_face_list;
@@ -187,10 +189,13 @@ void MainCanvas::updateModelBuffer()
     //v_crest[crest_edge[i].second] = 1.0f;
   }
 
-  std::vector<GLfloat> v_syn_texture_tag; // used to store syn texture tag
+  std::vector<GLfloat> v_syn_texture_tag(poly_mesh->n_vertices(), 0); // used to store syn texture tag
+  std::vector<GLfloat> v_hidden_uv_list(2 * poly_mesh->n_vertices(), 0); // used to store hidden uv list
   for (auto vit : poly_mesh->vertices())
   {
-    v_syn_texture_tag.push_back(syn_texture_tag[vit]);
+    v_syn_texture_tag[vit.idx()] = syn_texture_tag[vit];
+    v_hidden_uv_list[2 * vit.idx() + 0] = hidden_uv_list[vit][0];
+    v_hidden_uv_list[2 * vit.idx() + 1] = hidden_uv_list[vit][1];
   }
 
   num_vertex = GLenum(vertex_list.size() / 3);
@@ -231,6 +236,11 @@ void MainCanvas::updateModelBuffer()
   vertex_syn_texture_buffer->allocate(v_syn_texture_tag.size() * sizeof(GLfloat));
   vertex_syn_texture_buffer->write(0, &v_syn_texture_tag[0], v_syn_texture_tag.size() * sizeof(GLfloat));
   vertex_syn_texture_buffer->release();
+
+  hidden_uv_buffer->bind();
+  hidden_uv_buffer->allocate(v_hidden_uv_list.size() * sizeof(GLfloat));
+  hidden_uv_buffer->write(0, &v_hidden_uv_list[0], v_hidden_uv_list.size() * sizeof(GLfloat));
+  hidden_uv_buffer->release();
 
   GLenum error_code = glGetError();
   if (error_code != 0)
@@ -273,6 +283,8 @@ void MainCanvas::setTextureImage(QImage& glImg, GLuint& texture)
 
   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
 
   if (glGetError() != 0)
   {
@@ -514,6 +526,11 @@ void MainCanvas::drawModel()
   basic_shader->setAttributeBuffer("uv", GL_FLOAT, 0, 2, 0);
   basic_shader->enableAttributeArray("uv");
   uv_buffer->release();
+
+  hidden_uv_buffer->bind();
+  basic_shader->setAttributeBuffer("hidden_uv", GL_FLOAT, 0, 2, 0);
+  basic_shader->enableAttributeArray("hidden_uv");
+  hidden_uv_buffer->release();
 
   vertex_crest_buffer->bind();
   basic_shader->setAttributeBuffer("vCrestTag", GL_FLOAT, 0, 1, 0);

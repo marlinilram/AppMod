@@ -51,6 +51,8 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
     this->generatePyramid(gptar_detail[i], levels);
   }
 
+  //this->buildAllFeatureButkects(gpsrc_feature, gpsrc_feature_buckets);
+
   std::cout << "SynthesisTool Init success !" << std::endl;
   /*std::cout << "The size of gpsrc_detail is" << gpsrc_detail.size() << std::endl;
   std::cout << "The size of gptar_detail is" << gptar_detail.size() << std::endl;
@@ -120,6 +122,7 @@ void SynthesisTool::doSynthesis()
           //FCandidates candidates;
           //this->findCandidates(gpsrc_feature, gptar_feature, l, j, i, candidates);//std::cout <<"found candidates finished. ";
           //std::cout << "The size of the candidates is :" << candidates.size() << std::endl;
+          //this->findCandidatesInBuckets(gpsrc_feature_buckets, gptar_feature, l, j, i, candidates);
           this->findBestMatch(gpsrc_detail, gptar_detail, l, j, i, all_pixel_candidates[offset], findX, findY);//std::cout<<"found best match finished.\n";
           for (int k = 0; k < detail_dim; ++k)
           {
@@ -151,6 +154,7 @@ void SynthesisTool::doSynthesis()
           //FCandidates candidates;
           //this->findCandidates(gpsrc_feature, gptar_feature, l, j, i, candidates);//std::cout <<"found candidates finished. ";
           //std::cout << "The size of the candidates is :" << candidates.size() << std::endl;
+          //this->findCandidatesInBuckets(gpsrc_feature_buckets, gptar_feature, l, j, i, candidates);
           this->findBestMatch(gpsrc_detail, gptar_detail, l, j, i, all_pixel_candidates[offset], findX, findY);//std::cout<<"found best match finished.\n";
           for (int k = 0; k < detail_dim; ++k)
           {
@@ -637,4 +641,85 @@ void SynthesisTool::findCandidatesFromLastLevel(std::vector<ImagePyramid>& gpsrc
     }
   }
   candidates = new_candidates;
+}
+
+void SynthesisTool::buildAllFeatureButkects(std::vector<ImagePyramid>& gpsrc, std::vector<FBucketPryamid>& gpsrc_buckets)
+{
+  // build feature buckets for each feature dimension
+  gpsrc_buckets.clear();
+  gpsrc_buckets.resize(gpsrc.size());
+  for (size_t i = 0; i < gpsrc.size(); ++i)
+  {
+    buildPryFeatureBuckets(gpsrc[i], gpsrc_buckets[i]); // for each dimension
+  }
+}
+
+void SynthesisTool::buildPryFeatureBuckets(ImagePyramid& gpsrc, FBucketPryamid& gpsrc_buckets)
+{
+  // build feature buckets for one pyramid
+  gpsrc_buckets.clear();
+  gpsrc_buckets.resize(gpsrc.size());
+  for (size_t i = 0; i < gpsrc.size(); ++i)
+  {
+    buildImgFeatureBuckets(gpsrc[i], gpsrc_buckets[i]);
+  }
+}
+
+void SynthesisTool::buildImgFeatureBuckets(cv::Mat& img, FBucket& buket)
+{
+  // build bucket for one image
+  int n_bin = 10;
+  buket.clear();
+  buket.resize(n_bin); // assume the value has been normalized to 0~1 and we use a 10 bins bucket
+  float* mat_ptr = (float*)img.data;
+  for (int i = 0; i < img.rows; ++i)
+  {
+    for (int j = 0; j < img.cols; ++j)
+    {
+      int offset = i * img.cols + j;
+      int bin_id = int(mat_ptr[offset] * n_bin); // assume normalized to 0~1 already !!!
+      if (bin_id == n_bin) bin_id = bin_id - 1;
+      buket[bin_id].insert(Point2D(j, i)); // store as (x,y) not (i,j)
+    }
+  }
+}
+
+void SynthesisTool::findCandidatesInBuckets(std::vector<FBucketPryamid>& gpsrc_buckets, std::vector<ImagePyramid>& gptar, int level, int pointX, int pointY, std::set<distance_position>& candidates)
+{
+  // pointX and pointY indicate a position in certain level of gptar (feature map)
+  // we try to find all candidates in the same level of gpsrc (feature map)
+  int n_bin = (int)gpsrc_buckets[0][0].size();
+  std::set<Point2D> bucket_candidates;
+  this->getElementsFromBuckets(gpsrc_buckets[0][level], bucket_candidates, gptar[0][level].at<float>(pointY, pointX));
+  for (size_t i = 1; i < gpsrc_buckets.size(); ++i) // for each feature dimension
+  {
+    std::set<Point2D> cur_f_candidates;
+    this->getElementsFromBuckets(gpsrc_buckets[i][level], cur_f_candidates, gptar[i][level].at<float>(pointY, pointX));
+
+    std::set<Point2D> bucket_intersection;
+    std::set_intersection(cur_f_candidates.begin(), cur_f_candidates.end(), bucket_candidates.begin(), bucket_candidates.end(), std::inserter(bucket_intersection, bucket_intersection.begin()));
+    if (!bucket_intersection.empty())
+    {
+      bucket_candidates.swap(bucket_intersection);
+    }
+  }
+
+  // now we have the candidates
+  for (auto i : bucket_candidates)
+  {
+    candidates.insert(distance_position(0, i));
+  }
+}
+
+void SynthesisTool::getElementsFromBuckets(FBucket& bucket, std::set<Point2D>& elements, float val)
+{
+  int n_bin = (int)bucket.size();
+  float bin_val = n_bin * val;
+  int bin_id = int(bin_val); // target feature in dimension i
+  bin_id = (bin_id >= n_bin) ? (n_bin - 1) : bin_id;
+  int bin_id_n = int(bin_val + 0.5 - int(bin_val)) == 0 ? (bin_id - 1) : (bin_id + 1);
+  bin_id_n  = (bin_id_n < 0) ? 0 : ((bin_id_n >= n_bin) ? (n_bin - 1) : bin_id_n); // get a next bin
+
+  elements = bucket[bin_id];
+  elements.insert(bucket[bin_id_n].begin(), bucket[bin_id_n].end());
 }
