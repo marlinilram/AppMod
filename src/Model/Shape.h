@@ -27,6 +27,7 @@ public:
   void setFaceColorList(STLVectorf& facecolorList);
   void setUVCoord(STLVectorf& UVCoord);
   const VertexList& getVertexList();
+  const VertexList& getOriVertexList();
   const FaceList& getFaceList();
   const STLVectorf& getUVCoord();
   const NormalList& getNormalList();
@@ -64,6 +65,7 @@ private:
   // geometry information
   VertexList vertex_list;
   FaceList   face_list;
+  VertexList ori_vertex_list;
 
   // connectivity information
   AdjList    face_adjlist;

@@ -395,6 +395,10 @@ const VertexList& Model::getShapeVertexList()
 {
   return shape->getVertexList();
 }
+const VertexList& Model::getShapeOriVertexList()
+{
+  return shape->getOriVertexList();
+}
 const FaceList& Model::getShapeFaceList()
 {
   return shape->getFaceList();
