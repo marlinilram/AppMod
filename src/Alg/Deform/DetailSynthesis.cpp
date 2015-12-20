@@ -17,7 +17,7 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-
+  resolution = 100;
 }
 
 DetailSynthesis::~DetailSynthesis()
@@ -43,7 +43,7 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
 
   ShapeUtility::computeSymmetry(model);
   ShapeUtility::computeNormalizedHeight(model);
-  ShapeUtility::computeDirectionalOcclusion(model);
+  //ShapeUtility::computeDirectionalOcclusion(model);
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
   PolygonMesh::Vertex_attribute<Scalar> normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -63,7 +63,7 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
     //vertex_feature_list[vit.idx()].push_back(v_normals[vit][2]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
-      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+      //vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
   }
 
@@ -83,7 +83,7 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
 
 void DetailSynthesis::computeFeatureMap(std::vector<cv::Mat>& feature_map, std::vector<std::vector<float> >& feature_list, bool is_src)
 {
-  resolution = 512;
+  //resolution = 512;
   int dim_feature = feature_list[0].size();
   feature_map.clear();
   for(int i = 0; i < dim_feature; i ++)
@@ -225,7 +225,7 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
 
 void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model)
 {
-  resolution = 512;
+  //resolution = 512;
   int dim_detail = detail_image.size();
   detail_map.clear();
   for(int i = 0; i < dim_detail; i ++)
@@ -484,7 +484,7 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   syn_tool->doSynthesis();
 
   // map the synthesis to model color
-  resolution = 512;
+  //resolution = 512;
   std::vector<std::vector<cv::Mat> >& detail_result = syn_tool->getTargetDetail();
   //detail_result[0][0]; // R
   //detail_result[1][0]; // G
@@ -507,6 +507,7 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
   PolygonMesh::Vertex_attribute<int> syn_texture_tag = poly_mesh->vertex_attribute<int>("v:syn_texture_tag");
+  PolygonMesh::Vertex_attribute<Vec2> hidden_uv_list = poly_mesh->vertex_attribute<Vec2>("v:hidden_uv");
 
   cv::Mat tar_detail;
   std::vector<cv::Mat> output_detail;
@@ -547,6 +548,9 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
     // put uv for syn texture
     uv_list[2 * v_set[i] + 0] = cut_uv_list_hidden[2 * i + 0];
     uv_list[2 * v_set[i] + 1] = cut_uv_list_hidden[2 * i + 1];
+
+    // put uv to hidden uv list
+    hidden_uv_list[PolygonMesh::Vertex(v_set[i])] = Vec2(cut_uv_list_hidden[2 * i + 0], cut_uv_list_hidden[2 * i + 1]);
 
     // put uv tag for syn texture
     syn_texture_tag[PolygonMesh::Vertex(v_set[i])] = 1;
@@ -590,7 +594,11 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
     uv_list[2 * v_set[i] + 1] = cut_uv_list[2 * i + 1];
 
     // put uv tag for original texture
+    //if (syn_texture_tag[PolygonMesh::Vertex(v_set[i])] != 1)
+    //{
     syn_texture_tag[PolygonMesh::Vertex(v_set[i])] = 0;
+    //}
+    
   }
 
   model->updateColorList(color_list);
