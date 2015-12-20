@@ -92,6 +92,8 @@ public:
   std::map<int, std::vector<int>>& getGlobalVisibleMapper();
   std::vector<double>& getEdgesAverageSpSl();
   void deleteTargetCurves(std::vector<int>& deleted_tags);
+  void addTargetCurves(std::vector<double2>& add_curve);
+  void computeAverageTargetCurvesDir();
 
 public:
 
@@ -111,6 +113,10 @@ public:
   std::vector<int> marked_source_curves; // all source curves user has marked for each stage (source curves are stored using the source curves id)
   std::vector<int> marked_target_curves; // all target curves user has marked for each stage
   //std::set<std::pair<int, int> > user_define_curve_crsp;
+  double sample_rate;
+  std::vector<double> src_sample_rate;
+  double average_sourcePts_interval;
+  std::vector<std::vector<Vector2f>> sampled_target_curves_average_dir;
 
 private:
   
@@ -136,7 +142,7 @@ private:
   std::vector<std::set<int> > tar_relationship;
   std::vector<Vector2f>       tar_avg_direction;
   std::vector<Vector2f>       src_avg_direction;
-
+  
   std::shared_ptr<KDTreeWrapper> source_KDTree;
   std::shared_ptr<KDTreeWrapper> target_KDTree;
   std::map<int, std::pair<int, int> > kdtree_id_mapper; // map from target kdtree id to curves id

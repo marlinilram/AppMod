@@ -261,9 +261,13 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
   src_vid_mapper.clear();
   src_rev_vid_mapp.clear();
   std::vector<double2> curve;
+  double distance = 0.0;
+  src_sample_rate.clear();
+  src_sample_rate.resize(crest_lines.size());
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
     curve.clear();
+    double tmp_distance = 0.0;
     for (size_t j = 0; j < crest_lines[i].size(); ++j)
     {
       Vector4f v;
@@ -276,11 +280,21 @@ void FeatureGuided::ExtractSrcCurves(const cv::Mat& source, CURVES& curves)
       float winx, winy;
       source_model->getProjectPt(v.data(), winx, winy);
       curve.push_back(double2(winx, source.rows - winy));
+      if(j != 0)
+      {
+        tmp_distance += sqrt(pow(winx - curve[j - 1].x, 2) + pow(source.rows - winy - curve[j - 1].y, 2));
+      }
       src_vid_mapper[std::pair<int, int>(i, j)] = crest_lines[i][j];
       src_rev_vid_mapp[crest_lines[i][j]] = std::pair<int, int>(i, j);
     }
+    tmp_distance /= (crest_lines[i].size() - 1);
+    src_sample_rate[i] = tmp_distance * curve_scale;
+    distance += tmp_distance;
     curves.push_back(curve);
   }
+  distance /= crest_lines.size();
+  average_sourcePts_interval = distance;
+  sample_rate = 1 * average_sourcePts_interval * curve_scale;
 
   src_avg_direction.clear();
   CurvesUtility::CurvesAvgDir(curves, src_avg_direction, 1);
@@ -769,13 +783,67 @@ void FeatureGuided::deleteTargetCurves(std::vector<int>& deleted_tags)
 
   target_curves.swap(new_tar_curves);
 
-  target_edges_sp_len.clear();
-  CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, target_curves);
-
   target_edges_sp_sl.clear();
   CurvesUtility::CurveSpSaliency(target_edges_sp_sl, target_curves, target_edge_saliency, target_edges_average_sp_sl);
+
+  target_edges_sp_len.clear();
+  CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, target_curves);
 
   AnalyzeTargetRelationship();
 
   this->initTarRegister(1);
+}
+
+void FeatureGuided::addTargetCurves(std::vector<double2>& add_curve)
+{
+  if (add_curve.size() > 0)
+  {
+    target_curves.push_back(add_curve);
+    target_edges_sp_sl.push_back(std::vector<double>(add_curve.size(), 1.0));
+    target_edges_average_sp_sl.push_back(1.0);
+  }
+
+  target_edges_sp_len.clear();
+  CurvesUtility::CurveSpTwoSideDist(target_edges_sp_len, target_curves);
+
+  AnalyzeTargetRelationship();
+
+  this->initTarRegister(1);
+}
+
+void FeatureGuided::computeAverageTargetCurvesDir()
+{
+  CURVES tar_curves;
+  this->NormalizedTargetCurves(tar_curves);
+  sampled_target_curves_average_dir.clear();
+  sampled_target_curves_average_dir.resize(tar_curves.size());
+  for(size_t i = 0; i < tar_curves.size(); i ++)
+  {
+    sampled_target_curves_average_dir[i].resize(tar_curves[i].size());
+    int start;
+    start = 0;
+    std::vector<int> segment;
+    for(size_t j = 0; j < tar_curves[i].size(); j ++)
+    {
+      double2 diff;
+      diff = tar_curves[i][j] - tar_curves[i][start];
+      double distance = sqrt(diff.x * diff.x + diff.y * diff.y);
+      if(distance < sample_rate && j != tar_curves[i].size() - 1)
+      {
+        segment.push_back(j);
+      }
+      else
+      {
+        segment.push_back(j);
+        Vector2f dir;
+        dir << diff.x , diff.y;
+        for(size_t k = 0; k < segment.size(); k ++)
+        {
+          sampled_target_curves_average_dir[i][segment[k]] = dir;
+        }
+        start = j + 1;
+        segment.clear();
+      }
+    }
+  }
 }
