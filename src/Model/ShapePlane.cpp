@@ -1,6 +1,6 @@
 #include "ShapePlane.h"
 #include "Shape.h"
-
+#include "Bound.h"
 #include "Colormap.h"
 
 void ShapePlane::setShape(std::shared_ptr<Shape> _shape)
@@ -198,6 +198,7 @@ void ShapePlane::computePlaneCenter()
   VertexList vertex_list = shape->getVertexList();
   NormalList normal_list = shape->getNormalList();
   NormalList face_normal = shape->getFaceNormal();
+  Bound* bounding = shape->getBoundbox();
   for(size_t i = 0; i < flat_surfaces.size(); i ++)
   {
     Vector3f center_position, center_normal;
@@ -264,6 +265,9 @@ void ShapePlane::computePlaneCenter()
       center_normal += distance * symmetric_plane_normal;
       center_normal.normalized();
     }
+    center_position << (center_position(0) - bounding->minX) / (bounding->maxX - bounding->minX), 
+                       (center_position(1) - bounding->minY) / (bounding->maxY - bounding->minY),
+                       (center_position(2) - bounding->minZ) / (bounding->maxZ - bounding->minZ);
     plane_center.push_back(std::pair<Vector3f, Vector3f>(center_position, center_normal));
   }
 }
@@ -281,4 +285,26 @@ std::vector<std::pair<Vector3f, Vector3f>>& ShapePlane::getOriginalPlaneCenter()
 std::vector<std::set<int>>& ShapePlane::getFlatSurfaces()
 {
   return this->flat_surfaces;
+}
+
+void ShapePlane::findSymmetricPlane(int input_face_id, int& output_face_id)
+{
+  double min = std::numeric_limits<double>::max();
+  for(size_t i = 0; i < plane_center.size(); i ++)
+  {
+    if(i != input_face_id)
+    {
+      double distance = sqrt(pow(plane_center[i].first(0) - plane_center[input_face_id].first(0), 2)
+                           + pow(plane_center[i].first(1) - plane_center[input_face_id].first(1), 2)
+                           + pow(plane_center[i].first(2) - plane_center[input_face_id].first(2), 2)
+                           + pow(plane_center[i].second(0) - plane_center[input_face_id].second(0), 2)
+                           + pow(plane_center[i].second(1) - plane_center[input_face_id].second(1), 2)
+                           + pow(plane_center[i].second(2) - plane_center[input_face_id].second(2), 2));
+      if(distance < min)
+      {
+        min = distance;
+        output_face_id = i;
+      }
+    }
+  }
 }

@@ -27,7 +27,7 @@ public:
   std::vector<std::pair<Vector3f, Vector3f>>& getPlaneCenter();
   std::vector<std::pair<Vector3f, Vector3f>>& getOriginalPlaneCenter();
   std::vector<std::set<int>>& getFlatSurfaces();
-  
+  void findSymmetricPlane(int input_face_id, int& output_face_id);
 
 private:
   void flatSurface(std::set<int>& surface, int f_id, float ref_normal[3]);
