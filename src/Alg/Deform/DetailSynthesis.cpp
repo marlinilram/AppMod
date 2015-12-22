@@ -17,7 +17,7 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 100;
+  resolution = 500;
 }
 
 DetailSynthesis::~DetailSynthesis()
@@ -73,11 +73,11 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
   // save feature map to file
   for (size_t i = 0; i < src_feature_map.size(); ++i)
   {
-    YMLHandler::saveToFile(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".yml", src_feature_map[i]);
-    YMLHandler::saveToFile(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".yml", tar_feature_map[i]);
+    //YMLHandler::saveToFile(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".yml", src_feature_map[i]);
+    //YMLHandler::saveToFile(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".yml", tar_feature_map[i]);
 
-    YMLHandler::saveToMat(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".mat", src_feature_map[i]);
-    YMLHandler::saveToMat(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".mat", tar_feature_map[i]);
+    //YMLHandler::saveToMat(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".mat", src_feature_map[i]);
+    //YMLHandler::saveToMat(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".mat", tar_feature_map[i]);
   }
 }
 
@@ -218,8 +218,8 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   // save detail map to file
   for (size_t i = 0; i < src_detail_map.size(); ++i)
   {
-    YMLHandler::saveToFile(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".yml", src_detail_map[i]);
-    YMLHandler::saveToMat(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".mat", src_detail_map[i]);
+    //YMLHandler::saveToFile(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".yml", src_detail_map[i]);
+    //YMLHandler::saveToMat(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".mat", src_detail_map[i]);
   }
 }
 
@@ -479,9 +479,23 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   prepareFeatureMap(model);
   prepareDetailMap(model);
 
+  //cv::Mat load_img = cv::imread(model->getDataPath() + "/syntext/0.9-.png");
+  //cv::Mat syn_ref_ext;
+  //if (load_img.data != NULL)
+  //{
+  //  load_img.convertTo(syn_ref_ext, CV_32FC3);
+  //  syn_ref_ext = syn_ref_ext / 255.0;
+  //}
+  //src_detail_map.clear();
+  //src_detail_map.resize(3);
+  //cv::split(syn_ref_ext, &src_detail_map[0]);
+  //src_feature_map.clear();
+  //src_feature_map.resize(1, cv::Mat::zeros(src_detail_map[0].rows, src_detail_map[0].cols, CV_32FC1));
+  //tar_feature_map = src_feature_map;
+
   syn_tool.reset(new SynthesisTool);
   syn_tool->init(src_feature_map, tar_feature_map, src_detail_map);
-  syn_tool->doSynthesis();
+  syn_tool->doSynthesisNew();
 
   // map the synthesis to model color
   //resolution = 512;
@@ -503,6 +517,14 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //detail_result[0].push_back(output_detail_ext[2].clone());
   //detail_result[1].push_back(output_detail_ext[1].clone());
   //detail_result[2].push_back(output_detail_ext[0].clone());
+
+  cv::Mat tar_detail_last_level;
+  std::vector<cv::Mat> output_detail_last_level;
+  output_detail_last_level.push_back(detail_result[2][1].clone());
+  output_detail_last_level.push_back(detail_result[1][1].clone());
+  output_detail_last_level.push_back(detail_result[0][1].clone());
+  cv::merge(&output_detail_last_level[0], 3, tar_detail_last_level);
+  cv::imshow("last level", tar_detail_last_level);
 
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
