@@ -23,6 +23,7 @@ public:
 	~Ray(){};
 
 	bool intersectModel(Eigen::Vector3d &ray_start, Eigen::Vector3d &ray_end);
+  bool intersectModel(Eigen::Vector3d &ray_start, Eigen::Vector3d &ray_end, double* intersect_point);
 	void passModel(const std::vector<float> &vertices, const std::vector<unsigned int> &faces);
 
 public:

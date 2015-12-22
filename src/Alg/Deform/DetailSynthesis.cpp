@@ -12,6 +12,7 @@
 #include "KevinVectorField.h"
 #include "PolygonMesh.h"
 #include "YMLHandler.h"
+#include "Ray.h"
 
 using namespace LG;
 
@@ -27,15 +28,15 @@ DetailSynthesis::~DetailSynthesis()
 
 void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
 {
-  cv::FileStorage fs(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  /*cv::FileStorage fs(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   cv::Mat displacement_mat;
   fs["displacement"] >> displacement_mat;
   PolygonMesh poly_mesh;
-  ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);
+  ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);*/
 
-  /*mesh_para.reset(new MeshParameterization);
+  mesh_para.reset(new MeshParameterization);
 
-  mesh_para->doMeshParameterization(model);*/
+  mesh_para->doMeshParameterization(model);
 }
 
 
@@ -219,7 +220,15 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   }
   //cv::merge(&detail_image[0], 3, detail_reflectance_mat);
   //imshow("dilate souroce", detail_reflectance_mat);
+  
   computeDetailMap(src_detail_map, detail_image, model);
+
+  cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  cv::Mat displacement_mat;
+  fs2["displacement"] >> displacement_mat;
+  computeDisplacementMap(displacement_map, displacement_mat, model);
+  YMLHandler::saveToFile(model->getOutputPath(), std::string("displacement_map") + ".yml", displacement_map);
+  YMLHandler::saveToMat(model->getOutputPath(), std::string("displacement_map") + ".mat", displacement_map);
 
   // save detail map to file
   for (size_t i = 0; i < src_detail_map.size(); ++i)
@@ -227,6 +236,122 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
     YMLHandler::saveToFile(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".yml", src_detail_map[i]);
     YMLHandler::saveToMat(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".mat", src_detail_map[i]);
   }
+}
+
+void DetailSynthesis::computeDisplacementMap(cv::Mat& displacement_map, cv::Mat& displacement_image, std::shared_ptr<Model> model)
+{
+  PolygonMesh new_mesh;
+  ShapeUtility::matToMesh(displacement_image, new_mesh, model);
+  VertexList vertex_list;
+  vertex_list.clear();
+  for (auto vit : new_mesh.vertices())
+  {
+    const Vec3& pt = new_mesh.position(vit);
+    vertex_list.push_back(pt[0]);
+    vertex_list.push_back(pt[1]);
+    vertex_list.push_back(pt[2]);
+  }
+  FaceList face_list;
+  face_list.clear();
+  for (auto fit : new_mesh.faces())
+  {
+    for (auto vfc_it : new_mesh.vertices(fit))
+    {
+      face_list.push_back(vfc_it.idx());
+    }
+  } 
+  Ray ray_instance;
+  ray_instance.passModel(vertex_list, face_list);
+
+  //resolution = 512;
+  displacement_map = cv::Mat(resolution, resolution, CV_32FC1);
+
+  PolygonMesh* poly_mesh = model->getPolygonMesh();
+  std::shared_ptr<Shape> shape = mesh_para->cut_shape;
+  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->kdTree_UV;
+  STLVectori v_set = mesh_para->vertex_set;
+  PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+  
+  AdjList adjFaces_list = shape->getVertexShareFaces();
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      int pt_id;
+      std::vector<float> pt;
+      pt.resize(2);
+      pt[0] = float(x) / resolution;
+      pt[1] = float(y) / resolution;
+      kdTree->nearestPt(pt,pt_id); // pt has been modified
+      std::vector<int> adjFaces = adjFaces_list[pt_id];
+      int face_id;
+      float point[3];
+      point[0] = float(x) / resolution;//pt[0];
+      point[1] = float(y) / resolution;;//pt[1];
+      point[2] = 0;
+      float lambda[3];
+      int id1,id2,id3;
+      for(size_t i = 0; i < adjFaces.size(); i ++)
+      {
+        float l[3];
+        int v1_id,v2_id,v3_id;
+        float v1[3],v2[3],v3[3];
+        v1_id = (shape->getFaceList())[3 * adjFaces[i]];
+        v2_id = (shape->getFaceList())[3 * adjFaces[i] + 1];
+        v3_id = (shape->getFaceList())[3 * adjFaces[i] + 2];
+        v1[0] = (shape->getUVCoord())[2 * v1_id];
+        v1[1] = (shape->getUVCoord())[2 * v1_id + 1];
+        v1[2] = 0;
+        v2[0] = (shape->getUVCoord())[2 * v2_id];
+        v2[1] = (shape->getUVCoord())[2 * v2_id + 1];
+        v2[2] = 0;
+        v3[0] = (shape->getUVCoord())[2 * v3_id];
+        v3[1] = (shape->getUVCoord())[2 * v3_id + 1];
+        v3[2] = 0;
+        ShapeUtility::computeBaryCentreCoord(point,v1,v2,v3,l);
+        l[0] = (fabs(l[0]) < 1e-4) ? 0 : l[0];
+        l[1] = (fabs(l[1]) < 1e-4) ? 0 : l[1];
+        l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
+        if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+        {
+          face_id = i;
+          lambda[0] = l[0];
+          lambda[1] = l[1];
+          lambda[2] = l[2];
+          id1 = v1_id;
+          id2 = v2_id;
+          id3 = v3_id;
+        }
+      }
+      
+      Vector3f pos = lambda[0] * poly_mesh->position(PolygonMesh::Vertex(v_set[id1]))
+                   + lambda[1] * poly_mesh->position(PolygonMesh::Vertex(v_set[id2]))
+                   + lambda[2] * poly_mesh->position(PolygonMesh::Vertex(v_set[id3]));
+      Vector3f dir = lambda[0] * v_normals[PolygonMesh::Vertex(v_set[id1])]
+                   + lambda[1] * v_normals[PolygonMesh::Vertex(v_set[id2])]
+                   + lambda[2] * v_normals[PolygonMesh::Vertex(v_set[id3])];
+      Vector3f end = pos + dir;
+      double intersect_point[3];
+      Eigen::Vector3d start_pt, end_pt;
+      start_pt << pos(0), pos(1), pos(2);
+      end_pt << end(0), end(1), end(2);
+      bool is_intersected;
+      is_intersected = ray_instance.intersectModel(start_pt, end_pt, intersect_point);
+      if(is_intersected == false)
+      {
+        displacement_map.at<float>(resolution - y - 1,x) = 0;
+      }
+      else
+      {
+        float distance;
+        distance = sqrt((intersect_point[0] - pos(0)) * (intersect_point[0] - pos(0)) 
+                      + (intersect_point[1] - pos(1)) * (intersect_point[1] - pos(1)) 
+                      + (intersect_point[2] - pos(2)) * (intersect_point[2] - pos(2)));
+        displacement_map.at<float>(resolution - y - 1,x) = distance;
+      }
+    }
+  }
+  applyDisplacementMap(mesh_para->vertex_set, mesh_para->cut_shape, model, displacement_map);
 }
 
 void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model)
@@ -312,7 +437,7 @@ void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::ve
   }
 }
 
-
+//old one, useless 
 void DetailSynthesis::computeDisplacementMap(std::shared_ptr<Model> model)
 {
   resolution = 500;
@@ -456,7 +581,7 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
     {
       img_y --;    
     }
-    displacement = disp_map.at<float>(img_x,img_y);
+    displacement = disp_map.at<float>(resolution - img_y - 1, img_x);
     vertex_check[3 * vertex_set[i]] = pt_check[0] + normal_check[0] * displacement;
     vertex_check[3 * vertex_set[i] + 1] = pt_check[1] + normal_check[1] * displacement;
     vertex_check[3 * vertex_set[i] + 2] = pt_check[2] + normal_check[2] * displacement;
@@ -648,6 +773,7 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //cv::merge(&output_detail[0], 3, tar_detail);
   //cv::minMaxLoc(tar_detail,&min,&max);
   //cv::imshow("result", (tar_detail - min) / (max - min));
+  
 }
 
 void DetailSynthesis::computeVectorField(std::shared_ptr<Model> model)
