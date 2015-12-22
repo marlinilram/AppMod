@@ -95,6 +95,7 @@ public:
   void clearTaggedPlanes();
   void getTaggedPlaneVertices(std::vector<STLVectori>& vertices);
   void getPlaneVertices(std::vector<STLVectori>& vertices);
+  const std::vector<std::set<int> >& getPlaneFaces();
   std::vector<std::pair<Vector3f, Vector3f>>& getOriginalPlaneCenter();
   std::vector<std::pair<Vector3f, Vector3f>>& getPlaneCenter();
   std::vector<std::set<int>>& getFlatSurfaces();

@@ -8,15 +8,14 @@ void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_pa
 {
   shape = _shape;
 
-  if (this->loadExtPlaneInfo(ext_info_path)) return;
-
-  this->findFlats();
-
-  this->writeExtPlaneInfo(ext_info_path);
+  if (!this->loadExtPlaneInfo(ext_info_path))
+  {
+    this->findFlats();
+    this->writeExtPlaneInfo(ext_info_path);
+  }
 
   this->setSymmetricPlane(1, 0, 0, 0);
   this->computePlaneCenter();
-
 }
 
 std::vector<std::set<int> >& ShapePlane::getFlats()

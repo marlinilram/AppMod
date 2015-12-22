@@ -605,6 +605,11 @@ void Model::getPlaneVertices(std::vector<STLVectori>& vertices)
   shape_plane->getFlatSurfaceVertices(vertices, 0);
 }
 
+const std::vector<std::set<int> >& Model::getPlaneFaces()
+{
+  return shape_plane->getFlats();
+}
+
 std::vector<std::pair<Vector3f, Vector3f>>& Model::getPlaneCenter()
 {
   return shape_plane->getPlaneCenter();

@@ -825,3 +825,30 @@ void DetailSynthesis::getDrawableActors(std::vector<GLActor>& actors)
 {
   actors = this->actors;
 }
+
+void DetailSynthesis::testShapePlane(std::shared_ptr<Model> model)
+{
+  std::vector<std::pair<Vector3f, Vector3f>> plane_center = model->getPlaneCenter();
+  std::vector<std::pair<Vector3f, Vector3f>> original_plane_center = model->getOriginalPlaneCenter();
+  std::vector<std::set<int>> flat_surfaces = model->getFlatSurfaces();
+  VertexList vertex_list = model->getShapeVertexList();
+  FaceList face_list = model->getShapeFaceList();
+
+  actors.clear();
+  actors.push_back(GLActor(ML_POINT, 5.0f));
+  actors.push_back(GLActor(ML_LINE, 3.0f));
+
+  for(auto j : plane_center)
+  {
+    actors[0].addElement(j.first(0), j.first(1), j.first(2), 1, 0, 0);
+    actors[1].addElement(j.first(0), j.first(1), j.first(2), 0, 0, 0);
+    actors[1].addElement(j.first(0) + 0.5 * j.second(0), j.first(1) + 0.5 * j.second(1), j.first(2) + 0.5 * j.second(2), 0, 0, 0);
+  }
+
+  for(auto j : original_plane_center)
+  {
+    actors[0].addElement(j.first(0), j.first(1), j.first(2), 0, 1, 1);
+    actors[1].addElement(j.first(0), j.first(1), j.first(2), 0.5, 1, 0);
+    actors[1].addElement(j.first(0) + 0.5 * j.second(0), j.first(1) + 0.5 * j.second(1), j.first(2) + 0.5 * j.second(2), 0.5, 1, 0);
+  }
+}
