@@ -28,6 +28,7 @@ public:
   void startDetailSynthesis(std::shared_ptr<Model> model);
   void computeVectorField(std::shared_ptr<Model> model);
   void getDrawableActors(std::vector<GLActor>& actors);
+  void testShapePlane(std::shared_ptr<Model> model);
 
 private:
   void computeFeatureMap(std::vector<cv::Mat>& feature_map, std::vector<std::vector<float> >& feature_list, bool is_src);

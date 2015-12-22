@@ -72,7 +72,7 @@ Model::Model(const std::string path, const std::string name)
     shape_crest.reset(new ShapeCrest());
     shape_crest->setShape(shape);
     shape_plane.reset(new ShapePlane());
-    shape_plane->setShape(shape);
+    shape_plane->setShape(shape, data_path);
   }
   else
   {
@@ -603,6 +603,11 @@ void Model::getTaggedPlaneVertices(std::vector<STLVectori>& vertices)
 void Model::getPlaneVertices(std::vector<STLVectori>& vertices)
 {
   shape_plane->getFlatSurfaceVertices(vertices, 0);
+}
+
+const std::vector<std::set<int> >& Model::getPlaneFaces()
+{
+  return shape_plane->getFlats();
 }
 
 std::vector<std::pair<Vector3f, Vector3f>>& Model::getPlaneCenter()

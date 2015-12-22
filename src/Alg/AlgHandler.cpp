@@ -6,6 +6,7 @@
 #include "LargeFeatureReg.h"
 #include "FeatureGuided.h"
 #include "Model.h"
+#include "DecompImg.h"
 
 #include "ParameterMgr.h"
 
@@ -136,11 +137,12 @@ void AlgHandler::doDetailSynthesis()
     return;
   }
   detail_synthesis->testMeshPara(shape_model);
+  detail_synthesis->testShapePlane(shape_model);
   /*shape_model->exportOBJ(0);
   doNormalTransfer();
   shape_model->exportOBJ(0);*/
 
-  detail_synthesis->startDetailSynthesis(shape_model);
+  //detail_synthesis->startDetailSynthesis(shape_model);
 
   //detail_synthesis->computeVectorField(shape_model);
   actors.clear();

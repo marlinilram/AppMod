@@ -8,6 +8,8 @@
 #include <set>
 #include <map>
 
+#include "BasicHeader.h"
+
 class Shape;
 
 class ShapePlane
@@ -16,7 +18,7 @@ public:
   ShapePlane() {};
   ~ShapePlane() {};
 
-  void setShape(std::shared_ptr<Shape> _shape);
+  void setShape(std::shared_ptr<Shape> _shape, std::string ext_info_path);
   void findFlats();
   std::vector<std::set<int> >& getFlats();
   void addTaggedPlane(int f_id);
@@ -24,6 +26,8 @@ public:
   void getFlatSurfaceVertices(std::vector<std::vector<int> >& vertices, int tagged = 1);
   void setSymmetricPlane(double a, double b, double c, double d);
   void computePlaneCenter();
+  bool loadExtPlaneInfo(std::string fname);
+  void writeExtPlaneInfo(std::string fname);
   std::vector<std::pair<Vector3f, Vector3f>>& getPlaneCenter();
   std::vector<std::pair<Vector3f, Vector3f>>& getOriginalPlaneCenter();
   std::vector<std::set<int>>& getFlatSurfaces();

@@ -1,6 +1,7 @@
 #include "DetailSynthesis.h"
 #include "Model.h"
 #include "MeshParameterization.h"
+#include "ParaShape.h"
 #include "KDTreeWrapper.h"
 #include "Shape.h"
 #include "BasicHeader.h"
@@ -18,7 +19,7 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 100;
+  resolution = 500;
 }
 
 DetailSynthesis::~DetailSynthesis()
@@ -37,6 +38,11 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
   mesh_para.reset(new MeshParameterization);
 
   mesh_para->doMeshParameterization(model);
+
+  for (int i = 0; i < model->getPlaneFaces().size(); ++i)
+  {
+    mesh_para->doMeshParamterizationPatch(model, i);
+  }
 }
 
 
@@ -80,11 +86,11 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
   // save feature map to file
   for (size_t i = 0; i < src_feature_map.size(); ++i)
   {
-    YMLHandler::saveToFile(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".yml", src_feature_map[i]);
-    YMLHandler::saveToFile(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".yml", tar_feature_map[i]);
+    //YMLHandler::saveToFile(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".yml", src_feature_map[i]);
+    //YMLHandler::saveToFile(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".yml", tar_feature_map[i]);
 
-    YMLHandler::saveToMat(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".mat", src_feature_map[i]);
-    YMLHandler::saveToMat(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".mat", tar_feature_map[i]);
+    //YMLHandler::saveToMat(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".mat", src_feature_map[i]);
+    //YMLHandler::saveToMat(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".mat", tar_feature_map[i]);
   }
 }
 
@@ -105,15 +111,15 @@ void DetailSynthesis::computeFeatureMap(std::vector<cv::Mat>& feature_map, std::
   STLVectori v_set;
   if(is_src)
   {
-    shape = mesh_para->cut_shape;
-    kdTree = mesh_para->kdTree_UV;
-    v_set = mesh_para->vertex_set;
+    shape = mesh_para->seen_part->cut_shape;
+    kdTree = mesh_para->seen_part->kdTree_UV;
+    v_set = mesh_para->seen_part->vertex_set;
   }
   else
   {
-    shape = mesh_para->cut_shape_hidden;
-    kdTree = mesh_para->kdTree_UV_hidden;
-    v_set = mesh_para->vertex_set_hidden;
+    shape = mesh_para->unseen_part->cut_shape;
+    kdTree = mesh_para->unseen_part->kdTree_UV;
+    v_set = mesh_para->unseen_part->vertex_set;
   }
   AdjList adjFaces_list = shape->getVertexShareFaces();
   for(int x = 0; x < resolution; x ++)
@@ -223,18 +229,18 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   
   computeDetailMap(src_detail_map, detail_image, model);
 
-  cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
-  cv::Mat displacement_mat;
-  fs2["displacement"] >> displacement_mat;
-  computeDisplacementMap(displacement_map, displacement_mat, model);
-  YMLHandler::saveToFile(model->getOutputPath(), std::string("displacement_map") + ".yml", displacement_map);
-  YMLHandler::saveToMat(model->getOutputPath(), std::string("displacement_map") + ".mat", displacement_map);
+  //cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  //cv::Mat displacement_mat;
+  //fs2["displacement"] >> displacement_mat;
+  //computeDisplacementMap(displacement_map, displacement_mat, model);
+  //YMLHandler::saveToFile(model->getOutputPath(), std::string("displacement_map") + ".yml", displacement_map);
+  //YMLHandler::saveToMat(model->getOutputPath(), std::string("displacement_map") + ".mat", displacement_map);
 
   // save detail map to file
   for (size_t i = 0; i < src_detail_map.size(); ++i)
   {
-    YMLHandler::saveToFile(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".yml", src_detail_map[i]);
-    YMLHandler::saveToMat(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".mat", src_detail_map[i]);
+    //YMLHandler::saveToFile(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".yml", src_detail_map[i]);
+    //YMLHandler::saveToMat(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".mat", src_detail_map[i]);
   }
 }
 
@@ -267,9 +273,9 @@ void DetailSynthesis::computeDisplacementMap(cv::Mat& displacement_map, cv::Mat&
   displacement_map = cv::Mat(resolution, resolution, CV_32FC1);
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
-  std::shared_ptr<Shape> shape = mesh_para->cut_shape;
-  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->kdTree_UV;
-  STLVectori v_set = mesh_para->vertex_set;
+  std::shared_ptr<Shape> shape = mesh_para->seen_part->cut_shape;
+  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->seen_part->kdTree_UV;
+  STLVectori v_set = mesh_para->seen_part->vertex_set;
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
   
   AdjList adjFaces_list = shape->getVertexShareFaces();
@@ -351,7 +357,7 @@ void DetailSynthesis::computeDisplacementMap(cv::Mat& displacement_map, cv::Mat&
       }
     }
   }
-  applyDisplacementMap(mesh_para->vertex_set, mesh_para->cut_shape, model, displacement_map);
+  applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, displacement_map);
 }
 
 void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model)
@@ -365,9 +371,9 @@ void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::ve
   }
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
-  std::shared_ptr<Shape> shape = mesh_para->cut_shape;
-  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->kdTree_UV;
-  STLVectori v_set = mesh_para->vertex_set;
+  std::shared_ptr<Shape> shape = mesh_para->seen_part->cut_shape;
+  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->seen_part->kdTree_UV;
+  STLVectori v_set = mesh_para->seen_part->vertex_set;
   
   AdjList adjFaces_list = shape->getVertexShareFaces();
   for(int x = 0; x < resolution; x ++)
@@ -440,115 +446,115 @@ void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::ve
 //old one, useless 
 void DetailSynthesis::computeDisplacementMap(std::shared_ptr<Model> model)
 {
-  resolution = 500;
-  displacement_map = cv::Mat(resolution, resolution, CV_32FC1);
-  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->kdTree_UV;
-  AdjList adjFaces_list = mesh_para->cut_shape->getVertexShareFaces();
-  for(int x = 0; x < resolution; x ++)
-  {
-    for(int y = 0; y < resolution; y ++)
-    {
-      int pt_id;
-      std::vector<float> pt;
-      pt.resize(2);
-      pt[0] = float(x) / resolution;
-      pt[1] = float(y) / resolution;
-      kdTree->nearestPt(pt,pt_id);
-      std::vector<int> adjFaces = adjFaces_list[pt_id];
-      int face_id;
-      float point[3];
-      point[0] = pt[0];
-      point[1] = pt[1];
-      point[2] = 0;
-      float lambda[3];
-      int id1_before,id2_before,id3_before;
-      for(size_t i = 0; i < adjFaces.size(); i ++)
-      {
-        float l[3];
-        int v1_id,v2_id,v3_id;
-        float v1[3],v2[3],v3[3];
-        v1_id = (mesh_para->cut_shape->getFaceList())[3 * adjFaces[i]];
-        v2_id = (mesh_para->cut_shape->getFaceList())[3 * adjFaces[i] + 1];
-        v3_id = (mesh_para->cut_shape->getFaceList())[3 * adjFaces[i] + 2];
-        v1[0] = (mesh_para->cut_shape->getUVCoord())[2 * v1_id];
-        v1[1] = (mesh_para->cut_shape->getUVCoord())[2 * v1_id + 1];
-        v1[2] = 0;
-        v2[0] = (mesh_para->cut_shape->getUVCoord())[2 * v2_id];
-        v2[1] = (mesh_para->cut_shape->getUVCoord())[2 * v2_id + 1];
-        v2[2] = 0;
-        v3[0] = (mesh_para->cut_shape->getUVCoord())[2 * v3_id];
-        v3[1] = (mesh_para->cut_shape->getUVCoord())[2 * v3_id + 1];
-        v3[2] = 0;
-        ShapeUtility::computeBaryCentreCoord(point,v1,v2,v3,l);
-        if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
-        {
-          face_id = i;
-          lambda[0] = l[0];
-          lambda[1] = l[1];
-          lambda[2] = l[2];
-          id1_before = v1_id;
-          id2_before = v2_id;
-          id3_before = v3_id;
-        }
-      }
-      float v1_worldCoord_before[3],v2_worldCoord_before[3],v3_worldCoord_before[3];
-      v1_worldCoord_before[0] = (mesh_para->cut_shape->getVertexList())[3 * id1_before];
-      v1_worldCoord_before[1] = (mesh_para->cut_shape->getVertexList())[3 * id1_before + 1];
-      v1_worldCoord_before[2] = (mesh_para->cut_shape->getVertexList())[3 * id1_before + 2];
-      v2_worldCoord_before[0] = (mesh_para->cut_shape->getVertexList())[3 * id2_before];
-      v2_worldCoord_before[1] = (mesh_para->cut_shape->getVertexList())[3 * id2_before + 1];
-      v2_worldCoord_before[2] = (mesh_para->cut_shape->getVertexList())[3 * id2_before + 2];
-      v3_worldCoord_before[0] = (mesh_para->cut_shape->getVertexList())[3 * id3_before];
-      v3_worldCoord_before[1] = (mesh_para->cut_shape->getVertexList())[3 * id3_before + 1];
-      v3_worldCoord_before[2] = (mesh_para->cut_shape->getVertexList())[3 * id3_before + 2];
-      float pt_worldCoord_before[3];
-      pt_worldCoord_before[0] = lambda[0] * v1_worldCoord_before[0] + lambda[1] * v2_worldCoord_before[0] + lambda[2] * v3_worldCoord_before[0];
-      pt_worldCoord_before[1] = lambda[0] * v1_worldCoord_before[1] + lambda[1] * v2_worldCoord_before[1] + lambda[2] * v3_worldCoord_before[1];
-      pt_worldCoord_before[2] = lambda[0] * v1_worldCoord_before[2] + lambda[1] * v2_worldCoord_before[2] + lambda[2] * v3_worldCoord_before[2];
-      int id1_after,id2_after,id3_after;
-      id1_after = mesh_para->vertex_set[id1_before];
-      id2_after = mesh_para->vertex_set[id2_before];
-      id3_after = mesh_para->vertex_set[id3_before];
-      float v1_worldCoord_after[3],v2_worldCoord_after[3],v3_worldCoord_after[3];
-      v1_worldCoord_after[0] = (model->getShapeVertexList())[3 * id1_after];
-      v1_worldCoord_after[1] = (model->getShapeVertexList())[3 * id1_after + 1];
-      v1_worldCoord_after[2] = (model->getShapeVertexList())[3 * id1_after + 2];
-      v2_worldCoord_after[0] = (model->getShapeVertexList())[3 * id2_after];
-      v2_worldCoord_after[1] = (model->getShapeVertexList())[3 * id2_after + 1];
-      v2_worldCoord_after[2] = (model->getShapeVertexList())[3 * id2_after + 2];
-      v3_worldCoord_after[0] = (model->getShapeVertexList())[3 * id3_after];
-      v3_worldCoord_after[1] = (model->getShapeVertexList())[3 * id3_after + 1];
-      v3_worldCoord_after[2] = (model->getShapeVertexList())[3 * id3_after + 2];
-      float pt_worldCoord_after[3];
-      pt_worldCoord_after[0] = lambda[0] * v1_worldCoord_after[0] + lambda[1] * v2_worldCoord_after[0] + lambda[2] * v3_worldCoord_after[0];
-      pt_worldCoord_after[1] = lambda[0] * v1_worldCoord_after[1] + lambda[1] * v2_worldCoord_after[1] + lambda[2] * v3_worldCoord_after[1];
-      pt_worldCoord_after[2] = lambda[0] * v1_worldCoord_after[2] + lambda[1] * v2_worldCoord_after[2] + lambda[2] * v3_worldCoord_after[2];
-      float v1_normal_original_mesh[3],v2_normal_original_mesh[3],v3_normal_original_mesh[3];
-      v1_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * id1_after];
-      v1_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * id1_after + 1];
-      v1_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * id1_after + 2];
-      v2_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * id2_after];
-      v2_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * id2_after + 1];
-      v2_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * id2_after + 2];
-      v3_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * id3_after];
-      v3_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * id3_after + 1];
-      v3_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * id3_after + 2];
-      float pt_normal_original_mesh[3];
-      pt_normal_original_mesh[0] = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
-      pt_normal_original_mesh[1] = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
-      pt_normal_original_mesh[2] = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];
-      float pt_difference[3];
-      pt_difference[0] = pt_worldCoord_after[0] - pt_worldCoord_before[0];
-      pt_difference[1] = pt_worldCoord_after[1] - pt_worldCoord_before[1];
-      pt_difference[2] = pt_worldCoord_after[2] - pt_worldCoord_before[2];
-      displacement_map.at<float>(x,y) = pt_difference[0] * pt_normal_original_mesh[0] + pt_difference[1] * pt_normal_original_mesh[1] + pt_difference[2] * pt_normal_original_mesh[2];
-    }
-  }
-  // show the displacement_map
-  /*double min,max;
-  cv::minMaxLoc(displacement_map,&min,&max);
-  cv::imshow("displacement_map",(displacement_map - min) / (max - min));*/
-  applyDisplacementMap(mesh_para->vertex_set, mesh_para->cut_shape, model, displacement_map);
+  //resolution = 500;
+  //displacement_map = cv::Mat(resolution, resolution, CV_32FC1);
+  //std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->seen_part->kdTree_UV;
+  //AdjList adjFaces_list = mesh_para->seen_part->cut_shape->getVertexShareFaces();
+  //for(int x = 0; x < resolution; x ++)
+  //{
+  //  for(int y = 0; y < resolution; y ++)
+  //  {
+  //    int pt_id;
+  //    std::vector<float> pt;
+  //    pt.resize(2);
+  //    pt[0] = float(x) / resolution;
+  //    pt[1] = float(y) / resolution;
+  //    kdTree->nearestPt(pt,pt_id);
+  //    std::vector<int> adjFaces = adjFaces_list[pt_id];
+  //    int face_id;
+  //    float point[3];
+  //    point[0] = pt[0];
+  //    point[1] = pt[1];
+  //    point[2] = 0;
+  //    float lambda[3];
+  //    int id1_before,id2_before,id3_before;
+  //    for(size_t i = 0; i < adjFaces.size(); i ++)
+  //    {
+  //      float l[3];
+  //      int v1_id,v2_id,v3_id;
+  //      float v1[3],v2[3],v3[3];
+  //      v1_id = (mesh_para->seen_part->cut_shape->getFaceList())[3 * adjFaces[i]];
+  //      v2_id = (mesh_para->seen_part->cut_shape->getFaceList())[3 * adjFaces[i] + 1];
+  //      v3_id = (mesh_para->seen_part->cut_shape->getFaceList())[3 * adjFaces[i] + 2];
+  //      v1[0] = (mesh_para->seen_part->cut_shape->getUVCoord())[2 * v1_id];
+  //      v1[1] = (mesh_para->seen_part->cut_shape->getUVCoord())[2 * v1_id + 1];
+  //      v1[2] = 0;
+  //      v2[0] = (mesh_para->seen_part->cut_shape->getUVCoord())[2 * v2_id];
+  //      v2[1] = (mesh_para->seen_part->cut_shape->getUVCoord())[2 * v2_id + 1];
+  //      v2[2] = 0;
+  //      v3[0] = (mesh_para->seen_part->cut_shape->getUVCoord())[2 * v3_id];
+  //      v3[1] = (mesh_para->seen_part->cut_shape->getUVCoord())[2 * v3_id + 1];
+  //      v3[2] = 0;
+  //      ShapeUtility::computeBaryCentreCoord(point,v1,v2,v3,l);
+  //      if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+  //      {
+  //        face_id = i;
+  //        lambda[0] = l[0];
+  //        lambda[1] = l[1];
+  //        lambda[2] = l[2];
+  //        id1_before = v1_id;
+  //        id2_before = v2_id;
+  //        id3_before = v3_id;
+  //      }
+  //    }
+  //    float v1_worldCoord_before[3],v2_worldCoord_before[3],v3_worldCoord_before[3];
+  //    v1_worldCoord_before[0] = (mesh_para->cut_shape->getVertexList())[3 * id1_before];
+  //    v1_worldCoord_before[1] = (mesh_para->cut_shape->getVertexList())[3 * id1_before + 1];
+  //    v1_worldCoord_before[2] = (mesh_para->cut_shape->getVertexList())[3 * id1_before + 2];
+  //    v2_worldCoord_before[0] = (mesh_para->cut_shape->getVertexList())[3 * id2_before];
+  //    v2_worldCoord_before[1] = (mesh_para->cut_shape->getVertexList())[3 * id2_before + 1];
+  //    v2_worldCoord_before[2] = (mesh_para->cut_shape->getVertexList())[3 * id2_before + 2];
+  //    v3_worldCoord_before[0] = (mesh_para->cut_shape->getVertexList())[3 * id3_before];
+  //    v3_worldCoord_before[1] = (mesh_para->cut_shape->getVertexList())[3 * id3_before + 1];
+  //    v3_worldCoord_before[2] = (mesh_para->cut_shape->getVertexList())[3 * id3_before + 2];
+  //    float pt_worldCoord_before[3];
+  //    pt_worldCoord_before[0] = lambda[0] * v1_worldCoord_before[0] + lambda[1] * v2_worldCoord_before[0] + lambda[2] * v3_worldCoord_before[0];
+  //    pt_worldCoord_before[1] = lambda[0] * v1_worldCoord_before[1] + lambda[1] * v2_worldCoord_before[1] + lambda[2] * v3_worldCoord_before[1];
+  //    pt_worldCoord_before[2] = lambda[0] * v1_worldCoord_before[2] + lambda[1] * v2_worldCoord_before[2] + lambda[2] * v3_worldCoord_before[2];
+  //    int id1_after,id2_after,id3_after;
+  //    id1_after = mesh_para->vertex_set[id1_before];
+  //    id2_after = mesh_para->vertex_set[id2_before];
+  //    id3_after = mesh_para->vertex_set[id3_before];
+  //    float v1_worldCoord_after[3],v2_worldCoord_after[3],v3_worldCoord_after[3];
+  //    v1_worldCoord_after[0] = (model->getShapeVertexList())[3 * id1_after];
+  //    v1_worldCoord_after[1] = (model->getShapeVertexList())[3 * id1_after + 1];
+  //    v1_worldCoord_after[2] = (model->getShapeVertexList())[3 * id1_after + 2];
+  //    v2_worldCoord_after[0] = (model->getShapeVertexList())[3 * id2_after];
+  //    v2_worldCoord_after[1] = (model->getShapeVertexList())[3 * id2_after + 1];
+  //    v2_worldCoord_after[2] = (model->getShapeVertexList())[3 * id2_after + 2];
+  //    v3_worldCoord_after[0] = (model->getShapeVertexList())[3 * id3_after];
+  //    v3_worldCoord_after[1] = (model->getShapeVertexList())[3 * id3_after + 1];
+  //    v3_worldCoord_after[2] = (model->getShapeVertexList())[3 * id3_after + 2];
+  //    float pt_worldCoord_after[3];
+  //    pt_worldCoord_after[0] = lambda[0] * v1_worldCoord_after[0] + lambda[1] * v2_worldCoord_after[0] + lambda[2] * v3_worldCoord_after[0];
+  //    pt_worldCoord_after[1] = lambda[0] * v1_worldCoord_after[1] + lambda[1] * v2_worldCoord_after[1] + lambda[2] * v3_worldCoord_after[1];
+  //    pt_worldCoord_after[2] = lambda[0] * v1_worldCoord_after[2] + lambda[1] * v2_worldCoord_after[2] + lambda[2] * v3_worldCoord_after[2];
+  //    float v1_normal_original_mesh[3],v2_normal_original_mesh[3],v3_normal_original_mesh[3];
+  //    v1_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * id1_after];
+  //    v1_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * id1_after + 1];
+  //    v1_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * id1_after + 2];
+  //    v2_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * id2_after];
+  //    v2_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * id2_after + 1];
+  //    v2_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * id2_after + 2];
+  //    v3_normal_original_mesh[0] = mesh_para->normal_original_mesh[3 * id3_after];
+  //    v3_normal_original_mesh[1] = mesh_para->normal_original_mesh[3 * id3_after + 1];
+  //    v3_normal_original_mesh[2] = mesh_para->normal_original_mesh[3 * id3_after + 2];
+  //    float pt_normal_original_mesh[3];
+  //    pt_normal_original_mesh[0] = lambda[0] * v1_normal_original_mesh[0] + lambda[1] * v2_normal_original_mesh[0] + lambda[2] * v3_normal_original_mesh[0];
+  //    pt_normal_original_mesh[1] = lambda[0] * v1_normal_original_mesh[1] + lambda[1] * v2_normal_original_mesh[1] + lambda[2] * v3_normal_original_mesh[1];
+  //    pt_normal_original_mesh[2] = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];
+  //    float pt_difference[3];
+  //    pt_difference[0] = pt_worldCoord_after[0] - pt_worldCoord_before[0];
+  //    pt_difference[1] = pt_worldCoord_after[1] - pt_worldCoord_before[1];
+  //    pt_difference[2] = pt_worldCoord_after[2] - pt_worldCoord_before[2];
+  //    displacement_map.at<float>(x,y) = pt_difference[0] * pt_normal_original_mesh[0] + pt_difference[1] * pt_normal_original_mesh[1] + pt_difference[2] * pt_normal_original_mesh[2];
+  //  }
+  //}
+  //// show the displacement_map
+  ///*double min,max;
+  //cv::minMaxLoc(displacement_map,&min,&max);
+  //cv::imshow("displacement_map",(displacement_map - min) / (max - min));*/
+  //applyDisplacementMap(mesh_para->vertex_set, mesh_para->cut_shape, model, displacement_map);
 }
 
 void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> model, cv::Mat disp_map)
@@ -610,9 +616,23 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   prepareFeatureMap(model);
   prepareDetailMap(model);
 
+  //cv::Mat load_img = cv::imread(model->getDataPath() + "/syntext/0.9-.png");
+  //cv::Mat syn_ref_ext;
+  //if (load_img.data != NULL)
+  //{
+  //  load_img.convertTo(syn_ref_ext, CV_32FC3);
+  //  syn_ref_ext = syn_ref_ext / 255.0;
+  //}
+  //src_detail_map.clear();
+  //src_detail_map.resize(3);
+  //cv::split(syn_ref_ext, &src_detail_map[0]);
+  //src_feature_map.clear();
+  //src_feature_map.resize(1, cv::Mat::zeros(src_detail_map[0].rows, src_detail_map[0].cols, CV_32FC1));
+  //tar_feature_map = src_feature_map;
+
   syn_tool.reset(new SynthesisTool);
   syn_tool->init(src_feature_map, tar_feature_map, src_detail_map);
-  syn_tool->doSynthesis();
+  syn_tool->doSynthesisNew();
 
   // map the synthesis to model color
   //resolution = 512;
@@ -635,6 +655,14 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //detail_result[1].push_back(output_detail_ext[1].clone());
   //detail_result[2].push_back(output_detail_ext[0].clone());
 
+  cv::Mat tar_detail_last_level;
+  std::vector<cv::Mat> output_detail_last_level;
+  output_detail_last_level.push_back(detail_result[2][1].clone());
+  output_detail_last_level.push_back(detail_result[1][1].clone());
+  output_detail_last_level.push_back(detail_result[0][1].clone());
+  cv::merge(&output_detail_last_level[0], 3, tar_detail_last_level);
+  cv::imshow("last level", tar_detail_last_level);
+
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
   PolygonMesh::Vertex_attribute<int> syn_texture_tag = poly_mesh->vertex_attribute<int>("v:syn_texture_tag");
@@ -652,8 +680,8 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   model->getSynRImg() = tar_detail.clone();
   cv::imshow("result", (tar_detail) / (max));
 
-  std::shared_ptr<Shape> shape = mesh_para->cut_shape_hidden;
-  STLVectori v_set = mesh_para->vertex_set_hidden;
+  std::shared_ptr<Shape> shape = mesh_para->unseen_part->cut_shape;
+  STLVectori v_set = mesh_para->unseen_part->vertex_set;
 
   STLVectorf uv_list = model->getShapeUVCoord();
   STLVectorf color_list = model->getShapeColorList();
@@ -698,8 +726,8 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   model->getOriRImg() = src_detail.clone();
   cv::imshow("source", (src_detail));
 
-  shape = mesh_para->cut_shape;
-  v_set = mesh_para->vertex_set;
+  shape = mesh_para->seen_part->cut_shape;
+  v_set = mesh_para->seen_part->vertex_set;
 
   const STLVectorf& cut_uv_list = shape->getUVCoord();
   for (size_t i = 0; i < cut_uv_list.size() / 2; ++i)
@@ -796,4 +824,31 @@ void DetailSynthesis::computeVectorField(std::shared_ptr<Model> model)
 void DetailSynthesis::getDrawableActors(std::vector<GLActor>& actors)
 {
   actors = this->actors;
+}
+
+void DetailSynthesis::testShapePlane(std::shared_ptr<Model> model)
+{
+  std::vector<std::pair<Vector3f, Vector3f>> plane_center = model->getPlaneCenter();
+  std::vector<std::pair<Vector3f, Vector3f>> original_plane_center = model->getOriginalPlaneCenter();
+  std::vector<std::set<int>> flat_surfaces = model->getFlatSurfaces();
+  VertexList vertex_list = model->getShapeVertexList();
+  FaceList face_list = model->getShapeFaceList();
+
+  actors.clear();
+  actors.push_back(GLActor(ML_POINT, 5.0f));
+  actors.push_back(GLActor(ML_LINE, 3.0f));
+
+  for(auto j : plane_center)
+  {
+    actors[0].addElement(j.first(0), j.first(1), j.first(2), 1, 0, 0);
+    actors[1].addElement(j.first(0), j.first(1), j.first(2), 0, 0, 0);
+    actors[1].addElement(j.first(0) + 0.5 * j.second(0), j.first(1) + 0.5 * j.second(1), j.first(2) + 0.5 * j.second(2), 0, 0, 0);
+  }
+
+  for(auto j : original_plane_center)
+  {
+    actors[0].addElement(j.first(0), j.first(1), j.first(2), 0, 1, 1);
+    actors[1].addElement(j.first(0), j.first(1), j.first(2), 0.5, 1, 0);
+    actors[1].addElement(j.first(0) + 0.5 * j.second(0), j.first(1) + 0.5 * j.second(1), j.first(2) + 0.5 * j.second(2), 0.5, 1, 0);
+  }
 }

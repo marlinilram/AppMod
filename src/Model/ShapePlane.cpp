@@ -2,16 +2,20 @@
 #include "Shape.h"
 #include "Bound.h"
 #include "Colormap.h"
+#include <fstream>
 
-void ShapePlane::setShape(std::shared_ptr<Shape> _shape)
+void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_path)
 {
   shape = _shape;
 
-  this->findFlats();
+  if (!this->loadExtPlaneInfo(ext_info_path))
+  {
+    this->findFlats();
+    this->writeExtPlaneInfo(ext_info_path);
+  }
 
   this->setSymmetricPlane(1, 0, 0, 0);
   this->computePlaneCenter();
-
 }
 
 std::vector<std::set<int> >& ShapePlane::getFlats()
@@ -53,6 +57,8 @@ void ShapePlane::findFlats()
     }
   }
 
+
+
   tagged_planes = std::vector<bool>(flat_surfaces.size(), false);
 }
 
@@ -70,7 +76,7 @@ void ShapePlane::flatSurface(std::set<int>& surface, int f_id, float ref_normal[
   //ref_normal[0] = shape->getFaceNormal()[3 * f_id + 0];
   //ref_normal[1] = shape->getFaceNormal()[3 * f_id + 1];
   //ref_normal[2] = shape->getFaceNormal()[3 * f_id + 2];
-  if (face_cos < 0.95)
+  if (face_cos < 0.8)
   {
     return;
   }
@@ -270,6 +276,71 @@ void ShapePlane::computePlaneCenter()
                        (center_position(2) - bounding->minZ) / (bounding->maxZ - bounding->minZ);
     plane_center.push_back(std::pair<Vector3f, Vector3f>(center_position, center_normal));
   }
+}
+
+bool ShapePlane::loadExtPlaneInfo(std::string fname)
+{
+  std::cout << std::endl << "Try to load plane information." << std::endl;
+  std::ifstream inFile(fname + "/plane_info.txt");
+  if (!inFile.is_open())
+  {
+    std::cout << "Not existed or failed to open." << std::endl;
+    return false;
+  }
+
+  std::cout << "Loading plane_info.txt." << std::endl;
+  std::string line_str;
+
+  getline(inFile, line_str);
+  std::stringstream line_parser(line_str);
+  int n_plane ;
+  line_parser >> n_plane;
+  std::cout << "Total " << n_plane << " patches." << std::endl;
+  flat_surfaces.clear();
+  flat_surfaces.resize(n_plane, std::set<int>());
+
+  while (getline(inFile, line_str))
+  {
+    if (line_str.empty()) continue;
+    std::stringstream plane_parser(line_str);
+    int plane_id;
+    int num_face;
+    plane_parser >> plane_id >> num_face;
+    for (int i = 0; i < num_face; ++i)
+    {
+      getline(inFile, line_str);
+      std::stringstream face_parser(line_str);
+      int face_id;
+      face_parser >> face_id;
+      flat_surfaces[plane_id].insert(face_id);
+    }
+  }
+  inFile.close();
+  std::cout << "Loading plane_info.txt finished." << std::endl;
+  return true;
+}
+
+void ShapePlane::writeExtPlaneInfo(std::string fname)
+{
+  std::cout << std::endl << "Writing plane information." << std::endl;
+  std::ofstream outFile(fname + "/plane_info.txt");
+  if (!outFile.is_open())
+  {
+    std::cout << "failed to open plane_info.txt file, return." << std::endl;
+    return;
+  }
+
+  outFile << flat_surfaces.size() << std::endl;
+  for (size_t i = 0; i < flat_surfaces.size(); ++i)
+  {
+    outFile << i << " " << flat_surfaces[i].size() << std::endl;
+    for (auto j : flat_surfaces[i])
+    {
+      outFile << j << std::endl;
+    }
+  }
+  outFile.close();
+  std::cout << "Writing plane_info.txt finished." << std::endl;
 }
 
 std::vector<std::pair<Vector3f, Vector3f>>& ShapePlane::getPlaneCenter()
