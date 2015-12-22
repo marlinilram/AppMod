@@ -1333,6 +1333,7 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
 
   //if (d_f < 0.001)  lambda_d_f = 1, lambda_d_d = 0;
   //else  lambda_d_f = 0, lambda_d_d = 1;
+  beta = 1.0 / (1 + exp(5 * (d_f - 0.5)));
   d = beta * d_f + (1 - beta) * d_d + 0.01*d_occ;// + lambda_d_d * d_d + d_occ;
   return d;
 }
