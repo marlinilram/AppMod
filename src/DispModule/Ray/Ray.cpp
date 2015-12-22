@@ -140,3 +140,12 @@ bool Ray::intersectModel(Eigen::Vector3d &ray_start, Eigen::Vector3d &ray_end)
     else return false;
 
 }
+
+bool Ray::intersectModel(Eigen::Vector3d &ray_start, Eigen::Vector3d &ray_end, double* intersect_point)
+{
+  int id = bsptree->IntersectWithLine(ray_start.data(), ray_end.data(), 0.001, t, intersect_point, pt_coord, sub_id);
+
+  if (id == 0) return false; // no intersection so return false
+  else return true;
+}
+

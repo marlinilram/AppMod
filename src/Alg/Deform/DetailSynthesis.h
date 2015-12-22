@@ -21,7 +21,7 @@ public:
   ~DetailSynthesis();
 
   void testMeshPara(std::shared_ptr<Model> model);
-  void computeDisplacementMap(std::shared_ptr<Model> model);
+  void computeDisplacementMap(std::shared_ptr<Model> model); //old one; useless
   void prepareFeatureMap(std::shared_ptr<Model> model);
   void prepareDetailMap(std::shared_ptr<Model> model);
   void applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> model, cv::Mat disp_map);
@@ -32,6 +32,7 @@ public:
 private:
   void computeFeatureMap(std::vector<cv::Mat>& feature_map, std::vector<std::vector<float> >& feature_list, bool is_src);
   void computeDetailMap(std::vector<cv::Mat>& detail_map, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model);
+  void computeDisplacementMap(cv::Mat& displacement_map, cv::Mat& displacement_image, std::shared_ptr<Model> model);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;

@@ -175,3 +175,26 @@ void ShapePlane::getFlatSurfaceVertices(std::vector<std::vector<int> >& vertices
     }
   }
 }
+
+void ShapePlane::setSymmetricPlane(double a, double b, double c, double d)
+{
+  symmetric_plane_a = a;
+  symmetric_plane_b = b;
+  symmetric_plane_c = c;
+  symmetric_plane_d = d;
+  symmetric_plane_normal << a, b, c;
+}
+
+void ShapePlane::computePlaneCenter()
+{
+  FaceList face_list = shape->getFaceList();
+  for(size_t i = 0; i < flat_surfaces.size(); i ++)
+  {
+    std::set<Vector3f> pts_on_plane;
+    Vector3f center_position, center_normal;
+    for(auto j : flat_surfaces[i])
+    {
+      
+    }
+  }
+}
