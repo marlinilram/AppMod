@@ -95,6 +95,7 @@ public:
   void clearTaggedPlanes();
   void getTaggedPlaneVertices(std::vector<STLVectori>& vertices);
   void getPlaneVertices(std::vector<STLVectori>& vertices);
+  const std::vector<std::set<int> >& getPlaneFaces();
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape

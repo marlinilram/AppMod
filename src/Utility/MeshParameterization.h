@@ -11,6 +11,7 @@
 class Model;
 class Shape;
 class KDTreeWrapper;
+class ParaShape;
 
 class MeshParameterization
 {
@@ -20,7 +21,8 @@ public:
 
   void init();
   void doMeshParameterization(std::shared_ptr<Model> model);
-  void saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, bool is_hidden);
+  void saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, std::string fname);
+  void doMeshParamterizationPatch(std::shared_ptr<Model> model, int plane_id); // the API is not fixed yet here
 
 private:
   // prepare cut_shape
@@ -48,22 +50,11 @@ private:
   void getVertexOfOriginalMesh(std::shared_ptr<Model> model);
 
 public:
-  FaceList cut_face_list; // triplets which store the old vertex id of the faces
-  STLVectori vertex_set; // vertex id mapping from new id to old id
-  STLVectori boundary_loop; // boundary vertex id in cut shape
-  std::shared_ptr<Shape> cut_shape;
-  std::shared_ptr<KDTreeWrapper> kdTree_UV;
-  std::set<int> visible_faces; // face id in original model
+  std::unique_ptr<ParaShape> seen_part;
+  std::unique_ptr<ParaShape> unseen_part;
 
   NormalList normal_original_mesh;
   VertexList vertex_original_mesh;
-
-  FaceList cut_face_list_hidden;
-  STLVectori vertex_set_hidden;
-  STLVectori boundary_loop_hidden;
-  std::shared_ptr<Shape> cut_shape_hidden;
-  std::shared_ptr<KDTreeWrapper> kdTree_UV_hidden; 
-  std::set<int> hidden_faces; // face id in original model
 
 private:
   MeshParameterization(const MeshParameterization&);

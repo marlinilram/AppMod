@@ -65,7 +65,7 @@ private:
   void findCombineCandidatesFromLastLevel(std::vector<ImagePyramid>& gpsrc_f, std::vector<ImagePyramid>& gptar_f, std::vector<ImagePyramid>& gpsrc_d, std::vector<ImagePyramid>& gptar_d, std::vector<float>& ref_cnt, int level, int tarpointX, int tarpointY, std::set<distance_position>& best_match);
 
   // patch match based method
-  void getRandomPosition(std::vector<Point2D>& random_set, int n_set, int max_height, int max_width);
+  void getRandomPosition(std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height = 0, int min_width = 0);
   void initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level);
   void initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new);
   void initializeTarDetail(ImagePyramidVec& gptar_d, int level);

@@ -1144,15 +1144,15 @@ void SynthesisTool::initializeTarDetail(ImagePyramidVec& gptar_d, int level)
   }
 }
 
-void SynthesisTool::getRandomPosition(std::vector<Point2D>& random_set, int n_set, int max_height, int max_width)
+void SynthesisTool::getRandomPosition(std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height, int min_width)
 {
   random_set.clear();
   random_set.resize(n_set);
 
   for (int i = 0; i < n_set; ++i)
   {
-    int x = (rand() / double(RAND_MAX)) * max_width;
-    int y = (rand() / double(RAND_MAX)) * max_height;
+    int x = (rand() / double(RAND_MAX)) * (max_width - min_width) + min_width;
+    int y = (rand() / double(RAND_MAX)) * (max_height - min_height) + min_height;
 
     // clamp if the random value is 1
     x = (x >= max_width) ? (max_width - 1) : x;
@@ -1237,7 +1237,7 @@ void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& 
 
   // deal with the right bottom corner
   std::vector<Point2D> rand_pos;
-  this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+  this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width); // TODO: random sample in a more local region
   int offset = (nnf_height - 1) * nnf_width + (nnf_width - 1);
   Point2D best_patch;
   rand_pos.push_back(nnf[offset]);
