@@ -1,6 +1,8 @@
 #ifndef ShapePlane_H
 #define ShapePlane_H
 
+#include "BasicHeader.h"
+
 #include <memory>
 #include <vector>
 #include <set>
@@ -26,6 +28,10 @@ public:
   void computePlaneCenter();
   bool loadExtPlaneInfo(std::string fname);
   void writeExtPlaneInfo(std::string fname);
+  std::vector<std::pair<Vector3f, Vector3f>>& getPlaneCenter();
+  std::vector<std::pair<Vector3f, Vector3f>>& getOriginalPlaneCenter();
+  std::vector<std::set<int>>& getFlatSurfaces();
+  
 
 private:
   void flatSurface(std::set<int>& surface, int f_id, float ref_normal[3]);
@@ -38,6 +44,7 @@ private:
   double symmetric_plane_a, symmetric_plane_b, symmetric_plane_c, symmetric_plane_d;
   Vector3f symmetric_plane_normal;
   std::vector<std::pair<Vector3f, Vector3f>> plane_center;
+  std::vector<std::pair<Vector3f, Vector3f>> original_plane_center;
 
 private:
   ShapePlane(const ShapePlane&);

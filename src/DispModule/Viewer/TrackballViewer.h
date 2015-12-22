@@ -35,6 +35,7 @@ protected:
   void drawTrackBall();
   void drawActors();
   //void drawCrestLines();
+  void drawPlaneCenter();
 
 private:
   void drawCornerAxis();

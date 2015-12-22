@@ -13,6 +13,10 @@ void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_pa
   this->findFlats();
 
   this->writeExtPlaneInfo(ext_info_path);
+
+  this->setSymmetricPlane(1, 0, 0, 0);
+  this->computePlaneCenter();
+
 }
 
 std::vector<std::set<int> >& ShapePlane::getFlats()
@@ -190,19 +194,84 @@ void ShapePlane::setSymmetricPlane(double a, double b, double c, double d)
   symmetric_plane_c = c;
   symmetric_plane_d = d;
   symmetric_plane_normal << a, b, c;
+  symmetric_plane_normal.normalized();
 }
 
 void ShapePlane::computePlaneCenter()
 {
+  plane_center.clear();
+  original_plane_center.clear();
   FaceList face_list = shape->getFaceList();
+  VertexList vertex_list = shape->getVertexList();
+  NormalList normal_list = shape->getNormalList();
+  NormalList face_normal = shape->getFaceNormal();
   for(size_t i = 0; i < flat_surfaces.size(); i ++)
   {
-    std::set<Vector3f> pts_on_plane;
     Vector3f center_position, center_normal;
+    center_position << 0, 0, 0;
+    center_normal << 0, 0, 0;
+    double x_max = std::numeric_limits<double>::min(), 
+           x_min = std::numeric_limits<double>::max(),
+           y_max = std::numeric_limits<double>::min(), 
+           y_min = std::numeric_limits<double>::max(), 
+           z_max = std::numeric_limits<double>::min(), 
+           z_min = std::numeric_limits<double>::max();
     for(auto j : flat_surfaces[i])
     {
-      
+      /*Vector3f v1, v2, v3, n1, n2, n3;
+      v1 << vertex_list[3 * face_list[3 * j]], vertex_list[3 * face_list[3 * j] + 1], vertex_list[3 * face_list[3 * j] + 2];
+      v2 << vertex_list[3 * face_list[3 * j + 1]], vertex_list[3 * face_list[3 * j + 1] + 1], vertex_list[3 * face_list[3 * j + 1] + 2];
+      v3 << vertex_list[3 * face_list[3 * j + 2]], vertex_list[3 * face_list[3 * j + 2] + 1], vertex_list[3 * face_list[3 * j + 2] + 2];*/
+      /*n1 << normal_list[3 * face_list[3 * j]], normal_list[3 * face_list[3 * j] + 1], normal_list[3 * face_list[3 * j] + 2];
+      n2 << normal_list[3 * face_list[3 * j + 1]], normal_list[3 * face_list[3 * j + 1] + 1], normal_list[3 * face_list[3 * j + 1] + 2];
+      n3 << normal_list[3 * face_list[3 * j + 2]], normal_list[3 * face_list[3 * j + 2] + 1], normal_list[3 * face_list[3 * j + 2] + 2];*/
+      //center_position += (v1 + v2 + v3) / 3;
+      /*center_normal += (n1 + n2 + n3) / 3;*/
+      for(int k = 0; k < 3; k ++)
+      {
+        if(vertex_list[3 * face_list[3 * j + k]] > x_max)
+        {
+          x_max = vertex_list[3 * face_list[3 * j + k]];
+        }
+        if(vertex_list[3 * face_list[3 * j + k]] < x_min)
+        {
+          x_min = vertex_list[3 * face_list[3 * j + k]];
+        }
+        if(vertex_list[3 * face_list[3 * j + k] + 1] > y_max)
+        {
+          y_max = vertex_list[3 * face_list[3 * j + k] + 1];
+        }
+        if(vertex_list[3 * face_list[3 * j + k] + 1] < y_min)
+        {
+          y_min = vertex_list[3 * face_list[3 * j + k] + 1];
+        }
+        if(vertex_list[3 * face_list[3 * j + k] + 2] > z_max)
+        {
+          z_max = vertex_list[3 * face_list[3 * j + k] + 2];
+        }
+        if(vertex_list[3 * face_list[3 * j + k] + 2] < z_min)
+        {
+          z_min = vertex_list[3 * face_list[3 * j + k] + 2];
+        }
+      }
+      center_normal += Vector3f(face_normal[3 * j], face_normal[3 * j + 1], face_normal[3 * j + 2]);
     }
+    /*center_position /= flat_surfaces[i].size();*/
+    center_position << (x_max + x_min) / 2, (y_max + y_min) / 2, (z_max + z_min) / 2;
+    center_normal /= flat_surfaces[i].size();
+    center_normal.normalized();
+    original_plane_center.push_back(std::pair<Vector3f, Vector3f>(center_position, center_normal));
+
+    double distance = (symmetric_plane_a * center_position(0) + symmetric_plane_b * center_position(1) + symmetric_plane_c * center_position(2) + symmetric_plane_d)
+      / sqrt(symmetric_plane_a * symmetric_plane_a + symmetric_plane_b * symmetric_plane_b + symmetric_plane_c * symmetric_plane_c);
+    center_position += (-distance) * symmetric_plane_normal;
+    if(center_normal.dot(symmetric_plane_normal) < 0)
+    {
+      distance = 2 * fabs(center_normal.dot(symmetric_plane_normal));
+      center_normal += distance * symmetric_plane_normal;
+      center_normal.normalized();
+    }
+    plane_center.push_back(std::pair<Vector3f, Vector3f>(center_position, center_normal));
   }
 }
 
@@ -269,4 +338,19 @@ void ShapePlane::writeExtPlaneInfo(std::string fname)
   }
   outFile.close();
   std::cout << "Writing plane_info.txt finished." << std::endl;
+}
+
+std::vector<std::pair<Vector3f, Vector3f>>& ShapePlane::getPlaneCenter()
+{
+  return this->plane_center;
+}
+
+std::vector<std::pair<Vector3f, Vector3f>>& ShapePlane::getOriginalPlaneCenter()
+{
+  return this->original_plane_center;
+}
+
+std::vector<std::set<int>>& ShapePlane::getFlatSurfaces()
+{
+  return this->flat_surfaces;
 }
