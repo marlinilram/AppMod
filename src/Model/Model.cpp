@@ -605,9 +605,19 @@ void Model::getPlaneVertices(std::vector<STLVectori>& vertices)
   shape_plane->getFlatSurfaceVertices(vertices, 0);
 }
 
-const std::vector<std::set<int> >& Model::getPlaneFaces()
+std::vector<std::pair<Vector3f, Vector3f>>& Model::getPlaneCenter()
 {
-  return shape_plane->getFlats();
+  return shape_plane->getPlaneCenter();
+}
+
+std::vector<std::pair<Vector3f, Vector3f>>& Model::getOriginalPlaneCenter()
+{
+  return shape_plane->getOriginalPlaneCenter();
+}
+
+std::vector<std::set<int>>& Model::getFlatSurfaces()
+{
+  return shape_plane->getFlatSurfaces();
 }
 
 LG::PolygonMesh* Model::getPolygonMesh()

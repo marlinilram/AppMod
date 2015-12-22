@@ -48,6 +48,7 @@ void TrackballViewer::draw()
     glDisable(GL_LIGHTING);
     drawTrackBall();
     //drawCrestLines();
+    drawPlaneCenter();
     if (!dispObjects[i]->display())
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
@@ -518,6 +519,93 @@ void TrackballViewer::updateShapeCrest()
     if (trackball_canvas)
     {
       trackball_canvas->getModel()->updateShapeCrest();
+    }
+  }
+}
+
+void TrackballViewer::drawPlaneCenter()
+{
+  glClear(GL_DEPTH_BUFFER_BIT);
+  for (size_t i = 0; i < dispObjects.size(); ++i)
+  {
+    TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+    if (trackball_canvas)
+    {
+      std::vector<std::pair<Vector3f, Vector3f>> plane_center = trackball_canvas->getModel()->getPlaneCenter();
+      std::vector<std::pair<Vector3f, Vector3f>> original_plane_center = trackball_canvas->getModel()->getOriginalPlaneCenter();
+      std::vector<std::set<int>> flat_surfaces = trackball_canvas->getModel()->getFlatSurfaces();
+      VertexList vertex_list = trackball_canvas->getModel()->getShapeVertexList();
+      FaceList face_list = trackball_canvas->getModel()->getShapeFaceList();
+      /*for(auto j : flat_surfaces[2])
+      {
+        int v1, v2, v3;
+        v1 = face_list[3 * j];
+        v2 = face_list[3 * j + 1];
+        v3 = face_list[3 * j + 2];
+        glPointSize(5.0f);
+        glColor3f(1, 0, 0);
+        glBegin(GL_POINTS);
+        glVertex3f(vertex_list[3 * v1], vertex_list[3 * v1 + 1], vertex_list[3 * v1 + 2]);
+        glVertex3f(vertex_list[3 * v2], vertex_list[3 * v2 + 1], vertex_list[3 * v2 + 2]);
+        glVertex3f(vertex_list[3 * v3], vertex_list[3 * v3 + 1], vertex_list[3 * v3 + 2]);
+        glEnd();
+      }
+
+      std::pair<Vector3f, Vector3f> test_plane = plane_center[2];
+      glPointSize(5.0f);
+      glColor3f(1, 0, 0);
+      glBegin(GL_POINTS);
+      glVertex3f(test_plane.first(0), test_plane.first(1), test_plane.first(2));
+      glEnd();
+      glLineWidth(3.0f);
+      glColor3f(0, 0, 0);
+      glBegin(GL_LINE_STRIP);
+      glVertex3f(test_plane.first(0), test_plane.first(1), test_plane.first(2));
+      glVertex3f(test_plane.first(0) + 0.5 * test_plane.second(0), test_plane.first(1) + 0.5 * test_plane.second(1), test_plane.first(2) + 0.5 * test_plane.second(2));
+      glEnd();
+
+      test_plane = original_plane_center[2];
+      glPointSize(5.0f);
+      glColor3f(0, 1, 1);
+      glBegin(GL_POINTS);
+      glVertex3f(test_plane.first(0), test_plane.first(1), test_plane.first(2));
+      glEnd();
+      glLineWidth(3.0f);
+      glColor3f(0.5, 1, 0);
+      glBegin(GL_LINE_STRIP);
+      glVertex3f(test_plane.first(0), test_plane.first(1), test_plane.first(2));
+      glVertex3f(test_plane.first(0) + 0.5 * test_plane.second(0), test_plane.first(1) + 0.5 * test_plane.second(1), test_plane.first(2) + 0.5 * test_plane.second(2));
+      glEnd();*/
+
+      for(auto j : plane_center)
+      {
+        glPointSize(5.0f);
+        glColor3f(1, 0, 0);
+        glBegin(GL_POINTS);
+        glVertex3f(j.first(0), j.first(1), j.first(2));
+        glEnd();
+        glLineWidth(3.0f);
+        glColor3f(0, 0, 0);
+        glBegin(GL_LINE_STRIP);
+        glVertex3f(j.first(0), j.first(1), j.first(2));
+        glVertex3f(j.first(0) + 0.5 * j.second(0), j.first(1) + 0.5 * j.second(1), j.first(2) + 0.5 * j.second(2));
+        glEnd();
+      }
+
+      for(auto j : original_plane_center)
+      {
+        glPointSize(5.0f);
+        glColor3f(0, 1, 1);
+        glBegin(GL_POINTS);
+        glVertex3f(j.first(0), j.first(1), j.first(2));
+        glEnd();
+        glLineWidth(3.0f);
+        glColor3f(0.5, 1, 0);
+        glBegin(GL_LINE_STRIP);
+        glVertex3f(j.first(0), j.first(1), j.first(2));
+        glVertex3f(j.first(0) + 0.5 * j.second(0), j.first(1) + 0.5 * j.second(1), j.first(2) + 0.5 * j.second(2));
+        glEnd();
+      }
     }
   }
 }
