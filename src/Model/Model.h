@@ -99,6 +99,7 @@ public:
   std::vector<std::pair<Vector3f, Vector3f>>& getOriginalPlaneCenter();
   std::vector<std::pair<Vector3f, Vector3f>>& getPlaneCenter();
   std::vector<std::set<int>>& getFlatSurfaces();
+  void findCrspPatch(int input_id, int& output_id, std::vector<int>& candidate);
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape

@@ -1,6 +1,6 @@
 #include "ShapePlane.h"
 #include "Shape.h"
-
+#include "Bound.h"
 #include "Colormap.h"
 #include <fstream>
 
@@ -14,7 +14,7 @@ void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_pa
     this->writeExtPlaneInfo(ext_info_path);
   }
 
-  this->setSymmetricPlane(1, 0, 0, 0);
+  this->setSymmetricPlane(0, 0, 1, 0);
   this->computePlaneCenter();
 }
 
@@ -204,6 +204,7 @@ void ShapePlane::computePlaneCenter()
   VertexList vertex_list = shape->getVertexList();
   NormalList normal_list = shape->getNormalList();
   NormalList face_normal = shape->getFaceNormal();
+  Bound* bounding = shape->getBoundbox();
   for(size_t i = 0; i < flat_surfaces.size(); i ++)
   {
     Vector3f center_position, center_normal;
@@ -217,46 +218,46 @@ void ShapePlane::computePlaneCenter()
            z_min = std::numeric_limits<double>::max();
     for(auto j : flat_surfaces[i])
     {
-      /*Vector3f v1, v2, v3, n1, n2, n3;
+      Vector3f v1, v2, v3, n1, n2, n3;
       v1 << vertex_list[3 * face_list[3 * j]], vertex_list[3 * face_list[3 * j] + 1], vertex_list[3 * face_list[3 * j] + 2];
       v2 << vertex_list[3 * face_list[3 * j + 1]], vertex_list[3 * face_list[3 * j + 1] + 1], vertex_list[3 * face_list[3 * j + 1] + 2];
-      v3 << vertex_list[3 * face_list[3 * j + 2]], vertex_list[3 * face_list[3 * j + 2] + 1], vertex_list[3 * face_list[3 * j + 2] + 2];*/
+      v3 << vertex_list[3 * face_list[3 * j + 2]], vertex_list[3 * face_list[3 * j + 2] + 1], vertex_list[3 * face_list[3 * j + 2] + 2];
       /*n1 << normal_list[3 * face_list[3 * j]], normal_list[3 * face_list[3 * j] + 1], normal_list[3 * face_list[3 * j] + 2];
       n2 << normal_list[3 * face_list[3 * j + 1]], normal_list[3 * face_list[3 * j + 1] + 1], normal_list[3 * face_list[3 * j + 1] + 2];
       n3 << normal_list[3 * face_list[3 * j + 2]], normal_list[3 * face_list[3 * j + 2] + 1], normal_list[3 * face_list[3 * j + 2] + 2];*/
-      //center_position += (v1 + v2 + v3) / 3;
+      center_position += (v1 + v2 + v3) / 3;
       /*center_normal += (n1 + n2 + n3) / 3;*/
-      for(int k = 0; k < 3; k ++)
-      {
-        if(vertex_list[3 * face_list[3 * j + k]] > x_max)
-        {
-          x_max = vertex_list[3 * face_list[3 * j + k]];
-        }
-        if(vertex_list[3 * face_list[3 * j + k]] < x_min)
-        {
-          x_min = vertex_list[3 * face_list[3 * j + k]];
-        }
-        if(vertex_list[3 * face_list[3 * j + k] + 1] > y_max)
-        {
-          y_max = vertex_list[3 * face_list[3 * j + k] + 1];
-        }
-        if(vertex_list[3 * face_list[3 * j + k] + 1] < y_min)
-        {
-          y_min = vertex_list[3 * face_list[3 * j + k] + 1];
-        }
-        if(vertex_list[3 * face_list[3 * j + k] + 2] > z_max)
-        {
-          z_max = vertex_list[3 * face_list[3 * j + k] + 2];
-        }
-        if(vertex_list[3 * face_list[3 * j + k] + 2] < z_min)
-        {
-          z_min = vertex_list[3 * face_list[3 * j + k] + 2];
-        }
-      }
+      //for(int k = 0; k < 3; k ++)
+      //{
+      //  if(vertex_list[3 * face_list[3 * j + k]] > x_max)
+      //  {
+      //    x_max = vertex_list[3 * face_list[3 * j + k]];
+      //  }
+      //  if(vertex_list[3 * face_list[3 * j + k]] < x_min)
+      //  {
+      //    x_min = vertex_list[3 * face_list[3 * j + k]];
+      //  }
+      //  if(vertex_list[3 * face_list[3 * j + k] + 1] > y_max)
+      //  {
+      //    y_max = vertex_list[3 * face_list[3 * j + k] + 1];
+      //  }
+      //  if(vertex_list[3 * face_list[3 * j + k] + 1] < y_min)
+      //  {
+      //    y_min = vertex_list[3 * face_list[3 * j + k] + 1];
+      //  }
+      //  if(vertex_list[3 * face_list[3 * j + k] + 2] > z_max)
+      //  {
+      //    z_max = vertex_list[3 * face_list[3 * j + k] + 2];
+      //  }
+      //  if(vertex_list[3 * face_list[3 * j + k] + 2] < z_min)
+      //  {
+      //    z_min = vertex_list[3 * face_list[3 * j + k] + 2];
+      //  }
+      //}
       center_normal += Vector3f(face_normal[3 * j], face_normal[3 * j + 1], face_normal[3 * j + 2]);
     }
-    /*center_position /= flat_surfaces[i].size();*/
-    center_position << (x_max + x_min) / 2, (y_max + y_min) / 2, (z_max + z_min) / 2;
+    center_position /= flat_surfaces[i].size();
+    //center_position << (x_max + x_min) / 2, (y_max + y_min) / 2, (z_max + z_min) / 2;
     center_normal /= flat_surfaces[i].size();
     center_normal.normalized();
     original_plane_center.push_back(std::pair<Vector3f, Vector3f>(center_position, center_normal));
@@ -270,6 +271,9 @@ void ShapePlane::computePlaneCenter()
       center_normal += distance * symmetric_plane_normal;
       center_normal.normalized();
     }
+    /*center_position << (center_position(0) - bounding->minX) / (bounding->maxX - bounding->minX), 
+                       (center_position(1) - bounding->minY) / (bounding->maxY - bounding->minY),
+                       (center_position(2) - bounding->minZ) / (bounding->maxZ - bounding->minZ);*/
     plane_center.push_back(std::pair<Vector3f, Vector3f>(center_position, center_normal));
   }
 }
@@ -352,4 +356,26 @@ std::vector<std::pair<Vector3f, Vector3f>>& ShapePlane::getOriginalPlaneCenter()
 std::vector<std::set<int>>& ShapePlane::getFlatSurfaces()
 {
   return this->flat_surfaces;
+}
+
+void ShapePlane::findSymmetricPlane(int input_face_id, int& output_face_id, std::vector<int>& candidate)
+{
+  double min = std::numeric_limits<double>::max();
+  for(size_t i = 0; i < plane_center.size(); i ++)
+  {
+    if(i != input_face_id && candidate[i] != 0)
+    {
+      double distance = sqrt(pow(plane_center[i].first(0) - plane_center[input_face_id].first(0), 2)
+                           + pow(plane_center[i].first(1) - plane_center[input_face_id].first(1), 2)
+                           + pow(plane_center[i].first(2) - plane_center[input_face_id].first(2), 2)
+                           + pow(plane_center[i].second(0) - plane_center[input_face_id].second(0), 2)
+                           + pow(plane_center[i].second(1) - plane_center[input_face_id].second(1), 2)
+                           + pow(plane_center[i].second(2) - plane_center[input_face_id].second(2), 2));
+      if(distance < min)
+      {
+        min = distance;
+        output_face_id = i;
+      }
+    }
+  }
 }
