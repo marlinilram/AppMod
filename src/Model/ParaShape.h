@@ -17,6 +17,8 @@ public:
   ParaShape();
   ~ParaShape();
 
+  void initUVKDTree();
+
 public:
   FaceList cut_face_list; // triplets which store the old vertex id of the faces
   STLVectori vertex_set; // vertex id mapping from new id to old id
@@ -24,12 +26,15 @@ public:
   std::shared_ptr<Shape> cut_shape;
   std::shared_ptr<KDTreeWrapper> kdTree_UV;
   std::set<int> cut_faces; // face id in original model
+  STLVectori face_set; // face id mapping from new id to old id
   std::vector<cv::Mat> feature_map;
   std::vector<cv::Mat> detail_map;
+  int filled;
+  float fill_ratio;
 
-private:
-  ParaShape(const ParaShape&);
-  void operator = (const ParaShape&);
+//private:
+//  ParaShape(const ParaShape&);
+//  void operator = (const ParaShape&);
 };
 
 #endif // !ParaShape_H

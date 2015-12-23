@@ -19,7 +19,7 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 500;
+  resolution = 200;
 }
 
 DetailSynthesis::~DetailSynthesis()
@@ -39,9 +39,12 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
 
   mesh_para->doMeshParameterization(model);
 
+  mesh_para->shape_patches.clear();
+  mesh_para->shape_patches.resize(model->getPlaneFaces().size());
   for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   {
-    mesh_para->doMeshParamterizationPatch(model, i);
+    mesh_para->doMeshParamterizationPatch(model, i, &mesh_para->shape_patches[i]);
+    mesh_para->shape_patches[i].initUVKDTree();
   }
 }
 
@@ -80,11 +83,15 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
     }
   }
 
-  computeFeatureMap(src_feature_map, vertex_feature_list, TRUE);
-  computeFeatureMap(tar_feature_map, vertex_feature_list, FALSE);
+  computeFeatureMap(mesh_para->seen_part.get(), vertex_feature_list);
+  computeFeatureMap(mesh_para->unseen_part.get(), vertex_feature_list);
+  for (int i = 0; i < model->getPlaneFaces().size(); ++i)
+  {
+    computeFeatureMap(&mesh_para->shape_patches[i], vertex_feature_list);
+  }
 
   // save feature map to file
-  for (size_t i = 0; i < src_feature_map.size(); ++i)
+  for (size_t i = 0; i < mesh_para->seen_part->feature_map.size(); ++i)
   {
     //YMLHandler::saveToFile(model->getOutputPath(), std::string("src_feature_") + std::to_string(i) + ".yml", src_feature_map[i]);
     //YMLHandler::saveToFile(model->getOutputPath(), std::string("tar_feature_") + std::to_string(i) + ".yml", tar_feature_map[i]);
@@ -94,33 +101,22 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
   }
 }
 
-void DetailSynthesis::computeFeatureMap(std::vector<cv::Mat>& feature_map, std::vector<std::vector<float> >& feature_list, bool is_src)
+void DetailSynthesis::computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list)
 {
   //resolution = 512;
   int dim_feature = feature_list[0].size();
-  feature_map.clear();
+  para_shape->feature_map.clear();
   for(int i = 0; i < dim_feature; i ++)
   {
-    feature_map.push_back(cv::Mat(resolution, resolution, CV_32FC1));
+    para_shape->feature_map.push_back(cv::Mat(resolution, resolution, CV_32FC1));
   }
   /*feature_map = cv::Mat(resolution, resolution, CV_32FC3);*/
   /*int dims[3] = { resolution, resolution, 3};
   feature_map.create(3, dims, CV_32F);*/
-  std::shared_ptr<Shape> shape;
-  std::shared_ptr<KDTreeWrapper> kdTree;
-  STLVectori v_set;
-  if(is_src)
-  {
-    shape = mesh_para->seen_part->cut_shape;
-    kdTree = mesh_para->seen_part->kdTree_UV;
-    v_set = mesh_para->seen_part->vertex_set;
-  }
-  else
-  {
-    shape = mesh_para->unseen_part->cut_shape;
-    kdTree = mesh_para->unseen_part->kdTree_UV;
-    v_set = mesh_para->unseen_part->vertex_set;
-  }
+  std::shared_ptr<Shape> shape = para_shape->cut_shape;
+  std::shared_ptr<KDTreeWrapper> kdTree = para_shape->kdTree_UV;
+  STLVectori v_set = para_shape->vertex_set;
+
   AdjList adjFaces_list = shape->getVertexShareFaces();
   for(int x = 0; x < resolution; x ++)
   {
@@ -176,7 +172,7 @@ void DetailSynthesis::computeFeatureMap(std::vector<cv::Mat>& feature_map, std::
       // put feature into feature map from feature_list
       for (int i = 0; i < dim_feature; ++i)
       {
-        feature_map[i].at<float>(resolution - y - 1,x) = lambda[0] * feature_list[v_set[id1]][i] + lambda[1] * feature_list[v_set[id2]][i] + lambda[2] * feature_list[v_set[id3]][i];
+        para_shape->feature_map[i].at<float>(resolution - y - 1,x) = lambda[0] * feature_list[v_set[id1]][i] + lambda[1] * feature_list[v_set[id2]][i] + lambda[2] * feature_list[v_set[id3]][i];
       }
 
 
@@ -227,7 +223,12 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   //cv::merge(&detail_image[0], 3, detail_reflectance_mat);
   //imshow("dilate souroce", detail_reflectance_mat);
   
-  computeDetailMap(src_detail_map, detail_image, model);
+  computeDetailMap(mesh_para->seen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
+  computeDetailMap(mesh_para->unseen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
+  for (int i = 0; i < model->getPlaneFaces().size(); ++i)
+  {
+    computeDetailMap(&mesh_para->shape_patches[i], detail_image, model, mesh_para->seen_part->cut_faces);
+  }
 
   //cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   //cv::Mat displacement_mat;
@@ -237,7 +238,7 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   //YMLHandler::saveToMat(model->getOutputPath(), std::string("displacement_map") + ".mat", displacement_map);
 
   // save detail map to file
-  for (size_t i = 0; i < src_detail_map.size(); ++i)
+  for (size_t i = 0; i < mesh_para->seen_part->detail_map.size(); ++i)
   {
     //YMLHandler::saveToFile(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".yml", src_detail_map[i]);
     //YMLHandler::saveToMat(model->getOutputPath(), std::string("src_detail_") + std::to_string(i) + ".mat", src_detail_map[i]);
@@ -360,20 +361,21 @@ void DetailSynthesis::computeDisplacementMap(cv::Mat& displacement_map, cv::Mat&
   applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, displacement_map);
 }
 
-void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model)
+void DetailSynthesis::computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces)
 {
   //resolution = 512;
+  int n_filled_pixel = 0;
   int dim_detail = detail_image.size();
-  detail_map.clear();
+  para_shape->detail_map.clear();
   for(int i = 0; i < dim_detail; i ++)
   {
-    detail_map.push_back(cv::Mat(resolution, resolution, CV_32FC1));
+    para_shape->detail_map.push_back(cv::Mat(resolution, resolution, CV_32FC1));
   }
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
-  std::shared_ptr<Shape> shape = mesh_para->seen_part->cut_shape;
-  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->seen_part->kdTree_UV;
-  STLVectori v_set = mesh_para->seen_part->vertex_set;
+  std::shared_ptr<Shape> shape = para_shape->cut_shape;
+  std::shared_ptr<KDTreeWrapper> kdTree = para_shape->kdTree_UV;
+  STLVectori v_set = para_shape->vertex_set;
   
   AdjList adjFaces_list = shape->getVertexShareFaces();
   for(int x = 0; x < resolution; x ++)
@@ -417,7 +419,7 @@ void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::ve
         l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
         if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
         {
-          face_id = i;
+          face_id = adjFaces[i];
           lambda[0] = l[0];
           lambda[1] = l[1];
           lambda[2] = l[2];
@@ -427,19 +429,44 @@ void DetailSynthesis::computeDetailMap(std::vector<cv::Mat>& detail_map, std::ve
         }
       }
       
-      Vector3f pos = lambda[0] * poly_mesh->position(PolygonMesh::Vertex(v_set[id1]))
-                   + lambda[1] * poly_mesh->position(PolygonMesh::Vertex(v_set[id2]))
-                   + lambda[2] * poly_mesh->position(PolygonMesh::Vertex(v_set[id3]));
-      float winx, winy;
-      model->getProjectPt(pos.data(), winx, winy); // start from left upper corner
-      winy = winy < 0 ? 0 : (winy >= detail_image[0].rows ? detail_image[0].rows - 1 : winy);
-      winx = winx < 0 ? 0 : (winx >= detail_image[0].cols ? detail_image[0].cols - 1 : winx);
-      // put detail into detail map from detail image
-      for (int i = 0; i < dim_detail; ++i)
+      // first it needs to be in the visible face, face_id need to be mapped to original face id
+      if (visible_faces.find(para_shape->face_set[face_id]) != visible_faces.end())
       {
-        detail_map[i].at<float>(resolution - y - 1,x) = detail_image[i].at<float>(winy, winx);
+        Vector3f pos = lambda[0] * poly_mesh->position(PolygonMesh::Vertex(v_set[id1]))
+          + lambda[1] * poly_mesh->position(PolygonMesh::Vertex(v_set[id2]))
+          + lambda[2] * poly_mesh->position(PolygonMesh::Vertex(v_set[id3]));
+        float winx, winy;
+        model->getProjectPt(pos.data(), winx, winy); // start from left upper corner
+        winy = winy < 0 ? 0 : (winy >= detail_image[0].rows ? detail_image[0].rows - 1 : winy);
+        winx = winx < 0 ? 0 : (winx >= detail_image[0].cols ? detail_image[0].cols - 1 : winx);
+        // put detail into detail map from detail image
+        for (int i = 0; i < dim_detail; ++i)
+        {
+          para_shape->detail_map[i].at<float>(resolution - y - 1,x) = detail_image[i].at<float>(winy, winx);
+        }
+
+        ++n_filled_pixel;
+      }
+      else
+      {
+        for (int i = 0; i < dim_detail; ++i)
+        {
+          para_shape->detail_map[i].at<float>(resolution - y - 1,x) = -1.0;
+        }
       }
     }
+  }
+
+  // record the fill ratio and tag whether it is full filled
+  if (n_filled_pixel == (resolution * resolution))
+  {
+    para_shape->filled = 1;
+    para_shape->fill_ratio = 1.0;
+  }
+  else
+  {
+    para_shape->filled = 0;
+    para_shape->fill_ratio = float(n_filled_pixel) / (resolution * resolution);
   }
 }
 
@@ -631,8 +658,9 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //tar_feature_map = src_feature_map;
 
   syn_tool.reset(new SynthesisTool);
-  syn_tool->init(src_feature_map, tar_feature_map, src_detail_map);
-  syn_tool->doSynthesisNew();
+  //syn_tool->init(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map);
+  //syn_tool->doSynthesisNew();
+  syn_tool->doFilling(mesh_para->shape_patches[0].feature_map, mesh_para->shape_patches[0].detail_map);
 
   // map the synthesis to model color
   //resolution = 512;
@@ -655,13 +683,13 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //detail_result[1].push_back(output_detail_ext[1].clone());
   //detail_result[2].push_back(output_detail_ext[0].clone());
 
-  cv::Mat tar_detail_last_level;
-  std::vector<cv::Mat> output_detail_last_level;
-  output_detail_last_level.push_back(detail_result[2][1].clone());
-  output_detail_last_level.push_back(detail_result[1][1].clone());
-  output_detail_last_level.push_back(detail_result[0][1].clone());
-  cv::merge(&output_detail_last_level[0], 3, tar_detail_last_level);
-  cv::imshow("last level", tar_detail_last_level);
+  //cv::Mat tar_detail_last_level;
+  //std::vector<cv::Mat> output_detail_last_level;
+  //output_detail_last_level.push_back(detail_result[2][1].clone());
+  //output_detail_last_level.push_back(detail_result[1][1].clone());
+  //output_detail_last_level.push_back(detail_result[0][1].clone());
+  //cv::merge(&output_detail_last_level[0], 3, tar_detail_last_level);
+  //cv::imshow("last level", tar_detail_last_level);
 
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
@@ -678,7 +706,13 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   cv::minMaxLoc(tar_detail,&min,&max);
   tar_detail = tar_detail;// / max;
   model->getSynRImg() = tar_detail.clone();
-  cv::imshow("result", (tar_detail) / (max));
+  cv::imshow("result", (tar_detail));
+
+  // store the detail map result to unseen part
+  mesh_para->unseen_part->detail_map.clear();
+  mesh_para->unseen_part->detail_map.push_back(detail_result[0][0].clone());
+  mesh_para->unseen_part->detail_map.push_back(detail_result[1][0].clone());
+  mesh_para->unseen_part->detail_map.push_back(detail_result[2][0].clone());
 
   std::shared_ptr<Shape> shape = mesh_para->unseen_part->cut_shape;
   STLVectori v_set = mesh_para->unseen_part->vertex_set;
@@ -691,13 +725,13 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
     int winx = cut_uv_list_hidden[2 * i + 0] * resolution;
     int winy = cut_uv_list_hidden[2 * i + 1] * resolution;
 
-    winy = winy < 0 ? 0 : (winy >= detail_result[0][0].rows ? detail_result[0][0].rows - 1 : winy);
-    winx = winx < 0 ? 0 : (winx >= detail_result[0][0].cols ? detail_result[0][0].cols - 1 : winx);
+    winy = winy < 0 ? 0 : (winy >= mesh_para->unseen_part->detail_map[0].rows ? mesh_para->unseen_part->detail_map[0].rows - 1 : winy);
+    winx = winx < 0 ? 0 : (winx >= mesh_para->unseen_part->detail_map[0].cols ? mesh_para->unseen_part->detail_map[0].cols - 1 : winx);
 
     float new_color[3];
-    new_color[0] = detail_result[0][0].at<float>(resolution - 1 - winy, winx);
-    new_color[1] = detail_result[1][0].at<float>(resolution - 1 - winy, winx);
-    new_color[2] = detail_result[2][0].at<float>(resolution - 1 - winy, winx);
+    new_color[0] = mesh_para->unseen_part->detail_map[0].at<float>(resolution - 1 - winy, winx);
+    new_color[1] = mesh_para->unseen_part->detail_map[1].at<float>(resolution - 1 - winy, winx);
+    new_color[2] = mesh_para->unseen_part->detail_map[2].at<float>(resolution - 1 - winy, winx);
 
     // get vertex id in original model
     color_list[3 * v_set[i] + 0] = new_color[0] / max;
@@ -717,9 +751,9 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
 
   cv::Mat src_detail;
   std::vector<cv::Mat> seen_detail;
-  seen_detail.push_back(src_detail_map[2].clone());
-  seen_detail.push_back(src_detail_map[1].clone());
-  seen_detail.push_back(src_detail_map[0].clone());
+  seen_detail.push_back(mesh_para->shape_patches[0].detail_map[2].clone());
+  seen_detail.push_back(mesh_para->shape_patches[0].detail_map[1].clone());
+  seen_detail.push_back(mesh_para->shape_patches[0].detail_map[0].clone());
   cv::merge(&seen_detail[0], 3, src_detail);
   cv::minMaxLoc(src_detail,&min,&max);
   src_detail = src_detail;// / max;
@@ -735,13 +769,13 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
     int winx = cut_uv_list[2 * i + 0] * resolution;
     int winy = cut_uv_list[2 * i + 1] * resolution;
 
-    winy = winy < 0 ? 0 : (winy >= src_detail_map[0].rows ? src_detail_map[0].rows - 1 : winy);
-    winx = winx < 0 ? 0 : (winx >= src_detail_map[0].cols ? src_detail_map[0].cols - 1 : winx);
+    winy = winy < 0 ? 0 : (winy >= mesh_para->seen_part->detail_map[0].rows ? mesh_para->seen_part->detail_map[0].rows - 1 : winy);
+    winx = winx < 0 ? 0 : (winx >= mesh_para->seen_part->detail_map[0].cols ? mesh_para->seen_part->detail_map[0].cols - 1 : winx);
 
     float new_color[3];
-    new_color[0] = src_detail_map[0].at<float>(resolution - 1 - winy, winx);
-    new_color[1] = src_detail_map[1].at<float>(resolution - 1 - winy, winx);
-    new_color[2] = src_detail_map[2].at<float>(resolution - 1 - winy, winx);
+    new_color[0] = mesh_para->seen_part->detail_map[0].at<float>(resolution - 1 - winy, winx);
+    new_color[1] = mesh_para->seen_part->detail_map[1].at<float>(resolution - 1 - winy, winx);
+    new_color[2] = mesh_para->seen_part->detail_map[2].at<float>(resolution - 1 - winy, winx);
 
     // get vertex id in original model
     color_list[3 * v_set[i] + 0] = new_color[0] / max;

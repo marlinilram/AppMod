@@ -22,7 +22,7 @@ public:
   void init();
   void doMeshParameterization(std::shared_ptr<Model> model);
   void saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, std::string fname);
-  void doMeshParamterizationPatch(std::shared_ptr<Model> model, int plane_id); // the API is not fixed yet here
+  void doMeshParamterizationPatch(std::shared_ptr<Model> model, int plane_id, ParaShape* one_patch); // the API is not fixed yet here
 
 private:
   // prepare cut_shape
@@ -33,7 +33,7 @@ private:
   void findConnectedFaces(int f_id, std::set<int>& connected_faces, const std::set<int>& visible_faces, const AdjList& adj_list);
   void connectedComponents(std::vector<std::set<int> >& components, const std::set<int>& visible_faces, const AdjList& adj_list);
   int findLargestComponent(const std::vector<std::set<int> >& components);
-  void expandCuteShape(std::shared_ptr<Model> model, std::set<int>& f_id_set);
+  void expandCutShape(std::shared_ptr<Model> model, std::set<int>& f_id_set);
 
   // barycentric parameterization
   void computeBaryCentericPara(std::shared_ptr<Shape>& shape, STLVectori& b_loop);
@@ -52,6 +52,7 @@ private:
 public:
   std::unique_ptr<ParaShape> seen_part;
   std::unique_ptr<ParaShape> unseen_part;
+  std::vector<ParaShape> shape_patches;
 
   NormalList normal_original_mesh;
   VertexList vertex_original_mesh;

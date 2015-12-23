@@ -41,7 +41,7 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->computeBaryCentericPara(seen_part->cut_shape, seen_part->boundary_loop);
   this->saveParameterization(model->getOutputPath(), seen_part->cut_shape, "seen");
   
-  this->expandCuteShape(model, unseen_part->cut_faces);
+  this->expandCutShape(model, unseen_part->cut_faces);
   this->prepareCutShape(model, unseen_part->cut_face_list, unseen_part->vertex_set, unseen_part->cut_shape);
   this->findBoundary(unseen_part->cut_shape, unseen_part->boundary_loop);
   this->computeBaryCentericPara(unseen_part->cut_shape, unseen_part->boundary_loop);
@@ -144,12 +144,14 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
 
   // save cut_face_list
   seen_part->cut_face_list.clear();
+  seen_part->face_set.clear();
   const FaceList& ori_face_list = model->getShapeFaceList();
   for (auto i : seen_part->cut_faces)
   {
     seen_part->cut_face_list.push_back(ori_face_list[3 * i + 0]);
     seen_part->cut_face_list.push_back(ori_face_list[3 * i + 1]);
     seen_part->cut_face_list.push_back(ori_face_list[3 * i + 2]);
+    seen_part->face_set.push_back(i);
   }
 
   // get hidden face_list
@@ -158,11 +160,13 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
                       seen_part->cut_faces.begin(), seen_part->cut_faces.end(),
                       std::inserter(unseen_part->cut_faces, unseen_part->cut_faces.begin()));
   unseen_part->cut_face_list.clear();
+  unseen_part->face_set.clear();
   for (auto i : unseen_part->cut_faces)
   {
     unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 0]);
     unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 1]);
     unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 2]);
+    unseen_part->face_set.push_back(i);
   }
 
   //std::vector<tinyobj::shape_t> shapes;
@@ -175,7 +179,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   //WriteObj(model->getOutputPath() + "/cutface.obj", shapes, materials);
 }
 
-void MeshParameterization::expandCuteShape(std::shared_ptr<Model> model, std::set<int>& f_id_set)
+void MeshParameterization::expandCutShape(std::shared_ptr<Model> model, std::set<int>& f_id_set)
 {
   // expand the boundary
 
@@ -197,11 +201,13 @@ void MeshParameterization::expandCuteShape(std::shared_ptr<Model> model, std::se
   // build face
   const FaceList& ori_face_list = model->getShapeFaceList();
   unseen_part->cut_face_list.clear();
+  unseen_part->face_set.clear();
   for (auto i : f_id_set)
   {
     unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 0]);
     unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 1]);
     unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 2]);
+    unseen_part->face_set.push_back(i);
   }
 }
 
@@ -625,31 +631,32 @@ void MeshParameterization::getVertexOfOriginalMesh(std::shared_ptr<Model> model)
   vertex_original_mesh = model->getShapeVertexList();
 }
 
-void MeshParameterization::doMeshParamterizationPatch(std::shared_ptr<Model> model, int plane_id)
+void MeshParameterization::doMeshParamterizationPatch(std::shared_ptr<Model> model, int plane_id, ParaShape* one_patch)
 {
   // prepare the (plane) patch for parameterization
 
   // get the patch face list
-  std::set<int> faces = model->getPlaneFaces()[plane_id];
-  FaceList face_list;
+  one_patch->cut_faces = model->getPlaneFaces()[plane_id];
+  one_patch->cut_face_list.clear();
+  one_patch->face_set.clear();
   const FaceList& ori_face_list = model->getShapeFaceList();
-  for (auto i : faces)
+  for (auto i : one_patch->cut_faces)
   {
-    face_list.push_back(ori_face_list[3 * i + 0]);
-    face_list.push_back(ori_face_list[3 * i + 1]);
-    face_list.push_back(ori_face_list[3 * i + 2]);
+    one_patch->cut_face_list.push_back(ori_face_list[3 * i + 0]);
+    one_patch->cut_face_list.push_back(ori_face_list[3 * i + 1]);
+    one_patch->cut_face_list.push_back(ori_face_list[3 * i + 2]);
+    one_patch->face_set.push_back(i);
   }
 
   // build the new shape
-  STLVectori v_set; // v_id mapper from new shape to original shape
-  std::shared_ptr<Shape> shape; // new shape for parameterization
-  this->prepareCutShape(model, face_list, v_set, shape);
+  one_patch->vertex_set.clear(); // v_id mapper from new shape to original shape
+  // new shape for parameterization
+  this->prepareCutShape(model, one_patch->cut_face_list, one_patch->vertex_set, one_patch->cut_shape);
 
   // find boundary
-  STLVectori b_loop;
-  this->findBoundary(shape, b_loop);
-  this->computeBaryCentericPara(shape, b_loop);
+  this->findBoundary(one_patch->cut_shape, one_patch->boundary_loop);
+  this->computeBaryCentericPara(one_patch->cut_shape, one_patch->boundary_loop);
 
   // save the parametrization
-  this->saveParameterization(model->getOutputPath(), shape, "plane_" + std::to_string(plane_id));
+  this->saveParameterization(model->getOutputPath(), one_patch->cut_shape, "plane_" + std::to_string(plane_id));
 }

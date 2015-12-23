@@ -4,13 +4,9 @@
 #include <vector>
 #include <cv.h>
 
-void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail)
+SynthesisTool::SynthesisTool()
 {
-  // pyramids stored from up to down
-  // [0] ------
-  // [1]  ----
-  // [2]   --
-  levels = 5;
+  levels = 3;
   NeighborRange.resize(3);
   NeighborRange[0].height = 9;
   NeighborRange[0].width = 9;
@@ -22,6 +18,14 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
   candidate_size = 20;
   best_random_size = 5;
   patch_size = 10;
+}
+
+void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail)
+{
+  // pyramids stored from up to down
+  // [0] ------
+  // [1]  ----
+  // [2]   --
 
   // get image for pyramids
   gpsrc_feature.clear();
@@ -1018,11 +1022,11 @@ void SynthesisTool::doSynthesisNew()
 
     if(l == levels - 1)
     {
-      std::vector<float> ref_cnt(width * height, 0.0);
       this->initializeNNF(gptar_detail[0], nnf, l);
       this->initializeTarDetail(gptar_detail, l);
       for (int i_iter = 0; i_iter < 5; ++i_iter)
       {
+        std::vector<float> ref_cnt(width * height, 0.0);
         if (i_iter % 2 == 0)
         {
           this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
