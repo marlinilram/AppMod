@@ -625,6 +625,11 @@ std::vector<std::set<int>>& Model::getFlatSurfaces()
   return shape_plane->getFlatSurfaces();
 }
 
+void Model::findCrspPatch(int input_id, int& output_id, std::vector<int>& candidate)
+{
+  shape_plane->findSymmetricPlane(input_id, output_id, candidate);
+}
+
 LG::PolygonMesh* Model::getPolygonMesh()
 {
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
