@@ -72,7 +72,7 @@ Model::Model(const std::string path, const std::string name)
     shape_crest.reset(new ShapeCrest());
     shape_crest->setShape(shape);
     shape_plane.reset(new ShapePlane());
-    shape_plane->setShape(shape);
+    shape_plane->setShape(shape, data_path);
   }
   else
   {
@@ -395,6 +395,10 @@ const VertexList& Model::getShapeVertexList()
 {
   return shape->getVertexList();
 }
+const VertexList& Model::getShapeOriVertexList()
+{
+  return shape->getOriVertexList();
+}
 const FaceList& Model::getShapeFaceList()
 {
   return shape->getFaceList();
@@ -599,6 +603,31 @@ void Model::getTaggedPlaneVertices(std::vector<STLVectori>& vertices)
 void Model::getPlaneVertices(std::vector<STLVectori>& vertices)
 {
   shape_plane->getFlatSurfaceVertices(vertices, 0);
+}
+
+const std::vector<std::set<int> >& Model::getPlaneFaces()
+{
+  return shape_plane->getFlats();
+}
+
+std::vector<std::pair<Vector3f, Vector3f>>& Model::getPlaneCenter()
+{
+  return shape_plane->getPlaneCenter();
+}
+
+std::vector<std::pair<Vector3f, Vector3f>>& Model::getOriginalPlaneCenter()
+{
+  return shape_plane->getOriginalPlaneCenter();
+}
+
+std::vector<std::set<int>>& Model::getFlatSurfaces()
+{
+  return shape_plane->getFlatSurfaces();
+}
+
+void Model::findCrspPatch(int input_id, int& output_id, std::vector<int>& candidate)
+{
+  shape_plane->findSymmetricPlane(input_id, output_id, candidate);
 }
 
 LG::PolygonMesh* Model::getPolygonMesh()

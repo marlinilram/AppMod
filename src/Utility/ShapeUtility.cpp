@@ -10,6 +10,8 @@
 #include "SAMPLE.h"
 #include "GenerateSamples.h"
 
+#include "obj_writer.h"
+
 using namespace LG;
 
 namespace ShapeUtility
@@ -176,7 +178,6 @@ namespace ShapeUtility
       if (n_line == poly_mesh->n_vertices()) 
       {
         std::cout << "Loading finished." << std::endl;
-        return;
       }
       else 
       {
@@ -203,6 +204,25 @@ namespace ShapeUtility
       }
       outFile.close();
       std::cout << "Generating finished." << std::endl;
+    }
+
+    // normalize the value
+    Vector3f mins(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    Vector3f maxs(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+    for (auto vit : poly_mesh->vertices())
+    {
+      Vec3 cur_sym = v_symmetry[vit];
+      if (cur_sym[0] < mins[0]) mins[0] = cur_sym[0];
+      if (cur_sym[0] > maxs[0]) maxs[0] = cur_sym[0];
+      if (cur_sym[1] < mins[1]) mins[1] = cur_sym[1];
+      if (cur_sym[1] > maxs[1]) maxs[1] = cur_sym[1];
+      if (cur_sym[2] < mins[2]) mins[2] = cur_sym[2];
+      if (cur_sym[2] > maxs[2]) maxs[2] = cur_sym[2];
+    }
+    for (auto vit : poly_mesh->vertices())
+    {
+      Vec3 cur_sym = v_symmetry[vit];
+      v_symmetry[vit] = ((cur_sym - mins).array() / (maxs - mins).array()).matrix();
     }
   }
 
@@ -316,5 +336,73 @@ namespace ShapeUtility
       filled_mat_ptr[offset] = 1 + value / n_value;
     }
   }
+
+  void matToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model)
+  {
+    int width = mat.size().width;
+    int height = mat.size().height;
+    Vector3f dir ;
+    dir << 0, 0, -1;
+    shape_model->getUnprojectVec(dir);
+    dir.normalize();
+
+    for(int i = 0; i < width; i ++)
+    {
+      for(int j = 0; j < height; j ++)
+      {
+        Vector3f img_coord, w_coord;
+        img_coord << i, j, 1;
+        shape_model->getWorldCoord(img_coord, w_coord);
+        Vector3f mesh_pt;
+        mesh_pt = w_coord + 0.1 * dir * mat.at<float>(j, i);
+        mesh.add_vertex(Vec3(mesh_pt(0), mesh_pt(1), mesh_pt(2)));
+        //mesh.add_vertex(Vec3(float(i), float(j), 10 * mat.at<float>(j, i)));
+      }
+    }
+    for(int i = 0; i < width - 1; i ++)
+    {
+      for(int j = 0; j < height - 1; j ++)
+      {
+        std::vector<PolygonMesh::Vertex> vertices;
+        vertices.clear();
+        vertices.push_back(PolygonMesh::Vertex(height * i + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j + 1));
+        vertices.push_back(PolygonMesh::Vertex(height * i + j + 1));
+        mesh.add_face(vertices);
+        vertices.clear();
+        vertices.push_back(PolygonMesh::Vertex(height * i + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j + 1));
+        mesh.add_face(vertices);
+      }
+    }
+
+    std::vector<tinyobj::shape_t> shapes;
+    tinyobj::shape_t obj_shape;
+    std::vector<tinyobj::material_t> materials;
+    VertexList vertex_list;
+    vertex_list.clear();
+    for (auto vit : mesh.vertices())
+    {
+      const Vec3& pt = mesh.position(vit);
+      vertex_list.push_back(pt[0]);
+      vertex_list.push_back(pt[1]);
+      vertex_list.push_back(pt[2]);
+    }
+    obj_shape.mesh.positions = vertex_list;
+    FaceList face_list;
+    face_list.clear();
+    for (auto fit : mesh.faces())
+    {
+      for (auto vfc_it : mesh.vertices(fit))
+      {
+        face_list.push_back(vfc_it.idx());
+      }
+    } 
+    obj_shape.mesh.indices = face_list;
+    shapes.push_back(obj_shape);
+    WriteObj(shape_model->getOutputPath() + "/mat2mesh.obj", shapes, materials);
+  }
+
 
 }

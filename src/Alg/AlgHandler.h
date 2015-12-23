@@ -4,10 +4,10 @@
 #include <memory>
 #include <vector>
 #include "GLActor.h"
-#include "DecompImg.h"
 
 class ProjOptimize;
 class NormalTransfer;
+class DecompImg;
 class DetailSynthesis;
 class ProjICP;
 class LargeFeatureReg;

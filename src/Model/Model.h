@@ -55,6 +55,7 @@ public:
 
   // get information from Shape
   const VertexList& getShapeVertexList();
+  const VertexList& getShapeOriVertexList();
   const FaceList& getShapeFaceList();
   const STLVectorf& getShapeUVCoord();
   const NormalList& getShapeNormalList();
@@ -94,6 +95,11 @@ public:
   void clearTaggedPlanes();
   void getTaggedPlaneVertices(std::vector<STLVectori>& vertices);
   void getPlaneVertices(std::vector<STLVectori>& vertices);
+  const std::vector<std::set<int> >& getPlaneFaces();
+  std::vector<std::pair<Vector3f, Vector3f>>& getOriginalPlaneCenter();
+  std::vector<std::pair<Vector3f, Vector3f>>& getPlaneCenter();
+  std::vector<std::set<int>>& getFlatSurfaces();
+  void findCrspPatch(int input_id, int& output_id, std::vector<int>& candidate);
 
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape

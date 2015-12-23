@@ -47,7 +47,6 @@ void TrackballViewer::draw()
   {
     glDisable(GL_LIGHTING);
     drawTrackBall();
-    //drawCrestLines();
     if (!dispObjects[i]->display())
     {
       std::cerr<<"Error when drawing object " << i << ".\n";

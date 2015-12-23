@@ -77,6 +77,7 @@ private:
   std::unique_ptr<QGLBuffer> sketch_vertex_buffer;
   std::unique_ptr<QGLBuffer> vertex_crest_buffer;
   std::unique_ptr<QGLBuffer> uv_buffer;
+  std::unique_ptr<QGLBuffer> hidden_uv_buffer;
   std::unique_ptr<QGLBuffer> vertex_syn_texture_buffer;
 
   GLuint offscr_color;

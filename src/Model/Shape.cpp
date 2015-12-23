@@ -30,6 +30,8 @@ void Shape::init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList)
   setFaceList(faceList);
   setUVCoord(UVList);
 
+  ori_vertex_list  = vertex_list;
+
   color_list.resize(vertex_list.size(), 0.5);
   PolygonMesh::Vertex_attribute<Vec3> colors = poly_mesh->vertex_attribute<Vec3>("v:colors");
   for (auto vit : poly_mesh->vertices())
@@ -166,6 +168,11 @@ void Shape::setUVCoord(STLVectorf& UVCoord)
 const VertexList& Shape::getVertexList()
 {
   return vertex_list;
+}
+
+const VertexList& Shape::getOriVertexList()
+{
+ return ori_vertex_list;
 }
 
 const FaceList& Shape::getFaceList()

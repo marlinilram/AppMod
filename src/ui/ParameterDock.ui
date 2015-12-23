@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>358</width>
+    <width>330</width>
     <height>917</height>
    </rect>
   </property>
@@ -25,7 +25,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>323</width>
+         <width>295</width>
          <height>988</height>
         </rect>
        </property>
@@ -322,7 +322,7 @@
                 <double>10.000000000000000</double>
                </property>
                <property name="singleStep">
-                <double>0.010000000000000</double>
+                <double>0.100000000000000</double>
                </property>
                <property name="value">
                 <double>0.700000000000000</double>
@@ -342,7 +342,7 @@
                 <double>10.000000000000000</double>
                </property>
                <property name="singleStep">
-                <double>0.010000000000000</double>
+                <double>0.100000000000000</double>
                </property>
                <property name="value">
                 <double>0.500000000000000</double>
@@ -366,7 +366,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="singleStep">
-                <double>0.010000000000000</double>
+                <double>0.100000000000000</double>
                </property>
                <property name="value">
                 <double>1.000000000000000</double>
@@ -386,10 +386,27 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="singleStep">
-                <double>0.010000000000000</double>
+                <double>0.100000000000000</double>
                </property>
                <property name="value">
-                <double>0.050000000000000</double>
+                <double>5.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_18">
+               <property name="text">
+                <string>e</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="SField_e_doubleSpinBox">
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>5.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -457,7 +474,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.100000000000000</double>
+                <double>10.000000000000000</double>
                </property>
               </widget>
              </item>
