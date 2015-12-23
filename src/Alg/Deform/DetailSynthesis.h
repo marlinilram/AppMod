@@ -30,6 +30,8 @@ public:
   void computeVectorField(std::shared_ptr<Model> model);
   void getDrawableActors(std::vector<GLActor>& actors);
   void testShapePlane(std::shared_ptr<Model> model);
+  void mergeSynthesis(std::shared_ptr<Model> model);
+  void patchSynthesis(std::shared_ptr<Model> model);
 
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);

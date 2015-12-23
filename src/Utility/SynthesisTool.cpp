@@ -6,7 +6,7 @@
 
 SynthesisTool::SynthesisTool()
 {
-  levels = 3;
+  levels = 5;
   NeighborRange.resize(3);
   NeighborRange[0].height = 9;
   NeighborRange[0].width = 9;
@@ -1049,7 +1049,7 @@ void SynthesisTool::doSynthesisNew()
       std::vector<Point2D> nnf_new;
       this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
       nnf.swap(nnf_new);
-      for (int i_iter = 0; i_iter < 5; ++i_iter)
+      for (int i_iter = 0; i_iter < 3; ++i_iter)
       {
         std::vector<float> ref_cnt(width * height, 0.0);
         if (i_iter % 2 == 0)

@@ -28,6 +28,8 @@ public:
   void computePlaneCenter();
   bool loadExtPlaneInfo(std::string fname);
   void writeExtPlaneInfo(std::string fname);
+  bool loadExtSymmetryInfo(std::string fname);
+  void writeExtSymmetryInfo(std::string fname);
   std::vector<std::pair<Vector3f, Vector3f>>& getPlaneCenter();
   std::vector<std::pair<Vector3f, Vector3f>>& getOriginalPlaneCenter();
   std::vector<std::set<int>>& getFlatSurfaces();

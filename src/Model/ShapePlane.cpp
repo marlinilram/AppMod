@@ -14,8 +14,12 @@ void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_pa
     this->writeExtPlaneInfo(ext_info_path);
   }
 
-  this->setSymmetricPlane(0, 0, 1, 0);
-  this->computePlaneCenter();
+  if (!this->loadExtSymmetryInfo(ext_info_path))
+  {
+    this->setSymmetricPlane(0, 1, 0, 0);
+    this->computePlaneCenter();
+    this->writeExtSymmetryInfo(ext_info_path);
+  }
 }
 
 std::vector<std::set<int> >& ShapePlane::getFlats()
@@ -378,4 +382,68 @@ void ShapePlane::findSymmetricPlane(int input_face_id, int& output_face_id, std:
       }
     }
   }
+}
+
+bool ShapePlane::loadExtSymmetryInfo(std::string fname)
+{
+  std::cout << std::endl << "Try to load symmetry patch information." << std::endl;
+  std::ifstream inFile(fname + "/symmetry_patch_info.txt");
+  if (!inFile.is_open())
+  {
+    std::cout << "Not existed or failed to open." << std::endl;
+    return false;
+  }
+
+  std::cout << "Loading symmetry_patch_info.txt." << std::endl;
+  std::string line_str;
+
+  getline(inFile, line_str);
+  std::stringstream line_parser(line_str);
+  double a, b, c, d;
+  line_parser >> a >> b >> c >> d;
+  symmetric_plane_a = a;
+  symmetric_plane_b = b;
+  symmetric_plane_c = c;
+  symmetric_plane_d = d;
+  symmetric_plane_normal << a, b, c;
+  symmetric_plane_normal.normalized();
+  std::cout << "symmetry plane: " << a << " " << b << " "  << c << " "  << d << std::endl;
+
+  plane_center.clear();
+  original_plane_center.clear();
+  while (getline(inFile, line_str))
+  {
+    if (line_str.empty()) continue;
+    std::stringstream plane_parser(line_str);
+    double x, y, z, nx, ny, nz, orix, oriy, oriz, orinx, oriny, orinz;
+    plane_parser >> x >> y >> z >> nx >> ny >> nz >> orix >> oriy >> oriz >> orinx >> oriny >> orinz;
+    plane_center.push_back(std::pair<Vector3f, Vector3f>(Vector3f(x, y, z), Vector3f(nx, ny, nz)));
+    original_plane_center.push_back(std::pair<Vector3f, Vector3f>(Vector3f(orix, oriy, oriz), Vector3f(orinx, oriny, orinz)));
+  }
+  inFile.close();
+  std::cout << "Loading symmetry_patch_info.txt finished." << std::endl;
+  return true;
+}
+
+void ShapePlane::writeExtSymmetryInfo(std::string fname)
+{
+  std::cout << std::endl << "Writing symmetry patch information." << std::endl;
+  std::ofstream outFile(fname + "/symmetry_patch_info.txt");
+  if (!outFile.is_open())
+  {
+    std::cout << "failed to open symmetry_patch_info.txt file, return." << std::endl;
+    return;
+  }
+
+  outFile << symmetric_plane_a << " " << symmetric_plane_b << " " << symmetric_plane_c << " " << symmetric_plane_d << std::endl;
+  for (size_t i = 0; i < flat_surfaces.size(); ++i)
+  {
+    Vector3f pos = plane_center[i].first;
+    Vector3f n   = plane_center[i].second;
+    Vector3f ori_pos = original_plane_center[i].first;
+    Vector3f ori_n   = original_plane_center[i].second;
+    outFile << pos.transpose() << " " << n.transpose() << " " << ori_pos.transpose() << " " << ori_n.transpose() << std::endl;
+  }
+  outFile.close();
+  std::cout << "Writing symmetry_patch_info.txt finished." << std::endl;
 }

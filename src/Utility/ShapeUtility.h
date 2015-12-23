@@ -9,6 +9,7 @@ class Model;
 namespace LG {
 class PolygonMesh;
 }
+class ParaShape;
 
 namespace ShapeUtility
 {
@@ -27,6 +28,8 @@ namespace ShapeUtility
   void dilateImageMeetBoundary(cv::Mat& mat, cv::Mat& filled_mat, int i, int j);
 
   void matToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model);
+
+  void getFaceInPatchByFaceInMesh(int f_id, std::vector<ParaShape>& patches, int& f_id_patch, int& patch_id);
 }
 
 #endif

@@ -5,6 +5,7 @@
 #include "Shape.h"
 #include "PolygonMesh.h"
 #include "Bound.h"
+#include "ParaShape.h"
 
 #include "Ray.h"
 #include "SAMPLE.h"
@@ -404,5 +405,20 @@ namespace ShapeUtility
     WriteObj(shape_model->getOutputPath() + "/mat2mesh.obj", shapes, materials);
   }
 
+
+  void getFaceInPatchByFaceInMesh(int f_id, std::vector<ParaShape>& patches, int& f_id_patch, int& patch_id)
+  {
+    // f_id is original mesh face id
+    for (size_t i = 0; i < patches.size(); ++i)
+    {
+      int pos = std::find(patches[i].face_set.begin(), patches[i].face_set.end(), f_id) - patches[i].face_set.begin();
+      if (pos < patches[i].face_set.size())
+      {
+        f_id_patch = pos;
+        patch_id = i;
+        return;
+      }
+    }
+  }
 
 }
