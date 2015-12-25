@@ -40,6 +40,7 @@ typedef struct
     std::vector<float>          normals;
     std::vector<float>          texcoords;
     std::vector<unsigned int>   indices;
+    std::vector<unsigned int>   uv_indices;
     std::vector<int>            material_ids; // per-mesh material ID
 } mesh_t;
 

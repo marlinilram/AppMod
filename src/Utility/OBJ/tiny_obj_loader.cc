@@ -710,11 +710,15 @@ std::string LoadObj(
 
   shape.mesh.positions = v;
   shape.mesh.normals = vn;
+  shape.mesh.texcoords = vt;
   for (decltype(faceGroup.size()) i = 0; i < faceGroup.size(); ++i)
   {
       shape.mesh.indices.push_back(faceGroup[i][0].v_idx);
       shape.mesh.indices.push_back(faceGroup[i][1].v_idx);
       shape.mesh.indices.push_back(faceGroup[i][2].v_idx);
+      shape.mesh.uv_indices.push_back(faceGroup[i][0].vt_idx);
+      shape.mesh.uv_indices.push_back(faceGroup[i][1].vt_idx);
+      shape.mesh.uv_indices.push_back(faceGroup[i][2].vt_idx);
   }
   
   bool ret = true;
