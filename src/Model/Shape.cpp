@@ -22,13 +22,13 @@ Shape::~Shape()
   std::cout << "Deleted a Shape.\n";
 }
 
-void Shape::init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList)
+void Shape::init(VertexList& vertexList, FaceList& faceList, FaceList& UVIdList, STLVectorf& UVList)
 {
   poly_mesh.reset(new PolygonMesh());
 
   setVertexList(vertexList);
   setFaceList(faceList);
-  setUVCoord(UVList);
+  setUVCoord(UVIdList, UVList, faceList);
 
   ori_vertex_list  = vertex_list;
 
@@ -133,6 +133,93 @@ void Shape::setColorList(STLVectorf& colorList)
 void Shape::setFaceColorList(STLVectorf& facecolorList)
 {
   face_color_list = facecolorList;
+}
+
+void Shape::setUVCoord(FaceList& UVIdList, STLVectorf& UVCoord, FaceList& ori_face_list)
+{
+  // uv coord are stored as halfedge attributes
+  // we need to original face list to keep coherence between vt id and v id
+  if (!UVIdList.empty() && !UVCoord.empty())
+  {
+    std::vector<Vec2>& he_texcoord = poly_mesh->add_attribute<std::vector<Vec2> >("he:texcoord");
+    for (size_t i = 0; i < UVCoord.size() / 2; ++i)
+    {
+      he_texcoord.push_back(Vec2(UVCoord[2 * i + 0], UVCoord[2 * i + 1]));
+    }
+
+    PolygonMesh::Halfedge_attribute<Vec2> f_uv_coord = poly_mesh->halfedge_attribute<Vec2>("he:face_uv");
+    PolygonMesh::Halfedge_attribute<int> f_uv_id = poly_mesh->halfedge_attribute<int>("he:uv_id");
+    for (size_t i = 0; i < ori_face_list.size() / 3; ++i)
+    {
+      // i is the face id, we need to iterate the halfedges around this face
+      PolygonMesh::Halfedge he_start_v;
+      PolygonMesh::Halfedge he_iter_v;
+      for (auto hefc : poly_mesh->halfedges(PolygonMesh::Face(int(i))))
+      {
+        if (poly_mesh->to_vertex(hefc).idx() == ori_face_list[3 * i + 0])
+        {
+          he_start_v = hefc;
+          break;
+        }
+      }
+      for (int j = 0; j < 3; ++j)
+      {
+        f_uv_coord[he_start_v] = Vec2(UVCoord[2 * UVIdList[3 * i + j] + 0], UVCoord[2 * UVIdList[3 * i + j] + 1]);
+        f_uv_id[he_start_v] = UVIdList[3 * i + j];
+        he_start_v = poly_mesh->next_halfedge(he_start_v);
+      }
+    }
+
+    PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
+    for (auto fit : poly_mesh->faces())
+    {
+      for (auto hefc : poly_mesh->halfedges(fit))
+      {
+        tex_coords[poly_mesh->to_vertex(hefc)] = f_uv_coord[hefc];
+      }
+    }
+
+    UV_list.resize(2 * poly_mesh->n_vertices());
+    //PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
+    for (auto vit : poly_mesh->vertices())
+    {
+      const Vec2& uv_coord = tex_coords[vit];
+      UV_list[2 * vit.idx() + 0] = uv_coord[0];
+      UV_list[2 * vit.idx() + 1] = uv_coord[1];
+    } // this will update the internal variable UV_list from poly_mesh
+  }
+  else
+  {
+    UV_list.resize(2 * poly_mesh->n_vertices(), 0);
+  }
+
+
+  ////UV_list = UVCoord;
+  ////std::cout << "test loading speed: add vertex attribute texture coord.\n";
+  //PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
+  //if (UVCoord.size() == 2 * poly_mesh->n_vertices())
+  //{
+  //  for (auto vit : poly_mesh->vertices())
+  //  {
+  //    tex_coords[vit] = Vec2(UVCoord[2 * vit.idx() + 0], UVCoord[2 * vit.idx() + 1]);
+  //  }
+  //}
+  //else
+  //{
+  //  for (auto vit : poly_mesh->vertices())
+  //  {
+  //    tex_coords[vit] = Vec2(vit.idx(), vit.idx());
+  //  }
+  //}
+
+  //UV_list.resize(2 * poly_mesh->n_vertices());
+  ////PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
+  //for (auto vit : poly_mesh->vertices())
+  //{
+  //  const Vec2& uv_coord = tex_coords[vit];
+  //  UV_list[2 * vit.idx() + 0] = uv_coord[0];
+  //  UV_list[2 * vit.idx() + 1] = uv_coord[1];
+  //} // this will update the internal variable UV_list from poly_mesh
 }
 
 void Shape::setUVCoord(STLVectorf& UVCoord)

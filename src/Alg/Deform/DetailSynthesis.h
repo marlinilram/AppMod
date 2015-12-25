@@ -10,6 +10,7 @@ class Model;
 class MeshParameterization;
 class SynthesisTool;
 class Shape;
+class ParaShape;
 class CurveGuidedVectorField;
 class GLActor;
 class KevinVectorField;
@@ -29,10 +30,15 @@ public:
   void computeVectorField(std::shared_ptr<Model> model);
   void getDrawableActors(std::vector<GLActor>& actors);
   void testShapePlane(std::shared_ptr<Model> model);
+  void mergeSynthesis(std::shared_ptr<Model> model);
+  void patchSynthesis(std::shared_ptr<Model> model);
+
+  // transfer
+  void doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 
 private:
-  void computeFeatureMap(std::vector<cv::Mat>& feature_map, std::vector<std::vector<float> >& feature_list, bool is_src);
-  void computeDetailMap(std::vector<cv::Mat>& detail_map, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model);
+  void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);
+  void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces);
   void computeDisplacementMap(cv::Mat& displacement_map, cv::Mat& displacement_image, std::shared_ptr<Model> model);
 
 private:
@@ -41,9 +47,6 @@ private:
   std::shared_ptr<CurveGuidedVectorField> curve_guided_vector_field;
   std::shared_ptr<KevinVectorField> kevin_vector_field;
   cv::Mat displacement_map;
-  std::vector<cv::Mat> src_feature_map;
-  std::vector<cv::Mat> tar_feature_map;
-  std::vector<cv::Mat> src_detail_map; // tar_detail_map is taken from the synthesis result
   std::vector<GLActor> actors;
   int resolution;
 

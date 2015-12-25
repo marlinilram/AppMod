@@ -132,16 +132,17 @@ void AlgHandler::doNormalCompute()
 
 void AlgHandler::doDetailSynthesis()
 {
-  if (!workable())
-  {
-    return;
-  }
+  //if (!workable())
+  //{
+  //  return;
+  //}
   detail_synthesis->testMeshPara(shape_model);
   detail_synthesis->testShapePlane(shape_model);
   /*shape_model->exportOBJ(0);
   doNormalTransfer();
   shape_model->exportOBJ(0);*/
 
+  detail_synthesis->doTransfer(shape_model, synthesis_model);
   //detail_synthesis->startDetailSynthesis(shape_model);
 
   //detail_synthesis->computeVectorField(shape_model);

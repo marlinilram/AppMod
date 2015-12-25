@@ -13,7 +13,7 @@ KDTreeWrapper::~KDTreeWrapper()
 
 void KDTreeWrapper::initKDTree(std::vector<float>& data, size_t num_pts, int dim)
 {
-  std::cout << "Building KDTree...\n";
+  //std::cout << "Building KDTree...\n";
   kdTree_data.resize(boost::extents[num_pts][dim]);
   int cnt_edge_points = 0;
   for (int i = 0; i < data.size() / dim; ++i)
@@ -25,7 +25,7 @@ void KDTreeWrapper::initKDTree(std::vector<float>& data, size_t num_pts, int dim
   }
 
   kdTree.reset(new kdtree::KDTree(kdTree_data));
-  std::cout << "Build KDTree finished.\n";
+  //std::cout << "Build KDTree finished.\n";
 }
 
 void KDTreeWrapper::nearestPt(std::vector<float>& pt)

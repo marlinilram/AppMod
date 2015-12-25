@@ -31,12 +31,13 @@ public:
   typedef std::vector<Point2D> NNF;
 
 public:
-  SynthesisTool() {};
+  SynthesisTool();
   ~SynthesisTool() {};
 
   void init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail);
   void doSynthesis();
   void doSynthesisNew();
+  void doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& src_detail);
   void doImageSynthesis(std::vector<cv::Mat>& src_detail);
   inline std::vector<ImagePyramid>& getTargetDetail(){ return gptar_detail; };
 
@@ -84,7 +85,20 @@ private:
                       ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
                       std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch);
 
-   
+  void buildMask(cv::Mat& src_detail, std::vector<int>& pixel_mask, std::vector<int>& patch_mask);
+  void initializeFillingNNF(ImagePyramid& gptar_d, NNF& nnf, std::vector<int>& patch_mask, int level);
+  void initializeFillingTarDetail(ImagePyramidVec& gptar_d, std::vector<int>& pixel_mask, int level);
+  void updateFillingNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+                        ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
+                        NNF& nnf, std::vector<float>& ref_cnt, std::vector<int>& patch_mask, int level);
+  void updateFillingNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+                               ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
+                               NNF& nnf, std::vector<float>& ref_cnt, std::vector<int>& patch_mask, int level);
+  void getRandomPositionWithMask(std::vector<Point2D>& random_set, std::vector<int>& patch_mask,int nnf_width, int nnf_height, int n_set, int max_height, int max_width, int min_height = 0, int min_width = 0);
+  void voteFillingImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, std::vector<int>& pixel_mask, int level);
+  void initializeFillingUpTarDetail(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, std::vector<int>& pixel_mask, int level);
+  bool validPatchWithMask(Point2D& patch_pos, std::vector<int>& patch_mask, int nnf_height, int nnf_width);
+
 private:
   int levels;
   int candidate_size;
