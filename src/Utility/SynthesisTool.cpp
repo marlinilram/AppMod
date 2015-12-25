@@ -6,7 +6,7 @@
 
 SynthesisTool::SynthesisTool()
 {
-  levels = 5;
+  levels = 3;
   NeighborRange.resize(3);
   NeighborRange[0].height = 9;
   NeighborRange[0].width = 9;

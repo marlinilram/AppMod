@@ -22,6 +22,7 @@ bool PLY2Reader::loadPLY2Mesh(std::shared_ptr<Shape> shape, std::string fname)
   VertexList vertexList;
   FaceList faceList;
   STLVectorf UVList;
+  FaceList UVIdList;
 
   getline(f_handler, line);
   ss.str(line);
@@ -54,6 +55,6 @@ bool PLY2Reader::loadPLY2Mesh(std::shared_ptr<Shape> shape, std::string fname)
     }
   }
 
-  shape->init(vertexList, faceList, UVList);
+  shape->init(vertexList, faceList, UVIdList, UVList);
   return true;
 }

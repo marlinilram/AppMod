@@ -105,7 +105,8 @@ bool Model::loadOBJ(const std::string name, const std::string path)
   }
 
   shape.reset(new Shape());
-  shape->init(shapes[0].mesh.positions, shapes[0].mesh.indices, shapes[0].mesh.texcoords);
+  
+  shape->init(shapes[0].mesh.positions, shapes[0].mesh.indices, shapes[0].mesh.uv_indices, shapes[0].mesh.texcoords);
 
   Vector3f shape_center;
   shape->getBoundbox()->getCenter(shape_center.data());

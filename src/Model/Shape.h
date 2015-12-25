@@ -20,11 +20,12 @@ public:
   Shape();
   virtual ~Shape();
 
-  void init(VertexList& vertexList, FaceList& faceList, STLVectorf& UVList);
+  void init(VertexList& vertexList, FaceList& faceList, FaceList& UVIdList, STLVectorf& UVList);
   void setVertexList(VertexList& vertexList);
   void setFaceList(FaceList& faceList);
   void setColorList(STLVectorf& colorList);
   void setFaceColorList(STLVectorf& facecolorList);
+  void setUVCoord(FaceList& UVIdList, STLVectorf& UVCoord, FaceList& ori_face_list);
   void setUVCoord(STLVectorf& UVCoord);
   const VertexList& getVertexList();
   const VertexList& getOriVertexList();

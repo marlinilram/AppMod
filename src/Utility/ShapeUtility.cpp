@@ -10,6 +10,7 @@
 #include "Ray.h"
 #include "SAMPLE.h"
 #include "GenerateSamples.h"
+#include "KDTreeWrapper.h"
 
 #include "obj_writer.h"
 
@@ -41,6 +42,15 @@ namespace ShapeUtility
 
     lambd[0] = 1.0f - lambd[1] - lambd[2];
 
+  }
+
+  void computeBaryCentreCoord(Vector2f& pt, Vector2f& v0, Vector2f& v1, Vector2f& v2, float lambd[3])
+  {
+    float pte[3] = { pt[0], pt[1], 0 };
+    float v0e[3] = { v0[0], v0[1], 0 };
+    float v1e[3] = { v1[0], v1[1], 0 };
+    float v2e[3] = { v2[0], v2[1], 0 };
+    computeBaryCentreCoord(pte, v0e, v1e, v2e, lambd);
   }
 
   void computeNormalizedHeight(std::shared_ptr<Model> model)
@@ -93,9 +103,9 @@ namespace ShapeUtility
 
         if (dot > 0.0)
         {
-          //Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
-          //Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
-          //if (ray->intersectModel(ray_start, ray_end))
+          Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
+          Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
+          if (ray->intersectModel(ray_start, ray_end))
           {
             for (int l = 0; l < numFunctions; ++l)
             {
@@ -421,4 +431,341 @@ namespace ShapeUtility
     }
   }
 
+  bool twoSideOfLine(Vector2f& line_start, Vector2f& line_end, Vector2f& pt0, Vector2f& pt1)
+  {
+    float a = (line_start[1] - line_end[1])*(pt0[0] - line_start[0]) + (line_end[0] - line_start[0])*(pt0[1] - line_start[1]);
+    float b = (line_start[1] - line_end[1])*(pt1[0] - line_start[0]) + (line_end[0] - line_start[0])*(pt1[1] - line_start[1]);
+    return (a * b) < 0 ? true : false;
+  }
+
+  bool onSegment(const Vector2f& p, const Vector2f& q, const Vector2f& r)
+  {
+    if (q[0] <= std::max(p[0], r[0]) && q[0] >= std::min(p[0], r[0]) &&
+      q[1] <= std::max(p[1], r[1]) && q[1] >= std::min(p[1], r[1]))
+      return true;
+
+    return false;
+  }
+
+  int orientation(const Vector2f& p, const Vector2f& q, const Vector2f& r)
+  {
+    // See http://www.geeksforgeeks.org/orientation-3-ordered-points/
+    // for details of below formula.
+    float fval = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
+    int val = (fabs(fval) < 1e-9) ? 0 : ((fval < 0) ? -1 : 1); // how precise this is ?
+
+    if (val == 0) return 0;  // colinear
+
+    return (val > 0)? 1: 2; // clock or counterclock wise
+  }
+
+  bool doIntersect(const Vector2f& p1, const Vector2f& q1, const Vector2f& p2, const Vector2f& q2)
+  {
+    // Find the four orientations needed for general and
+    // special cases
+    int o1 = orientation(p1, q1, p2);
+    int o2 = orientation(p1, q1, q2);
+    int o3 = orientation(p2, q2, p1);
+    int o4 = orientation(p2, q2, q1);
+
+    // General case
+    if (o1 != o2 && o3 != o4)
+      return true;
+
+    // Special Cases
+    // p1, q1 and p2 are colinear and p2 lies on segment p1q1
+    if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+
+    // p1, q1 and p2 are colinear and q2 lies on segment p1q1
+    if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+
+    // p2, q2 and p1 are colinear and p1 lies on segment p2q2
+    if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+
+    // p2, q2 and q1 are colinear and q1 lies on segment p2q2
+    if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+    return false; // Doesn't fall in any of the above cases
+  }
+
+  bool findClosesttUVriangleFace(std::vector<float>& pt, ParaShape* para_shape, std::vector<float>& bary_coord, int& f_id, std::vector<int>& v_ids)
+  {
+    bary_coord.clear();
+    bary_coord.resize(3, 0);
+    v_ids.clear();
+    v_ids.resize(3, 0);
+
+    // pt should be normalized to 0~1 uv coordinate
+    int pt_id;
+    float point[3] = { pt[0], pt[1], 1.0 };
+    Vec2 pt_s_uv(pt[0], pt[1]);
+    para_shape->kdTree_UV->nearestPt(pt, pt_id);
+
+    // fast method to find which face the point lies in
+    // first we test the faces around this vertex
+    PolygonMesh* poly_mesh = para_shape->cut_shape->getPolygonMesh();
+    PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
+    const FaceList& f_list = para_shape->cut_shape->getFaceList();
+    Vec2 pt_e_uv = tex_coords[PolygonMesh::Vertex(pt_id)];
+    PolygonMesh::Face f_intersect;
+    bool found_possible_face = false;
+    for (auto hvc : poly_mesh->halfedges(PolygonMesh::Vertex(pt_id)))
+    {
+      if (poly_mesh->is_boundary(hvc)) continue;
+
+      float l[3];
+      Vec2 pt0 = tex_coords[poly_mesh->to_vertex(hvc)];
+      Vec2 pt1 = tex_coords[poly_mesh->from_vertex(poly_mesh->prev_halfedge(hvc))];
+      computeBaryCentreCoord(pt_s_uv, pt_e_uv, pt0, pt1, l);
+
+      l[0] = (fabs(l[0]) < 1e-4) ? 0 : l[0];
+      l[1] = (fabs(l[1]) < 1e-4) ? 0 : l[1];
+      l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
+      if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+      {
+        f_id = poly_mesh->face(hvc).idx();
+        bary_coord[0] = l[0];
+        bary_coord[1] = l[1];
+        bary_coord[2] = l[2];
+        v_ids[0] = f_list[3 * f_id + 0];
+        v_ids[1] = f_list[3 * f_id + 1];
+        v_ids[2] = f_list[3 * f_id + 2];
+        return true;
+      }
+      else
+      {
+        // test intersection
+        if (doIntersect(pt_s_uv, pt_e_uv, pt0, pt1))
+        {
+          PolygonMesh::Halfedge possible_hf = poly_mesh->opposite_halfedge(poly_mesh->next_halfedge(hvc));
+          if (!poly_mesh->is_boundary(possible_hf))
+          {
+            found_possible_face = true;
+            f_intersect = poly_mesh->face(possible_hf);
+            break;
+          }
+        }
+      }
+    }
+    
+    if (found_possible_face)
+    {
+      float l[3];
+      std::vector<Vec2> pts;
+      for (auto vfc : poly_mesh->vertices(f_intersect))
+      {
+        pts.push_back(tex_coords[vfc]);
+      }
+      computeBaryCentreCoord(pt_s_uv, pts[0], pts[1], pts[2], l);
+
+      l[0] = (fabs(l[0]) < 1e-4) ? 0 : l[0];
+      l[1] = (fabs(l[1]) < 1e-4) ? 0 : l[1];
+      l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
+      if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+      {
+        f_id = f_intersect.idx();
+        bary_coord[0] = l[0];
+        bary_coord[1] = l[1];
+        bary_coord[2] = l[2];
+        v_ids[0] = f_list[3 * f_id + 0];
+        v_ids[1] = f_list[3 * f_id + 1];
+        v_ids[2] = f_list[3 * f_id + 2];
+        return true;
+      }
+    }
+
+
+    //PolygonMesh* poly_mesh = para_shape->cut_shape->getPolygonMesh();
+    //const FaceList& f_list = para_shape->cut_shape->getFaceList();
+    //const STLVectorf& uv_list = para_shape->cut_shape->getUVCoord();
+    //bool meet_boundary = false;
+    //std::set<int> visited;
+    //for (auto fc : poly_mesh->faces(PolygonMesh::Vertex(pt_id)))
+    //{
+    //  visited.insert(fc.idx());
+    //}
+    //std::set<int> cur_ring;
+    //std::set<int> last_ring = visited;
+    //std::set<int>::iterator iter;
+    //while (!last_ring.empty())
+    //{
+    //  for (auto i : last_ring)
+    //  {
+    //    // i is face id
+    //    float l[3];
+    //    int v1_id,v2_id,v3_id;
+    //    v1_id = f_list[3 * i + 0];
+    //    v2_id = f_list[3 * i + 1];
+    //    v3_id = f_list[3 * i + 2];
+    //    float v1[3] = { uv_list[2 * v1_id + 0], uv_list[2 * v1_id + 1], 1.0 };
+    //    float v2[3] = { uv_list[2 * v2_id + 0], uv_list[2 * v2_id + 1], 1.0 };
+    //    float v3[3] = { uv_list[2 * v3_id + 0], uv_list[2 * v3_id + 1], 1.0 };
+    //    ShapeUtility::computeBaryCentreCoord(point,v1,v2,v3,l);
+    //    l[0] = (fabs(l[0]) < 1e-4) ? 0 : l[0];
+    //    l[1] = (fabs(l[1]) < 1e-4) ? 0 : l[1];
+    //    l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
+    //    if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+    //    {
+    //      f_id = i;
+    //      bary_coord[0] = l[0];
+    //      bary_coord[1] = l[1];
+    //      bary_coord[2] = l[2];
+    //      v_ids[0] = v1_id;
+    //      v_ids[1] = v2_id;
+    //      v_ids[2] = v3_id;
+    //      return true;
+    //    }
+    //    for (auto hc : poly_mesh->halfedges(PolygonMesh::Face(i)))
+    //    {
+    //      if (poly_mesh->is_boundary(poly_mesh->opposite_halfedge(hc)))
+    //      {
+    //        meet_boundary = true;
+    //        continue;
+    //      }
+    //      int cur_f_id = poly_mesh->face(poly_mesh->opposite_halfedge(hc)).idx();
+    //      iter = visited.find(cur_f_id);
+    //      if (iter == visited.end())
+    //      {
+    //        cur_ring.insert(cur_f_id);
+    //      }
+    //    }
+    //  }
+    //  visited.insert(cur_ring.begin(), cur_ring.end());
+    //  last_ring.swap(cur_ring);
+    //  cur_ring.clear();
+    //}
+
+    return false;
+  }
+
+  bool findClosestUVFace(std::vector<float>& pt, ParaShape* para_shape, std::vector<float>& bary_coord, int& f_id, std::vector<int>& v_ids)
+  {
+    bary_coord.clear();
+    bary_coord.resize(3, 0);
+    v_ids.clear();
+    v_ids.resize(3, 0);
+
+    // pt should be normalized to 0~1 uv coordinate
+    int closest_f_id;
+    float point[3] = { pt[0], pt[1], 1.0 };
+    Vec2 uv_pt(pt[0], pt[1]);
+    para_shape->kdTree_UV_f->nearestPt(pt, closest_f_id);
+    Vec2 uv_f_center_pt(pt[0], pt[1]);
+
+    bool meet_boundary = false;
+    PolygonMesh* poly_mesh = para_shape->cut_shape->getPolygonMesh();
+    PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
+    const FaceList& f_list = para_shape->cut_shape->getFaceList();
+    while (!meet_boundary)
+    {
+      // test if the uv_pt is inside the face
+      float l[3];
+      std::vector<Vec2> pts;
+      uv_f_center_pt = Vec2(0, 0);
+      int n_pts = 0;
+      for (auto vfc : poly_mesh->vertices(PolygonMesh::Face(closest_f_id)))
+      {
+        pts.push_back(tex_coords[vfc]);
+        uv_f_center_pt += tex_coords[vfc];
+        ++ n_pts;
+      }
+      uv_f_center_pt = uv_f_center_pt / n_pts;
+      computeBaryCentreCoord(uv_pt, pts[0], pts[1], pts[2], l);
+
+      l[0] = (fabs(l[0]) < 1e-4) ? 0 : l[0];
+      l[1] = (fabs(l[1]) < 1e-4) ? 0 : l[1];
+      l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
+      if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+      {
+        f_id = closest_f_id;
+        bary_coord[0] = l[0];
+        bary_coord[1] = l[1];
+        bary_coord[2] = l[2];
+        v_ids[0] = f_list[3 * f_id + 0];
+        v_ids[1] = f_list[3 * f_id + 1];
+        v_ids[2] = f_list[3 * f_id + 2];
+        return true;
+      }
+
+      // not in the face, test which edge it intersects
+      for (auto hefv : poly_mesh->halfedges(PolygonMesh::Face(closest_f_id)))
+      {
+        Vec2 pt0 = tex_coords[poly_mesh->to_vertex(hefv)];
+        Vec2 pt1 = tex_coords[poly_mesh->from_vertex(hefv)];
+        if (doIntersect(uv_pt, uv_f_center_pt, pt0, pt1))
+        {
+          // find the intersect halfedge then we search the other side face
+          PolygonMesh::Halfedge oppo_he = poly_mesh->opposite_halfedge(hefv);
+          if (poly_mesh->is_boundary(oppo_he))
+          {
+            meet_boundary = true;
+            break;
+          }
+          else
+          {
+            closest_f_id = poly_mesh->face(oppo_he).idx();
+            break;
+          }
+        }
+      }
+    }
+
+    if (meet_boundary)
+    {
+      // we use the last closest face
+      float l[3];
+      std::vector<Vec2> pts;
+      for (auto vfc : poly_mesh->vertices(PolygonMesh::Face(closest_f_id)))
+      {
+        pts.push_back(tex_coords[vfc]);
+      }
+      computeBaryCentreCoord(uv_pt, pts[0], pts[1], pts[2], l);
+
+      //l[0] = (fabs(l[0]) < 1e-4) ? 0 : l[0];
+      //l[1] = (fabs(l[1]) < 1e-4) ? 0 : l[1];
+      //l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
+      //if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+      //{
+      f_id = closest_f_id;
+      bary_coord[0] = l[0];
+      bary_coord[1] = l[1];
+      bary_coord[2] = l[2];
+      v_ids[0] = f_list[3 * f_id + 0];
+      v_ids[1] = f_list[3 * f_id + 1];
+      v_ids[2] = f_list[3 * f_id + 2];
+      return true;
+      //}
+    }
+
+    return false;
+  }
+
+
+  void saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, std::string fname)
+  {
+    STLVectorf vertex_list;
+    const STLVectorf& UV_list = shape->getUVCoord();
+    for (size_t i = 0; i < UV_list.size() / 2; ++i)
+    {
+      vertex_list.push_back(UV_list[2 * i + 0]);
+      vertex_list.push_back(UV_list[2 * i + 1]);
+      vertex_list.push_back(0.0f);
+    }
+
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    tinyobj::shape_t obj_shape;
+
+    obj_shape.mesh.positions = vertex_list;
+    obj_shape.mesh.indices = shape->getFaceList();
+    shapes.push_back(obj_shape);
+    WriteObj(file_path + "/parameterization_" + fname + ".obj", shapes, materials);
+
+    obj_shape.mesh.positions = shape->getVertexList();
+    obj_shape.mesh.indices = shape->getFaceList();
+    obj_shape.mesh.texcoords = shape->getUVCoord();
+    shapes.pop_back();
+    shapes.push_back(obj_shape);
+    WriteObj(file_path + "/cutmesh_" + fname + ".obj", shapes, materials);
+  }
 }

@@ -33,6 +33,9 @@ public:
   void mergeSynthesis(std::shared_ptr<Model> model);
   void patchSynthesis(std::shared_ptr<Model> model);
 
+  // transfer
+  void doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
+
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces);

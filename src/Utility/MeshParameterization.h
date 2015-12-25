@@ -21,7 +21,7 @@ public:
 
   void init();
   void doMeshParameterization(std::shared_ptr<Model> model);
-  void saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, std::string fname);
+  //void saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, std::string fname);
   void doMeshParamterizationPatch(std::shared_ptr<Model> model, int plane_id, ParaShape* one_patch); // the API is not fixed yet here
 
 private:
