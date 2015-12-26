@@ -30,7 +30,7 @@ public:
   void computeVectorField(std::shared_ptr<Model> model);
   void getDrawableActors(std::vector<GLActor>& actors);
   void testShapePlane(std::shared_ptr<Model> model);
-  void mergeSynthesis(std::shared_ptr<Model> model);
+  void mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Model> model);
   void patchSynthesis(std::shared_ptr<Model> model);
 
   // transfer
@@ -39,7 +39,7 @@ public:
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces);
-  void computeDisplacementMap(cv::Mat& displacement_map, cv::Mat& displacement_image, std::shared_ptr<Model> model);
+  void computeDisplacementMap(ParaShape* para_shape, cv::Mat& displacement_map, cv::Mat& displacement_image, std::shared_ptr<Model> model);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;
