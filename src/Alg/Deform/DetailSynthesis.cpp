@@ -85,6 +85,7 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
 
   computeFeatureMap(mesh_para->seen_part.get(), vertex_feature_list);
   computeFeatureMap(mesh_para->unseen_part.get(), vertex_feature_list);
+
   /*for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   {
     computeFeatureMap(&mesh_para->shape_patches[i], vertex_feature_list);
@@ -193,9 +194,11 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   }
   //cv::merge(&detail_image[0], 3, detail_reflectance_mat);
   //imshow("dilate souroce", detail_reflectance_mat);
-  
+  std::cout << "OK0\n";
   computeDetailMap(mesh_para->seen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
+  std::cout << "OK1\n";
   computeDetailMap(mesh_para->unseen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
+  std::cout << "OK2\n";
   /*for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   {
     computeDetailMap(&mesh_para->shape_patches[i], detail_image, model, mesh_para->seen_part->cut_faces);
@@ -428,7 +431,7 @@ void DetailSynthesis::computeDetailMap(ParaShape* para_shape, std::vector<cv::Ma
           Vector3f pos = lambda[0] * poly_mesh->position(PolygonMesh::Vertex(v_set[id[0]]))
             + lambda[1] * poly_mesh->position(PolygonMesh::Vertex(v_set[id[1]]))
             + lambda[2] * poly_mesh->position(PolygonMesh::Vertex(v_set[id[2]]));
-          float winx, winy;
+          float winx, winy;//std::cout<< pos.transpose() << " ";
           model->getProjectPt(pos.data(), winx, winy); // start from left upper corner
           winy = winy < 0 ? 0 : (winy >= detail_image[0].rows ? detail_image[0].rows - 1 : winy);
           winx = winx < 0 ? 0 : (winx >= detail_image[0].cols ? detail_image[0].cols - 1 : winx);
@@ -643,13 +646,13 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
 
 void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
 {
-  this->prepareFeatureMap(model);
   this->prepareDetailMap(model);
+  this->prepareFeatureMap(model);
   cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   cv::Mat displacement_mat;
   fs2["displacement"] >> displacement_mat;
   computeDisplacementMap(mesh_para->seen_part.get(), displacement_map, displacement_mat, model);
-
+  applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, displacement_map);
   //this->patchSynthesis(model);
   //this->mergeSynthesis(mesh_para->unseen_part.get(), model);
 
@@ -679,7 +682,7 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //detail_result[1][0]; // G
   //detail_result[2][0]; // B
   cv::Mat tar_displacement_map = detail_result[3][0];
-  applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, displacement_map);
+  
   applyDisplacementMap(mesh_para->unseen_part->vertex_set, mesh_para->unseen_part->cut_shape, model, tar_displacement_map);
   //cv::Mat load_img = cv::imread(model->getDataPath() + "/syntext/0.9-.png");
   //cv::Mat syn_ref_ext;
