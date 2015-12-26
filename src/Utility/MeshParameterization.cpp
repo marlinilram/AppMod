@@ -46,7 +46,6 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->findBoundary(unseen_part->cut_shape, unseen_part->boundary_loop);
   this->computeBaryCentericPara(unseen_part->cut_shape, unseen_part->boundary_loop);
   ShapeUtility::saveParameterization(model->getOutputPath(), unseen_part->cut_shape, "unseen");
-
   this->buildKDTree_UV();
   this->getNormalOfOriginalMesh(model);
   this->getVertexOfOriginalMesh(model);
@@ -172,6 +171,39 @@ void MeshParameterization::expandCutShape(std::shared_ptr<Model> model, std::set
 
   // build face
   const FaceList& ori_face_list = model->getShapeFaceList();
+  unseen_part->cut_face_list.clear();
+  unseen_part->face_set.clear();
+  for (auto i : f_id_set)
+  {
+    unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 0]);
+    unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 1]);
+    unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 2]);
+    unseen_part->face_set.push_back(i);
+  }
+
+  this->prepareCutShape(model, unseen_part->cut_face_list, unseen_part->vertex_set, unseen_part->cut_shape);
+  std::set<int> invalid_f;
+  PolygonMesh* cut_poly_mesh = unseen_part->cut_shape->getPolygonMesh();
+  for (auto fit : cut_poly_mesh->faces())
+  {
+    int b_edge = 0;
+    for (auto hefc : cut_poly_mesh->halfedges(fit))
+    {
+      if (cut_poly_mesh->is_boundary(cut_poly_mesh->edge(hefc)))
+      {
+        ++b_edge;
+      }
+    }
+    if (b_edge > 1)
+    {
+      invalid_f.insert(unseen_part->face_set[fit.idx()]);
+    }
+  }
+  std::set<int> left_f;
+  std::set_difference(f_id_set.begin(), f_id_set.end(), invalid_f.begin(), invalid_f.end(), std::inserter(left_f, left_f.begin()));
+
+  // build final face
+  f_id_set.swap(left_f);
   unseen_part->cut_face_list.clear();
   unseen_part->face_set.clear();
   for (auto i : f_id_set)

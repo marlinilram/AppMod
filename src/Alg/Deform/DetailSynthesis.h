@@ -49,6 +49,7 @@ private:
   cv::Mat displacement_map;
   std::vector<GLActor> actors;
   int resolution;
+  double normalize_max;
 
 private:
   DetailSynthesis(const DetailSynthesis&);

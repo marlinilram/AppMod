@@ -39,13 +39,13 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
 
   mesh_para->doMeshParameterization(model);
 
-  mesh_para->shape_patches.clear();
-  mesh_para->shape_patches.resize(model->getPlaneFaces().size());
-  for (int i = 0; i < model->getPlaneFaces().size(); ++i)
-  {
-    mesh_para->doMeshParamterizationPatch(model, i, &mesh_para->shape_patches[i]);
-    mesh_para->shape_patches[i].initUVKDTree();
-  }
+  //mesh_para->shape_patches.clear();
+  //mesh_para->shape_patches.resize(model->getPlaneFaces().size());
+  //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
+  //{
+  //  mesh_para->doMeshParamterizationPatch(model, i, &mesh_para->shape_patches[i]);
+  //  mesh_para->shape_patches[i].initUVKDTree();
+  //}
 }
 
 
@@ -85,10 +85,10 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
 
   computeFeatureMap(mesh_para->seen_part.get(), vertex_feature_list);
   computeFeatureMap(mesh_para->unseen_part.get(), vertex_feature_list);
-  for (int i = 0; i < model->getPlaneFaces().size(); ++i)
-  {
-    computeFeatureMap(&mesh_para->shape_patches[i], vertex_feature_list);
-  }
+  //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
+  //{
+  //  computeFeatureMap(&mesh_para->shape_patches[i], vertex_feature_list);
+  //}
 
   // save feature map to file
   for (size_t i = 0; i < mesh_para->seen_part->feature_map.size(); ++i)
@@ -196,10 +196,10 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   
   computeDetailMap(mesh_para->seen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
   computeDetailMap(mesh_para->unseen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
-  for (int i = 0; i < model->getPlaneFaces().size(); ++i)
-  {
-    computeDetailMap(&mesh_para->shape_patches[i], detail_image, model, mesh_para->seen_part->cut_faces);
-  }
+  //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
+  //{
+  //  computeDetailMap(&mesh_para->shape_patches[i], detail_image, model, mesh_para->seen_part->cut_faces);
+  //}
 
   //cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   //cv::Mat displacement_mat;
@@ -616,8 +616,8 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   this->prepareFeatureMap(model);
   this->prepareDetailMap(model);
 
-  this->patchSynthesis(model);
-  this->mergeSynthesis(model);
+  //this->patchSynthesis(model);
+  //this->mergeSynthesis(model);
 
   //cv::Mat load_img = cv::imread(model->getDataPath() + "/syntext/0.9-.png");
   //cv::Mat syn_ref_ext;
@@ -633,14 +633,19 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //src_feature_map.resize(1, cv::Mat::zeros(src_detail_map[0].rows, src_detail_map[0].cols, CV_32FC1));
   //tar_feature_map = src_feature_map;
 
-  //syn_tool.reset(new SynthesisTool);
+  syn_tool.reset(new SynthesisTool);
   //syn_tool->init(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map);
   //syn_tool->doSynthesisNew();
+  syn_tool->doSynthesisWithMask(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map, mesh_para->unseen_part->detail_map);
   //syn_tool->doFilling(mesh_para->shape_patches[0].feature_map, mesh_para->shape_patches[0].detail_map);
 
   // map the synthesis to model color
   //resolution = 512;
-  //std::vector<std::vector<cv::Mat> >& detail_result = syn_tool->getTargetDetail();
+  std::vector<std::vector<cv::Mat> >& detail_result = syn_tool->getTargetDetail();
+  mesh_para->unseen_part->detail_map.clear();
+  mesh_para->unseen_part->detail_map.push_back(detail_result[0][0].clone());
+  mesh_para->unseen_part->detail_map.push_back(detail_result[1][0].clone());
+  mesh_para->unseen_part->detail_map.push_back(detail_result[2][0].clone());
   //detail_result[0][0]; // R
   //detail_result[1][0]; // G
   //detail_result[2][0]; // B
@@ -679,8 +684,8 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   output_detail.push_back(mesh_para->unseen_part->detail_map[0].clone());
   cv::merge(&output_detail[0], 3, tar_detail);
   double min,max;
-  cv::minMaxLoc(tar_detail,&min,&max);
-  tar_detail = tar_detail;// / max;
+  cv::minMaxLoc(tar_detail,&min,&normalize_max);
+  tar_detail = tar_detail / normalize_max;
   model->getSynRImg() = tar_detail.clone();
   cv::imshow("result", (tar_detail));
 
@@ -733,8 +738,8 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   seen_detail.push_back(mesh_para->seen_part->detail_map[1].clone());
   seen_detail.push_back(mesh_para->seen_part->detail_map[0].clone());
   cv::merge(&seen_detail[0], 3, src_detail);
-  cv::minMaxLoc(src_detail,&min,&max);
-  src_detail = src_detail;// / max;
+  //cv::minMaxLoc(src_detail,&min,&max);
+  src_detail = src_detail / normalize_max;
   model->getOriRImg() = src_detail.clone();
   cv::imshow("source", (src_detail));
 
@@ -1113,12 +1118,12 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //imshow("dilate souroce", detail_reflectance_mat);
 
   computeDetailMap(mesh_para->seen_part.get(), detail_image, src_model, mesh_para->seen_part->cut_faces);
-  //mesh_para->seen_part->detail_map.push_back(displacement_map.clone());
+  mesh_para->seen_part->detail_map.push_back(displacement_map.clone());
 
   // 5. do synthesis
   syn_tool.reset(new SynthesisTool);
   syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
-  syn_tool->doSynthesis();
+  syn_tool->doSynthesisNew();
 
   std::vector<cv::Mat> result_detail;
   result_detail.push_back(syn_tool->getTargetDetail()[0][0].clone());
@@ -1128,7 +1133,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::merge(result_detail, result_reflectance);
   double min,max;
   cv::minMaxLoc(result_reflectance,&min,&max);
-  result_reflectance = result_reflectance / max;
+  result_reflectance = result_reflectance / normalize_max;
   cv::Mat result_displacement = syn_tool->getTargetDetail()[3][0].clone();
 
   cv::imwrite(tar_model->getOutputPath() + "/reflectance.png", result_reflectance*255);

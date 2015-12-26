@@ -440,3 +440,111 @@ bool SynthesisTool::validPatchWithMask(Point2D& patch_pos, std::vector<int>& pat
   if (patch_mask[patch_pos.second * nnf_width + patch_pos.first] == 0) return true;
   else return false;
 }
+
+void SynthesisTool::doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail, std::vector<cv::Mat>& tar_detail)
+{
+  gpsrc_feature.clear();
+  gptar_feature.clear();
+  gpsrc_detail.clear();
+  gptar_detail.clear();
+
+  gpsrc_feature.resize(src_feature.size());
+  gptar_feature.resize(tar_feature.size());
+  gpsrc_detail.resize(src_detail.size());
+  gptar_detail.resize(tar_detail.size());
+  ImagePyramidVec gptar_detail_bk;
+  gptar_detail_bk.resize(tar_detail.size());
+
+  for(size_t i = 0; i < src_feature.size(); i ++)
+  {
+    gpsrc_feature[i].push_back(src_feature[i].clone());
+    gptar_feature[i].push_back(tar_feature[i].clone());
+  }
+  for (size_t i = 0; i < src_detail.size(); ++i)
+  {
+    gpsrc_detail[i].push_back(src_detail[i].clone());
+    gptar_detail[i].push_back(tar_detail[i].clone());
+    gptar_detail_bk[i].push_back(tar_detail[i].clone());
+  }
+  for(size_t i = 0; i < gptar_feature.size(); i ++)
+  {
+    this->generatePyramid(gpsrc_feature[i], levels);
+    this->generatePyramid(gptar_feature[i], levels);
+  }
+  for (size_t i = 0; i < gpsrc_detail.size(); ++i)
+  {
+    this->generatePyramid(gpsrc_detail[i], levels);
+    this->generatePyramid(gptar_detail[i], levels);
+    this->generatePyramid(gptar_detail_bk[i], levels);
+  }
+
+  // build target mask for each level of pyramid
+  std::vector<std::vector<int> > patch_masks(levels, std::vector<int>());
+  std::vector<std::vector<int> > pixel_masks(levels, std::vector<int>());
+  for (int i = 0; i < levels; ++i)
+  {
+    this->buildMask(gptar_detail[0][i], pixel_masks[i], patch_masks[i]);
+  }
+
+  std::cout << "MaskSynthesisTool Init success !" << std::endl;
+
+  // find best match for each level
+  double totalTime = 0.0;
+  srand((unsigned)time(NULL));
+
+  std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
+  for (int l = levels - 1; l >= 0; --l)                      
+  {
+    double duration;
+    clock_t start, end;
+    start = clock();
+
+    int width = gptar_detail[0].at(l).cols;
+    int height = gptar_detail[0].at(l).rows;
+
+    if(l == levels - 1)
+    {
+      this->initializeNNF(gptar_detail[0], nnf, l);
+      this->initializeFillingTarDetail(gptar_detail, pixel_masks[l], l);
+      for (int i_iter = 0; i_iter < 5; ++i_iter)
+      {
+        std::vector<float> ref_cnt(width * height, 0.0);
+        if (i_iter % 2 == 0)
+        {
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+        else
+        {
+          this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+        this->voteFillingImage(gpsrc_detail, gptar_detail, nnf, pixel_masks[l], l);
+      }
+    }
+    else
+    {
+      std::vector<Point2D> nnf_new;
+      this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
+      this->initializeFillingUpTarDetail(gptar_detail_bk, gptar_detail, pixel_masks[l], l);
+      nnf.swap(nnf_new);
+      for (int i_iter = 0; i_iter < 5; ++i_iter)
+      {
+        std::vector<float> ref_cnt(width * height, 0.0);
+        if (i_iter % 2 == 0)
+        {
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+         else
+        {
+          this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+        this->voteFillingImage(gpsrc_detail, gptar_detail, nnf, pixel_masks[l], l);
+      }
+    }
+
+    end = clock();
+    duration = (double)(end - start) / CLOCKS_PER_SEC;
+    totalTime += duration;
+    std::cout << "Level " << l << " is finished ! " << "Running time is : " << duration << " seconds." << std::endl;
+  }
+  std::cout << "All levels is finished !" << " The total running time is :" << totalTime << " seconds." << std::endl;
+}
