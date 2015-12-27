@@ -6,14 +6,18 @@
 
 SynthesisTool::SynthesisTool()
 {
-  levels = 3;
-  NeighborRange.resize(3);
+  levels = 5;
+  NeighborRange.resize(5);
   NeighborRange[0].height = 9;
   NeighborRange[0].width = 9;
   NeighborRange[1].height = 9;
   NeighborRange[1].width = 9;
   NeighborRange[2].height = 9;
   NeighborRange[2].width = 9;
+  NeighborRange[3].height = 9;
+  NeighborRange[3].width = 9;
+  NeighborRange[4].height = 9;
+  NeighborRange[4].width = 9;
 
   candidate_size = 20;
   best_random_size = 5;

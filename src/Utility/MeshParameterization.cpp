@@ -46,7 +46,6 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->findBoundary(unseen_part->cut_shape, unseen_part->boundary_loop);
   this->computeBaryCentericPara(unseen_part->cut_shape, unseen_part->boundary_loop);
   ShapeUtility::saveParameterization(model->getOutputPath(), unseen_part->cut_shape, "unseen");
-
   this->buildKDTree_UV();
   this->getNormalOfOriginalMesh(model);
   this->getVertexOfOriginalMesh(model);
@@ -114,6 +113,9 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
     }
   }
 
+  // deal with single face leads to bad case in parameterization
+  this->eliminateSingleFace(model, seen_part->cut_faces);
+
   // save cut_face_list
   seen_part->cut_face_list.clear();
   seen_part->face_set.clear();
@@ -171,6 +173,10 @@ void MeshParameterization::expandCutShape(std::shared_ptr<Model> model, std::set
   }
 
   // build face
+  this->eliminateSingleFace(model, f_id_set);
+
+  // build final face
+  //f_id_set.swap(left_f);
   const FaceList& ori_face_list = model->getShapeFaceList();
   unseen_part->cut_face_list.clear();
   unseen_part->face_set.clear();
@@ -181,6 +187,45 @@ void MeshParameterization::expandCutShape(std::shared_ptr<Model> model, std::set
     unseen_part->cut_face_list.push_back(ori_face_list[3 * i + 2]);
     unseen_part->face_set.push_back(i);
   }
+}
+
+void MeshParameterization::eliminateSingleFace(std::shared_ptr<Model> model, std::set<int>& f_id_set)
+{
+  const FaceList& ori_face_list = model->getShapeFaceList();
+  FaceList cut_face_list;
+  STLVectori face_set;
+  for (auto i : f_id_set)
+  {
+    cut_face_list.push_back(ori_face_list[3 * i + 0]);
+    cut_face_list.push_back(ori_face_list[3 * i + 1]);
+    cut_face_list.push_back(ori_face_list[3 * i + 2]);
+    face_set.push_back(i);
+  }
+
+  STLVectori vertex_set;
+  std::shared_ptr<Shape> cut_shape;
+  this->prepareCutShape(model, cut_face_list, vertex_set, cut_shape);
+  std::set<int> invalid_f;
+  PolygonMesh* cut_poly_mesh = cut_shape->getPolygonMesh();
+  for (auto fit : cut_poly_mesh->faces())
+  {
+    int b_edge = 0;
+    for (auto hefc : cut_poly_mesh->halfedges(fit))
+    {
+      if (cut_poly_mesh->is_boundary(cut_poly_mesh->edge(hefc)))
+      {
+        ++b_edge;
+      }
+    }
+    if (b_edge > 1)
+    {
+      invalid_f.insert(face_set[fit.idx()]);
+    }
+  }
+  std::set<int> left_f;
+  std::set_difference(f_id_set.begin(), f_id_set.end(), invalid_f.begin(), invalid_f.end(), std::inserter(left_f, left_f.begin()));
+
+  f_id_set.swap(left_f);
 }
 
 void MeshParameterization::prepareCutShape(std::shared_ptr<Model> model, FaceList& f_list, STLVectori& v_set, std::shared_ptr<Shape>& shape)

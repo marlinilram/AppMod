@@ -145,6 +145,7 @@ void AlgHandler::doDetailSynthesis()
   //detail_synthesis->doTransfer(shape_model, synthesis_model);
   detail_synthesis->startDetailSynthesis(shape_model);
 
+
   //detail_synthesis->computeVectorField(shape_model);
   actors.clear();
   std::vector<GLActor> temp_actors;

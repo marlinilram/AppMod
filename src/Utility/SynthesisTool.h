@@ -38,6 +38,7 @@ public:
   void doSynthesis();
   void doSynthesisNew();
   void doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& src_detail);
+  void doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail, std::vector<cv::Mat>& tar_detail);
   void doImageSynthesis(std::vector<cv::Mat>& src_detail);
   inline std::vector<ImagePyramid>& getTargetDetail(){ return gptar_detail; };
 

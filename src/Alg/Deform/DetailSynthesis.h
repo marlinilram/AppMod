@@ -14,6 +14,9 @@ class ParaShape;
 class CurveGuidedVectorField;
 class GLActor;
 class KevinVectorField;
+namespace LG {
+class PolygonMesh;
+}
 
 class DetailSynthesis
 {
@@ -39,16 +42,16 @@ public:
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces);
-  void computeDisplacementMap(ParaShape* para_shape, cv::Mat& displacement_map, cv::Mat& displacement_image, std::shared_ptr<Model> model);
+  void computeDisplacementMap(ParaShape* para_shape, LG::PolygonMesh* displacement_mesh, std::shared_ptr<Model> model, std::set<int>& visible_faces);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;
   std::shared_ptr<SynthesisTool>        syn_tool;
   std::shared_ptr<CurveGuidedVectorField> curve_guided_vector_field;
   std::shared_ptr<KevinVectorField> kevin_vector_field;
-  cv::Mat displacement_map;
   std::vector<GLActor> actors;
   int resolution;
+  double normalize_max;
 
 private:
   DetailSynthesis(const DetailSynthesis&);
