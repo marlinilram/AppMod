@@ -41,7 +41,7 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->computeBaryCentericPara(seen_part->cut_shape, seen_part->boundary_loop);
   ShapeUtility::saveParameterization(model->getOutputPath(), seen_part->cut_shape, "seen");
   
-  //this->expandCutShape(model, unseen_part->cut_faces);
+  this->expandCutShape(model, unseen_part->cut_faces);
   this->prepareCutShape(model, unseen_part->cut_face_list, unseen_part->vertex_set, unseen_part->cut_shape);
   this->findBoundary(unseen_part->cut_shape, unseen_part->boundary_loop);
   this->computeBaryCentericPara(unseen_part->cut_shape, unseen_part->boundary_loop);
