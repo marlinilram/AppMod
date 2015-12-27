@@ -78,6 +78,8 @@ void MainWindow::loadModel()
     //    gt_model->setRenderer(viewer_img);
     //}
     //coarse_model->setGtModelPtr(gt_model);
+
+    this->snapShot();
 }
 
 void MainWindow::loadSynthesisTarget()

@@ -146,6 +146,96 @@ namespace ShapeUtility
 
   void computeSymmetry(std::shared_ptr<Model> model)
   {
+
+    //std::cout << "Generate or Load symmetry.txt." << std::endl;
+    //bool regenerate = false;
+    //// test if the file exist
+    //std::ifstream inFile(model->getDataPath() + "/symmetry.txt");
+    //if (!inFile.is_open())
+    //{
+    //  std::cout << "Not existed or failed to load." << std::endl;
+    //  regenerate = true;
+    //}
+
+    //PolygonMesh* poly_mesh = model->getPolygonMesh();
+    //PolygonMesh::Vertex_attribute<Vec3> v_symmetry = poly_mesh->vertex_attribute<Vec3>("v:symmetry");
+
+    //if (!regenerate)
+    //{
+    //  // symmetry information should use original coarse model
+    //  // because after large alignment, symmetry information would be broken
+    //  // we assume the ground plane are xoy plane
+    //  // symmetry plane are yoz plane
+    //  // symmetry information are stored like this
+    //  // first two scalars store projection position on the symmetry plane (y,z)
+    //  // last scalar stores the distance to symmetry plane |x|
+
+    //  // no need to regenerate, read from file
+    //  std::cout << "Loading symmetry.txt" << std::endl;
+    //  std::string line_str;
+    //  int n_line = 0;
+    //  float min_v = std::numeric_limits<float>::max();
+    //  float max_v = -std::numeric_limits<float>::max();
+    //  for (auto vit : poly_mesh->vertices())
+    //  {
+    //    getline(inFile, line_str);
+    //    std::stringstream line_parser(line_str);
+    //    Vec3 cur_v_symmetry(0,0,0);
+    //    line_parser >> cur_v_symmetry[0] >> cur_v_symmetry[1] >> cur_v_symmetry[2];
+    //    v_symmetry[vit] = cur_v_symmetry;
+    //    ++n_line;
+    //  }
+    //  
+    //  inFile.close();
+    //  if (n_line == poly_mesh->n_vertices()) 
+    //  {
+    //    std::cout << "Loading finished." << std::endl;
+    //  }
+    //  else 
+    //  {
+    //    std::cout << "Loading errors. Need to regenerate." << std::endl;
+    //    regenerate = true;
+    //  }
+    //}
+    //
+    //if (regenerate)
+    //{
+    //  std::cout << "Generating Symmetry.txt." << std::endl;
+    //  std::ofstream outFile(model->getDataPath() + "/symmetry.txt");
+    //  // read from the file
+    //  if (!outFile.is_open())
+    //  {
+    //    std::cout << "failed to open the symmetry.txt file, return." << std::endl;
+    //    return;
+    //  }
+    //  for (auto vit : poly_mesh->vertices())
+    //  {
+    //    Vec3 pos = poly_mesh->position(vit);
+    //    v_symmetry[vit] = Vec3(fabs(pos[1]), pos[0], pos[2]);
+    //    outFile << fabs(pos[1]) << "\t" << pos[0] << "\t" << pos[2] << std::endl;
+    //  }
+    //  outFile.close();
+    //  std::cout << "Generating finished." << std::endl;
+    //}
+
+    //// normalize the value
+    //Vector3f mins(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    //Vector3f maxs(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+    //for (auto vit : poly_mesh->vertices())
+    //{
+    //  Vec3 cur_sym = v_symmetry[vit];
+    //  if (cur_sym[0] < mins[0]) mins[0] = cur_sym[0];
+    //  if (cur_sym[0] > maxs[0]) maxs[0] = cur_sym[0];
+    //  if (cur_sym[1] < mins[1]) mins[1] = cur_sym[1];
+    //  if (cur_sym[1] > maxs[1]) maxs[1] = cur_sym[1];
+    //  if (cur_sym[2] < mins[2]) mins[2] = cur_sym[2];
+    //  if (cur_sym[2] > maxs[2]) maxs[2] = cur_sym[2];
+    //}
+    //for (auto vit : poly_mesh->vertices())
+    //{
+    //  Vec3 cur_sym = v_symmetry[vit];
+    //  v_symmetry[vit] = ((cur_sym - mins).array() / (maxs - mins).array()).matrix();
+    //}
     std::cout << "Generate or Load symmetry.txt." << std::endl;
     bool regenerate = false;
     // test if the file exist
@@ -157,7 +247,7 @@ namespace ShapeUtility
     }
 
     PolygonMesh* poly_mesh = model->getPolygonMesh();
-    PolygonMesh::Vertex_attribute<Vec3> v_symmetry = poly_mesh->vertex_attribute<Vec3>("v:symmetry");
+    PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
 
     if (!regenerate)
     {
@@ -179,8 +269,10 @@ namespace ShapeUtility
       {
         getline(inFile, line_str);
         std::stringstream line_parser(line_str);
-        Vec3 cur_v_symmetry(0,0,0);
-        line_parser >> cur_v_symmetry[0] >> cur_v_symmetry[1] >> cur_v_symmetry[2];
+        //Vec3 cur_v_symmetry(0,0,0);
+        std::vector<float> cur_v_symmetry;
+        cur_v_symmetry.resize(5);
+        line_parser >> cur_v_symmetry[0] >> cur_v_symmetry[1] >> cur_v_symmetry[2] >> cur_v_symmetry[3] >> cur_v_symmetry[4];
         v_symmetry[vit] = cur_v_symmetry;
         ++n_line;
       }
@@ -188,11 +280,11 @@ namespace ShapeUtility
       inFile.close();
       if (n_line == poly_mesh->n_vertices()) 
       {
-        std::cout << "Loading finished." << std::endl;
+        std::cout << "Loading symmetry.txt finished." << std::endl;
       }
       else 
       {
-        std::cout << "Loading errors. Need to regenerate." << std::endl;
+        std::cout << "Loading errors. Need to regenerate symmetry.txt." << std::endl;
         regenerate = true;
       }
     }
@@ -207,33 +299,99 @@ namespace ShapeUtility
         std::cout << "failed to open the symmetry.txt file, return." << std::endl;
         return;
       }
+      std::cout << "Generate or Load symmetry_plane.txt." << std::endl;
+      bool regenerate_sym_plane = false;
+      // test if the file exist
+      std::ifstream inFile(model->getDataPath() + "/symmetry_plane.txt");
+      if (!inFile.is_open())
+      {
+        std::cout << "Not existed or failed to load symmetry_plane.txt." << std::endl;
+        regenerate_sym_plane = true;
+      }
+      double a, b, c, d;
+      if(!regenerate_sym_plane)
+      {
+        std::cout << "Loading symmetry_plane.txt" << std::endl;
+        std::string line_str;
+        getline(inFile, line_str);
+        std::stringstream line_parser(line_str);
+        line_parser >> a >> b >> c >> d;
+      }
+      else
+      {
+        a = 0;
+        b = 1;
+        c = 0;
+        d = 0;
+        std::cout << "Generating Symmetry_plane.txt." << std::endl;
+        std::ofstream outFile_sym_plane(model->getDataPath() + "/symmetry_plane.txt");
+        // read from the file
+        if (!outFile_sym_plane.is_open())
+        {
+          std::cout << "failed to open the symmetry_plane.txt file, return." << std::endl;
+          return;
+        }
+        outFile_sym_plane << a << "\t" << b << "\t" << c << "\t" << d << "\n";
+        outFile_sym_plane.close();
+        std::cout << "Generating symmetry_plane.txt finished." << std::endl;
+      }
+      std::vector<double> symmetric_plane_coef;
+      symmetric_plane_coef.push_back(a);
+      symmetric_plane_coef.push_back(b);
+      symmetric_plane_coef.push_back(c);
+      symmetric_plane_coef.push_back(d);
+      PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
       for (auto vit : poly_mesh->vertices())
       {
         Vec3 pos = poly_mesh->position(vit);
-        v_symmetry[vit] = Vec3(fabs(pos[1]), pos[0], pos[2]);
-        outFile << fabs(pos[1]) << "\t" << pos[0] << "\t" << pos[2] << std::endl;
+        Vec3 normal = v_normals[vit];
+        ShapeUtility::computeVertexSymmetryProjection(pos, normal, symmetric_plane_coef);
+        std::vector<float> cur_v_symmetry;
+        cur_v_symmetry.push_back(pos(0));
+        cur_v_symmetry.push_back(pos(1));
+        cur_v_symmetry.push_back(pos(2));
+        cur_v_symmetry.push_back(normal(0));
+        cur_v_symmetry.push_back(normal(1));
+        //v_symmetry[vit] = Vec3(fabs(pos[1]), pos[0], pos[2]);
+        v_symmetry[vit] = cur_v_symmetry;
+        outFile << cur_v_symmetry[0] << "\t" << cur_v_symmetry[1] << "\t" << cur_v_symmetry[2] << "\t" << cur_v_symmetry[3] << "\t" << cur_v_symmetry[4] << std::endl;
       }
       outFile.close();
-      std::cout << "Generating finished." << std::endl;
+      std::cout << "Generating symmetrt.txt finished." << std::endl;
     }
 
-    // normalize the value
-    Vector3f mins(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
-    Vector3f maxs(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
-    for (auto vit : poly_mesh->vertices())
+    //// normalize the value
+    //Vector3f mins(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    //Vector3f maxs(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+    //for (auto vit : poly_mesh->vertices())
+    //{
+    //  Vec3 cur_sym = v_symmetry[vit];
+    //  if (cur_sym[0] < mins[0]) mins[0] = cur_sym[0];
+    //  if (cur_sym[0] > maxs[0]) maxs[0] = cur_sym[0];
+    //  if (cur_sym[1] < mins[1]) mins[1] = cur_sym[1];
+    //  if (cur_sym[1] > maxs[1]) maxs[1] = cur_sym[1];
+    //  if (cur_sym[2] < mins[2]) mins[2] = cur_sym[2];
+    //  if (cur_sym[2] > maxs[2]) maxs[2] = cur_sym[2];
+    //}
+    //for (auto vit : poly_mesh->vertices())
+    //{
+    //  Vec3 cur_sym = v_symmetry[vit];
+    //  v_symmetry[vit] = ((cur_sym - mins).array() / (maxs - mins).array()).matrix();
+    //}
+  }
+
+  void computeVertexSymmetryProjection(Vector3f& vertex, Vector3f& normal, std::vector<double>& plane_coef)
+  {
+    Vector3f symmetric_plane_normal;
+    symmetric_plane_normal << plane_coef[0], plane_coef[1], plane_coef[2];
+    double distance = (plane_coef[0] * vertex(0) + plane_coef[1] * vertex(1) + plane_coef[2] * vertex(2) + plane_coef[3])
+      / sqrt(plane_coef[0] * plane_coef[0] + plane_coef[1] * plane_coef[1] + plane_coef[2] * plane_coef[3]);
+    vertex += (-distance) * symmetric_plane_normal;
+    if(normal.dot(symmetric_plane_normal) < 0)
     {
-      Vec3 cur_sym = v_symmetry[vit];
-      if (cur_sym[0] < mins[0]) mins[0] = cur_sym[0];
-      if (cur_sym[0] > maxs[0]) maxs[0] = cur_sym[0];
-      if (cur_sym[1] < mins[1]) mins[1] = cur_sym[1];
-      if (cur_sym[1] > maxs[1]) maxs[1] = cur_sym[1];
-      if (cur_sym[2] < mins[2]) mins[2] = cur_sym[2];
-      if (cur_sym[2] > maxs[2]) maxs[2] = cur_sym[2];
-    }
-    for (auto vit : poly_mesh->vertices())
-    {
-      Vec3 cur_sym = v_symmetry[vit];
-      v_symmetry[vit] = ((cur_sym - mins).array() / (maxs - mins).array()).matrix();
+      distance = 2 * fabs(normal.dot(symmetric_plane_normal));
+      normal += distance * symmetric_plane_normal;
+      normal.normalized();
     }
   }
 
@@ -352,6 +510,8 @@ namespace ShapeUtility
   {
     int width = mat.size().width;
     int height = mat.size().height;
+    double z_scale = shape_model->getZScale();
+    std::cout << "z_scale is : " << z_scale << std::endl;
     Vector3f dir ;
     dir << 0, 0, -1;
     shape_model->getUnprojectVec(dir);
@@ -365,7 +525,7 @@ namespace ShapeUtility
         img_coord << i, j, 1;
         shape_model->getWorldCoord(img_coord, w_coord);
         Vector3f mesh_pt;
-        mesh_pt = w_coord + 0.1 * dir * mat.at<float>(j, i);
+        mesh_pt = w_coord + dir * mat.at<float>(j, i) / z_scale;
         mesh.add_vertex(Vec3(mesh_pt(0), mesh_pt(1), mesh_pt(2)));
         //mesh.add_vertex(Vec3(float(i), float(j), 10 * mat.at<float>(j, i)));
       }
