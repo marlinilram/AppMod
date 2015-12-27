@@ -768,4 +768,52 @@ namespace ShapeUtility
     shapes.push_back(obj_shape);
     WriteObj(file_path + "/cutmesh_" + fname + ".obj", shapes, materials);
   }
+
+  //void findFaceId(int& x, int& y, int& resolution, std::shared_ptr<KDTreeWrapper> kdTree, AdjList& adjFaces_list, std::shared_ptr<Shape> shape,
+  //                int& face_id, float* lambda, int& id1, int& id2, int& id3)
+  //{
+  //  int pt_id;
+  //  std::vector<float> pt;
+  //  pt.resize(2);
+  //  pt[0] = float(x) / resolution;
+  //  pt[1] = float(y) / resolution;
+  //  kdTree->nearestPt(pt,pt_id); // pt has been modified
+  //  std::vector<int> adjFaces = adjFaces_list[pt_id];
+  //  float point[3];
+  //  point[0] = float(x) / resolution;//pt[0];
+  //  point[1] = float(y) / resolution;;//pt[1];
+  //  point[2] = 0;
+  //  for(size_t i = 0; i < adjFaces.size(); i ++)
+  //  {
+  //    float l[3];
+  //    int v1_id,v2_id,v3_id;
+  //    float v1[3],v2[3],v3[3];
+  //    v1_id = (shape->getFaceList())[3 * adjFaces[i]];
+  //    v2_id = (shape->getFaceList())[3 * adjFaces[i] + 1];
+  //    v3_id = (shape->getFaceList())[3 * adjFaces[i] + 2];
+  //    v1[0] = (shape->getUVCoord())[2 * v1_id];
+  //    v1[1] = (shape->getUVCoord())[2 * v1_id + 1];
+  //    v1[2] = 0;
+  //    v2[0] = (shape->getUVCoord())[2 * v2_id];
+  //    v2[1] = (shape->getUVCoord())[2 * v2_id + 1];
+  //    v2[2] = 0;
+  //    v3[0] = (shape->getUVCoord())[2 * v3_id];
+  //    v3[1] = (shape->getUVCoord())[2 * v3_id + 1];
+  //    v3[2] = 0;
+  //    ShapeUtility::computeBaryCentreCoord(point,v1,v2,v3,l);
+  //    l[0] = (fabs(l[0]) < 1e-4) ? 0 : l[0];
+  //    l[1] = (fabs(l[1]) < 1e-4) ? 0 : l[1];
+  //    l[2] = (fabs(l[2]) < 1e-4) ? 0 : l[2];
+  //    if(l[0] >= 0 && l[1] >= 0 && l[2] >= 0)
+  //    {
+  //      face_id = adjFaces[i];
+  //      lambda[0] = l[0];
+  //      lambda[1] = l[1];
+  //      lambda[2] = l[2];
+  //      id1 = v1_id;
+  //      id2 = v2_id;
+  //      id3 = v3_id;
+  //    }
+  //  }
+  //}
 }
