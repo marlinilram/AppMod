@@ -685,6 +685,7 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   cv::merge(&output_detail[0], 3, tar_detail);
   double min,max;
   cv::minMaxLoc(tar_detail,&min,&normalize_max);
+  normalize_max = 1;
   tar_detail = tar_detail / normalize_max;
   model->getSynRImg() = tar_detail.clone();
   cv::imshow("result", (tar_detail));
