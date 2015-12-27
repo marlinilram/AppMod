@@ -341,11 +341,17 @@ namespace ShapeUtility
       symmetric_plane_coef.push_back(c);
       symmetric_plane_coef.push_back(d);
       PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+      Bound* bounding = model->getBoundBox();
       for (auto vit : poly_mesh->vertices())
       {
         Vec3 pos = poly_mesh->position(vit);
+        pos << (pos(0) - bounding->minX) / (bounding->maxX - bounding->minX), 
+                       (pos(1) - bounding->minY) / (bounding->maxY - bounding->minY),
+                       (pos(2) - bounding->minZ) / (bounding->maxZ - bounding->minZ);
         Vec3 normal = v_normals[vit];
         ShapeUtility::computeVertexSymmetryProjection(pos, normal, symmetric_plane_coef);
+        normal = (normal + Vec3(1, 1, 1)) / 2 ;
+
         std::vector<float> cur_v_symmetry;
         cur_v_symmetry.push_back(pos(0));
         cur_v_symmetry.push_back(pos(1));
@@ -525,7 +531,8 @@ namespace ShapeUtility
         img_coord << i, j, 1;
         shape_model->getWorldCoord(img_coord, w_coord);
         Vector3f mesh_pt;
-        mesh_pt = w_coord + dir * mat.at<float>(j, i) / z_scale;
+        /*mesh_pt = w_coord + dir * mat.at<float>(j, i) / z_scale;*/
+        mesh_pt = w_coord + dir * mat.at<float>(j, i) / 10.0;
         mesh.add_vertex(Vec3(mesh_pt(0), mesh_pt(1), mesh_pt(2)));
         //mesh.add_vertex(Vec3(float(i), float(j), 10 * mat.at<float>(j, i)));
       }
