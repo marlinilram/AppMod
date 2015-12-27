@@ -633,14 +633,12 @@ void Model::findCrspPatch(int input_id, int& output_id, std::vector<int>& candid
 
 LG::PolygonMesh* Model::getPolygonMesh()
 {
-  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
-  {
-    return shape->getPolygonMesh();
-  }
-  else
-  {
-    return lighting_ball->getPolygonMesh();
-  }
+  return shape->getPolygonMesh();
+}
+
+LG::PolygonMesh* Model::getLightPolygonMesh()
+{
+  return lighting_ball->getPolygonMesh();
 }
 
 std::map<int, int>& Model::getVisbleGlobalMapper()

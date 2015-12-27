@@ -32,6 +32,7 @@ public:
   //std::shared_ptr<Shape> getShape() { return shape; };
   //std::shared_ptr<ShapeCrest> getShapeCrest();
   LG::PolygonMesh* getPolygonMesh();
+  LG::PolygonMesh* getLightPolygonMesh();
   std::string getDataPath();
   std::string getOutputPath();
 
