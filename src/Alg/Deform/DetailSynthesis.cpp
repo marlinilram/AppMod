@@ -61,6 +61,7 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
 
   ShapeUtility::computeSymmetry(model);
   ShapeUtility::computeNormalizedHeight(model);
+
   //ShapeUtility::computeDirectionalOcclusion(model);
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
