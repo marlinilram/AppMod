@@ -8,6 +8,7 @@
 
 class Model;
 class Shape;
+class KDTreeWrapper;
 namespace LG {
 class PolygonMesh;
 }
@@ -58,6 +59,9 @@ namespace ShapeUtility
   bool findClosestUVFace(std::vector<float>& pt, ParaShape* para_shape, std::vector<float>& bary_coord, int& f_id, std::vector<int>& v_ids);
 
   void saveParameterization(std::string file_path, std::shared_ptr<Shape> shape, std::string fname);
+  
+  /*void findFaceId(int& x, int& y, int& resolution, std::shared_ptr<KDTreeWrapper> kdTree, AdjList& adjFaces_list, std::shared_ptr<Shape> shape,
+                  int& face_id, float* lambda, int& id1, int& id2, int& id3); */
 }
 
 #endif
