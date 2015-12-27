@@ -198,9 +198,7 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   }
   //cv::merge(&detail_image[0], 3, detail_reflectance_mat);
   //imshow("dilate souroce", detail_reflectance_mat);
-  std::cout << "OK0\n";
   computeDetailMap(mesh_para->seen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
-  std::cout << "OK1\n";
   computeDetailMap(mesh_para->unseen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
   //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   //{
@@ -253,9 +251,9 @@ void DetailSynthesis::computeDisplacementMap(ParaShape* para_shape, PolygonMesh*
   cv::Mat displacement_map(resolution, resolution, CV_32FC1);
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
-  std::shared_ptr<Shape> shape = mesh_para->seen_part->cut_shape;
-  std::shared_ptr<KDTreeWrapper> kdTree = mesh_para->seen_part->kdTree_UV;
-  STLVectori v_set = mesh_para->seen_part->vertex_set;
+  std::shared_ptr<Shape> shape = para_shape->cut_shape;
+  std::shared_ptr<KDTreeWrapper> kdTree = para_shape->kdTree_UV;
+  STLVectori v_set = para_shape->vertex_set;
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
   
   AdjList adjFaces_list = shape->getVertexShareFaces();
@@ -666,7 +664,6 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   this->prepareDetailMap(model);
   this->prepareFeatureMap(model);
 
-  applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, mesh_para->seen_part->detail_map[3]);
   //this->patchSynthesis(model);
   //this->mergeSynthesis(mesh_para->unseen_part.get(), model);
 
@@ -705,8 +702,16 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //detail_result[1][0]; // G
   //detail_result[2][0]; // B
   //cv::Mat tar_displacement_map = detail_result[3][0];
-  
-  applyDisplacementMap(mesh_para->unseen_part->vertex_set, mesh_para->unseen_part->cut_shape, model, mesh_para->unseen_part->detail_map[3]);
+
+  applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, mesh_para->seen_part->detail_map[3]);
+  STLVectori intersect_seen_unseen; // we don't want to the crossed region move twice
+  std::set_intersection(mesh_para->unseen_part->vertex_set.begin(), mesh_para->unseen_part->vertex_set.end(),
+    mesh_para->seen_part->vertex_set.begin(), mesh_para->seen_part->vertex_set.end(),
+    std::inserter(intersect_seen_unseen, intersect_seen_unseen.begin()));
+  STLVectori real_unseen_vertex_set;
+  std::set_difference(mesh_para->unseen_part->vertex_set.begin(), mesh_para->unseen_part->vertex_set.end(),
+    intersect_seen_unseen.begin(), intersect_seen_unseen.end(), std::inserter(real_unseen_vertex_set, real_unseen_vertex_set.begin()));
+  applyDisplacementMap(real_unseen_vertex_set, mesh_para->unseen_part->cut_shape, model, mesh_para->unseen_part->detail_map[3]);
   //cv::Mat load_img = cv::imread(model->getDataPath() + "/syntext/0.9-.png");
   //cv::Mat syn_ref_ext;
   //if (load_img.data != NULL)
@@ -1117,8 +1122,8 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-  this->prepareDetailMap(src_model);
-  this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
+  //this->prepareDetailMap(src_model);
+  //this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
 
   //cv::FileStorage fs2(src_model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   //cv::Mat displacement_mat;
