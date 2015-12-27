@@ -1,17 +1,19 @@
 #include "DetailSynthesis.h"
 #include "Model.h"
+#include "Shape.h"
+#include "PolygonMesh.h"
+#include "Bound.h"
+
 #include "MeshParameterization.h"
 #include "ParaShape.h"
-#include "KDTreeWrapper.h"
-#include "Shape.h"
-#include "BasicHeader.h"
-#include "ShapeUtility.h"
-#include "obj_writer.h"
 #include "SynthesisTool.h"
 #include "CurveGuidedVectorField.h"
-#include "GLActor.h"
 #include "KevinVectorField.h"
-#include "PolygonMesh.h"
+
+#include "KDTreeWrapper.h"
+#include "ShapeUtility.h"
+#include "obj_writer.h"
+#include "GLActor.h"
 #include "YMLHandler.h"
 #include "Ray.h"
 
@@ -59,13 +61,15 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
 
   ShapeUtility::computeSymmetry(model);
   ShapeUtility::computeNormalizedHeight(model);
+
   //ShapeUtility::computeDirectionalOcclusion(model);
 
   PolygonMesh* poly_mesh = model->getPolygonMesh();
   PolygonMesh::Vertex_attribute<Scalar> normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
   PolygonMesh::Vertex_attribute<STLVectorf> directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
-  PolygonMesh::Vertex_attribute<Vec3> v_symmetry = poly_mesh->vertex_attribute<Vec3>("v:symmetry");
+  //PolygonMesh::Vertex_attribute<Vec3> v_symmetry = poly_mesh->vertex_attribute<Vec3>("v:symmetry");
+  PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
 
   std::vector<std::vector<float> > vertex_feature_list(poly_mesh->n_vertices(), std::vector<float>());
   for (auto vit : poly_mesh->vertices())
@@ -74,6 +78,8 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
     //vertex_feature_list[vit.idx()].push_back(v_normals[vit][0]);
     //vertex_feature_list[vit.idx()].push_back(v_normals[vit][1]);
     //vertex_feature_list[vit.idx()].push_back(v_normals[vit][2]);
@@ -319,7 +325,9 @@ void DetailSynthesis::computeDisplacementMap(ParaShape* para_shape, PolygonMesh*
           Vector3f dir = lambda[0] * v_normals[PolygonMesh::Vertex(v_set[id[0]])]
                        + lambda[1] * v_normals[PolygonMesh::Vertex(v_set[id[1]])]
                        + lambda[2] * v_normals[PolygonMesh::Vertex(v_set[id[2]])];
-          Vector3f end = pos + dir;
+
+          dir.normalized();
+          Vector3f end = pos + model->getBoundBox()->getRadius() * dir;
           double intersect_point[3];
           Eigen::Vector3d start_pt, end_pt;
           start_pt << pos(0), pos(1), pos(2);

@@ -902,6 +902,7 @@ void MainCanvas::drawInfo(double z_scale)
   cv::Mat &z_img = model->getZImg();
   z_img.create(height, width, CV_32FC1);
   cv::Mat &mask_rimg = model->getRMask();
+  model->setZScale(z_scale);
 
   int render_mode_cache = render_mode;
   render_mode = 1;
@@ -994,7 +995,8 @@ void MainCanvas::drawInfo(double z_scale)
       Eigen::Map<Eigen::MatrixXf>temp_mat(z_img.ptr<float>(), z_img.cols, z_img.rows);
       mat_output << ((1 - temp_mat.array()).matrix() * z_scale).transpose();
       mat_output.close();
-    }YMLHandler::saveToFile(data_path, std::string("rendered.yml"), r_img);
+    }
+    //YMLHandler::saveToFile(data_path, std::string("rendered.yml"), r_img);
     //YMLHandler::saveToFile(data_path, std::string("primitive.yml"), primitive_ID);
   }
 
