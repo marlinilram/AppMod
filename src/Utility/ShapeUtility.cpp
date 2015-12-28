@@ -36,11 +36,22 @@ namespace ShapeUtility
     float d21 = e2.dot(e1);
     float denom = d00*d11 - d01*d01;
 
-    lambd[1] = (d11*d20 - d01*d21) / denom;
+    if (denom == 0.0f)
+    {
+      lambd[1] = 0.33;
 
-    lambd[2] = (d00*d21 - d01*d20) / denom;
+      lambd[2] = 0.33;
 
-    lambd[0] = 1.0f - lambd[1] - lambd[2];
+      lambd[0] = 1.0f - lambd[1] - lambd[2];
+    }
+    else
+    {
+      lambd[1] = (d11*d20 - d01*d21) / denom;
+
+      lambd[2] = (d00*d21 - d01*d20) / denom;
+
+      lambd[0] = 1.0f - lambd[1] - lambd[2];
+    }
 
   }
 
@@ -103,9 +114,9 @@ namespace ShapeUtility
 
         if (dot > 0.0)
         {
-          Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
+          /*Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
           Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
-          if (ray->intersectModel(ray_start, ray_end))
+          if (ray->intersectModel(ray_start, ray_end))*/
           {
             for (int l = 0; l < numFunctions; ++l)
             {
@@ -522,6 +533,7 @@ namespace ShapeUtility
     dir << 0, 0, -1;
     shape_model->getUnprojectVec(dir);
     dir.normalize();
+    cv::Mat& mask = shape_model->getPrimitiveIDImg();
 
     for(int i = 0; i < width; i ++)
     {
@@ -532,7 +544,7 @@ namespace ShapeUtility
         shape_model->getWorldCoord(img_coord, w_coord);
         Vector3f mesh_pt;
         /*mesh_pt = w_coord + dir * mat.at<float>(j, i) / z_scale;*/
-        mesh_pt = w_coord + dir * mat.at<float>(j, i) / 10.0;
+        mesh_pt = w_coord + dir * mat.at<float>(j, i) / 30.0;
         mesh.add_vertex(Vec3(mesh_pt(0), mesh_pt(1), mesh_pt(2)));
         //mesh.add_vertex(Vec3(float(i), float(j), 10 * mat.at<float>(j, i)));
       }
@@ -582,6 +594,74 @@ namespace ShapeUtility
     WriteObj(shape_model->getOutputPath() + "/mat2mesh.obj", shapes, materials);
   }
 
+  void heightToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model)
+  {
+    int width = mat.size().width;
+    int height = mat.size().height;
+    double z_scale = shape_model->getZScale();
+    std::cout << "z_scale is : " << z_scale << std::endl;
+
+    for(int i = 0; i < width; i ++)
+    {
+      for(int j = 0; j < height; j ++)
+      {
+        float obj_coord[3];
+        if(!shape_model->getUnprojectPt(i, j, (1 - mat.at<float>(j, i) / z_scale), obj_coord))
+          return ;
+        mesh.add_vertex(Vec3(obj_coord[0], obj_coord[1], obj_coord[2]));
+      }
+    }
+    for(int i = 0; i < width - 1; i ++)
+    {
+      for(int j = 0; j < height - 1; j ++)
+      {
+        std::vector<PolygonMesh::Vertex> vertices;
+        vertices.clear();
+        vertices.push_back(PolygonMesh::Vertex(height * i + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j + 1));
+        vertices.push_back(PolygonMesh::Vertex(height * i + j + 1));
+        mesh.add_face(vertices);
+        vertices.clear();
+        vertices.push_back(PolygonMesh::Vertex(height * i + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j));
+        vertices.push_back(PolygonMesh::Vertex(height * (i + 1) + j + 1));
+        mesh.add_face(vertices);
+      }
+    }
+
+    std::vector<tinyobj::shape_t> shapes;
+    tinyobj::shape_t obj_shape;
+    std::vector<tinyobj::material_t> materials;
+    VertexList vertex_list;
+    vertex_list.clear();
+    for (auto vit : mesh.vertices())
+    {
+      const Vec3& pt = mesh.position(vit);
+      vertex_list.push_back(pt[0]);
+      vertex_list.push_back(pt[1]);
+      vertex_list.push_back(pt[2]);
+    }
+    obj_shape.mesh.positions = vertex_list;
+    FaceList face_list;
+    face_list.clear();
+    for (auto fit : mesh.faces())
+    {
+      for (auto vfc_it : mesh.vertices(fit))
+      {
+        face_list.push_back(vfc_it.idx());
+      }
+    } 
+    obj_shape.mesh.indices = face_list;
+    shapes.push_back(obj_shape);
+
+    char time_postfix[50];
+    time_t current_time = time(NULL);
+    strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+    std::string file_time_postfix = time_postfix;
+    std::string output_name = shape_model->getOutputPath() + "/height2mesh" + file_time_postfix + ".obj";
+
+    WriteObj(output_name, shapes, materials);
+  }
 
   void getFaceInPatchByFaceInMesh(int f_id, std::vector<ParaShape>& patches, int& f_id_patch, int& patch_id)
   {
@@ -619,6 +699,11 @@ namespace ShapeUtility
     // See http://www.geeksforgeeks.org/orientation-3-ordered-points/
     // for details of below formula.
     float fval = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
+
+    if (fval > 0) return 1;
+    else if (fval < 0) return 2;
+    else return 0;
+
     int val = (fabs(fval) < 1e-9) ? 0 : ((fval < 0) ? -1 : 1); // how precise this is ?
 
     if (val == 0) return 0;  // colinear
@@ -823,9 +908,13 @@ namespace ShapeUtility
     PolygonMesh* poly_mesh = para_shape->cut_shape->getPolygonMesh();
     PolygonMesh::Vertex_attribute<Vec2> tex_coords = poly_mesh->vertex_attribute<Vec2>("v:texcoord");
     const FaceList& f_list = para_shape->cut_shape->getFaceList();
-    while (!meet_boundary)
+    int last_f_id = closest_f_id;
+    int n_visited_f = 0;
+    int max_visited_f = 5;
+    while (!meet_boundary && n_visited_f < max_visited_f)
     {
       // test if the uv_pt is inside the face
+      ++ n_visited_f;
       float l[3];
       std::vector<Vec2> pts;
       uv_f_center_pt = Vec2(0, 0);
@@ -877,7 +966,7 @@ namespace ShapeUtility
       }
     }
 
-    if (meet_boundary)
+    if (meet_boundary || n_visited_f == max_visited_f)
     {
       // we use the last closest face
       float l[3];

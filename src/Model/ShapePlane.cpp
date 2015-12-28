@@ -20,6 +20,8 @@ void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_pa
     this->computePlaneCenter();
     this->writeExtSymmetryInfo(ext_info_path);
   }
+
+  tagged_planes = std::vector<bool>(flat_surfaces.size(), false);
 }
 
 std::vector<std::set<int> >& ShapePlane::getFlats()
@@ -61,9 +63,6 @@ void ShapePlane::findFlats()
     }
   }
 
-
-
-  tagged_planes = std::vector<bool>(flat_surfaces.size(), false);
 }
 
 void ShapePlane::flatSurface(std::set<int>& surface, int f_id, float ref_normal[3])
