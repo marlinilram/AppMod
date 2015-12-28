@@ -34,7 +34,6 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
 {
   seen_part.reset(new ParaShape);
   unseen_part.reset(new ParaShape);
-
   this->cutMesh(model);
   this->prepareCutShape(model, seen_part->cut_face_list, seen_part->vertex_set, seen_part->cut_shape);
   this->findBoundary(seen_part->cut_shape, seen_part->boundary_loop);

@@ -370,7 +370,7 @@ void MainCanvas::setSynthesisReflectance()
   temp.convertTo(ref_img, CV_8UC3);
   cv::cvtColor(ref_img, ref_img, CV_BGR2RGB);
   QImage syn_ref((const uchar *) ref_img.data, ref_img.cols, ref_img.rows, ref_img.step, QImage::Format_RGB888);
-  QImage gl_syn_ref = QGLWidget::convertToGLFormat(ori_ref);
+  QImage gl_syn_ref = QGLWidget::convertToGLFormat(syn_ref);
   setTextureImage(gl_syn_ref, synthesis_reflect_texture);
   syn_ref.save(QString::fromStdString(model->getDataPath() + "/syn_ref.png"));
 }

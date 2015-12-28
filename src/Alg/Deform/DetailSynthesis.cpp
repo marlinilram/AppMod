@@ -80,12 +80,12 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
-    //vertex_feature_list[vit.idx()].push_back(v_normals[vit][0]);
-    //vertex_feature_list[vit.idx()].push_back(v_normals[vit][1]);
-    //vertex_feature_list[vit.idx()].push_back(v_normals[vit][2]);
+    vertex_feature_list[vit.idx()].push_back(v_normals[vit][0]);
+    vertex_feature_list[vit.idx()].push_back(v_normals[vit][1]);
+    vertex_feature_list[vit.idx()].push_back(v_normals[vit][2]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
-      //vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
   }
 
@@ -192,11 +192,18 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
 
   std::vector<cv::Mat> detail_image(3);
   cv::split(detail_reflectance_mat, &detail_image[0]);
-  // dilate the detail map in case of black
-  for (int i = 0; i < 3; ++i)
   {
-    ShapeUtility::dilateImage(detail_image[i], 15);
+    // dilate the detail map in case of black
+    for (int i = 0; i < 3; ++i)
+    {
+      ShapeUtility::dilateImage(detail_image[i], 15);
+    }
+    //cv::merge(detail_image, detail_reflectance_mat);
+    //double n_max, n_min;
+    //cv::minMaxLoc(detail_reflectance_mat, &n_min, &n_max);
+    //detail_reflectance_mat = detail_reflectance_mat / n_max;
   }
+  //cv::split(detail_reflectance_mat, &detail_image[0]);
   //cv::merge(&detail_image[0], 3, detail_reflectance_mat);
   //imshow("dilate souroce", detail_reflectance_mat);
   computeDetailMap(mesh_para->seen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
@@ -608,6 +615,7 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
   VertexList vertex_check;
   //vertex_check =  mesh_para->vertex_original_mesh;
   vertex_check = model->getShapeVertexList();
+  const NormalList& ori_normal = model->getShapeNormalList();
   for(int i = 0; i < vertex_set.size(); i ++)
   {
     float pt_check[3];
@@ -615,9 +623,9 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
     pt_check[1] = vertex_check[3 * vertex_set[i] + 1];
     pt_check[2] = vertex_check[3 * vertex_set[i] + 2];
     float normal_check[3];
-    normal_check[0] = mesh_para->normal_original_mesh[3 * vertex_set[i]];
-    normal_check[1] = mesh_para->normal_original_mesh[3 * vertex_set[i] + 1];
-    normal_check[2] = mesh_para->normal_original_mesh[3 * vertex_set[i] + 2];
+    normal_check[0] = ori_normal[3 * vertex_set[i]];
+    normal_check[1] = ori_normal[3 * vertex_set[i] + 1];
+    normal_check[2] = ori_normal[3 * vertex_set[i] + 2];
     float displacement;
     float U,V;
     U = (cut_shape->getUVCoord())[2 * i];
@@ -688,6 +696,7 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   syn_tool.reset(new SynthesisTool);
   //syn_tool->init(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map);
   //syn_tool->doSynthesisNew();
+  syn_tool->setExportPath(model->getOutputPath());
   syn_tool->doSynthesisWithMask(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map, mesh_para->unseen_part->detail_map);
   //syn_tool->doFilling(mesh_para->shape_patches[0].feature_map, mesh_para->shape_patches[0].detail_map);
 
@@ -1123,8 +1132,8 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-  //this->prepareDetailMap(src_model);
-  //this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
+  this->prepareDetailMap(src_model);
+  this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
 
   //cv::FileStorage fs2(src_model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   //cv::Mat displacement_mat;
@@ -1135,8 +1144,10 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // normalized height, curvature, directional occlusion, surface normal
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);
+  ShapeUtility::computeSymmetry(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
   ShapeUtility::computeDirectionalOcclusion(tar_model);
+  ShapeUtility::computeSymmetry(tar_model);
 
   // 3. third do CCA, skip for now
 
@@ -1148,7 +1159,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   PolygonMesh::Vertex_attribute<Scalar> normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
   PolygonMesh::Vertex_attribute<STLVectorf> directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
-
+  PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
   std::vector<std::vector<float> > vertex_feature_list(poly_mesh->n_vertices(), std::vector<float>());
   for (auto vit : poly_mesh->vertices())
   {
@@ -1156,6 +1167,11 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
@@ -1167,6 +1183,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
   directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
   v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+  v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
   vertex_feature_list.clear();
   vertex_feature_list.resize(poly_mesh->n_vertices(), std::vector<float>());
   for (auto vit : poly_mesh->vertices())
@@ -1175,6 +1192,11 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
@@ -1202,7 +1224,16 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //mesh_para->seen_part->detail_map.push_back(displacement_map.clone());
 
   // 5. do synthesis
+  {
+    double min_test, max_test;
+    for (size_t i = 0; i < mesh_para->seen_part->detail_map.size(); ++i)
+    {
+      cv::minMaxLoc(mesh_para->seen_part->detail_map[i], &min_test, &max_test);
+      std::cout << "Source Detail Dim " << i << ": " << min_test << "\t" << max_test << std::endl;
+    }
+  }
   syn_tool.reset(new SynthesisTool);
+  syn_tool->setExportPath(tar_model->getOutputPath());
   syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
   syn_tool->doSynthesisNew();
 
@@ -1216,6 +1247,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::minMaxLoc(result_reflectance,&min,&max);
   result_reflectance = result_reflectance / normalize_max;
   cv::Mat result_displacement = syn_tool->getTargetDetail()[3][0].clone();
+  applyDisplacementMap(tar_para_shape->vertex_set, tar_para_shape->cut_shape, tar_model, result_displacement);
 
   cv::imwrite(tar_model->getOutputPath() + "/reflectance.png", result_reflectance*255);
   cv::imwrite(tar_model->getOutputPath() + "/displacement.png", result_displacement*255);
