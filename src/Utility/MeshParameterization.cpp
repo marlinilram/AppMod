@@ -114,7 +114,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   }
 
   // deal with single face leads to bad case in parameterization
-  this->eliminateSingleFace(model, seen_part->cut_faces);
+  this->eliminateSingleFaceAll(model, seen_part->cut_faces);
 
   // save cut_face_list
   seen_part->cut_face_list.clear();
@@ -173,7 +173,7 @@ void MeshParameterization::expandCutShape(std::shared_ptr<Model> model, std::set
   }
 
   // build face
-  this->eliminateSingleFace(model, f_id_set);
+  this->eliminateSingleFaceAll(model, f_id_set);
 
   // build final face
   //f_id_set.swap(left_f);
@@ -189,7 +189,7 @@ void MeshParameterization::expandCutShape(std::shared_ptr<Model> model, std::set
   }
 }
 
-void MeshParameterization::eliminateSingleFace(std::shared_ptr<Model> model, std::set<int>& f_id_set)
+bool MeshParameterization::eliminateSingleFace(std::shared_ptr<Model> model, std::set<int>& f_id_set)
 {
   const FaceList& ori_face_list = model->getShapeFaceList();
   FaceList cut_face_list;
@@ -226,6 +226,16 @@ void MeshParameterization::eliminateSingleFace(std::shared_ptr<Model> model, std
   std::set_difference(f_id_set.begin(), f_id_set.end(), invalid_f.begin(), invalid_f.end(), std::inserter(left_f, left_f.begin()));
 
   f_id_set.swap(left_f);
+  if (invalid_f.empty()) return false;
+  else return true;
+}
+
+void MeshParameterization::eliminateSingleFaceAll(std::shared_ptr<Model> model, std::set<int>& f_id_set)
+{
+  this->eliminateSingleFace(model, f_id_set);
+  //while (this->eliminateSingleFace(model, f_id_set))
+  //{
+  //}
 }
 
 void MeshParameterization::prepareCutShape(std::shared_ptr<Model> model, FaceList& f_list, STLVectori& v_set, std::shared_ptr<Shape>& shape)

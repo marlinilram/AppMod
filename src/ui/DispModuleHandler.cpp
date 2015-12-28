@@ -243,6 +243,7 @@ void DispModuleHandler::runNormalTransfer()
 {
   alg_handler->doNormalTransfer();
   trackball_viewer->setGLActors(alg_handler->getGLActors());
+  trackball_viewer->updateGLOutside();
   main_canvas_viewer->setReflectanceImage(QString::fromStdString(cur_file_path + "/reflectance.png"));
   updateCanvas();
 }

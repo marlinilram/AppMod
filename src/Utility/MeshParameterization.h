@@ -34,7 +34,8 @@ private:
   void connectedComponents(std::vector<std::set<int> >& components, const std::set<int>& visible_faces, const AdjList& adj_list);
   int findLargestComponent(const std::vector<std::set<int> >& components);
   void expandCutShape(std::shared_ptr<Model> model, std::set<int>& f_id_set);
-  void eliminateSingleFace(std::shared_ptr<Model> model, std::set<int>& f_id_set);
+  bool eliminateSingleFace(std::shared_ptr<Model> model, std::set<int>& f_id_set);
+  void eliminateSingleFaceAll(std::shared_ptr<Model> model, std::set<int>& f_id_set);
 
   // barycentric parameterization
   void computeBaryCentericPara(std::shared_ptr<Shape>& shape, STLVectori& b_loop);

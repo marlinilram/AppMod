@@ -9,6 +9,7 @@
 #include "SynthesisTool.h"
 #include "CurveGuidedVectorField.h"
 #include "KevinVectorField.h"
+#include "NormalTransfer.h"
 
 #include "KDTreeWrapper.h"
 #include "ShapeUtility.h"
@@ -17,11 +18,14 @@
 #include "YMLHandler.h"
 #include "Ray.h"
 
+#include <string>
+
 using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
   resolution = 512;
+  normalize_max = -1.0;
 }
 
 DetailSynthesis::~DetailSynthesis()
@@ -36,6 +40,18 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
   fs["displacement"] >> displacement_mat;
   PolygonMesh poly_mesh;
   ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);*/
+
+  cv::FileStorage fs1(model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
+  cv::Mat smoothed_output_height;
+  fs1["smoothed_output_height"] >> smoothed_output_height;
+  PolygonMesh smoothed_output_height_mesh;
+  ShapeUtility::heightToMesh(smoothed_output_height, smoothed_output_height_mesh, model); // generate the displacement mesh
+
+  cv::FileStorage fs2(model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  cv::Mat final_height;
+  fs2["final_height"] >> final_height;
+  PolygonMesh final_height_mesh;
+  ShapeUtility::heightToMesh(final_height, final_height_mesh, model); // generate the displacement mesh
 
   mesh_para.reset(new MeshParameterization);
 
@@ -190,6 +206,10 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   cv::Mat detail_reflectance_mat;
   fs["reflectance"] >> detail_reflectance_mat;
 
+  cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  cv::Mat displacement_mat;
+  fs2["displacement"] >> displacement_mat;
+
   std::vector<cv::Mat> detail_image(3);
   cv::split(detail_reflectance_mat, &detail_image[0]);
   // dilate the detail map in case of black
@@ -197,22 +217,26 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   {
     ShapeUtility::dilateImage(detail_image[i], 15);
   }
+  std::cout<<"test"<< std::endl;
+  std::vector<cv::Mat> new_detail_image;
+  new_detail_image.push_back(detail_image[0]);
+  new_detail_image.push_back(detail_image[1]);
+  new_detail_image.push_back(detail_image[2]);
+  new_detail_image.push_back(displacement_mat);
   //cv::merge(&detail_image[0], 3, detail_reflectance_mat);
   //imshow("dilate souroce", detail_reflectance_mat);
-  computeDetailMap(mesh_para->seen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
-  computeDetailMap(mesh_para->unseen_part.get(), detail_image, model, mesh_para->seen_part->cut_faces);
+  computeDetailMap(mesh_para->seen_part.get(), new_detail_image, model, mesh_para->seen_part->cut_faces);std::cout<<"test2"<< std::endl;
+  computeDetailMap(mesh_para->unseen_part.get(), new_detail_image, model, mesh_para->seen_part->cut_faces);std::cout<<"test3"<< std::endl;
   //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   //{
   //  computeDetailMap(&mesh_para->shape_patches[i], detail_image, model, mesh_para->seen_part->cut_faces);
   //}
 
-  cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
-  cv::Mat displacement_mat;
-  fs2["displacement"] >> displacement_mat;
-  PolygonMesh displacement_mesh;
-  ShapeUtility::matToMesh(displacement_mat, displacement_mesh, model); // generate the displacement mesh
-  computeDisplacementMap(mesh_para->seen_part.get(), &displacement_mesh, model, mesh_para->seen_part->cut_faces);
-  computeDisplacementMap(mesh_para->unseen_part.get(), &displacement_mesh, model, mesh_para->seen_part->cut_faces);
+  
+  //PolygonMesh displacement_mesh;
+  //ShapeUtility::matToMesh(displacement_mat, displacement_mesh, model); // generate the displacement mesh
+  //computeDisplacementMap(mesh_para->seen_part.get(), &displacement_mesh, model, mesh_para->seen_part->cut_faces);
+  //computeDisplacementMap(mesh_para->unseen_part.get(), &displacement_mesh, model, mesh_para->seen_part->cut_faces);
 
   //YMLHandler::saveToFile(model->getOutputPath(), std::string("displacement_map") + ".yml", displacement_map);
   //YMLHandler::saveToMat(model->getOutputPath(), std::string("displacement_map") + ".mat", displacement_map);
@@ -327,24 +351,33 @@ void DetailSynthesis::computeDisplacementMap(ParaShape* para_shape, PolygonMesh*
                        + lambda[2] * v_normals[PolygonMesh::Vertex(v_set[id[2]])];
 
           dir.normalized();
-          Vector3f end = pos + model->getBoundBox()->getRadius() * dir;
+          Vector3f end = pos + model->getBoundBox()->getRadius() * dir / 10;
+          Vector3f neg_end = pos - model->getBoundBox()->getRadius() * dir / 10;
           double intersect_point[3];
-          Eigen::Vector3d start_pt, end_pt;
+          double neg_intersect_point[3];
+          Eigen::Vector3d start_pt, end_pt, neg_end_pt, epslon;
           start_pt << pos(0), pos(1), pos(2);
           end_pt << end(0), end(1), end(2);
-          bool is_intersected;
-          is_intersected = ray_instance.intersectModel(start_pt, end_pt, intersect_point);
-          if(is_intersected == false)
+          neg_end_pt << neg_end(0), neg_end(1), neg_end(2);
+          epslon << 1e-5, 1e-5, 1e-5;
+          bool is_intersected, is_neg_intersected;
+          is_intersected = ray_instance.intersectModel(start_pt + epslon, end_pt, intersect_point);
+          is_neg_intersected = ray_instance.intersectModel(start_pt - epslon, neg_end_pt, neg_intersect_point);
+          if(is_intersected == false && is_neg_intersected == false)
           {
             displacement_map.at<float>(resolution - y - 1,x) = 0;
           }
           else
           {
             float distance;
+            float neg_distance;
             distance = sqrt((intersect_point[0] - pos(0)) * (intersect_point[0] - pos(0)) 
                           + (intersect_point[1] - pos(1)) * (intersect_point[1] - pos(1)) 
                           + (intersect_point[2] - pos(2)) * (intersect_point[2] - pos(2)));
-            displacement_map.at<float>(resolution - y - 1,x) = distance;
+            neg_distance = sqrt((neg_intersect_point[0] - pos(0)) * (neg_intersect_point[0] - pos(0)) 
+                          + (neg_intersect_point[1] - pos(1)) * (neg_intersect_point[1] - pos(1)) 
+                          + (neg_intersect_point[2] - pos(2)) * (neg_intersect_point[2] - pos(2)));
+            displacement_map.at<float>(resolution - y - 1,x) = distance > neg_distance ? -neg_distance : distance;
           }
         }
         else
@@ -662,8 +695,8 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
 
 void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
 {
-  this->prepareDetailMap(model);
-  this->prepareFeatureMap(model);
+  //this->prepareDetailMap(model);
+  //this->prepareFeatureMap(model);
 
   //this->patchSynthesis(model);
   //this->mergeSynthesis(mesh_para->unseen_part.get(), model);
@@ -685,34 +718,39 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //src_feature_map.resize(1, cv::Mat::zeros(src_detail_map[0].rows, src_detail_map[0].cols, CV_32FC1));
   //tar_feature_map = src_feature_map;
 
-  syn_tool.reset(new SynthesisTool);
+  //syn_tool.reset(new SynthesisTool);
   //syn_tool->init(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map);
   //syn_tool->doSynthesisNew();
-  syn_tool->doSynthesisWithMask(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map, mesh_para->unseen_part->detail_map);
+  //syn_tool->doSynthesisWithMask(mesh_para->seen_part->feature_map, mesh_para->unseen_part->feature_map, mesh_para->seen_part->detail_map, mesh_para->unseen_part->detail_map);
   //syn_tool->doFilling(mesh_para->shape_patches[0].feature_map, mesh_para->shape_patches[0].detail_map);
 
   // map the synthesis to model color
   //resolution = 512;
-  std::vector<std::vector<cv::Mat> >& detail_result = syn_tool->getTargetDetail();
-  mesh_para->unseen_part->detail_map.clear();
-  mesh_para->unseen_part->detail_map.push_back(detail_result[0][0].clone());
-  mesh_para->unseen_part->detail_map.push_back(detail_result[1][0].clone());
-  mesh_para->unseen_part->detail_map.push_back(detail_result[2][0].clone());
-  mesh_para->unseen_part->detail_map.push_back(detail_result[3][0].clone());
+  //std::vector<std::vector<cv::Mat> >& detail_result = syn_tool->getTargetDetail();
+  //mesh_para->unseen_part->detail_map.clear();
+  //mesh_para->unseen_part->detail_map.push_back(detail_result[0][0].clone());
+  //mesh_para->unseen_part->detail_map.push_back(detail_result[1][0].clone());
+  //mesh_para->unseen_part->detail_map.push_back(detail_result[2][0].clone());
+  //mesh_para->unseen_part->detail_map.push_back(detail_result[3][0].clone());
   //detail_result[0][0]; // R
   //detail_result[1][0]; // G
   //detail_result[2][0]; // B
   //cv::Mat tar_displacement_map = detail_result[3][0];
 
-  applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, mesh_para->seen_part->detail_map[3]);
-  STLVectori intersect_seen_unseen; // we don't want to the crossed region move twice
-  std::set_intersection(mesh_para->unseen_part->vertex_set.begin(), mesh_para->unseen_part->vertex_set.end(),
-    mesh_para->seen_part->vertex_set.begin(), mesh_para->seen_part->vertex_set.end(),
-    std::inserter(intersect_seen_unseen, intersect_seen_unseen.begin()));
-  STLVectori real_unseen_vertex_set;
-  std::set_difference(mesh_para->unseen_part->vertex_set.begin(), mesh_para->unseen_part->vertex_set.end(),
-    intersect_seen_unseen.begin(), intersect_seen_unseen.end(), std::inserter(real_unseen_vertex_set, real_unseen_vertex_set.begin()));
-  applyDisplacementMap(real_unseen_vertex_set, mesh_para->unseen_part->cut_shape, model, mesh_para->unseen_part->detail_map[3]);
+  //cv::imshow("souorce feature", mesh_para->seen_part->feature_map[0]);
+  //cv::imshow("souorce detail", mesh_para->seen_part->detail_map[3]);
+  //cv::imshow("target feature", mesh_para->unseen_part->feature_map[0]);
+  //cv::imshow("target feature", mesh_para->unseen_part->detail_map[3]);
+
+  //applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, mesh_para->seen_part->detail_map[3]);
+  //STLVectori intersect_seen_unseen; // we don't want to the crossed region move twice
+  //std::set_intersection(mesh_para->unseen_part->vertex_set.begin(), mesh_para->unseen_part->vertex_set.end(),
+  //  mesh_para->seen_part->vertex_set.begin(), mesh_para->seen_part->vertex_set.end(),
+  //  std::inserter(intersect_seen_unseen, intersect_seen_unseen.begin()));
+  //STLVectori real_unseen_vertex_set;
+  //std::set_difference(mesh_para->unseen_part->vertex_set.begin(), mesh_para->unseen_part->vertex_set.end(),
+  //  intersect_seen_unseen.begin(), intersect_seen_unseen.end(), std::inserter(real_unseen_vertex_set, real_unseen_vertex_set.begin()));
+  //applyDisplacementMap(real_unseen_vertex_set, mesh_para->unseen_part->cut_shape, model, mesh_para->unseen_part->detail_map[3]);
   //cv::Mat load_img = cv::imread(model->getDataPath() + "/syntext/0.9-.png");
   //cv::Mat syn_ref_ext;
   //if (load_img.data != NULL)
@@ -882,7 +920,7 @@ void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
   //cv::merge(&output_detail[0], 3, tar_detail);
   //cv::minMaxLoc(tar_detail,&min,&max);
   //cv::imshow("result", (tar_detail - min) / (max - min));
-  
+  std::cout << "FINISHED!" << std::endl;
 }
 
 void DetailSynthesis::computeVectorField(std::shared_ptr<Model> model)
@@ -1123,7 +1161,11 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-  //this->prepareDetailMap(src_model);
+  this->prepareDetailMap(src_model);
+  NormalTransfer normal_transfer;
+  std::string normal_file_name = "smoothed_normal";
+  normal_transfer.prepareNewNormal(src_model, normal_file_name);
+  std::cout<<"test4"<< std::endl;
   //this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
 
   //cv::FileStorage fs2(src_model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
@@ -1214,7 +1256,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::merge(result_detail, result_reflectance);
   double min,max;
   cv::minMaxLoc(result_reflectance,&min,&max);
-  result_reflectance = result_reflectance / normalize_max;
+  if (normalize_max < 0) result_reflectance = result_reflectance / max;
+  else result_reflectance = result_reflectance / normalize_max;
   cv::Mat result_displacement = syn_tool->getTargetDetail()[3][0].clone();
 
   cv::imwrite(tar_model->getOutputPath() + "/reflectance.png", result_reflectance*255);
@@ -1222,4 +1265,5 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::cout << "transfer finished." << std::endl;
 
   // 6. fill the detail map of tar_model
+  this->startDetailSynthesis(src_model);
 }

@@ -34,6 +34,8 @@ namespace ShapeUtility
 
   void matToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model);
 
+  void heightToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model);
+
   void getFaceInPatchByFaceInMesh(int f_id, std::vector<ParaShape>& patches, int& f_id_patch, int& patch_id);
   
   // test if two points lie on two side of a line

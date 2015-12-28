@@ -23,7 +23,7 @@ NormalTransfer::~NormalTransfer()
 
 }
 
-void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
+void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string normal_file_name)
 {
   // build new normal list for deformation
   // for all visible faces in the image, we set a new normal
@@ -36,8 +36,8 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
 
   cv::Mat photo_normal;
 
-  cv::FileStorage fs(model->getDataPath() + "/normal.xml", cv::FileStorage::READ);
-  fs["normal"] >> photo_normal;
+  cv::FileStorage fs(model->getDataPath() + "/" + normal_file_name.c_str() + ".xml", cv::FileStorage::READ);
+  fs[normal_file_name.c_str()] >> photo_normal;
   cv::imshow("normal_img", photo_normal);
 
   // the origin of coordinate system of normal image
@@ -84,6 +84,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
 
   std::vector<int> faces_in_photo;
   std::vector<Vector3f> faces_new_normal;
+  int count = 0;
   for (iter_map = normal_map.begin(); iter_map != normal_map.end(); ++iter_map)
   {
     faces_in_photo.push_back(iter_map->first);
@@ -92,10 +93,16 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
     Vector3f start;
     model->getShapeFaceCenter(iter_map->first, start.data());
     Vector3f end = iter_map->second.normalized();
-    end = start + 0.1*end;
-    actors[2].addElement(start[0], start[1], start[2], 1.0, 0.0, 0.0);
-    actors[2].addElement(end[0], end[1], end[2], 1.0, 0.0, 0.0);
+    end = start + 1*end;
+    //if(count % 10 == 0)
+    {
+      actors[0].addElement(start[0], start[1], start[2], 0.0, 1.0, 1.0);
+      actors[2].addElement(start[0], start[1], start[2], 1.0, 0.0, 0.0);
+      actors[2].addElement(end[0], end[1], end[2], 1.0, 0.0, 0.0);
+    }
+    count ++;
   }
+  
 
   NormalList new_normals;// = model->getShapeFaceNormal();
   for (size_t i = 0; i < faces_in_photo.size(); ++i)
@@ -162,8 +169,8 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model)
 
   model->updateShape(new_vertex_list);
   // map new texture
-  model->updateColor(); // this is for build uv coordinates
-  model->updateSHColor();
+  //model->updateColor(); // this is for build uv coordinates
+  //model->updateSHColor();
 
   std::cout << "Update geometry finished...\n";
 }
