@@ -23,7 +23,7 @@ SynthesisTool::SynthesisTool()
   best_random_size = 5;
   patch_size = 10;
   bias_rate = 0.1;
-  lamd_occ = 0.0;
+  lamd_occ = 0.01;
   max_iter = 5;
 }
 
@@ -1033,6 +1033,8 @@ void SynthesisTool::doSynthesisNew()
     this->exportSrcFeature(gpsrc_feature, l);
     this->exportTarFeature(gptar_feature, l);
     this->exportSrcDetail(gpsrc_detail, l, 0);
+
+
 
     if(l == levels - 1)
     {

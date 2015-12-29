@@ -193,15 +193,15 @@ void DetailSynthesis::computeFeatureMap(ParaShape* para_shape, std::vector<std::
       feature_map[2].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
     }
   }
-  double max1,min1,max2,min2,max3,min3,max4,min4,max5,min5,max6,min6,max7,min7,max8,min8;
-  cv::minMaxLoc(para_shape->feature_map[0],&min1,&max1);
-  cv::minMaxLoc(para_shape->feature_map[1],&min2,&max2);
-  cv::minMaxLoc(para_shape->feature_map[2],&min3,&max3);
-  cv::minMaxLoc(para_shape->feature_map[3],&min4,&max4);
-  cv::minMaxLoc(para_shape->feature_map[4],&min5,&max5);
-  cv::minMaxLoc(para_shape->feature_map[5],&min6,&max6);
-  cv::minMaxLoc(para_shape->feature_map[6],&min7,&max7);
-  cv::minMaxLoc(para_shape->feature_map[7],&min8,&max8);
+
+  std::cout << "feature min max: " << std::endl;
+  for (size_t i = 0; i < para_shape->feature_map.size(); ++i)
+  {
+    double min, max;
+    cv::minMaxLoc(para_shape->feature_map[i],&min,&max);
+    std::cout << min << " " << max << " ";
+  }
+  std::cout << std::endl;
 }
 
 void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
@@ -542,6 +542,15 @@ void DetailSynthesis::computeDetailMap(ParaShape* para_shape, std::vector<cv::Ma
     para_shape->filled = 0;
     para_shape->fill_ratio = float(n_filled_pixel) / (resolution * resolution);
   }
+
+  std::cout << "detail min max: " << std::endl;
+  for (size_t i = 0; i < para_shape->detail_map.size(); ++i)
+  {
+    double min, max;
+    cv::minMaxLoc(para_shape->detail_map[i],&min,&max);
+    std::cout << min << " " << max << " ";
+  }
+  std::cout << std::endl;
 }
 
 //old one, useless 
@@ -1296,14 +1305,6 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //mesh_para->seen_part->detail_map.push_back(displacement_map.clone());
 
   // 5. do synthesis
-  {
-    double min_test, max_test;
-    for (size_t i = 0; i < mesh_para->seen_part->detail_map.size(); ++i)
-    {
-      cv::minMaxLoc(mesh_para->seen_part->detail_map[i], &min_test, &max_test);
-      std::cout << "Source Detail Dim " << i << ": " << min_test << "\t" << max_test << std::endl;
-    }
-  }
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
   syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
