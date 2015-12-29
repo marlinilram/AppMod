@@ -41,17 +41,17 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
   PolygonMesh poly_mesh;
   ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);*/
 
-  cv::FileStorage fs1(model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
-  cv::Mat smoothed_output_height;
-  fs1["smoothed_output_height"] >> smoothed_output_height;
-  PolygonMesh smoothed_output_height_mesh;
-  ShapeUtility::heightToMesh(smoothed_output_height, smoothed_output_height_mesh, model); // generate the displacement mesh
+  //cv::FileStorage fs1(model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
+  //cv::Mat smoothed_output_height;
+  //fs1["smoothed_output_height"] >> smoothed_output_height;
+  //PolygonMesh smoothed_output_height_mesh;
+  //ShapeUtility::heightToMesh(smoothed_output_height, smoothed_output_height_mesh, model); // generate the displacement mesh
 
-  cv::FileStorage fs2(model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
-  cv::Mat final_height;
-  fs2["final_height"] >> final_height;
-  PolygonMesh final_height_mesh;
-  ShapeUtility::heightToMesh(final_height, final_height_mesh, model); // generate the displacement mesh
+  //cv::FileStorage fs2(model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  //cv::Mat final_height;
+  //fs2["final_height"] >> final_height;
+  //PolygonMesh final_height_mesh;
+  //ShapeUtility::heightToMesh(final_height, final_height_mesh, model); // generate the displacement mesh
 
   mesh_para.reset(new MeshParameterization);
 
@@ -209,6 +209,11 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   cv::Mat displacement_mat;
   fs2["displacement"] >> displacement_mat;
+  //{
+  //  double n_disp_min, n_disp_max;
+  //  cv::minMaxLoc(displacement_mat, &n_disp_min, &n_disp_max);
+  //  displacement_mat = (displacement_mat - n_disp_min) / (n_disp_max - n_disp_min);
+  //}
 
   std::vector<cv::Mat> detail_image(3);
   cv::split(detail_reflectance_mat, &detail_image[0]);
@@ -1168,12 +1173,28 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
+  this->testMeshPara(src_model);
   this->prepareDetailMap(src_model);
-  NormalTransfer normal_transfer;
-  std::string normal_file_name = "smoothed_normal";
-  normal_transfer.prepareNewNormal(src_model, normal_file_name);
-  std::cout<<"test4"<< std::endl;
+  //NormalTransfer normal_transfer;
+  //std::string normal_file_name = "smoothed_normal";
+  //normal_transfer.prepareNewNormal(src_model, normal_file_name);
+  //std::cout<<"test4"<< std::endl;
   //this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
+
+  {
+    // try some real image
+    //cv::Mat load_img = cv::imread(tar_model->getDataPath() + "/0.9-.png");
+    //cv::Mat syn_ref_ext;
+    //if (load_img.data != NULL)
+    //{
+    //  load_img.convertTo(syn_ref_ext, CV_32FC3);
+    //  syn_ref_ext = syn_ref_ext / 255.0;
+    //}
+    //mesh_para->seen_part->detail_map.clear();
+    //mesh_para->seen_part->detail_map.resize(3);
+    //cv::split(syn_ref_ext, &mesh_para->seen_part->detail_map[0]);
+    //this->resolution = 375;
+  }
 
   //cv::FileStorage fs2(src_model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
   //cv::Mat displacement_mat;
@@ -1183,10 +1204,10 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 2. second we need to compute the geometry feature on deformed src_model and tar_model;
   // normalized height, curvature, directional occlusion, surface normal
   ShapeUtility::computeNormalizedHeight(src_model);
-  ShapeUtility::computeDirectionalOcclusion(src_model);
+  //ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
-  ShapeUtility::computeDirectionalOcclusion(tar_model);
+  //ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
 
   // 3. third do CCA, skip for now
@@ -1296,4 +1317,6 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 
   // 6. fill the detail map of tar_model
   this->startDetailSynthesis(src_model);
+
+  cv::imwrite(src_model->getOutputPath() + "/displacement.png", 255*mesh_para->seen_part->detail_map[3]);
 }

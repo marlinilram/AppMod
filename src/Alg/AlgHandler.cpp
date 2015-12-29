@@ -138,7 +138,6 @@ void AlgHandler::doDetailSynthesis()
   //{
   //  return;
   //}
-  detail_synthesis->testMeshPara(shape_model);
   //detail_synthesis->testShapePlane(shape_model);
   /*shape_model->exportOBJ(0);
   doNormalTransfer();

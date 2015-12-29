@@ -630,8 +630,8 @@ void SynthesisTool::exportNNF(NNF& nnf, ImagePyramidVec& gptar, int level, int i
   {
     for (int j = 0; j < nnf_width; ++j)
     {
-      float x = nnf[i * nnf_height + j].first;
-      float y = nnf[i * nnf_height + j].second;
+      float x = nnf[i * nnf_width + j].first;
+      float y = nnf[i * nnf_width + j].second;
       nnf_img.at<cv::Vec3f>(i, j) = cv::Vec3f(0.0f, y / height, x / width);
     }
   }

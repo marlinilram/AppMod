@@ -21,8 +21,10 @@ SynthesisTool::SynthesisTool()
 
   candidate_size = 20;
   best_random_size = 5;
-  patch_size = 5;
-  bias_rate = 0.25;
+  patch_size = 10;
+  bias_rate = 0.1;
+  lamd_occ = 0.0;
+  max_iter = 5;
 }
 
 void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail)
@@ -82,10 +84,13 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
 
 void SynthesisTool::generatePyramid(std::vector<cv::Mat>& pyr, int level)
 {
+  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 35, 1.0 / float(level - 1)); // minimal size 35 * 35
   for (int i = 1; i < level; ++i)
   {
     cv::Mat dst;
-    cv::pyrDown(pyr[i - 1], dst, cv::Size(pyr[i - 1].cols / 2, pyr[i - 1].rows / 2));
+    cv::Size d_size(float(pyr[i - 1].cols) / py_scale, float(pyr[i - 1].rows) / py_scale);
+    //cv::pyrDown(pyr[i - 1], dst, d_size);
+    cv::resize(pyr[i - 1], dst, d_size);
     pyr.push_back(dst);
   }
 }
@@ -1033,7 +1038,7 @@ void SynthesisTool::doSynthesisNew()
     {
       this->initializeNNF(gptar_detail[0], nnf, l);
       this->initializeTarDetail(gptar_detail, l);
-      for (int i_iter = 0; i_iter < 5; ++i_iter)
+      for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
         std::vector<float> ref_cnt(width * height, 0.0);
         //if (i_iter % 2 == 0)
@@ -1055,13 +1060,14 @@ void SynthesisTool::doSynthesisNew()
 
       for (int k = 0; k < gptar_detail.size(); ++k)
       {
-        cv::pyrUp(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
+        //cv::pyrUp(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
+        cv::resize(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
       }
 
       std::vector<Point2D> nnf_new;
       this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
       nnf.swap(nnf_new);
-      for (int i_iter = 0; i_iter < 3; ++i_iter)
+      for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
         std::vector<float> ref_cnt(width * height, 0.0);
         //if (i_iter % 2 == 0)
@@ -1119,18 +1125,19 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_l
   int last_nnf_width = (last_width - this->patch_size + 1);
   nnf_new.clear();
   nnf_new.resize(nnf_height * nnf_width);
+  float scale = float(height) / last_height;
 
   for (int i = 0; i < nnf_height; ++i)
   {
     for (int j = 0; j < nnf_width; ++j)
     {
-      int i_last = (i / 2);
-      int j_last = (j / 2);
+      int i_last = (i / scale);
+      int j_last = (j / scale);
       i_last = (i_last >= last_nnf_height) ? (last_nnf_height - 1) : i_last;
       j_last = (j_last >= last_nnf_width) ? (last_nnf_width - 1) : j_last;
       Point2D patch = nnf_last[i_last * last_nnf_width + j_last];
-      patch.first = 2 * (patch.first);
-      patch.second = 2 * (patch.second);
+      patch.first = scale * (patch.first);
+      patch.second = scale * (patch.second);
       patch.first = (patch.first >= nnf_width) ? (nnf_width - 1) : patch.first;
       patch.second = (patch.second >= nnf_height) ? (nnf_height - 1) : patch.second;
       nnf_new[i * nnf_width + j] = patch;
@@ -1465,7 +1472,7 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   //if (d_f < 0.001)  lambda_d_f = 1, lambda_d_d = 0;
   //else  lambda_d_f = 0, lambda_d_d = 1;
   beta = 1.0 / (1 + exp(5 * (d_f - 0.5)));
-  d = beta * d_f + (1 - beta) * d_d + 0.01*d_occ;// + lambda_d_d * d_d + d_occ;
+  d =  beta * d_f + (1 - beta) * d_d + lamd_occ * d_occ;// + lambda_d_d * d_d + d_occ;
   return d;
 }
 
@@ -1533,7 +1540,7 @@ void SynthesisTool::votePixel(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d
       {
         float cur_val = gpsrc_d[k][level].at<float>(patch.second + i, patch.first + j);
         final_val[k] += cur_val;
-        int bin_id = (cur_val >= 1.0) ? (10 - 1) : (cur_val * 10);
+        int bin_id = std::max(0, std::min(9, int(cur_val * 10)));
         bins_cnt[k][bin_id] += 1;
         bins_acc[k][bin_id] += cur_val;
       }
@@ -1574,4 +1581,4 @@ void SynthesisTool::updateRefCount(STLVectorf& ref_cnt, Point2D& best_patch, Ima
       ref_cnt[(best_patch.second + i) * gpsrc_d[0][level].cols + best_patch.first + j] += 1.0;
     }
   }
-}
+};

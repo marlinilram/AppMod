@@ -117,6 +117,9 @@ private:
   int best_random_size;
   int patch_size;
   double bias_rate;
+  double lamd_occ;
+  int max_iter;
+  float py_scale;
   std::vector<cv::Size> NeighborRange;
 
   std::vector<ImagePyramid> gpsrc_feature;
