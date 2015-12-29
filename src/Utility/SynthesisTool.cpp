@@ -22,6 +22,9 @@ SynthesisTool::SynthesisTool()
   candidate_size = 20;
   best_random_size = 5;
   patch_size = 10;
+  bias_rate = 0.1;
+  lamd_occ = 0.0;
+  max_iter = 5;
 }
 
 void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail)
@@ -81,10 +84,13 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
 
 void SynthesisTool::generatePyramid(std::vector<cv::Mat>& pyr, int level)
 {
+  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 35, 1.0 / float(level - 1)); // minimal size 35 * 35
   for (int i = 1; i < level; ++i)
   {
     cv::Mat dst;
-    cv::pyrDown(pyr[i - 1], dst, cv::Size(pyr[i - 1].cols / 2, pyr[i - 1].rows / 2));
+    cv::Size d_size(float(pyr[i - 1].cols) / py_scale, float(pyr[i - 1].rows) / py_scale);
+    //cv::pyrDown(pyr[i - 1], dst, d_size);
+    cv::resize(pyr[i - 1], dst, d_size);
     pyr.push_back(dst);
   }
 }
@@ -1024,22 +1030,29 @@ void SynthesisTool::doSynthesisNew()
     int width = gptar_detail[0].at(l).cols;
     int height = gptar_detail[0].at(l).rows;
 
+    this->exportSrcFeature(gpsrc_feature, l);
+    this->exportTarFeature(gptar_feature, l);
+    this->exportSrcDetail(gpsrc_detail, l, 0);
+
     if(l == levels - 1)
     {
       this->initializeNNF(gptar_detail[0], nnf, l);
       this->initializeTarDetail(gptar_detail, l);
-      for (int i_iter = 0; i_iter < 5; ++i_iter)
+      for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
         std::vector<float> ref_cnt(width * height, 0.0);
-        if (i_iter % 2 == 0)
+        //if (i_iter % 2 == 0)
         {
-          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 0);
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 1);
         }
-        else
-        {
-          this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
-        }
+        //else
+        //{
+          //this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        //}
         this->voteImage(gpsrc_detail, gptar_detail, nnf, l);
+        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportTarDetail(gptar_detail, l, i_iter);
       }
     }
     else
@@ -1047,24 +1060,28 @@ void SynthesisTool::doSynthesisNew()
 
       for (int k = 0; k < gptar_detail.size(); ++k)
       {
-        cv::pyrUp(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
+        //cv::pyrUp(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
+        cv::resize(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
       }
 
       std::vector<Point2D> nnf_new;
       this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
       nnf.swap(nnf_new);
-      for (int i_iter = 0; i_iter < 3; ++i_iter)
+      for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
         std::vector<float> ref_cnt(width * height, 0.0);
-        if (i_iter % 2 == 0)
+        //if (i_iter % 2 == 0)
         {
-          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 0);
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 1);
         }
-        else
-        {
-          this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
-        }
+        //else
+        //{
+        //  this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        //}
         this->voteImage(gpsrc_detail, gptar_detail, nnf, l);
+        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportTarDetail(gptar_detail, l, i_iter);
       }
     }
 
@@ -1108,18 +1125,19 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_l
   int last_nnf_width = (last_width - this->patch_size + 1);
   nnf_new.clear();
   nnf_new.resize(nnf_height * nnf_width);
+  float scale = float(height) / last_height;
 
   for (int i = 0; i < nnf_height; ++i)
   {
     for (int j = 0; j < nnf_width; ++j)
     {
-      int i_last = (i / 2);
-      int j_last = (j / 2);
+      int i_last = (i / scale);
+      int j_last = (j / scale);
       i_last = (i_last >= last_nnf_height) ? (last_nnf_height - 1) : i_last;
       j_last = (j_last >= last_nnf_width) ? (last_nnf_width - 1) : j_last;
       Point2D patch = nnf_last[i_last * last_nnf_width + j_last];
-      patch.first = 2 * (patch.first);
-      patch.second = 2 * (patch.second);
+      patch.first = scale * (patch.first);
+      patch.second = scale * (patch.second);
       patch.first = (patch.first >= nnf_width) ? (nnf_width - 1) : patch.first;
       patch.second = (patch.second >= nnf_height) ? (nnf_height - 1) : patch.second;
       nnf_new[i * nnf_width + j] = patch;
@@ -1172,7 +1190,7 @@ void SynthesisTool::getRandomPosition(std::vector<Point2D>& random_set, int n_se
 
 void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
   ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
-  NNF& nnf, std::vector<float>& ref_cnt, int level)
+  NNF& nnf, std::vector<float>& ref_cnt, int level, int iter)
 {
   // update nnf based on current nnf, random position and position nearby
   int height = gptar_d[0][level].rows;
@@ -1180,57 +1198,127 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
   int nnf_height = (height - this->patch_size + 1);
   int nnf_width  = (width - this->patch_size + 1);
 
-  // deal with the left upper corner
-  std::vector<Point2D> rand_pos;
-  this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
-  int offset = 0 * nnf_width + 0;
-  Point2D best_patch;
-  rand_pos.push_back(nnf[offset]);
-  this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(0, 0), rand_pos, best_patch);
-  nnf[offset] = best_patch;
+  //// deal with the left upper corner
+  //{
+  //  std::vector<Point2D> rand_pos;
+  //  this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+  //  int offset = 0 * nnf_width + 0;
+  //  Point2D best_patch;
+  //  rand_pos.push_back(nnf[offset]);
+  //  this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(0, 0), rand_pos, best_patch);
+  //  nnf[offset] = best_patch;
+  //  this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
+  //}
 
-  // deal with first row
-  for (int j = 1; j < nnf_width; ++j)
+  //// deal with first row
+  //for (int j = 1; j < nnf_width; ++j)
+  //{
+  //  std::vector<Point2D> rand_pos;
+  //  int offset = 0 * nnf_width + j;
+  //  this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+  //  Point2D best_rand;
+  //  double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, 0), rand_pos, best_rand);
+  //  Point2D left_nnf = nnf[j - 1];
+  //  left_nnf.first = (left_nnf.first + 1) >= nnf_width ? (nnf_width - 1) : (left_nnf.first + 1);
+  //  rand_pos.clear();
+  //  rand_pos.push_back(left_nnf);
+  //  rand_pos.push_back(nnf[offset]);
+  //  Point2D best_bias;
+  //  double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, 0), rand_pos, best_bias);
+  //  if (d_best_rand < (bias_rate * d_best_bias))
+  //  {
+  //    nnf[offset] = best_rand;
+  //  }
+  //  else
+  //  {
+  //    nnf[offset] = best_bias;
+  //  }
+  //  this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
+  //}
+
+  //// deal with first col
+  //for (int i = 1; i < nnf_height; ++i)
+  //{
+  //  std::vector<Point2D> rand_pos;
+  //  int offset = i * nnf_width + 0;
+  //  this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+  //  Point2D best_rand;
+  //  double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(0, i), rand_pos, best_rand);
+  //  Point2D up_nnf = nnf[(i - 1) * nnf_width];
+  //  up_nnf.second = (up_nnf.second + 1) >= nnf_height ? (nnf_height - 1) : (up_nnf.second + 1);
+  //  rand_pos.clear();
+  //  rand_pos.push_back(up_nnf);
+  //  rand_pos.push_back(nnf[offset]);
+  //  Point2D best_bias;
+  //  double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(0, i), rand_pos, best_bias);
+  //  if (d_best_rand < (bias_rate * d_best_bias))
+  //  {
+  //    nnf[offset] = best_rand;
+  //  }
+  //  else
+  //  {
+  //    nnf[offset] = best_bias;
+  //  }
+  //  this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
+  //}
+
+  int istart = 0, iend = nnf_height, ichange = 1;
+  int jstart = 0, jend = nnf_width, jchange = 1;
+  if (iter % 2 == 1)
   {
-    offset = 0 * nnf_width + j;
-    this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
-    Point2D left_nnf = nnf[j - 1];
-    left_nnf.first = (left_nnf.first + 1) >= nnf_width ? (nnf_width - 1) : (left_nnf.first + 1);
-    rand_pos.push_back(left_nnf);
-    rand_pos.push_back(nnf[offset]);
-    this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, 0), rand_pos, best_patch);
-    nnf[offset] = best_patch;
+    istart = iend - 1; iend = -1; ichange = -1;
+    jstart = jend - 1; jend = -1; jchange = -1;
   }
 
-  // deal with first col
-  for (int i = 1; i < nnf_height; ++i)
-  {
-    offset = i * nnf_width + 0;
-    this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
-    Point2D up_nnf = nnf[(i - 1) * nnf_width];
-    up_nnf.second = (up_nnf.second + 1) >= nnf_height ? (nnf_height - 1) : (up_nnf.second + 1);
-    rand_pos.push_back(up_nnf);
-    rand_pos.push_back(nnf[offset]);
-    this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(0, i), rand_pos, best_patch);
-    nnf[offset] = best_patch;
-  }
 
   // deal with all pixels left
-  for (int i = 1; i < nnf_height; ++i)
+  for (int i = istart; i != iend; i += ichange)
   {
-    for (int j = 1; j < nnf_width; ++j)
+    for (int j = jstart; j != jend; j += jchange)
     {
-      offset = i * nnf_width + j;
+      std::vector<Point2D> rand_pos;
+      int offset = i * nnf_width + j;
+      
+      // random search
       this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
-      Point2D left_nnf = nnf[i * nnf_width + j - 1];
-      left_nnf.first = (left_nnf.first + 1) >= nnf_width ? (nnf_width - 1) : (left_nnf.first + 1);
-      Point2D up_nnf = nnf[(i - 1) * nnf_width + j];
-      up_nnf.second = (up_nnf.second + 1) >= nnf_height ? (nnf_height - 1) : (up_nnf.second + 1);
-      rand_pos.push_back(left_nnf);
-      rand_pos.push_back(up_nnf);
+      Point2D best_rand;
+      double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_rand);
+      
+      // propagation
+      rand_pos.clear();
+      // left
+      if ((unsigned)(j - jchange) < (unsigned)nnf_width)
+      {
+        Point2D left_nnf = nnf[i * nnf_width + j - jchange];
+        if ((unsigned)(left_nnf.first + jchange) < unsigned(nnf_width))
+        {
+          left_nnf.first = left_nnf.first + jchange;
+          rand_pos.push_back(left_nnf);
+        }
+      }
+      // up
+      if ((unsigned)(i - ichange) < (unsigned)nnf_height)
+      {
+        Point2D up_nnf = nnf[(i - ichange) * nnf_width + j];
+        if ((unsigned)(up_nnf.second + ichange) < unsigned(nnf_height))
+        {
+          up_nnf.second = (up_nnf.second + ichange);
+          rand_pos.push_back(up_nnf);
+        }
+      }
+      Point2D best_bias;
       rand_pos.push_back(nnf[offset]);
-      this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_patch);
-      nnf[offset] = best_patch;
+      double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_bias);
+
+      if (d_best_rand < (bias_rate * d_best_bias))
+      {
+        nnf[offset] = best_rand;
+      }
+      else
+      {
+        nnf[offset] = best_bias;
+      }
+      this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
     }
   }
 }
@@ -1244,38 +1332,67 @@ void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& 
   int nnf_width  = (width - this->patch_size + 1);
 
   // deal with the right bottom corner
-  std::vector<Point2D> rand_pos;
-  this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width); // TODO: random sample in a more local region
-  int offset = (nnf_height - 1) * nnf_width + (nnf_width - 1);
-  Point2D best_patch;
-  rand_pos.push_back(nnf[offset]);
-  this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(nnf_width - 1, nnf_height - 1), rand_pos, best_patch);
-  nnf[offset] = best_patch;
+  {
+    std::vector<Point2D> rand_pos;
+    this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width); // TODO: random sample in a more local region
+    int offset = (nnf_height - 1) * nnf_width + (nnf_width - 1);
+    Point2D best_patch;
+    rand_pos.push_back(nnf[offset]);
+    this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(nnf_width - 1, nnf_height - 1), rand_pos, best_patch);
+    nnf[offset] = best_patch;
+    this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
+  }
 
   // deal with first row
   for (int j = nnf_width - 2; j >= 0; --j)
   {
-    offset = (nnf_height - 1) * nnf_width + j;
+    std::vector<Point2D> rand_pos;
+    int offset = (nnf_height - 1) * nnf_width + j;
     this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+    Point2D best_rand;
+    double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, nnf_height - 1), rand_pos, best_rand);
     Point2D right_nnf = nnf[(nnf_height - 1) * nnf_width + j + 1];
     right_nnf.first = (right_nnf.first - 1) < 0 ? 0 : (right_nnf.first - 1);
+    rand_pos.clear();
     rand_pos.push_back(right_nnf);
     rand_pos.push_back(nnf[offset]);
-    this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, nnf_height - 1), rand_pos, best_patch);
-    nnf[offset] = best_patch;
+    Point2D best_bias;
+    double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, nnf_height - 1), rand_pos, best_bias);
+    if (d_best_rand < (bias_rate * d_best_bias))
+    {
+      nnf[offset] = best_rand;
+    }
+    else
+    {
+      nnf[offset] = best_bias;
+    }
+    this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
   }
 
   // deal with first col
   for (int i = nnf_height - 2; i >= 0; --i)
   {
-    offset = i * nnf_width + (nnf_width - 1);
+    std::vector<Point2D> rand_pos;
+    int offset = i * nnf_width + (nnf_width - 1);
     this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+    Point2D best_rand;
+    double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(nnf_width - 1, i), rand_pos, best_rand);
     Point2D down_nnf = nnf[(i + 1) * nnf_width + nnf_width - 1];
     down_nnf.second = (down_nnf.second - 1) < 0 ? 0 : (down_nnf.second - 1);
+    rand_pos.clear();
     rand_pos.push_back(down_nnf);
     rand_pos.push_back(nnf[offset]);
-    this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(nnf_width - 1, i), rand_pos, best_patch);
-    nnf[offset] = best_patch;
+    Point2D best_bias;
+    double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(nnf_width - 1, i), rand_pos, best_bias);
+    if (d_best_rand < (bias_rate * d_best_bias))
+    {
+      nnf[offset] = best_rand;
+    }
+    else
+    {
+      nnf[offset] = best_bias;
+    }
+    this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
   }
 
   // deal with all pixels left
@@ -1283,17 +1400,30 @@ void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& 
   {
     for (int j = nnf_width - 2; j >= 0; --j)
     {
-      offset = i * nnf_width + j;
+      std::vector<Point2D> rand_pos;
+      int offset = i * nnf_width + j;
       this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+      Point2D best_rand;
+      double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_rand);
       Point2D right_nnf = nnf[i * nnf_width + j + 1];
       right_nnf.first = (right_nnf.first - 1) < 0 ? 0 : (right_nnf.first - 1);
       Point2D down_nnf = nnf[(i + 1) * nnf_width + j];
       down_nnf.second = (down_nnf.second - 1) < 0 ? 0 : (down_nnf.second - 1);
+      rand_pos.clear();
       rand_pos.push_back(right_nnf);
       rand_pos.push_back(down_nnf);
       rand_pos.push_back(nnf[offset]);
-      this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_patch);
-      nnf[offset] = best_patch;
+      Point2D best_bias;
+      double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_bias);
+      if (d_best_rand < (bias_rate * d_best_bias))
+      {
+        nnf[offset] = best_rand;
+      }
+      else
+      {
+        nnf[offset] = best_bias;
+      }
+      this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
     }
   }
 }
@@ -1342,11 +1472,11 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   //if (d_f < 0.001)  lambda_d_f = 1, lambda_d_d = 0;
   //else  lambda_d_f = 0, lambda_d_d = 1;
   beta = 1.0 / (1 + exp(5 * (d_f - 0.5)));
-  d = beta * d_f + (1 - beta) * d_d + 0.01*d_occ;// + lambda_d_d * d_d + d_occ;
+  d =  beta * d_f + (1 - beta) * d_d + lamd_occ * d_occ;// + lambda_d_d * d_d + d_occ;
   return d;
 }
 
-void SynthesisTool::bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+double SynthesisTool::bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
   ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
   std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch)
 {
@@ -1363,14 +1493,8 @@ void SynthesisTool::bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gp
   }
   best_patch = srcPatches[best_id];
 
-  // add the reference count to each pixel
-  for (int i = 0; i < this->patch_size; ++i)
-  {
-    for (int j = 0; j < this->patch_size; ++j)
-    {
-      ref_cnt[(best_patch.second + i) * gpsrc_d[0][level].cols + best_patch.first + j] += 1.0;
-    }
-  }
+
+  return min_dist;
 }
 
 void SynthesisTool::voteImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, int level)
@@ -1398,6 +1522,8 @@ void SynthesisTool::votePixel(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d
   int ddim = (int)gptar_d.size();
   std::vector<float> final_val(ddim, 0.0);
   int n_pixel = 0;
+  std::vector<std::vector<float> > bins_acc(ddim, std::vector<float>(10, 0));
+  std::vector<std::vector<int> > bins_cnt(ddim, std::vector<int>(10, 0));
 
   for (int i = 0; i < this->patch_size; ++i)
   {
@@ -1412,14 +1538,47 @@ void SynthesisTool::votePixel(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d
       // get the value of corresponding position
       for (int k = 0; k < ddim; ++k)
       {
-        final_val[k] += gpsrc_d[k][level].at<float>(patch.second + i, patch.first + j);
+        float cur_val = gpsrc_d[k][level].at<float>(patch.second + i, patch.first + j);
+        final_val[k] += cur_val;
+        int bin_id = std::max(0, std::min(9, int(cur_val * 10)));
+        bins_cnt[k][bin_id] += 1;
+        bins_acc[k][bin_id] += cur_val;
       }
       ++n_pixel;
     }
   }
+
+  // assume all values are between 0~1
+  //for (size_t i = 0; i < bins_cnt.size(); ++i)
+  //{
+  //  int most = bins_cnt[i][0];
+  //  int most_bin_id = 0;
+  //  for (size_t j = 1; j < bins_cnt[i].size(); ++j)
+  //  {
+  //    if (bins_cnt[i][j] > most)
+  //    {
+  //      most = bins_cnt[i][j];
+  //      most_bin_id = j;
+  //    }
+  //  }
+  //  gptar_d[i][level].at<float>(tarPos.second, tarPos.first) = bins_acc[i][most_bin_id] / bins_cnt[i][most_bin_id];
+  //}
+
 
   for (int k = 0; k < ddim; ++k)
   {
     gptar_d[k][level].at<float>(tarPos.second, tarPos.first) = final_val[k] / n_pixel;
   }
 }
+
+void SynthesisTool::updateRefCount(STLVectorf& ref_cnt, Point2D& best_patch, ImagePyramidVec& gpsrc_d, int level)
+{
+  // add the reference count to each pixel
+  for (int i = 0; i < this->patch_size; ++i)
+  {
+    for (int j = 0; j < this->patch_size; ++j)
+    {
+      ref_cnt[(best_patch.second + i) * gpsrc_d[0][level].cols + best_patch.first + j] += 1.0;
+    }
+  }
+};

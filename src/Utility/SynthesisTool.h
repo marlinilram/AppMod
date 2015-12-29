@@ -42,6 +42,16 @@ public:
   void doImageSynthesis(std::vector<cv::Mat>& src_detail);
   inline std::vector<ImagePyramid>& getTargetDetail(){ return gptar_detail; };
 
+  void setExportPath(std::string& path_in) { outputPath = path_in; };
+  void exportFeature(cv::Mat& f_mat, std::string fname);
+  void exportSrcFeature(ImagePyramidVec& gpsrc, int level);
+  void exportTarFeature(ImagePyramidVec& gptar, int level);
+  void exportRelfectance(cv::Mat& r, cv::Mat& g, cv::Mat& b, std::string fname);
+  void exportDisplacement(cv::Mat& d_mat, std::string fname);
+  void exportSrcDetail(ImagePyramidVec& gpsrc, int level, int iter);
+  void exportTarDetail(ImagePyramidVec& gptar, int level, int iter);
+  void exportNNF(NNF& nnf, ImagePyramidVec& gptar, int level, int iter);
+
 private:
   void generatePyramid(ImagePyramid& pyr, int level);
   void findCandidates(std::vector<ImagePyramid>& gpsrc, std::vector<ImagePyramid>& gptar, int level, int pointX, int pointY, std::set<distance_position>& candidates);
@@ -75,14 +85,14 @@ private:
   void votePixel(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, int level, Point2D& tarPos);
   void updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
                  ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
-                 NNF& nnf, std::vector<float>& ref_cnt, int level);
+                 NNF& nnf, std::vector<float>& ref_cnt, int level, int iter = 0);
   void updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
     ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
     NNF& nnf, std::vector<float>& ref_cnt, int level);
   double distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
                    ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
                    std::vector<float>& ref_cnt, int level, Point2D& srcPatch, Point2D& tarPatch);
-  void bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+  double bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
                       ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
                       std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch);
 
@@ -99,12 +109,17 @@ private:
   void voteFillingImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, std::vector<int>& pixel_mask, int level);
   void initializeFillingUpTarDetail(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, std::vector<int>& pixel_mask, int level);
   bool validPatchWithMask(Point2D& patch_pos, std::vector<int>& patch_mask, int nnf_height, int nnf_width);
+  void updateRefCount(STLVectorf& ref_cnt, Point2D& best_patch, ImagePyramidVec& gpsrc_d, int level);
 
 private:
   int levels;
   int candidate_size;
   int best_random_size;
   int patch_size;
+  double bias_rate;
+  double lamd_occ;
+  int max_iter;
+  float py_scale;
   std::vector<cv::Size> NeighborRange;
 
   std::vector<ImagePyramid> gpsrc_feature;
@@ -113,6 +128,8 @@ private:
   std::vector<ImagePyramid> gptar_detail;
 
   std::vector<FBucketPryamid> gpsrc_feature_buckets;
+
+  std::string outputPath;
 
 private:
   SynthesisTool(const SynthesisTool&);

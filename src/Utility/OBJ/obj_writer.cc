@@ -97,15 +97,22 @@ bool WriteObj(const std::string& filename, const std::vector<tinyobj::shape_t>& 
     //if (shapes[i].mesh.normals.size() > 0) has_vn = true;
 
     // facevarying texcoord
+    // !!!Notice: for current dev, I changed it into per vertex texcoord!!!
     if (shapes[i].mesh.texcoords.size() > 0) {
-      for (size_t k = 0; k < shapes[i].mesh.indices.size() / 3; k++) {
-        for (int j = 0; j < 3; j++) {
-          int idx = shapes[i].mesh.indices[3*k+j];
-          fprintf(fp, "vt %f %f\n",
-            shapes[i].mesh.texcoords[2*idx+0],
-            shapes[i].mesh.texcoords[2*idx+1]);
-        }
+      for (size_t k = 0; k < shapes[i].mesh.texcoords.size() / 2; ++k)
+      {
+            fprintf(fp, "vt %f %f\n",
+              shapes[i].mesh.texcoords[2*k+0],
+              shapes[i].mesh.texcoords[2*k+1]);
       }
+      //for (size_t k = 0; k < shapes[i].mesh.indices.size() / 3; k++) {
+      //  for (int j = 0; j < 3; j++) {
+      //    int idx = shapes[i].mesh.indices[3*k+j];
+      //    fprintf(fp, "vt %f %f\n",
+      //      shapes[i].mesh.texcoords[2*idx+0],
+      //      shapes[i].mesh.texcoords[2*idx+1]);
+      //  }
+      //}
     }
     if (shapes[i].mesh.texcoords.size() > 0) has_vt = true;
 

@@ -88,7 +88,7 @@ namespace ShapeUtility
 
     // 2. generate direction samples
     std::cout << "Generate samples.\n";
-    int sqrtNumSamples = 50;
+    int sqrtNumSamples = 10;
     int numSamples = sqrtNumSamples * sqrtNumSamples;
     std::vector<SAMPLE> samples(numSamples);
     GenerateSamples(sqrtNumSamples, num_band, &samples[0]);
@@ -114,9 +114,9 @@ namespace ShapeUtility
 
         if (dot > 0.0)
         {
-          /*Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
+          Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
           Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
-          if (ray->intersectModel(ray_start, ray_end))*/
+          if (ray->intersectModel(ray_start, ray_end))
           {
             for (int l = 0; l < numFunctions; ++l)
             {
@@ -330,8 +330,8 @@ namespace ShapeUtility
       }
       else
       {
-        a = 0;
-        b = 1;
+        a = 1;
+        b = 0;
         c = 0;
         d = 0;
         std::cout << "Generating Symmetry_plane.txt." << std::endl;
