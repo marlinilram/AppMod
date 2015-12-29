@@ -191,6 +191,15 @@ void DetailSynthesis::computeFeatureMap(ParaShape* para_shape, std::vector<std::
       feature_map[2].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
     }
   }
+  double max1,min1,max2,min2,max3,min3,max4,min4,max5,min5,max6,min6,max7,min7,max8,min8;
+  cv::minMaxLoc(para_shape->feature_map[0],&min1,&max1);
+  cv::minMaxLoc(para_shape->feature_map[1],&min2,&max2);
+  cv::minMaxLoc(para_shape->feature_map[2],&min3,&max3);
+  cv::minMaxLoc(para_shape->feature_map[3],&min4,&max4);
+  cv::minMaxLoc(para_shape->feature_map[4],&min5,&max5);
+  cv::minMaxLoc(para_shape->feature_map[5],&min6,&max6);
+  cv::minMaxLoc(para_shape->feature_map[6],&min7,&max7);
+  cv::minMaxLoc(para_shape->feature_map[7],&min8,&max8);
 }
 
 void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)

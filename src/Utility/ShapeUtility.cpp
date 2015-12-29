@@ -966,7 +966,7 @@ namespace ShapeUtility
       }
     }
 
-    if (meet_boundary || n_visited_f == max_visited_f)
+    if (!meet_boundary && n_visited_f == max_visited_f)
     {
       // we use the last closest face
       float l[3];
@@ -992,8 +992,10 @@ namespace ShapeUtility
       return true;
       //}
     }
-
-    return false;
+    if(meet_boundary)
+    {
+      return false;
+    }
   }
 
 
