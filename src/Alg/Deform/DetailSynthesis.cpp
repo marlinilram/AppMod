@@ -41,17 +41,19 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
   PolygonMesh poly_mesh;
   ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);*/
 
-  //cv::FileStorage fs1(model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
-  //cv::Mat smoothed_output_height;
-  //fs1["smoothed_output_height"] >> smoothed_output_height;
-  //PolygonMesh smoothed_output_height_mesh;
-  //ShapeUtility::heightToMesh(smoothed_output_height, smoothed_output_height_mesh, model); // generate the displacement mesh
+  {
+    cv::FileStorage fs1(model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
+    cv::Mat smoothed_output_height;
+    fs1["smoothed_output_height"] >> smoothed_output_height;
+    PolygonMesh smoothed_output_height_mesh;
+    ShapeUtility::heightToMesh(smoothed_output_height, smoothed_output_height_mesh, model); // generate the displacement mesh
 
-  //cv::FileStorage fs2(model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
-  //cv::Mat final_height;
-  //fs2["final_height"] >> final_height;
-  //PolygonMesh final_height_mesh;
-  //ShapeUtility::heightToMesh(final_height, final_height_mesh, model); // generate the displacement mesh
+    cv::FileStorage fs2(model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+    cv::Mat final_height;
+    fs2["final_height"] >> final_height;
+    PolygonMesh final_height_mesh;
+    ShapeUtility::heightToMesh(final_height, final_height_mesh, model); // generate the displacement mesh
+  }
 
   mesh_para.reset(new MeshParameterization);
 
@@ -1184,9 +1186,9 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 1. to do transfer, we first need to apply the displacement to src_model;
   this->testMeshPara(src_model);
   this->prepareDetailMap(src_model);
-  //NormalTransfer normal_transfer;
-  //std::string normal_file_name = "smoothed_normal";
-  //normal_transfer.prepareNewNormal(src_model, normal_file_name);
+  NormalTransfer normal_transfer;
+  std::string normal_file_name = "smoothed_normal";
+  normal_transfer.prepareNewNormal(src_model, normal_file_name);
   //std::cout<<"test4"<< std::endl;
   //this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
 
@@ -1213,10 +1215,10 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 2. second we need to compute the geometry feature on deformed src_model and tar_model;
   // normalized height, curvature, directional occlusion, surface normal
   ShapeUtility::computeNormalizedHeight(src_model);
-  //ShapeUtility::computeDirectionalOcclusion(src_model);
+  ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
-  //ShapeUtility::computeDirectionalOcclusion(tar_model);
+  ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
 
   // 3. third do CCA, skip for now
@@ -1308,9 +1310,9 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   syn_tool->doSynthesisNew();
 
   std::vector<cv::Mat> result_detail;
-  result_detail.push_back(syn_tool->getTargetDetail()[0][0].clone());
-  result_detail.push_back(syn_tool->getTargetDetail()[1][0].clone());
   result_detail.push_back(syn_tool->getTargetDetail()[2][0].clone());
+  result_detail.push_back(syn_tool->getTargetDetail()[1][0].clone());
+  result_detail.push_back(syn_tool->getTargetDetail()[0][0].clone());
   cv::Mat result_reflectance;
   cv::merge(result_detail, result_reflectance);
   double min,max;
