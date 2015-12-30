@@ -148,6 +148,49 @@ void SynthesisTool::buildMask(cv::Mat& src_detail, std::vector<int>& pixel_mask,
   }
 }
 
+void SynthesisTool::buildSourcePatchMask(cv::Mat& src_detail, std::vector<int>& source_patch_mask)
+{
+  int img_height = src_detail.rows;
+  int img_width  = src_detail.cols;
+  int nnf_height = (img_height - this->patch_size + 1);
+  int nnf_width  = (img_width - this->patch_size + 1);
+
+  source_patch_mask.clear();
+  source_patch_mask.resize(nnf_width * nnf_height, 0);
+
+  for(int i = 0; i < nnf_height; i ++)
+  {
+    for(int j = 0; j < nnf_width; j ++)
+    {
+      bool is_outside = false;
+      for(int m = 0; m < this->patch_size; m ++)
+      {
+        for(int n = 0; n < this->patch_size; n ++)
+        {
+          if(src_detail.at<float>(i + m, j + n) < 0)
+          {
+            is_outside = true;
+            break;
+          }
+        }
+        if(is_outside)
+        {
+          break;
+        }
+      }
+      if(is_outside)
+      {
+        source_patch_mask[i * nnf_width + j] = 1;
+      }
+    }
+  }
+}
+
+void SynthesisTool::buildTargetMask(cv::Mat& tar_detail, std::vector<int>& target_pixel_mask, std::vector<int>& target_patch_mask)
+{
+
+}
+
 void SynthesisTool::getRandomPositionWithMask(std::vector<Point2D>& random_set, std::vector<int>& patch_mask, int nnf_width, int nnf_height,
   int n_set, int max_height, int max_width, int min_height /* = 0 */, int min_width /* = 0 */)
 {

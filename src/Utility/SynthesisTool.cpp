@@ -1,6 +1,8 @@
 #include "SynthesisTool.h"
 #include "MeshParameterization.h"
 
+#include "KDTreeWrapper.h"
+
 #include <vector>
 #include <cv.h>
 
@@ -1019,7 +1021,13 @@ void SynthesisTool::doSynthesisNew()
   // find best match for each level
   double totalTime = 0.0;
   srand((unsigned)time(NULL));
-
+  for(int l = 0; l < levels; l ++)
+  {
+    std::vector<int> source_patch_mask_l;
+    this->buildSourcePatchMask(gpsrc_detail[0].at(l), source_patch_mask_l);
+    src_patch_mask.push_back(source_patch_mask_l);
+  }
+  std::cout << "OK1!!!!\n";
   std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
   for (int l = levels - 1; l >= 0; --l)                      
   {
@@ -1029,6 +1037,7 @@ void SynthesisTool::doSynthesisNew()
 
     int width = gptar_detail[0].at(l).cols;
     int height = gptar_detail[0].at(l).rows;
+
 
     this->exportSrcFeature(gpsrc_feature, l);
     this->exportTarFeature(gptar_feature, l);
@@ -1110,7 +1119,7 @@ void SynthesisTool::initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level)
   nnf.clear();
 
   // initialize the nnf with random position
-  this->getRandomPosition(nnf, nnf_height * nnf_width, nnf_height, nnf_width);
+  this->getRandomPosition(level, nnf, nnf_height * nnf_width, nnf_height, nnf_width);
 }
 
 void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new)
@@ -1127,6 +1136,21 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_l
   nnf_new.resize(nnf_height * nnf_width);
   float scale = float(height) / last_height;
 
+  std::vector<float> mask_kd_data;
+  for (int i = 0; i < nnf_height; ++i)
+  {
+    for (int j = 0; j < nnf_width; ++j)
+    {
+      if (src_patch_mask[level][i  *nnf_width + j] == 0)
+      {
+        mask_kd_data.push_back(j);
+        mask_kd_data.push_back(i);
+      }
+    }
+  }
+  KDTreeWrapper mask_kd;
+  mask_kd.initKDTree(mask_kd_data, mask_kd_data.size() / 2, 2);
+
   for (int i = 0; i < nnf_height; ++i)
   {
     for (int j = 0; j < nnf_width; ++j)
@@ -1140,7 +1164,16 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_l
       patch.second = scale * (patch.second);
       patch.first = (patch.first >= nnf_width) ? (nnf_width - 1) : patch.first;
       patch.second = (patch.second >= nnf_height) ? (nnf_height - 1) : patch.second;
-      nnf_new[i * nnf_width + j] = patch;
+      if(src_patch_mask[level][patch.second * nnf_width + patch.first] == 0)
+        nnf_new[i * nnf_width + j] = patch;
+      else
+      {
+        std::vector<float> query(2, 0);
+        query[0] = patch.first;
+        query[1] = patch.second;
+        mask_kd.nearestPt(query);
+        nnf_new[i * nnf_width + j] = Point2D(query[0], query[1]);
+      }
     }
   }
 }
@@ -1170,20 +1203,21 @@ void SynthesisTool::initializeTarDetail(ImagePyramidVec& gptar_d, int level)
   }
 }
 
-void SynthesisTool::getRandomPosition(std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height, int min_width)
+void SynthesisTool::getRandomPosition(int l, std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height, int min_width)
 {
   random_set.clear();
   random_set.resize(n_set);
-
+  int x, y;
   for (int i = 0; i < n_set; ++i)
   {
-    int x = (rand() / double(RAND_MAX)) * (max_width - min_width) + min_width;
-    int y = (rand() / double(RAND_MAX)) * (max_height - min_height) + min_height;
+    do{
+    x = (rand() / double(RAND_MAX)) * (max_width - min_width) + min_width;
+    y = (rand() / double(RAND_MAX)) * (max_height - min_height) + min_height;
 
     // clamp if the random value is 1
     x = (x >= max_width) ? (max_width - 1) : x;
     y = (y >= max_height) ? (max_height - 1) : y;
-
+    }while(src_patch_mask[l][y * max_width + x] == 1);
     random_set[i] = Point2D(x, y);
   }
 }
@@ -1280,7 +1314,7 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
       int offset = i * nnf_width + j;
       
       // random search
-      this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+      this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
       Point2D best_rand;
       double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_rand);
       
@@ -1293,7 +1327,8 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
         if ((unsigned)(left_nnf.first + jchange) < unsigned(nnf_width))
         {
           left_nnf.first = left_nnf.first + jchange;
-          rand_pos.push_back(left_nnf);
+          if(this->validPatchWithMask(left_nnf, src_patch_mask[level], nnf_height, nnf_width))
+            rand_pos.push_back(left_nnf);
         }
       }
       // up
@@ -1303,7 +1338,8 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
         if ((unsigned)(up_nnf.second + ichange) < unsigned(nnf_height))
         {
           up_nnf.second = (up_nnf.second + ichange);
-          rand_pos.push_back(up_nnf);
+          if(this->validPatchWithMask(up_nnf, src_patch_mask[level], nnf_height, nnf_width))
+            rand_pos.push_back(up_nnf);
         }
       }
       Point2D best_bias;
@@ -1323,6 +1359,78 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
   }
 }
 
+void SynthesisTool::updateNNFWithMask(std::vector<int>& source_patch_mask, ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+                 ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
+                 NNF& nnf, std::vector<float>& ref_cnt, int level, int iter)
+{
+  //// update nnf based on current nnf, random position and position nearby
+  //int height = gptar_d[0][level].rows;
+  //int width  = gptar_d[0][level].cols;
+  //int nnf_height = (height - this->patch_size + 1);
+  //int nnf_width  = (width - this->patch_size + 1);
+
+  //
+  //int istart = 0, iend = nnf_height, ichange = 1;
+  //int jstart = 0, jend = nnf_width, jchange = 1;
+  //if (iter % 2 == 1)
+  //{
+  //  istart = iend - 1; iend = -1; ichange = -1;
+  //  jstart = jend - 1; jend = -1; jchange = -1;
+  //}
+
+
+  //// deal with all pixels left
+  //for (int i = istart; i != iend; i += ichange)
+  //{
+  //  for (int j = jstart; j != jend; j += jchange)
+  //  {
+  //    std::vector<Point2D> rand_pos;
+  //    int offset = i * nnf_width + j;
+  //    
+  //    // random search
+  //    this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+  //    Point2D best_rand;
+  //    double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_rand);
+  //    
+  //    // propagation
+  //    rand_pos.clear();
+  //    // left
+  //    if ((unsigned)(j - jchange) < (unsigned)nnf_width)
+  //    {
+  //      Point2D left_nnf = nnf[i * nnf_width + j - jchange];
+  //      if ((unsigned)(left_nnf.first + jchange) < unsigned(nnf_width))
+  //      {
+  //        left_nnf.first = left_nnf.first + jchange;
+  //        rand_pos.push_back(left_nnf);
+  //      }
+  //    }
+  //    // up
+  //    if ((unsigned)(i - ichange) < (unsigned)nnf_height)
+  //    {
+  //      Point2D up_nnf = nnf[(i - ichange) * nnf_width + j];
+  //      if ((unsigned)(up_nnf.second + ichange) < unsigned(nnf_height))
+  //      {
+  //        up_nnf.second = (up_nnf.second + ichange);
+  //        rand_pos.push_back(up_nnf);
+  //      }
+  //    }
+  //    Point2D best_bias;
+  //    rand_pos.push_back(nnf[offset]);
+  //    double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_bias);
+
+  //    if (d_best_rand < (bias_rate * d_best_bias))
+  //    {
+  //      nnf[offset] = best_rand;
+  //    }
+  //    else
+  //    {
+  //      nnf[offset] = best_bias;
+  //    }
+  //    this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
+  //  }
+  //}
+}
+
 void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f, ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, std::vector<float>& ref_cnt, int level)
 {
   // update nnf based on current nnf, random position and position nearby
@@ -1334,7 +1442,7 @@ void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& 
   // deal with the right bottom corner
   {
     std::vector<Point2D> rand_pos;
-    this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width); // TODO: random sample in a more local region
+    this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width); // TODO: random sample in a more local region
     int offset = (nnf_height - 1) * nnf_width + (nnf_width - 1);
     Point2D best_patch;
     rand_pos.push_back(nnf[offset]);
@@ -1348,7 +1456,7 @@ void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& 
   {
     std::vector<Point2D> rand_pos;
     int offset = (nnf_height - 1) * nnf_width + j;
-    this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+    this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
     Point2D best_rand;
     double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, nnf_height - 1), rand_pos, best_rand);
     Point2D right_nnf = nnf[(nnf_height - 1) * nnf_width + j + 1];
@@ -1374,7 +1482,7 @@ void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& 
   {
     std::vector<Point2D> rand_pos;
     int offset = i * nnf_width + (nnf_width - 1);
-    this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+    this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
     Point2D best_rand;
     double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(nnf_width - 1, i), rand_pos, best_rand);
     Point2D down_nnf = nnf[(i + 1) * nnf_width + nnf_width - 1];
@@ -1402,7 +1510,7 @@ void SynthesisTool::updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& 
     {
       std::vector<Point2D> rand_pos;
       int offset = i * nnf_width + j;
-      this->getRandomPosition(rand_pos, best_random_size, nnf_height, nnf_width);
+      this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
       Point2D best_rand;
       double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, gpsrc_d, gptar_d, ref_cnt, level, Point2D(j, i), rand_pos, best_rand);
       Point2D right_nnf = nnf[i * nnf_width + j + 1];

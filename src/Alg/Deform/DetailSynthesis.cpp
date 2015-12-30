@@ -245,10 +245,15 @@ void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
   new_detail_image.push_back(detail_image[1]);
   new_detail_image.push_back(detail_image[2]);
   new_detail_image.push_back(displacement_mat);
+
   //cv::merge(&detail_image[0], 3, detail_reflectance_mat);
   //imshow("dilate souroce", detail_reflectance_mat);
+
+
   computeDetailMap(mesh_para->seen_part.get(), new_detail_image, model, mesh_para->seen_part->cut_faces);std::cout<<"test2"<< std::endl;
   computeDetailMap(mesh_para->unseen_part.get(), new_detail_image, model, mesh_para->seen_part->cut_faces);std::cout<<"test3"<< std::endl;
+
+
   //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   //{
   //  computeDetailMap(&mesh_para->shape_patches[i], detail_image, model, mesh_para->seen_part->cut_faces);
@@ -1185,7 +1190,41 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
   this->testMeshPara(src_model);
-  this->prepareDetailMap(src_model);
+  
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+
+  cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ);
+  cv::Mat detail_reflectance_mat;
+  fs["reflectance"] >> detail_reflectance_mat;
+
+  cv::FileStorage fs2(src_model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  cv::Mat displacement_mat;
+  fs2["displacement"] >> displacement_mat;
+  
+  std::vector<cv::Mat> detail_image(3);
+  cv::split(detail_reflectance_mat, &detail_image[0]);
+  {
+    // dilate the detail map in case of black
+    for (int i = 0; i < 3; ++i)
+    {
+      ShapeUtility::dilateImage(detail_image[i], 15);
+    }
+  }
+  std::vector<cv::Mat> new_detail_image;
+  new_detail_image.push_back(detail_image[0]);
+  new_detail_image.push_back(detail_image[1]);
+  new_detail_image.push_back(detail_image[2]);
+  new_detail_image.push_back(displacement_mat);
+
+  computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
+
+  cv::imshow("src detail 0", src_para_shape->detail_map[0]);
+  cv::imshow("src detail 1", src_para_shape->detail_map[1]);
+  cv::imshow("src detail 2", src_para_shape->detail_map[2]);
+  cv::imshow("src detail 3", src_para_shape->detail_map[3]);
+  return;
+
   NormalTransfer normal_transfer;
   std::string normal_file_name = "smoothed_normal";
   normal_transfer.prepareNewNormal(src_model, normal_file_name);
