@@ -77,7 +77,7 @@ private:
   void findCombineCandidatesFromLastLevel(std::vector<ImagePyramid>& gpsrc_f, std::vector<ImagePyramid>& gptar_f, std::vector<ImagePyramid>& gpsrc_d, std::vector<ImagePyramid>& gptar_d, std::vector<float>& ref_cnt, int level, int tarpointX, int tarpointY, std::set<distance_position>& best_match);
 
   // patch match based method
-  void getRandomPosition(std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height = 0, int min_width = 0);
+  void getRandomPosition(int l, std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height = 0, int min_width = 0);
   void initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level);
   void initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new);
   void initializeTarDetail(ImagePyramidVec& gptar_d, int level);
@@ -96,7 +96,7 @@ private:
                       ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
                       std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch);
 
-  void buildMask(cv::Mat& src_detail, std::vector<int>& pixel_mask, std::vector<int>& patch_mask);
+  void buildMask(cv::Mat& src_detail, std::vector<int>& pixel_mask, std::vector<int>& patch_mask);//0 -> valid; 1 -> invalid
   void initializeFillingNNF(ImagePyramid& gptar_d, NNF& nnf, std::vector<int>& patch_mask, int level);
   void initializeFillingTarDetail(ImagePyramidVec& gptar_d, std::vector<int>& pixel_mask, int level);
   void updateFillingNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
@@ -108,8 +108,13 @@ private:
   void getRandomPositionWithMask(std::vector<Point2D>& random_set, std::vector<int>& patch_mask,int nnf_width, int nnf_height, int n_set, int max_height, int max_width, int min_height = 0, int min_width = 0);
   void voteFillingImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, std::vector<int>& pixel_mask, int level);
   void initializeFillingUpTarDetail(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, std::vector<int>& pixel_mask, int level);
-  bool validPatchWithMask(Point2D& patch_pos, std::vector<int>& patch_mask, int nnf_height, int nnf_width);
+  bool validPatchWithMask(Point2D& patch_pos, std::vector<int>& patch_mask, int nnf_height, int nnf_width);//0 -> valid; 1 -> invalid
   void updateRefCount(STLVectorf& ref_cnt, Point2D& best_patch, ImagePyramidVec& gpsrc_d, int level);
+  void updateNNFWithMask(std::vector<int>& source_patch_mask, ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+                 ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
+                 NNF& nnf, std::vector<float>& ref_cnt, int level, int iter = 0);
+  void buildSourcePatchMask(cv::Mat& src_detail, std::vector<int>& source_patch_mask);
+  void buildTargetMask(cv::Mat& tar_detail, std::vector<int>& target_pixel_mask, std::vector<int>& target_patch_mask);
 
 private:
   int levels;
@@ -130,6 +135,7 @@ private:
   std::vector<FBucketPryamid> gpsrc_feature_buckets;
 
   std::string outputPath;
+  std::vector<std::vector<int>> src_patch_mask;
 
 private:
   SynthesisTool(const SynthesisTool&);
