@@ -1193,6 +1193,8 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
+  ShapeUtility::computeSolidAngleCurvature(src_model);return;
+
   this->testMeshPara(src_model);
   this->prepareDetailMap(src_model);
   NormalTransfer normal_transfer;

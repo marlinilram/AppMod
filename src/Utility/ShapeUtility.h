@@ -65,6 +65,8 @@ namespace ShapeUtility
   /*void findFaceId(int& x, int& y, int& resolution, std::shared_ptr<KDTreeWrapper> kdTree, AdjList& adjFaces_list, std::shared_ptr<Shape> shape,
                   int& face_id, float* lambda, int& id1, int& id2, int& id3); */
   void computeVertexSymmetryProjection(Vector3f& vertex, Vector3f& normal, std::vector<double>& plane_coef);
+
+  void computeSolidAngleCurvature(std::shared_ptr<Model> model);
 }
 
 #endif

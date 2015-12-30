@@ -6,6 +6,7 @@
 #include "PolygonMesh.h"
 #include "Bound.h"
 #include "ParaShape.h"
+#include "Voxeler.h"
 
 #include "Ray.h"
 #include "SAMPLE.h"
@@ -1074,4 +1075,75 @@ namespace ShapeUtility
   //    }
   //  }
   //}
+
+  void computeSolidAngleCurvature(std::shared_ptr<Model> model)
+  {
+    // voxelize the mesh
+    double voxel_size = model->getBoundBox()->getRadius() * 2 / 200;
+    VoxelerLibrary::Voxeler voxeler(model->getPolygonMesh(), voxel_size);
+    voxeler.fillInside();
+    std::vector<VoxelerLibrary::Voxel>& voxels = voxeler.voxels;
+    double voxelSize = voxeler.voxelSize;
+
+    std::vector<tinyobj::shape_t> shapes(1, tinyobj::shape_t());
+    std::vector<tinyobj::material_t> materials;
+    shapes[0].mesh.positions.clear();
+
+    KDTreeWrapper voxel_kd;
+    std::vector<float> voxel_kd_data;
+
+    for (size_t i = 0; i < voxels.size(); ++i)
+    {
+      Vector3f c(voxels[i].x, voxels[i].y, voxels[i].z);
+      c *= voxelSize;
+
+      voxel_kd_data.push_back(c(0));
+      voxel_kd_data.push_back(c(1));
+      voxel_kd_data.push_back(c(2));
+    }
+
+    voxel_kd.initKDTree(voxel_kd_data, voxels.size(), 3);
+    double voxelVol = voxelSize * voxelSize * voxelSize;
+    Vector4f sphereVol(1, 2, 3, 4);
+    sphereVol = sphereVol * model->getBoundBox()->getRadius() * 2 / 100; //radius here
+    Vector4f sphereR = sphereVol;
+    sphereVol = (sphereVol.array() * sphereVol.array() * sphereVol.array()).matrix();
+    sphereVol = 4 * M_PI / 3 * sphereVol; // volume
+
+    PolygonMesh* poly_mesh;
+    PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
+    float perc = 0;
+    for (auto vit : poly_mesh->vertices())
+    {
+      Vec3 pos = poly_mesh->position(vit);
+      std::vector<float> query(3, 0);
+      query[0] = pos(0);
+      query[1] = pos(1);
+      query[2] = pos(2);
+
+      std::vector<float> dis;
+      voxel_kd.rNearestPt(sphereVol(3), query, dis);
+      int r_id = 0;
+      solid_angles[vit] << 0, 0, 0, 0;
+      for (size_t i = 0; i < dis.size(); ++i)
+      {
+        if (dis[i] >= sphereR(i))
+        {
+          solid_angles[vit](r_id) = voxelVol * i / sphereVol(r_id);
+          ++r_id;
+        }
+      }
+      if (r_id < 3)
+      {
+        solid_angles[vit](3) = voxelVol * dis.size() / sphereVol(3);
+      }
+
+      float cur_perc = (float)vit.idx() / poly_mesh->n_vertices();
+      if (cur_perc - perc >= 0.05)
+      {
+        perc = cur_perc;
+        std::cout << perc << "...";
+      }
+    }
+  }
 }

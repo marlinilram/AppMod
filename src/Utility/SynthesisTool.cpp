@@ -23,7 +23,7 @@ SynthesisTool::SynthesisTool()
   best_random_size = 5;
   patch_size = 10;
   bias_rate = 0.1;
-  lamd_occ = 0.01;
+  lamd_occ = 0.0;
   max_iter = 5;
 }
 
