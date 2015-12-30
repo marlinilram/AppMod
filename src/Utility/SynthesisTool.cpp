@@ -86,7 +86,7 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
 
 void SynthesisTool::generatePyramid(std::vector<cv::Mat>& pyr, int level)
 {
-  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 35, 1.0 / float(level - 1)); // minimal size 35 * 35
+  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 70, 1.0 / float(level - 1)); // minimal size 35 * 35
   for (int i = 1; i < level; ++i)
   {
     cv::Mat dst;

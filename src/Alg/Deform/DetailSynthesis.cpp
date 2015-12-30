@@ -1223,7 +1223,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::imshow("src detail 1", src_para_shape->detail_map[1]);
   cv::imshow("src detail 2", src_para_shape->detail_map[2]);
   cv::imshow("src detail 3", src_para_shape->detail_map[3]);
-  return;
+  //return;
 
   NormalTransfer normal_transfer;
   std::string normal_file_name = "smoothed_normal";
@@ -1288,7 +1288,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
   }
-  computeFeatureMap(mesh_para->seen_part.get(), vertex_feature_list);
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list);
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -1337,15 +1337,15 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 5. do synthesis
   {
     double min_test, max_test;
-    for (size_t i = 0; i < mesh_para->seen_part->detail_map.size(); ++i)
+    for (size_t i = 0; i < src_para_shape->detail_map.size(); ++i)
     {
-      cv::minMaxLoc(mesh_para->seen_part->detail_map[i], &min_test, &max_test);
+      cv::minMaxLoc(src_para_shape->detail_map[i], &min_test, &max_test);
       std::cout << "Source Detail Dim " << i << ": " << min_test << "\t" << max_test << std::endl;
     }
   }
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
+  syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
   syn_tool->doSynthesisNew();
 
   std::vector<cv::Mat> result_detail;
@@ -1366,7 +1366,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::cout << "transfer finished." << std::endl;
 
   // 6. fill the detail map of tar_model
-  this->startDetailSynthesis(src_model);
+  //this->startDetailSynthesis(src_model);
 
-  cv::imwrite(src_model->getOutputPath() + "/displacement.png", 255*mesh_para->seen_part->detail_map[3]);
+  cv::imwrite(src_model->getOutputPath() + "/displacement.png", 255*src_para_shape->detail_map[3]);
 }
