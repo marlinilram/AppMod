@@ -58,6 +58,7 @@ public:
   void updateShapeCrest();
   void updateTargetCurves();
   void loadSynthesisTarget(std::shared_ptr<Model> model, std::string model_file_path);
+  void testApplyDisplacement();
 
 public slots:
   void updateGeometryInteractive();

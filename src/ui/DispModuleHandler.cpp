@@ -377,3 +377,11 @@ void DispModuleHandler::updateTargetCurves()
   //source_vector_viewer->updateSourceField(5);
   source_vector_viewer->updateGLOutside();
 }
+
+void DispModuleHandler::testApplyDisplacement()
+{
+  alg_handler->testApplyDisplacement();
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
+  //main_canvas_viewer->setSynthesisReflectance();
+  updateCanvas();
+}

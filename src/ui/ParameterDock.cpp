@@ -40,6 +40,7 @@ ParameterDock::ParameterDock()
   connect(SField_c_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpc(double)));
   connect(SField_d_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpd(double)));
   connect(SField_e_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpe(double)));
+  connect(TestApplyDisplacement_PushButton, SIGNAL(clicked()), this, SLOT(testApplyDisplacement()));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -263,4 +264,9 @@ void ParameterDock::setTargetCurvesThreshold(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold") = val;
   disp_modules->updateTargetCurves();
+}
+
+void ParameterDock::testApplyDisplacement()
+{
+  disp_modules->testApplyDisplacement();
 }

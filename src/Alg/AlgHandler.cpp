@@ -185,3 +185,15 @@ void AlgHandler::doLargeFeatureReg(int reg_type)
   }
   //lf_reg->testNlopt();
 }
+
+void AlgHandler::testApplyDisplacement()
+{
+  detail_synthesis->test(shape_model);
+  actors.clear();
+  std::vector<GLActor> temp_actors;
+  detail_synthesis->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
+}

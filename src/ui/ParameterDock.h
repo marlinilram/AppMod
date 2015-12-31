@@ -57,6 +57,7 @@ private slots:
 
   void setLFRegMethod(int state);
   void runLFRegNonRigid();
+  void testApplyDisplacement();
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;
