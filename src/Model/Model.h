@@ -32,6 +32,7 @@ public:
   //std::shared_ptr<Shape> getShape() { return shape; };
   //std::shared_ptr<ShapeCrest> getShapeCrest();
   LG::PolygonMesh* getPolygonMesh();
+  LG::PolygonMesh* getLightPolygonMesh();
   std::string getDataPath();
   std::string getOutputPath();
 
@@ -52,6 +53,8 @@ public:
   inline cv::Mat &getNImg() { return n_img; };
   inline cv::Mat &getOriRImg() { return ori_reflectance_img; };
   inline cv::Mat &getSynRImg() { return synthesis_reflectance_img; };
+  inline double getZScale() { return z_scale; };
+  inline void setZScale(double z_scale_) { z_scale = z_scale_; };
 
   // get information from Shape
   const VertexList& getShapeVertexList();
@@ -123,6 +126,7 @@ private:
   cv::Mat photo;
   cv::Mat ori_reflectance_img;
   cv::Mat synthesis_reflectance_img;
+  double z_scale;
 
   // camera info
   Matrix4f m_modelview;

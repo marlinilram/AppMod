@@ -58,6 +58,7 @@ void main(void)
       vec4 texton = texture2D( reflect_texture, vs_uv);
 		  fragColor = texton;
     }
+    fragColor = fragColor * vs_color;
 		fragColor[3] = (gl_PrimitiveID)/(fMeshSize);
 		break;
 	case 0:

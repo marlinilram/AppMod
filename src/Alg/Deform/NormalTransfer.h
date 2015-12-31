@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 #include "GLActor.h"
 
 class Model;
@@ -16,7 +17,7 @@ public:
   NormalTransfer();
   ~NormalTransfer();
 
-  void prepareNewNormal(std::shared_ptr<Model> model);
+  void prepareNewNormal(std::shared_ptr<Model> model, std::string normal_file_name);
   void getDrawableActors(std::vector<GLActor>& actors);
 
 private:

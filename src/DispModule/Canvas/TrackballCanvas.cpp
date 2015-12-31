@@ -120,7 +120,15 @@ void TrackballCanvas::updateModelBuffer()
     use_flat = 0;
   }
 
-  LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
+  LG::PolygonMesh* poly_mesh;
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
+  {
+    poly_mesh = model->getPolygonMesh();
+  }
+  else
+  {
+    poly_mesh = model->getLightPolygonMesh();
+  }
   LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_normals = poly_mesh->vertex_attribute<LG::Vec3>("v:normal");
   LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
   VertexList vertex_list;
@@ -186,7 +194,15 @@ void TrackballCanvas::updateModelBuffer()
 
 void TrackballCanvas::updateModelColorBuffer()
 {
-  LG::PolygonMesh* poly_mesh = model->getPolygonMesh();
+  LG::PolygonMesh* poly_mesh;
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
+  {
+    poly_mesh = model->getPolygonMesh();
+  }
+  else
+  {
+    poly_mesh = model->getLightPolygonMesh();
+  }
   LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
   STLVectorf color_list;
   for (auto vit : poly_mesh->vertices())

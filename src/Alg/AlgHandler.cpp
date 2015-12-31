@@ -107,7 +107,9 @@ void AlgHandler::doNormalTransfer()
   }
 
   //shape_model->updateSHColor();
-  normal_transfer->prepareNewNormal(shape_model);
+  std::string normal_file_name = "smoothed_normal";
+
+  normal_transfer->prepareNewNormal(shape_model, normal_file_name);
   actors.clear();
   std::vector<GLActor> temp_actors;
   normal_transfer->getDrawableActors(temp_actors);
@@ -136,13 +138,14 @@ void AlgHandler::doDetailSynthesis()
   //{
   //  return;
   //}
-  detail_synthesis->testMeshPara(shape_model);
-  detail_synthesis->testShapePlane(shape_model);
+  //detail_synthesis->testShapePlane(shape_model);
   /*shape_model->exportOBJ(0);
   doNormalTransfer();
   shape_model->exportOBJ(0);*/
 
-  detail_synthesis->startDetailSynthesis(shape_model);
+  detail_synthesis->doTransfer(shape_model, synthesis_model);
+  //detail_synthesis->startDetailSynthesis(shape_model);
+
 
   //detail_synthesis->computeVectorField(shape_model);
   actors.clear();

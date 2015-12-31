@@ -370,7 +370,7 @@ void MainCanvas::setSynthesisReflectance()
   temp.convertTo(ref_img, CV_8UC3);
   cv::cvtColor(ref_img, ref_img, CV_BGR2RGB);
   QImage syn_ref((const uchar *) ref_img.data, ref_img.cols, ref_img.rows, ref_img.step, QImage::Format_RGB888);
-  QImage gl_syn_ref = QGLWidget::convertToGLFormat(ori_ref);
+  QImage gl_syn_ref = QGLWidget::convertToGLFormat(syn_ref);
   setTextureImage(gl_syn_ref, synthesis_reflect_texture);
   syn_ref.save(QString::fromStdString(model->getDataPath() + "/syn_ref.png"));
 }
@@ -902,6 +902,7 @@ void MainCanvas::drawInfo(double z_scale)
   cv::Mat &z_img = model->getZImg();
   z_img.create(height, width, CV_32FC1);
   cv::Mat &mask_rimg = model->getRMask();
+  model->setZScale(z_scale);
 
   int render_mode_cache = render_mode;
   render_mode = 1;
@@ -994,7 +995,8 @@ void MainCanvas::drawInfo(double z_scale)
       Eigen::Map<Eigen::MatrixXf>temp_mat(z_img.ptr<float>(), z_img.cols, z_img.rows);
       mat_output << ((1 - temp_mat.array()).matrix() * z_scale).transpose();
       mat_output.close();
-    }YMLHandler::saveToFile(data_path, std::string("rendered.yml"), r_img);
+    }
+    //YMLHandler::saveToFile(data_path, std::string("rendered.yml"), r_img);
     //YMLHandler::saveToFile(data_path, std::string("primitive.yml"), primitive_ID);
   }
 

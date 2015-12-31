@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include <QImage>
 
 class Model;
 class QGLShaderProgram;
@@ -30,6 +31,9 @@ public:
   void updateModelColorBuffer();
   std::string getFilePath();
 
+  void setTextureImage(QImage& glImg, GLuint& texture);
+  void setSynthesisReflectance();
+
 private:
   std::shared_ptr<Model> model;
 
@@ -38,6 +42,9 @@ private:
   std::unique_ptr<QGLBuffer> face_buffer;
   std::unique_ptr<QGLBuffer> normal_buffer;
   std::unique_ptr<QGLBuffer> color_buffer;
+  std::unique_ptr<QGLBuffer> uv_buffer;
+
+  GLuint synthesis_reflect_texture;
 
   GLenum num_vertex;
   GLenum num_face;

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cv.h>
+#include <highgui.h>
 
 void SynthesisTool::doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& src_detail)
 {
@@ -145,6 +146,54 @@ void SynthesisTool::buildMask(cv::Mat& src_detail, std::vector<int>& pixel_mask,
       }
     }
   }
+}
+
+void SynthesisTool::buildSourcePatchMask(cv::Mat& src_detail, std::vector<int>& source_patch_mask)
+{
+  int img_height = src_detail.rows;
+  int img_width  = src_detail.cols;
+  int nnf_height = (img_height - this->patch_size + 1);
+  int nnf_width  = (img_width - this->patch_size + 1);
+
+  source_patch_mask.clear();
+  source_patch_mask.resize(nnf_width * nnf_height, 0);
+
+  int invalid_cnt = 0;
+
+  for(int i = 0; i < nnf_height; i ++)
+  {
+    for(int j = 0; j < nnf_width; j ++)
+    {
+      bool is_outside = false;
+      for(int m = 0; m < this->patch_size; m ++)
+      {
+        for(int n = 0; n < this->patch_size; n ++)
+        {
+          if(src_detail.at<float>(i + m, j + n) < 0)
+          {
+            is_outside = true;
+            break;
+          }
+        }
+        if(is_outside)
+        {
+          break;
+        }
+      }
+      if(is_outside)
+      {
+        source_patch_mask[i * nnf_width + j] = 1;
+        ++invalid_cnt;
+      }
+    }
+  }
+
+  std::cout << "valid patch number: " << nnf_height * nnf_width - invalid_cnt << std::endl;
+}
+
+void SynthesisTool::buildTargetMask(cv::Mat& tar_detail, std::vector<int>& target_pixel_mask, std::vector<int>& target_patch_mask)
+{
+
 }
 
 void SynthesisTool::getRandomPositionWithMask(std::vector<Point2D>& random_set, std::vector<int>& patch_mask, int nnf_width, int nnf_height,
@@ -439,4 +488,201 @@ bool SynthesisTool::validPatchWithMask(Point2D& patch_pos, std::vector<int>& pat
 {
   if (patch_mask[patch_pos.second * nnf_width + patch_pos.first] == 0) return true;
   else return false;
+}
+
+void SynthesisTool::doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail, std::vector<cv::Mat>& tar_detail)
+{
+  gpsrc_feature.clear();
+  gptar_feature.clear();
+  gpsrc_detail.clear();
+  gptar_detail.clear();
+
+  gpsrc_feature.resize(src_feature.size());
+  gptar_feature.resize(tar_feature.size());
+  gpsrc_detail.resize(src_detail.size());
+  gptar_detail.resize(tar_detail.size());
+  ImagePyramidVec gptar_detail_bk;
+  gptar_detail_bk.resize(tar_detail.size());
+
+  for(size_t i = 0; i < src_feature.size(); i ++)
+  {
+    gpsrc_feature[i].push_back(src_feature[i].clone());
+    gptar_feature[i].push_back(tar_feature[i].clone());
+  }
+  for (size_t i = 0; i < src_detail.size(); ++i)
+  {
+    gpsrc_detail[i].push_back(src_detail[i].clone());
+    gptar_detail[i].push_back(tar_detail[i].clone());
+    gptar_detail_bk[i].push_back(tar_detail[i].clone());
+  }
+  for(size_t i = 0; i < gptar_feature.size(); i ++)
+  {
+    this->generatePyramid(gpsrc_feature[i], levels);
+    this->generatePyramid(gptar_feature[i], levels);
+  }
+  for (size_t i = 0; i < gpsrc_detail.size(); ++i)
+  {
+    this->generatePyramid(gpsrc_detail[i], levels);
+    this->generatePyramid(gptar_detail[i], levels);
+    this->generatePyramid(gptar_detail_bk[i], levels);
+  }
+
+  // build target mask for each level of pyramid
+  std::vector<std::vector<int> > patch_masks(levels, std::vector<int>());
+  std::vector<std::vector<int> > pixel_masks(levels, std::vector<int>());
+  for (int i = 0; i < levels; ++i)
+  {
+    this->buildMask(gptar_detail[0][i], pixel_masks[i], patch_masks[i]);
+  }
+
+  std::cout << "MaskSynthesisTool Init success !" << std::endl;
+
+  // find best match for each level
+  double totalTime = 0.0;
+  srand((unsigned)time(NULL));
+
+  std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
+  for (int l = levels - 1; l >= 0; --l)                      
+  {
+    double duration;
+    clock_t start, end;
+    start = clock();
+
+    int width = gptar_detail[0].at(l).cols;
+    int height = gptar_detail[0].at(l).rows;
+
+    this->exportSrcFeature(gpsrc_feature, l);
+    this->exportTarFeature(gptar_feature, l);
+    this->exportSrcDetail(gpsrc_detail, l, 0);
+
+    if(l == levels - 1)
+    {
+      this->initializeNNF(gptar_detail[0], nnf, l);
+      this->initializeFillingTarDetail(gptar_detail, pixel_masks[l], l);
+      for (int i_iter = 0; i_iter < 5; ++i_iter)
+      {
+        std::vector<float> ref_cnt(width * height, 0.0);
+        if (i_iter % 2 == 0)
+        {
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+        else
+        {
+          this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+        this->voteFillingImage(gpsrc_detail, gptar_detail, nnf, pixel_masks[l], l);
+        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportTarDetail(gptar_detail, l, i_iter);
+      }
+    }
+    else
+    {
+      std::vector<Point2D> nnf_new;
+      this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
+      this->initializeFillingUpTarDetail(gptar_detail_bk, gptar_detail, pixel_masks[l], l);
+      nnf.swap(nnf_new);
+      for (int i_iter = 0; i_iter < 5; ++i_iter)
+      {
+        std::vector<float> ref_cnt(width * height, 0.0);
+        if (i_iter % 2 == 0)
+        {
+          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+         else
+        {
+          this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
+        }
+        this->voteFillingImage(gpsrc_detail, gptar_detail, nnf, pixel_masks[l], l);
+        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportTarDetail(gptar_detail, l, i_iter);
+      }
+    }
+
+    end = clock();
+    duration = (double)(end - start) / CLOCKS_PER_SEC;
+    totalTime += duration;
+    std::cout << "Level " << l << " is finished ! " << "Running time is : " << duration << " seconds." << std::endl;
+  }
+  std::cout << "All levels is finished !" << " The total running time is :" << totalTime << " seconds." << std::endl;
+}
+  
+void SynthesisTool::exportFeature(cv::Mat& f_mat, std::string fname)
+{
+  cv::Mat output = f_mat.clone();
+  double min,max;
+  cv::minMaxLoc(output,&min,&max);
+  if (max > 1.0) output = output / max;
+  cv::imwrite(outputPath + "/" + fname, output * 255);
+}
+
+void SynthesisTool::exportSrcFeature(ImagePyramidVec& gpsrc, int level)
+{
+  int fdim = (int)gpsrc.size();
+  for (int i = 0; i < fdim; ++i)
+  {
+    this->exportFeature(gpsrc[i][level], "src_feature_" + std::to_string(i) + "_level_" + std::to_string(level) + ".png");
+  }
+}
+
+void SynthesisTool::exportTarFeature(ImagePyramidVec& gptar, int level)
+{
+  int fdim = (int)gptar.size();
+  for (int i = 0; i < fdim; ++i)
+  {
+    this->exportFeature(gptar[i][level], "tar_feature_" + std::to_string(i) + "_level_" + std::to_string(level) + ".png");
+  }
+}
+
+void SynthesisTool::exportRelfectance(cv::Mat& r, cv::Mat& g, cv::Mat& b, std::string fname)
+{
+  cv::Mat output;
+  std::vector<cv::Mat> output_detail;
+  output_detail.push_back(b);
+  output_detail.push_back(g);
+  output_detail.push_back(r);
+  cv::merge(&output_detail[0], 3, output);
+  double min,max;
+  cv::minMaxLoc(output,&min,&max);
+  if (max > 1.0) output = output / max;
+  cv::imwrite(outputPath + "/" + fname, output * 255);
+}
+
+void SynthesisTool::exportDisplacement(cv::Mat& d_mat, std::string fname)
+{
+  this->exportFeature(d_mat, fname);
+}
+
+void SynthesisTool::exportSrcDetail(ImagePyramidVec& gpsrc, int level, int iter)
+{
+  this->exportRelfectance(gpsrc[0][level], gpsrc[1][level], gpsrc[2][level], "src_reflectance_level_" + std::to_string(level) + "_iter_" + std::to_string(iter) + ".png");
+
+  if (gpsrc.size() == 4) this->exportDisplacement(gpsrc[3][level], "src_displacement_level_" + std::to_string(level) + "_iter_" + std::to_string(iter) + ".png");
+}
+
+void SynthesisTool::exportTarDetail(ImagePyramidVec& gptar, int level, int iter)
+{
+  this->exportRelfectance(gptar[0][level], gptar[1][level], gptar[2][level], "tar_reflectance_level_" + std::to_string(level) + "_iter_" + std::to_string(iter) + ".png");
+
+  if (gptar.size() == 4) this->exportDisplacement(gptar[3][level], "tar_displacement_level_" + std::to_string(level) + "_iter_" + std::to_string(iter) + ".png");
+}
+
+void SynthesisTool::exportNNF(NNF& nnf, ImagePyramidVec& gptar, int level, int iter)
+{
+  int height = gptar[0][level].rows;
+  int width  = gptar[0][level].cols;
+  int nnf_height = (height - this->patch_size + 1);
+  int nnf_width  = (width - this->patch_size + 1);
+
+  cv::Mat nnf_img(nnf_height, nnf_width, CV_32FC3);
+  for (int i = 0; i < nnf_height; ++i)
+  {
+    for (int j = 0; j < nnf_width; ++j)
+    {
+      float x = nnf[i * nnf_width + j].first;
+      float y = nnf[i * nnf_width + j].second;
+      nnf_img.at<cv::Vec3f>(i, j) = cv::Vec3f(0.0f, y / height, x / width);
+    }
+  }
+
+  cv::imwrite(outputPath + "/nnf_level_" + std::to_string(level) + "_iter_" + std::to_string(iter) + ".png", nnf_img * 255);
 }
