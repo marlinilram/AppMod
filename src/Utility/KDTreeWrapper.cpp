@@ -25,6 +25,7 @@ void KDTreeWrapper::initKDTree(std::vector<float>& data, size_t num_pts, int dim
   }
 
   kdTree.reset(new kdtree::KDTree(kdTree_data));
+  kdTree->sort_results = true;
   //std::cout << "Build KDTree finished.\n";
 }
 

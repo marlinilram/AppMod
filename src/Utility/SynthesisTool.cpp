@@ -86,7 +86,7 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
 
 void SynthesisTool::generatePyramid(std::vector<cv::Mat>& pyr, int level)
 {
-  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 35, 1.0 / float(level - 1)); // minimal size 35 * 35
+  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 70, 1.0 / float(level - 1)); // minimal size 35 * 35
   for (int i = 1; i < level; ++i)
   {
     cv::Mat dst;
@@ -116,19 +116,7 @@ void SynthesisTool::doSynthesis()
     int detail_dim = gpsrc_detail.size();
     if(l == levels - 1)
     {
-      for (int k = 0; k < detail_dim; ++k)
-      {
-        double max, min;
-        cv::minMaxLoc(gpsrc_detail[k].at(l),&min,&max);
-        srand((unsigned)time(NULL));
-        for(int i = 0; i < height; i ++)
-        {
-          for(int j = 0; j < width; j ++)
-          {
-            gptar_detail[k].at(l).at<float>(i, j) = (rand() / double(RAND_MAX)) * (max - min) + min;
-          }
-        }
-      }
+      this->initializeTarDetail(gptar_detail, l);
 
       FCandidates candidates;
       FCandidates best_match;

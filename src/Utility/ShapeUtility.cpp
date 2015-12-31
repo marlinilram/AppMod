@@ -1110,7 +1110,7 @@ namespace ShapeUtility
     sphereVol = (sphereVol.array() * sphereVol.array() * sphereVol.array()).matrix();
     sphereVol = 4 * M_PI / 3 * sphereVol; // volume
 
-    PolygonMesh* poly_mesh;
+    PolygonMesh* poly_mesh = model->getPolygonMesh();
     PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
     float perc = 0;
     for (auto vit : poly_mesh->vertices())
@@ -1122,20 +1122,21 @@ namespace ShapeUtility
       query[2] = pos(2);
 
       std::vector<float> dis;
-      voxel_kd.rNearestPt(sphereVol(3), query, dis);
+      voxel_kd.rNearestPt(sphereR(3), query, dis);
       int r_id = 0;
       solid_angles[vit] << 0, 0, 0, 0;
       for (size_t i = 0; i < dis.size(); ++i)
       {
-        if (dis[i] >= sphereR(i))
+        if (dis[i] >= sphereR(r_id))
         {
           solid_angles[vit](r_id) = voxelVol * i / sphereVol(r_id);
           ++r_id;
+          if (r_id == 3)
+          {
+            solid_angles[vit](3) = voxelVol * dis.size() / sphereVol(3);
+            break;
+          }
         }
-      }
-      if (r_id < 3)
-      {
-        solid_angles[vit](3) = voxelVol * dis.size() / sphereVol(3);
       }
 
       float cur_perc = (float)vit.idx() / poly_mesh->n_vertices();
