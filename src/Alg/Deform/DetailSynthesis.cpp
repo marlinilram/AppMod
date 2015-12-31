@@ -193,15 +193,15 @@ void DetailSynthesis::computeFeatureMap(ParaShape* para_shape, std::vector<std::
       feature_map[2].at<float>(x,y) = lambda[0] * v1_normal_original_mesh[2] + lambda[1] * v2_normal_original_mesh[2] + lambda[2] * v3_normal_original_mesh[2];*/
     }
   }
-  double max1,min1,max2,min2,max3,min3,max4,min4,max5,min5,max6,min6,max7,min7,max8,min8;
-  cv::minMaxLoc(para_shape->feature_map[0],&min1,&max1);
-  cv::minMaxLoc(para_shape->feature_map[1],&min2,&max2);
-  cv::minMaxLoc(para_shape->feature_map[2],&min3,&max3);
-  cv::minMaxLoc(para_shape->feature_map[3],&min4,&max4);
-  cv::minMaxLoc(para_shape->feature_map[4],&min5,&max5);
-  cv::minMaxLoc(para_shape->feature_map[5],&min6,&max6);
-  cv::minMaxLoc(para_shape->feature_map[6],&min7,&max7);
-  cv::minMaxLoc(para_shape->feature_map[7],&min8,&max8);
+
+  std::cout << "feature min max: " << std::endl;
+  for (size_t i = 0; i < para_shape->feature_map.size(); ++i)
+  {
+    double min, max;
+    cv::minMaxLoc(para_shape->feature_map[i],&min,&max);
+    std::cout << min << " " << max << " ";
+  }
+  std::cout << std::endl;
 }
 
 void DetailSynthesis::prepareDetailMap(std::shared_ptr<Model> model)
@@ -581,6 +581,15 @@ void DetailSynthesis::computeDetailMap(ParaShape* para_shape, std::vector<cv::Ma
     para_shape->filled = 0;
     para_shape->fill_ratio = float(n_filled_pixel) / (resolution * resolution);
   }
+
+  std::cout << "detail min max: " << std::endl;
+  for (size_t i = 0; i < para_shape->detail_map.size(); ++i)
+  {
+    double min, max;
+    cv::minMaxLoc(para_shape->detail_map[i],&min,&max);
+    std::cout << min << " " << max << " ";
+  }
+  std::cout << std::endl;
 }
 
 //old one, useless 
@@ -1223,6 +1232,7 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
+
   this->testMeshPara(src_model);
   
 
@@ -1325,9 +1335,11 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
+  ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
   ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
+  ShapeUtility::computeSolidAngleCurvature(tar_model);
 
   // 3. third do CCA, skip for now
 
@@ -1340,6 +1352,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   PolygonMesh::Vertex_attribute<STLVectorf> directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
   PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
+  PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
   std::vector<std::vector<float> > vertex_feature_list(poly_mesh->n_vertices(), std::vector<float>());
   for (auto vit : poly_mesh->vertices())
   {
@@ -1347,6 +1360,10 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](0));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](1));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](2));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](3));
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
@@ -1364,11 +1381,16 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
   v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
   v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
+  solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
   vertex_feature_list.clear();
   vertex_feature_list.resize(poly_mesh->n_vertices(), std::vector<float>());
   for (auto vit : poly_mesh->vertices())
   {
     vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](0));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](1));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](2));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](3));
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
@@ -1414,7 +1436,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   }
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
+  //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
+  syn_tool->init(src_para_shape->feature_map, src_para_shape->feature_map, src_para_shape->detail_map);
   syn_tool->doSynthesisNew();
 
   std::vector<cv::Mat> result_detail;

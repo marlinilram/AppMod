@@ -125,6 +125,7 @@ private:
   double lamd_occ;
   int max_iter;
   float py_scale;
+  float feature_threshold;
   std::vector<cv::Size> NeighborRange;
 
   std::vector<ImagePyramid> gpsrc_feature;

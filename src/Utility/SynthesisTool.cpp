@@ -116,19 +116,7 @@ void SynthesisTool::doSynthesis()
     int detail_dim = gpsrc_detail.size();
     if(l == levels - 1)
     {
-      for (int k = 0; k < detail_dim; ++k)
-      {
-        double max, min;
-        cv::minMaxLoc(gpsrc_detail[k].at(l),&min,&max);
-        srand((unsigned)time(NULL));
-        for(int i = 0; i < height; i ++)
-        {
-          for(int j = 0; j < width; j ++)
-          {
-            gptar_detail[k].at(l).at<float>(i, j) = (rand() / double(RAND_MAX)) * (max - min) + min;
-          }
-        }
-      }
+      this->initializeTarDetail(gptar_detail, l);
 
       FCandidates candidates;
       FCandidates best_match;
@@ -1042,6 +1030,8 @@ void SynthesisTool::doSynthesisNew()
     this->exportSrcFeature(gpsrc_feature, l);
     this->exportTarFeature(gptar_feature, l);
     this->exportSrcDetail(gpsrc_detail, l, 0);
+
+
 
     if(l == levels - 1)
     {

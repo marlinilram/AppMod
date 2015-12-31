@@ -25,6 +25,7 @@ void KDTreeWrapper::initKDTree(std::vector<float>& data, size_t num_pts, int dim
   }
 
   kdTree.reset(new kdtree::KDTree(kdTree_data));
+  kdTree->sort_results = true;
   //std::cout << "Build KDTree finished.\n";
 }
 
@@ -99,6 +100,23 @@ void KDTreeWrapper::rNearestPt(float r, std::vector<float>& pt_in, std::vector<f
   }
 }
 
+int KDTreeWrapper::rNearestPt(float r, std::vector<float>& pt_in)
+{
+  kdtree::KDTreeResultVector result;
+  kdTree->r_nearest(pt_in, r, result);
+  return (int)result.size();
+}
+
+void KDTreeWrapper::rNearestPt(float r, std::vector<float>& pt_in, std::vector<float>& dis)
+{
+  kdtree::KDTreeResultVector result;
+  kdTree->r_nearest(pt_in, r, result);
+  for (size_t i = 0; i < result.size(); ++i)
+  {
+    dis.push_back(result[i].dis);
+  }
+}
+
 void KDTreeWrapper::nearestPt(int n_neighbor, std::vector<float>& pt_in, std::vector<float>& pt_out, std::vector<float>& dis, std::vector<int>& pt_id)
 {
   kdtree::KDTreeResultVector result;
@@ -117,4 +135,12 @@ void KDTreeWrapper::nearestPt(int n_neighbor, std::vector<float>& pt_in, std::ve
 int KDTreeWrapper::nDataPt()
 {
   return kdTree->N;
+}
+
+bool KDTreeWrapper::has(std::vector<float>& pt_in, float epsilon)
+{
+  kdtree::KDTreeResultVector result;
+  kdTree->r_nearest(pt_in, epsilon, result);
+  if (result.empty()) return false;
+  else return true;
 }

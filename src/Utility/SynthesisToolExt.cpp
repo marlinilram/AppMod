@@ -158,6 +158,8 @@ void SynthesisTool::buildSourcePatchMask(cv::Mat& src_detail, std::vector<int>& 
   source_patch_mask.clear();
   source_patch_mask.resize(nnf_width * nnf_height, 0);
 
+  int invalid_cnt = 0;
+
   for(int i = 0; i < nnf_height; i ++)
   {
     for(int j = 0; j < nnf_width; j ++)
@@ -181,9 +183,12 @@ void SynthesisTool::buildSourcePatchMask(cv::Mat& src_detail, std::vector<int>& 
       if(is_outside)
       {
         source_patch_mask[i * nnf_width + j] = 1;
+        ++invalid_cnt;
       }
     }
   }
+
+  std::cout << "valid patch number: " << nnf_height * nnf_width - invalid_cnt << std::endl;
 }
 
 void SynthesisTool::buildTargetMask(cv::Mat& tar_detail, std::vector<int>& target_pixel_mask, std::vector<int>& target_patch_mask)
