@@ -428,12 +428,12 @@ void DetailSynthesis::computeDisplacementMap(ParaShape* para_shape, PolygonMesh*
         }
         else
         {
-          displacement_map.at<float>(resolution - y - 1,x) = -1; // unseen part
+          displacement_map.at<float>(resolution - y - 1,x) = -999; // unseen part
         }
       }
       else
       {
-        displacement_map.at<float>(resolution - y - 1,x) = -1; // outside boundary
+        displacement_map.at<float>(resolution - y - 1,x) = -999; // outside boundary
       }
     }
   }
@@ -1303,6 +1303,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::imshow("src detail 1", src_para_shape->detail_map[1]);
   cv::imshow("src detail 2", src_para_shape->detail_map[2]);
   cv::imshow("src detail 3", src_para_shape->detail_map[3]);
+  YMLHandler::saveToFile(src_model->getOutputPath(), "d2_displacement_map.yml", src_para_shape->detail_map[3]);
+  YMLHandler::saveToMat(src_model->getOutputPath(), "d2_displacement_map.mat", src_para_shape->detail_map[3]);
   applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, src_para_shape->detail_map[3]);
   return;
 
@@ -1463,16 +1465,17 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::imwrite(src_model->getOutputPath() + "/displacement.png", 255*src_para_shape->detail_map[3]);
 }
 
-void DetailSynthesis::test(std::shared_ptr<Model> model, ParaShape* para_shape)
+void DetailSynthesis::test(std::shared_ptr<Model> model)
 {
-  /*cv::FileStorage fs(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
-  cv::Mat displacement_mat;
-  fs["displacement"] >> displacement_mat;
-  PolygonMesh poly_mesh;
-  ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);
-  computeDisplacementMap(para_shape, &poly_mesh, model, mesh_para->seen_part->cut_faces);
-  applyDisplacementMap(para_shape->vertex_set, para_shape->cut_shape, model, para_shape->detail_map[3]);
-*/
-  
+  //NormalTransfer normal_transfer;
+  //std::string normal_file_name = "final_normal";
+  //normal_transfer.prepareNewNormal(model, normal_file_name);return;
+
+  cv::FileStorage fs2(model->getDataPath() + "/d2_displacement_map.yml", cv::FileStorage::READ);
+  cv::Mat d2_displacement_mat;
+  fs2["d2_displacement_map"] >> d2_displacement_mat;
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(model);
+  applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, model, d2_displacement_mat);
 
 }
