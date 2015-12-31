@@ -307,7 +307,17 @@ void DetailSynthesis::computeDisplacementMap(ParaShape* para_shape, PolygonMesh*
   std::shared_ptr<KDTreeWrapper> kdTree = para_shape->kdTree_UV;
   STLVectori v_set = para_shape->vertex_set;
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
-  
+
+  cv::Mat mask(resolution, resolution, CV_32FC1);
+  for(int i = 0; i < resolution; i ++)
+  {
+    for(int j = 0; j < resolution; j ++)
+    {
+      mask.at<float>(i, j) = 0;
+    }
+  }
+  float max_displacement = std::numeric_limits<double>::min(), min_displacement = std::numeric_limits<double>::max();
+
   AdjList adjFaces_list = shape->getVertexShareFaces();
   std::vector<float> pt(2, 0);
   for(int x = 0; x < resolution; x ++)
@@ -406,18 +416,42 @@ void DetailSynthesis::computeDisplacementMap(ParaShape* para_shape, PolygonMesh*
                           + (neg_intersect_point[2] - pos(2)) * (neg_intersect_point[2] - pos(2)));
             displacement_map.at<float>(resolution - y - 1,x) = distance > neg_distance ? -neg_distance : distance;
           }
+          mask.at<float>(resolution - y - 1, x) = 1;
+          if(displacement_map.at<float>(resolution - y - 1,x) > max_displacement)
+          {
+            max_displacement = displacement_map.at<float>(resolution - y - 1,x);
+          }
+          if(displacement_map.at<float>(resolution - y - 1,x) < min_displacement)
+          {
+            min_displacement = displacement_map.at<float>(resolution - y - 1,x);
+          }
         }
         else
         {
-          displacement_map.at<float>(resolution - y - 1,x) = -1;
+          displacement_map.at<float>(resolution - y - 1,x) = -1; // unseen part
         }
       }
       else
       {
-        displacement_map.at<float>(resolution - y - 1,x) = -1;
+        displacement_map.at<float>(resolution - y - 1,x) = -1; // outside boundary
       }
     }
   }
+  
+  // normalize displacement : only for display, need to denormalize when it is used to applyDisplacementMap
+  std::cout << "min_displacement:" << min_displacement << std::endl;
+  std::cout << "max_displacement:" << max_displacement << std::endl;
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      if(mask.at<float>(x, y) == 1)
+      {
+        //displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - min_displacement) / (max_displacement - min_displacement);
+      }
+    }
+  }
+
 
   para_shape->detail_map.push_back(displacement_map);
   //applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, model, displacement_map);
@@ -1201,8 +1235,6 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 
   this->testMeshPara(src_model);
   
-  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
-  src_para_shape->initWithExtShape(src_model);
 
   cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ);
   cv::Mat detail_reflectance_mat;
@@ -1212,6 +1244,43 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::Mat displacement_mat;
   fs2["displacement"] >> displacement_mat;
   
+  
+  
+  PolygonMesh new_mesh;
+  ShapeUtility::matToMesh(displacement_mat, new_mesh, src_model);
+  /*cv::imshow("src detail 0", src_para_shape->detail_map[0]);
+  cv::imshow("src detail 1", src_para_shape->detail_map[1]);
+  cv::imshow("src detail 2", src_para_shape->detail_map[2]);
+  cv::imshow("src detail 3", src_para_shape->detail_map[3]);*/
+  
+  //std::vector<cv::Mat> detail_image(3);
+  //cv::split(detail_reflectance_mat, &detail_image[0]);
+  //{
+  //  // dilate the detail map in case of black
+  //  for (int i = 0; i < 3; ++i)
+  //  {
+  //    ShapeUtility::dilateImage(detail_image[i], 15);
+  //  }
+  //}
+  //std::vector<cv::Mat> new_detail_image;
+  //new_detail_image.push_back(detail_image[0]);
+  //new_detail_image.push_back(detail_image[1]);
+  //new_detail_image.push_back(detail_image[2]);
+  ////new_detail_image.push_back(displacement_mat);
+  //std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  //src_para_shape->initWithExtShape(src_model);
+  //computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
+  //computeDisplacementMap(src_para_shape.get(), &new_mesh, src_model, mesh_para->seen_part->cut_faces);
+  //cv::imshow("src detail 0", src_para_shape->detail_map[0]);
+  //cv::imshow("src detail 1", src_para_shape->detail_map[1]);
+  //cv::imshow("src detail 2", src_para_shape->detail_map[2]);
+  //cv::imshow("src detail 3", src_para_shape->detail_map[3]);
+  //applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, src_para_shape->detail_map[3]);
+  //return;
+
+  NormalTransfer normal_transfer;
+  std::string normal_file_name = "final_normal";
+  normal_transfer.prepareNewNormal(src_model, normal_file_name);
   std::vector<cv::Mat> detail_image(3);
   cv::split(detail_reflectance_mat, &detail_image[0]);
   {
@@ -1225,13 +1294,19 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   new_detail_image.push_back(detail_image[0]);
   new_detail_image.push_back(detail_image[1]);
   new_detail_image.push_back(detail_image[2]);
-  new_detail_image.push_back(displacement_mat);
-
+  //new_detail_image.push_back(displacement_mat);
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
   computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
+  computeDisplacementMap(src_para_shape.get(), &new_mesh, src_model, mesh_para->seen_part->cut_faces);
+  cv::imshow("src detail 0", src_para_shape->detail_map[0]);
+  cv::imshow("src detail 1", src_para_shape->detail_map[1]);
+  cv::imshow("src detail 2", src_para_shape->detail_map[2]);
+  cv::imshow("src detail 3", src_para_shape->detail_map[3]);
+  applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, src_para_shape->detail_map[3]);
+  return;
 
-  NormalTransfer normal_transfer;
-  std::string normal_file_name = "final_normal";
-  //normal_transfer.prepareNewNormal(src_model, normal_file_name);
+
   //std::cout<<"test4"<< std::endl;
   //this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
 
@@ -1299,7 +1374,6 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
   }
-  //computeFeatureMap(mesh_para->seen_part.get(), vertex_feature_list);
   computeFeatureMap(src_para_shape.get(), vertex_feature_list);
 
   poly_mesh = tar_model->getPolygonMesh();
@@ -1352,6 +1426,14 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //mesh_para->seen_part->detail_map.push_back(displacement_map.clone());
 
   // 5. do synthesis
+  {
+    double min_test, max_test;
+    for (size_t i = 0; i < src_para_shape->detail_map.size(); ++i)
+    {
+      cv::minMaxLoc(src_para_shape->detail_map[i], &min_test, &max_test);
+      std::cout << "Source Detail Dim " << i << ": " << min_test << "\t" << max_test << std::endl;
+    }
+  }
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
@@ -1376,7 +1458,21 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::cout << "transfer finished." << std::endl;
 
   // 6. fill the detail map of tar_model
-  this->startDetailSynthesis(src_model);
+  //this->startDetailSynthesis(src_model);
 
-  cv::imwrite(src_model->getOutputPath() + "/displacement.png", 255*mesh_para->seen_part->detail_map[3]);
+  cv::imwrite(src_model->getOutputPath() + "/displacement.png", 255*src_para_shape->detail_map[3]);
+}
+
+void DetailSynthesis::test(std::shared_ptr<Model> model, ParaShape* para_shape)
+{
+  /*cv::FileStorage fs(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  cv::Mat displacement_mat;
+  fs["displacement"] >> displacement_mat;
+  PolygonMesh poly_mesh;
+  ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);
+  computeDisplacementMap(para_shape, &poly_mesh, model, mesh_para->seen_part->cut_faces);
+  applyDisplacementMap(para_shape->vertex_set, para_shape->cut_shape, model, para_shape->detail_map[3]);
+*/
+  
+
 }
