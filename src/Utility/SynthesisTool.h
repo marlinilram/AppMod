@@ -53,6 +53,9 @@ public:
   void exportSrcDetail(ImagePyramidVec& gpsrc, int level, int iter);
   void exportTarDetail(ImagePyramidVec& gptar, int level, int iter);
   void exportNNF(NNF& nnf, ImagePyramidVec& gptar, int level, int iter);
+  void exportMask(std::vector<int> mask, int mask_height, int mask_width, std::string fname);
+  void exportSrcMask();
+  void exportTarMask();
 
 private:
   void generatePyramid(ImagePyramid& pyr, int level);
@@ -144,7 +147,9 @@ private:
   std::vector<FBucketPryamid> gpsrc_feature_buckets;
 
   std::string outputPath;
-  std::vector<std::vector<int>> src_patch_mask;
+  std::vector<std::vector<int> > src_patch_mask;
+  std::vector<std::vector<int> > tar_patch_mask;
+  std::vector<std::vector<int> > tar_pixel_mask;
 
 private:
   SynthesisTool(const SynthesisTool&);
