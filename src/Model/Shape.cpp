@@ -147,6 +147,8 @@ void Shape::setUVCoord(FaceList& UVIdList, STLVectorf& UVCoord, FaceList& ori_fa
       he_texcoord.push_back(Vec2(UVCoord[2 * i + 0], UVCoord[2 * i + 1]));
     }
 
+    face_varying_UV_list = UVCoord;
+    UV_id_list = UVIdList;
     PolygonMesh::Halfedge_attribute<Vec2> f_uv_coord = poly_mesh->halfedge_attribute<Vec2>("he:face_uv");
     PolygonMesh::Halfedge_attribute<int> f_uv_id = poly_mesh->halfedge_attribute<int>("he:uv_id");
     for (size_t i = 0; i < ori_face_list.size() / 3; ++i)
@@ -270,6 +272,16 @@ const FaceList& Shape::getFaceList()
 const STLVectorf& Shape::getUVCoord()
 {
   return UV_list;
+}
+
+const STLVectorf& Shape::getFaceVaringUVCoord()
+{
+  return face_varying_UV_list;
+}
+
+const FaceList& Shape::getFaceVaringUVId()
+{
+  return UV_id_list;
 }
 
 const NormalList& Shape::getNormalList()

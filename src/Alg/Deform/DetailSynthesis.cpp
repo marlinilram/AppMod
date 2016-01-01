@@ -1233,7 +1233,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
 
-  this->testMeshPara(src_model);
+  //this->testMeshPara(src_model);
   
 
   cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ);
@@ -1247,7 +1247,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   
   
   PolygonMesh new_mesh;
-  ShapeUtility::matToMesh(displacement_mat, new_mesh, src_model);
+  //ShapeUtility::matToMesh(displacement_mat, new_mesh, src_model);
   /*cv::imshow("src detail 0", src_para_shape->detail_map[0]);
   cv::imshow("src detail 1", src_para_shape->detail_map[1]);
   cv::imshow("src detail 2", src_para_shape->detail_map[2]);
@@ -1279,8 +1279,18 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //return;
 
   NormalTransfer normal_transfer;
+  PolygonMesh middle_src_mesh;
   std::string normal_file_name = "final_normal";
-  normal_transfer.prepareNewNormal(src_model, normal_file_name);
+  {
+    PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
+    PolygonMesh test_mesh = old_src_mesh;
+    normal_transfer.prepareNewNormal(src_model, normal_file_name);
+    ShapeUtility::savePolyMesh(&old_src_mesh, src_model->getOutputPath() + "/testoldsrcmesh.obj");
+    ShapeUtility::computeLocalTransform(&old_src_mesh, src_model->getPolygonMesh());
+    ShapeUtility::applyLocalTransform(src_model->getPolygonMesh(), &test_mesh);
+    ShapeUtility::savePolyMesh(&test_mesh, src_model->getOutputPath() + "/testlocaltransform.obj");
+    return;
+  }
   std::vector<cv::Mat> detail_image(3);
   cv::split(detail_reflectance_mat, &detail_image[0]);
   {
@@ -1389,13 +1399,13 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   for (auto vit : poly_mesh->vertices())
   {
     vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](0));
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](1));
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](2));
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](3));
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
