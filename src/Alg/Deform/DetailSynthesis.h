@@ -28,7 +28,7 @@ public:
   void computeDisplacementMap(std::shared_ptr<Model> model); //old one; useless
   void prepareFeatureMap(std::shared_ptr<Model> model);
   void prepareDetailMap(std::shared_ptr<Model> model);
-  void applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> model, cv::Mat disp_map);
+  void applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> model, cv::Mat disp_map, cv::Mat mask);
   void startDetailSynthesis(std::shared_ptr<Model> model);
   void computeVectorField(std::shared_ptr<Model> model);
   void getDrawableActors(std::vector<GLActor>& actors);
@@ -43,7 +43,7 @@ public:
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces);
-  void computeDisplacementMap(ParaShape* para_shape, LG::PolygonMesh* displacement_mesh, std::shared_ptr<Model> model, std::set<int>& visible_faces);
+  void computeDisplacementMap(ParaShape* para_shape, VertexList& new_mesh_v, FaceList& new_mesh_f, std::shared_ptr<Model> model, std::set<int>& visible_faces, cv::Mat& uv_mask);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;
@@ -53,7 +53,9 @@ private:
   std::vector<GLActor> actors;
   int resolution;
   double normalize_max;
-
+  std::vector<float> detail_min, detail_max;
+  float displacement_min, displacement_max;
+ 
 private:
   DetailSynthesis(const DetailSynthesis&);
   void operator = (const DetailSynthesis&);
