@@ -1079,7 +1079,7 @@ namespace ShapeUtility
   void computeSolidAngleCurvature(std::shared_ptr<Model> model)
   {
     // voxelize the mesh
-    double voxel_size = model->getBoundBox()->getRadius() * 2 / 200;
+    double voxel_size = model->getBoundBox()->getRadius() / 200;
     VoxelerLibrary::Voxeler voxeler(model->getPolygonMesh(), voxel_size);
     voxeler.fillInside();
     std::vector<VoxelerLibrary::Voxel>& voxels = voxeler.voxels;
@@ -1105,7 +1105,7 @@ namespace ShapeUtility
     voxel_kd.initKDTree(voxel_kd_data, voxels.size(), 3);
     double voxelVol = voxelSize * voxelSize * voxelSize;
     Vector4f sphereVol(1, 2, 3, 4);
-    sphereVol = sphereVol * model->getBoundBox()->getRadius() * 2 / 100; //radius here
+    sphereVol = sphereVol * model->getBoundBox()->getRadius() / 200; //radius here
     Vector4f sphereR = sphereVol;
     sphereVol = (sphereVol.array() * sphereVol.array() * sphereVol.array()).matrix();
     sphereVol = 4 * M_PI / 3 * sphereVol; // volume
@@ -1113,6 +1113,7 @@ namespace ShapeUtility
     PolygonMesh* poly_mesh = model->getPolygonMesh();
     PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
     float perc = 0;
+    std::vector<double> maxs(4, std::numeric_limits<double>::min());
     for (auto vit : poly_mesh->vertices())
     {
       Vec3 pos = poly_mesh->position(vit);
@@ -1122,18 +1123,20 @@ namespace ShapeUtility
       query[2] = pos(2);
 
       std::vector<float> dis;
-      voxel_kd.rNearestPt(sphereR(3), query, dis);
+      voxel_kd.rNearestPt(sphereR(3) * sphereR(3), query, dis);
       int r_id = 0;
       solid_angles[vit] << 0, 0, 0, 0;
       for (size_t i = 0; i < dis.size(); ++i)
       {
-        if (dis[i] >= sphereR(r_id))
+        if (dis[i] >= (sphereR(r_id) * sphereR(r_id)))
         {
           solid_angles[vit](r_id) = voxelVol * i / sphereVol(r_id);
+          if (maxs[r_id] < solid_angles[vit](r_id)) maxs[r_id] = solid_angles[vit](r_id);
           ++r_id;
           if (r_id == 3)
           {
             solid_angles[vit](3) = voxelVol * dis.size() / sphereVol(3);
+            if (maxs[r_id] < solid_angles[vit](r_id)) maxs[r_id] = solid_angles[vit](r_id);
             break;
           }
         }
@@ -1146,6 +1149,13 @@ namespace ShapeUtility
         std::cout << perc << "...";
       }
     }
+    std::cout << std::endl;
+
+    for (size_t i = 0; i < maxs.size(); ++i)
+    {
+      std::cout << maxs[i] << "\t";
+    }
+    std::cout << std::endl;
   }
 
   void computeLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh)

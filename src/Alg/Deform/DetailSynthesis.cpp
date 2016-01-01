@@ -1261,7 +1261,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
 
-  //this->testMeshPara(src_model);
+  this->testMeshPara(src_model);
   
 
   cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ); // normalized reflectance
@@ -1310,24 +1310,16 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 
   VertexList original_vertex_list = src_model->getShapeVertexList();
 
-  NormalTransfer normal_transfer;
-  PolygonMesh middle_src_mesh;
-  std::string normal_file_name = "final_normal";
   {
     PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
-    PolygonMesh test_mesh = old_src_mesh;
+    NormalTransfer normal_transfer;
+    std::string normal_file_name = "final_normal";
     normal_transfer.prepareNewNormal(src_model, normal_file_name);
-    ShapeUtility::savePolyMesh(&old_src_mesh, src_model->getOutputPath() + "/testoldsrcmesh.obj");
     ShapeUtility::computeLocalTransform(&old_src_mesh, src_model->getPolygonMesh());
-    ShapeUtility::applyLocalTransform(src_model->getPolygonMesh(), &test_mesh);
-    ShapeUtility::savePolyMesh(&test_mesh, src_model->getOutputPath() + "/testlocaltransform.obj");
-    return;
   }
 
   VertexList new_vertex_list = src_model->getShapeVertexList();
   FaceList new_face_list = src_model->getShapeFaceList();
-
-  PolygonMesh old_src_mesh = (*src_model->getPolygonMesh());
 
   src_model->updateShape(original_vertex_list);
 
@@ -1407,11 +1399,11 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 2. second we need to compute the geometry feature on deformed src_model and tar_model;
   // normalized height, curvature, directional occlusion, surface normal
   ShapeUtility::computeNormalizedHeight(src_model);
-  ShapeUtility::computeDirectionalOcclusion(src_model);
+  //ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
-  ShapeUtility::computeDirectionalOcclusion(tar_model);
+  //ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
   ShapeUtility::computeSolidAngleCurvature(tar_model);
 
@@ -1481,6 +1473,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
   tar_para_shape->initWithExtShape(tar_model);
   computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
+  return;
 
   //cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ);
   //cv::Mat detail_reflectance_mat;
