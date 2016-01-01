@@ -5,6 +5,8 @@
 
 #include <vector>
 #include <cv.h>
+#include <highgui.h>
+#include <fstream>
 
 SynthesisTool::SynthesisTool()
 {
@@ -24,9 +26,24 @@ SynthesisTool::SynthesisTool()
   candidate_size = 20;
   best_random_size = 5;
   patch_size = 10;
-  bias_rate = 0.1;
-  lamd_occ = 0.0;
+  bias_rate = 0.5; // not sure its effect, affect the smootheness of NNF when deactivate lamd_occ
+  lamd_occ = 0.005; // must activate, but low weight
   max_iter = 5;
+
+  std::ofstream outFile(outputPath + "/parameter_info.txt");
+  if (!outFile.is_open())
+  {
+    std::cout << "failed to open parameter_info.txt file, return." << std::endl;
+    return;
+  }
+  outFile << "candidate_size: " << candidate_size << std::endl;
+  outFile << "best_random_size: " << best_random_size << std::endl;
+  outFile << "patch_size: " << patch_size << std::endl;
+  outFile << "bias_rate: " << bias_rate << std::endl;
+  outFile << "lamd_occ: " << lamd_occ << std::endl;
+  outFile << "max_iter: " << max_iter << std::endl;
+  outFile << "levels: " << levels << std::endl;
+  outFile.close();
 }
 
 void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail)
@@ -1014,7 +1031,17 @@ void SynthesisTool::doSynthesisNew()
     std::vector<int> source_patch_mask_l;
     this->buildSourcePatchMask(gpsrc_detail[0].at(l), source_patch_mask_l);
     src_patch_mask.push_back(source_patch_mask_l);
+
+    std::vector<int> target_patch_mask_l;
+    std::vector<int> target_pixel_mask_l;
+    this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l);
+    tar_pixel_mask.push_back(target_pixel_mask_l);
+    tar_patch_mask.push_back(target_patch_mask_l);
   }
+  this->exportSrcMask();
+  this->exportTarMask();
+  //return;
+
   std::cout << "OK1!!!!\n";
   std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
   for (int l = levels - 1; l >= 0; --l)                      
@@ -1302,6 +1329,8 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
     {
       std::vector<Point2D> rand_pos;
       int offset = i * nnf_width + j;
+
+      if (tar_patch_mask[level][offset] == 1) continue;
       
       // random search
       this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
@@ -1570,7 +1599,7 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   //if (d_f < 0.001)  lambda_d_f = 1, lambda_d_d = 0;
   //else  lambda_d_f = 0, lambda_d_d = 1;
   beta = 1.0 / (1 + exp(5 * (d_f - 0.5)));
-  d =  beta * d_f + (1 - beta) * d_d + lamd_occ * d_occ;// + lambda_d_d * d_d + d_occ;
+  d =  d_f + lamd_occ * d_occ;// + lambda_d_d * d_d + d_occ;
   return d;
 }
 
@@ -1606,6 +1635,7 @@ void SynthesisTool::voteImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d
   {
     for (int j = 0; j < width; ++j)
     {
+      if (tar_pixel_mask[level][i * width + j] == 1) continue;
       this->votePixel(gpsrc_d, gptar_d, nnf, level, Point2D(j, i));
     }
   }
