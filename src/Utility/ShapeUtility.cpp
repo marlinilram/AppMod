@@ -1147,4 +1147,151 @@ namespace ShapeUtility
       }
     }
   }
+
+  void computeLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh)
+  {
+    // src_mesh is the base mesh, the coarse one
+    // tar_mesh is the transformed mesh, the deformed one
+    // src_mesh and tar_mesh should be with same mesh only with different vertex position
+
+    // we define the local coordinate system: tangent -> x, normal cross tangent -> y, normal -> z
+
+    PolygonMesh::Vertex_attribute<Vec3> local_transform = tar_mesh->vertex_attribute<Vec3>("v:local_transform");
+    PolygonMesh::Vertex_attribute<Vec3> v_normals = src_mesh->vertex_attribute<Vec3>("v:normal");
+    for (auto vit : tar_mesh->vertices())
+    {
+      Vec3 new_v = tar_mesh->position(vit);
+      Vec3 old_v = src_mesh->position(vit);
+
+      Vec3 centroid(0, 0, 0);
+      int n_cnt = 0;
+      for (auto vvc : src_mesh->vertices())
+      {
+        centroid += src_mesh->position(vvc);
+        ++n_cnt;
+      }
+      centroid = centroid / n_cnt;
+
+      Vec3 tangent = centroid - old_v; tangent.normalize();
+      Vec3 normal = v_normals[vit]; normal.normalize();
+      Vec3 yy = normal.cross(tangent);
+      tangent = yy.cross(normal);
+      Matrix3f local_trans_mat;
+      local_trans_mat << tangent, yy, normal;
+      local_transform[vit] = local_trans_mat.inverse() * (new_v - old_v);
+    }
+  }
+
+  void applyLocalTransform(std::shared_ptr<Shape> src_shape, std::shared_ptr<Shape> tar_shape)
+  {
+    PolygonMesh* src_mesh = src_shape->getPolygonMesh();
+    PolygonMesh* tar_mesh = tar_shape->getPolygonMesh();
+    PolygonMesh::Vertex_attribute<Vec3> local_transform = src_mesh->vertex_attribute<Vec3>("v:local_transform");
+    PolygonMesh::Vertex_attribute<Vec3> v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
+    VertexList new_vertices = tar_shape->getVertexList();
+    for (auto vit : tar_mesh->vertices())
+    {
+      Vec3 t_v = tar_mesh->position(vit);
+
+      Vec3 centroid(0, 0, 0);
+      int n_cnt = 0;
+      for (auto vvc : tar_mesh->vertices())
+      {
+        centroid += tar_mesh->position(vvc);
+        ++n_cnt;
+      }
+      centroid = centroid / n_cnt;
+
+      Vec3 tangent = centroid - t_v; tangent.normalize();
+      Vec3 normal = v_normals[vit]; normal.normalize();
+      Vec3 yy = normal.cross(tangent);
+      tangent = yy.cross(normal);
+      Matrix3f local_trans_mat;
+      local_trans_mat << tangent, yy, normal;
+      Vec3 n_t_v = local_trans_mat * local_transform[vit] + t_v;
+      new_vertices[3 * vit.idx() + 0] = n_t_v(0);
+      new_vertices[3 * vit.idx() + 1] = n_t_v(1);
+      new_vertices[3 * vit.idx() + 2] = n_t_v(2);
+    }
+
+    tar_shape->updateShape(new_vertices);
+  }
+
+  void applyLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh)
+  {
+    PolygonMesh::Vertex_attribute<Vec3> local_transform = src_mesh->vertex_attribute<Vec3>("v:local_transform");
+    PolygonMesh::Vertex_attribute<Vec3> v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
+    VertexList new_vertices(3 * tar_mesh->n_vertices(), 0);
+
+    for (auto vit : tar_mesh->vertices())
+    {
+      Vec3 t_v = tar_mesh->position(vit);
+
+      Vec3 centroid(0, 0, 0);
+      int n_cnt = 0;
+      for (auto vvc : tar_mesh->vertices())
+      {
+        centroid += tar_mesh->position(vvc);
+        ++n_cnt;
+      }
+      centroid = centroid / n_cnt;
+
+      Vec3 tangent = centroid - t_v; tangent.normalize();
+      Vec3 normal = v_normals[vit]; normal.normalize();
+      Vec3 yy = normal.cross(tangent);
+      tangent = yy.cross(normal);
+      Matrix3f local_trans_mat;
+      local_trans_mat << tangent, yy, normal;
+      Vec3 n_t_v = local_trans_mat * local_transform[vit] + t_v;
+      new_vertices[3 * vit.idx() + 0] = n_t_v(0);
+      new_vertices[3 * vit.idx() + 1] = n_t_v(1);
+      new_vertices[3 * vit.idx() + 2] = n_t_v(2);
+    }
+
+    for (auto vit : tar_mesh->vertices())
+    {
+      tar_mesh->position(vit) = Vec3(new_vertices[3 * vit.idx() + 0], new_vertices[3 * vit.idx() + 1], new_vertices[3 * vit.idx() + 2]);
+    }
+  }
+
+  void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName)
+  {
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+
+    tinyobj::shape_t obj_shape;
+
+    obj_shape.mesh.positions.resize(3 * poly_mesh->n_vertices(), 0);
+    obj_shape.mesh.indices.resize(3 * poly_mesh->n_faces(), 0);
+    obj_shape.mesh.uv_indices.resize(3 * poly_mesh->n_faces(), 0);
+
+    std::vector<Vec2>& he_texcoord = poly_mesh->get_attribute<std::vector<Vec2> >("he:texcoord");
+    for (size_t i = 0; i < he_texcoord.size(); ++i)
+    {
+      obj_shape.mesh.texcoords.push_back(he_texcoord[i](0));
+      obj_shape.mesh.texcoords.push_back(he_texcoord[i](1));
+    }
+    for (auto vit : poly_mesh->vertices())
+    {
+      Vec3 cur_v = poly_mesh->position(vit);
+      obj_shape.mesh.positions[3 * vit.idx() + 0] = cur_v(0);
+      obj_shape.mesh.positions[3 * vit.idx() + 1] = cur_v(1);
+      obj_shape.mesh.positions[3 * vit.idx() + 2] = cur_v(2);
+    }
+    PolygonMesh::Halfedge_attribute<int> f_uv_id = poly_mesh->halfedge_attribute<int>("he:uv_id");
+    for (auto fit : poly_mesh->faces())
+    {
+      int n_cnt = 0;
+      for (auto hefc : poly_mesh->halfedges(fit))
+      {
+        obj_shape.mesh.indices[3 * fit.idx() + n_cnt] = poly_mesh->to_vertex(hefc).idx();
+        obj_shape.mesh.uv_indices[3 * fit.idx() + n_cnt] = f_uv_id[hefc];
+        ++n_cnt;
+      }
+    }
+
+    shapes.push_back(obj_shape);
+
+    WriteObj(fName, shapes, materials);
+  }
 }

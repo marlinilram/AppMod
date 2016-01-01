@@ -173,6 +173,8 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   //model->updateSHColor();
 
   std::cout << "Update geometry finished...\n";
+
+  // save mesh 
 }
 
 void NormalTransfer::getDrawableActors(std::vector<GLActor>& actors)
