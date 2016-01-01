@@ -67,6 +67,12 @@ namespace ShapeUtility
   void computeVertexSymmetryProjection(Vector3f& vertex, Vector3f& normal, std::vector<double>& plane_coef);
 
   void computeSolidAngleCurvature(std::shared_ptr<Model> model);
+
+  void computeLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh);
+  void applyLocalTransform(std::shared_ptr<Shape> src_shape, std::shared_ptr<Shape> tar_shape);
+  void applyLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh);
+
+  void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName);
 }
 
 #endif

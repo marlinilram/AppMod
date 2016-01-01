@@ -96,6 +96,7 @@ SET( QGLViewer_lib_release 	${CMAKE_CURRENT_SOURCE_DIR}/lib/QGLViewer2.lib )
 SET( NLopt_lib_debug 		    ${CMAKE_CURRENT_SOURCE_DIR}/lib/nloptd.lib )
 SET( NLopt_lib_release 		  ${CMAKE_CURRENT_SOURCE_DIR}/lib/nlopt.lib )
 FILE( GLOB Cholmod_lib 		  "${CMAKE_CURRENT_SOURCE_DIR}/extern/cholmod/lib/*.lib" )
+SET(CMAKE_CXX_STACK_SIZE "1000000000")
 
 ADD_EXECUTABLE( ${PROJECT_NAME} 
                 ${Project_SRCS}  

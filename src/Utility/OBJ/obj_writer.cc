@@ -117,6 +117,7 @@ bool WriteObj(const std::string& filename, const std::vector<tinyobj::shape_t>& 
     if (shapes[i].mesh.texcoords.size() > 0) has_vt = true;
 
     // face
+    bool has_vt_id = shapes[i].mesh.uv_indices.empty() ? false : true;
     for (size_t k = 0; k < shapes[i].mesh.indices.size() / 3; k++) {
   
       // Face index is 1-base.
@@ -127,6 +128,16 @@ bool WriteObj(const std::string& filename, const std::vector<tinyobj::shape_t>& 
       int v1 = shapes[i].mesh.indices[3*k + 1] + 1 + v_offset;
       int v2 = shapes[i].mesh.indices[3*k + 2] + 1 + v_offset;
 
+      int v0_uv = v0;
+      int v1_uv = v1;
+      int v2_uv = v2;
+      if (has_vt_id)
+      {
+        v0_uv = shapes[i].mesh.uv_indices[3*k + 0] + 1 + v_offset;
+        v1_uv = shapes[i].mesh.uv_indices[3*k + 1] + 1 + v_offset;
+        v2_uv = shapes[i].mesh.uv_indices[3*k + 2] + 1 + v_offset;
+      }
+
       //int material_id = shapes[i].mesh.material_ids[k];
       //if (material_id != prev_material_id) {
       //  std::string material_name = materials[material_id].name;
@@ -136,11 +147,11 @@ bool WriteObj(const std::string& filename, const std::vector<tinyobj::shape_t>& 
 
       if (has_vn && has_vt) {
         fprintf(fp, "f %d/%d/%d %d/%d/%d %d/%d/%d\n",
-          v0, v0, v0, v1, v1, v1, v2, v2, v2);
+          v0, v0_uv, v0, v1, v1_uv, v1, v2, v2_uv, v2);
       } else if (has_vn && !has_vt) {
         fprintf(fp, "f %d//%d %d//%d %d//%d\n", v0, v0, v1, v1, v2, v2);
       } else if (!has_vn && has_vt) {
-        fprintf(fp, "f %d/%d %d/%d %d/%d\n", v0, v0, v1, v1, v2, v2);
+        fprintf(fp, "f %d/%d %d/%d %d/%d\n", v0, v0_uv, v1, v1_uv, v2, v2_uv);
       } else {
         fprintf(fp, "f %d %d %d\n", v0, v1, v2);
       }

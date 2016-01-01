@@ -125,7 +125,8 @@ void Model::exportOBJ(int cur_iter)
 
   obj_shape.mesh.positions = shape->getVertexList();
   obj_shape.mesh.indices = shape->getFaceList();
-  obj_shape.mesh.texcoords = shape->getUVCoord();
+  obj_shape.mesh.texcoords = shape->getFaceVaringUVCoord();
+  obj_shape.mesh.uv_indices = shape->getFaceVaringUVId(); 
 
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform") != 0)
   {
