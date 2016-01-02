@@ -1744,7 +1744,15 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
     std::vector<int> source_patch_mask_l;
     this->buildSourcePatchMask(gpsrc_feature[0].at(l), source_patch_mask_l);
     src_patch_mask.push_back(source_patch_mask_l);
+
+    std::vector<int> target_patch_mask_l;
+    std::vector<int> target_pixel_mask_l;
+    this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l);
+    tar_pixel_mask.push_back(target_pixel_mask_l);
+    tar_patch_mask.push_back(target_patch_mask_l);
   }
+  this->exportSrcMask();
+  this->exportTarMask();
   std::cout << "Init mask finished.\n";
   
   std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
@@ -1770,7 +1778,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
         //if (i_iter % 2 == 0)
         {
           double cur_energy = 0;
-          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 0);
+          this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 0);
           cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 1);
           std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
         }
@@ -1789,7 +1797,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
         {
           double cur_energy = 0;
           this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 0);
-          this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 1);
+          cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 1);
           std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
         }
         this->exportNNF(nnf, gptar_feature, l, i_iter);
@@ -1822,6 +1830,7 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   }
 
   double energyNNF = 0;
+  int n_patches = 0;
 
   // deal with all pixels left
   for (int i = istart; i != iend; i += ichange)
@@ -1830,6 +1839,8 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
     {
       std::vector<Point2D> rand_pos;
       int offset = i * nnf_width + j;
+
+      if (tar_patch_mask[level][offset] == 1) continue;
 
       // random search
       this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
@@ -1875,10 +1886,11 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
         energyNNF += d_best_bias;
       }
       this->updateRefCount(ref_cnt, nnf[offset], gpsrc_f, level);
+      ++n_patches;
     }
   }
 
-  return energyNNF;
+  return energyNNF / n_patches;
 }
 
 double SynthesisTool::bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f, std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch)

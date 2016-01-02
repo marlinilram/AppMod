@@ -39,6 +39,7 @@ public:
   // transfer
   void doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
   void test(std::shared_ptr<Model> model);
+  void doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);

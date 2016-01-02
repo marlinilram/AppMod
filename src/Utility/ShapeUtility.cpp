@@ -1264,6 +1264,42 @@ namespace ShapeUtility
     }
   }
 
+  void prepareLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh, const std::vector<int>& v_ids, std::vector<float>& new_v_list)
+  {
+    PolygonMesh::Vertex_attribute<Vec3> local_transform = src_mesh->vertex_attribute<Vec3>("v:local_transform");
+    PolygonMesh::Vertex_attribute<Vec3> v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
+
+    new_v_list.clear();
+    new_v_list.resize(3 * v_ids.size(), 0);
+    for (size_t i = 0; i < v_ids.size(); ++i)
+    {
+      PolygonMesh::Vertex cur_v(v_ids[i]);
+      Vec3 t_v = tar_mesh->position(cur_v);
+      
+      Vec3 centroid(0, 0, 0);
+      int n_cnt = 0;
+
+      for (auto vvc : tar_mesh->vertices())
+      {
+        centroid += tar_mesh->position(vvc);
+        ++n_cnt;
+      }
+      centroid = centroid / n_cnt;
+
+      Vec3 tangent = centroid - t_v; tangent.normalize();
+      Vec3 normal = v_normals[cur_v]; normal.normalize();
+      Vec3 yy = normal.cross(tangent);
+      tangent = yy.cross(normal);
+      Matrix3f local_trans_mat;
+      local_trans_mat << tangent, yy, normal;
+      Vec3 n_t_v = local_trans_mat * local_transform[cur_v] + t_v;
+
+      new_v_list[3 * i + 0] = n_t_v(0);
+      new_v_list[3 * i + 1] = n_t_v(1);
+      new_v_list[3 * i + 2] = n_t_v(2);
+    }
+  }
+
   void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName)
   {
     std::vector<tinyobj::shape_t> shapes;
