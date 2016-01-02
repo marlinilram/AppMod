@@ -42,6 +42,8 @@ public:
   void doImageSynthesis(std::vector<cv::Mat>& src_detail);
   inline std::vector<ImagePyramid>& getTargetDetail(){ return gptar_detail; };
 
+  void doNNFOptimization(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature);
+
   void setExportPath(std::string& path_in) { outputPath = path_in; };
   void exportFeature(cv::Mat& f_mat, std::string fname);
   void exportSrcFeature(ImagePyramidVec& gpsrc, int level);
@@ -118,6 +120,12 @@ private:
                  NNF& nnf, std::vector<float>& ref_cnt, int level, int iter = 0);
   void buildSourcePatchMask(cv::Mat& src_detail, std::vector<int>& source_patch_mask);
   void buildTargetMask(cv::Mat& tar_detail, std::vector<int>& target_pixel_mask, std::vector<int>& target_patch_mask);
+
+  double updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f, NNF& nnf, std::vector<float>& ref_cnt, int level, int iter = 0);
+  double distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+    std::vector<float>& ref_cnt, int level, Point2D& srcPatch, Point2D& tarPatch);
+  double bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+    std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch);
 
 private:
   int levels;

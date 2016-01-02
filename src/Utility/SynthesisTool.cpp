@@ -1710,3 +1710,242 @@ void SynthesisTool::updateRefCount(STLVectorf& ref_cnt, Point2D& best_patch, Ima
     }
   }
 };
+
+
+void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature)
+{
+  // get image for pyramids
+  gpsrc_feature.clear();
+  gptar_feature.clear();
+
+  gpsrc_feature.resize(src_feature.size());
+  gptar_feature.resize(tar_feature.size());
+
+  for(size_t i = 0; i < src_feature.size(); i ++)
+  {
+    gpsrc_feature[i].push_back(src_feature[i].clone());
+    gptar_feature[i].push_back(tar_feature[i].clone());
+  }
+  for(size_t i = 0; i < gptar_feature.size(); i ++)
+  {
+    this->generatePyramid(gpsrc_feature[i], levels);
+    this->generatePyramid(gptar_feature[i], levels);
+  }
+
+  //this->buildAllFeatureButkects(gpsrc_feature, gpsrc_feature_buckets);
+
+  std::cout << "NNF optimization Init success !" << std::endl;
+
+  // find best match for each level
+  double totalTime = 0.0;
+  srand((unsigned)time(NULL));
+  for(int l = 0; l < levels; l ++)
+  {
+    std::vector<int> source_patch_mask_l;
+    this->buildSourcePatchMask(gpsrc_feature[0].at(l), source_patch_mask_l);
+    src_patch_mask.push_back(source_patch_mask_l);
+
+    std::vector<int> target_patch_mask_l;
+    std::vector<int> target_pixel_mask_l;
+    this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l);
+    tar_pixel_mask.push_back(target_pixel_mask_l);
+    tar_patch_mask.push_back(target_patch_mask_l);
+  }
+  this->exportSrcMask();
+  this->exportTarMask();
+  std::cout << "Init mask finished.\n";
+  
+  std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
+  for (int l = levels - 1; l >= 0; --l)                      
+  {
+    double duration;
+    clock_t start, end;
+    start = clock();
+
+    int width = gptar_feature[0].at(l).cols;
+    int height = gptar_feature[0].at(l).rows;
+
+
+    this->exportSrcFeature(gpsrc_feature, l);
+    this->exportTarFeature(gptar_feature, l);
+
+    if(l == levels - 1)
+    {
+      this->initializeNNF(gptar_feature[0], nnf, l);
+      for (int i_iter = 0; i_iter < max_iter; ++i_iter)
+      {
+        std::vector<float> ref_cnt(width * height, 0.0);
+        //if (i_iter % 2 == 0)
+        {
+          double cur_energy = 0;
+          this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 0);
+          cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 1);
+          std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
+        }
+        this->exportNNF(nnf, gptar_feature, l, i_iter);
+      }
+    }
+    else
+    {
+      std::vector<Point2D> nnf_new;
+      this->initializeNNFFromLastLevel(gptar_feature[0], nnf, l, nnf_new);
+      nnf.swap(nnf_new);
+      for (int i_iter = 0; i_iter < max_iter; ++i_iter)
+      {
+        std::vector<float> ref_cnt(width * height, 0.0);
+        //if (i_iter % 2 == 0)
+        {
+          double cur_energy = 0;
+          this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 0);
+          cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 1);
+          std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
+        }
+        this->exportNNF(nnf, gptar_feature, l, i_iter);
+      }
+    }
+
+    end = clock();
+    duration = (double)(end - start) / CLOCKS_PER_SEC;
+    totalTime += duration;
+    std::cout << "Level " << l << " is finished ! " << "Running time is : " << duration << " seconds." << std::endl;
+  }
+  std::cout << "All levels is finished !" << " The total running time is :" << totalTime << " seconds." << std::endl;
+
+
+}
+
+double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f, NNF& nnf, std::vector<float>& ref_cnt, int level, int iter /* = 0 */)
+{
+  int height = gptar_f[0][level].rows;
+  int width  = gptar_f[0][level].cols;
+  int nnf_height = (height - this->patch_size + 1);
+  int nnf_width  = (width - this->patch_size + 1);
+
+  int istart = 0, iend = nnf_height, ichange = 1;
+  int jstart = 0, jend = nnf_width, jchange = 1;
+  if (iter % 2 == 1)
+  {
+    istart = iend - 1; iend = -1; ichange = -1;
+    jstart = jend - 1; jend = -1; jchange = -1;
+  }
+
+  double energyNNF = 0;
+  int n_patches = 0;
+
+  // deal with all pixels left
+  for (int i = istart; i != iend; i += ichange)
+  {
+    for (int j = jstart; j != jend; j += jchange)
+    {
+      std::vector<Point2D> rand_pos;
+      int offset = i * nnf_width + j;
+
+      if (tar_patch_mask[level][offset] == 1) continue;
+
+      // random search
+      this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
+      Point2D best_rand;
+      double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, ref_cnt, level, Point2D(j, i), rand_pos, best_rand);
+
+      // propagation
+      rand_pos.clear();
+      // left
+      if ((unsigned)(j - jchange) < (unsigned)nnf_width)
+      {
+        Point2D left_nnf = nnf[i * nnf_width + j - jchange];
+        if ((unsigned)(left_nnf.first + jchange) < unsigned(nnf_width))
+        {
+          left_nnf.first = left_nnf.first + jchange;
+          if(this->validPatchWithMask(left_nnf, src_patch_mask[level], nnf_height, nnf_width))
+            rand_pos.push_back(left_nnf);
+        }
+      }
+      // up
+      if ((unsigned)(i - ichange) < (unsigned)nnf_height)
+      {
+        Point2D up_nnf = nnf[(i - ichange) * nnf_width + j];
+        if ((unsigned)(up_nnf.second + ichange) < unsigned(nnf_height))
+        {
+          up_nnf.second = (up_nnf.second + ichange);
+          if(this->validPatchWithMask(up_nnf, src_patch_mask[level], nnf_height, nnf_width))
+            rand_pos.push_back(up_nnf);
+        }
+      }
+      Point2D best_bias;
+      rand_pos.push_back(nnf[offset]);
+      double d_best_bias = this->bestPatchInSet(gpsrc_f, gptar_f, ref_cnt, level, Point2D(j, i), rand_pos, best_bias);
+
+      if (d_best_rand < (bias_rate * d_best_bias))
+      {
+        nnf[offset] = best_rand;
+        energyNNF += d_best_rand;
+      }
+      else
+      {
+        nnf[offset] = best_bias;
+        energyNNF += d_best_bias;
+      }
+      this->updateRefCount(ref_cnt, nnf[offset], gpsrc_f, level);
+      ++n_patches;
+    }
+  }
+
+  return energyNNF / n_patches;
+}
+
+double SynthesisTool::bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f, std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch)
+{
+  size_t best_id = 0;
+  double min_dist = std::numeric_limits<double>::max();
+  for (size_t i = 0; i < srcPatches.size(); ++i)
+  {
+    double cur_dist = this->distPatch(gpsrc_f, gptar_f, ref_cnt, level, srcPatches[i], tarPatch);
+    if (cur_dist < min_dist)
+    {
+      best_id = i;
+      min_dist = cur_dist;
+    }
+  }
+  best_patch = srcPatches[best_id];
+
+
+  return min_dist;
+}
+
+double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f, std::vector<float>& ref_cnt, int level, Point2D& srcPatch, Point2D& tarPatch)
+{
+  double d = 0.0;
+  double d_f = 0.0;
+  double d_d = 0.0;
+  double d_occ = 0.0;
+  double lambda_d_f = 0;
+  double lambda_d_d = 0;
+  double beta = 0.0;
+
+  int fdim = (int)gpsrc_f.size();
+  int width = gptar_f[0][level].cols;
+  int nnf_width  = (width - this->patch_size + 1);
+
+  // for each pixel in the patch
+  for (int i = 0; i < this->patch_size; ++i)
+  {
+    for (int j = 0; j < this->patch_size; ++j)
+    {
+      // for each feature dimension
+      for (int k = 0; k < fdim; ++k)
+      {
+        d_f += pow(gpsrc_f[k][level].at<float>(srcPatch.second + i, srcPatch.first + j) - gptar_f[k][level].at<float>(tarPatch.second + i, tarPatch.first + j), 2);
+      }
+
+      d_occ += ref_cnt[(srcPatch.second + i) * gpsrc_f[0][level].cols + srcPatch.first + j];
+    }
+  }
+
+  d_f /= this->patch_size * this->patch_size * fdim;
+  d_occ /= pow(this->patch_size, 4);
+
+  //if (d_f < 0.001)  lambda_d_f = 1, lambda_d_d = 0;
+  //else  lambda_d_f = 0, lambda_d_d = 1;
+  d =  d_f + lamd_occ * d_occ;
+  return d;
+}

@@ -703,10 +703,10 @@ void SynthesisTool::exportMask(std::vector<int> mask, int mask_height, int mask_
 void SynthesisTool::exportSrcMask()
 {
   // only patch mask
-  for (size_t i = 0; i < gpsrc_detail[0].size(); ++i)
+  for (size_t i = 0; i < gpsrc_feature[0].size(); ++i)
   {
-    int height = gpsrc_detail[0][i].rows;
-    int width  = gpsrc_detail[0][i].cols;
+    int height = gpsrc_feature[0][i].rows;
+    int width  = gpsrc_feature[0][i].cols;
     int nnf_height = (height - this->patch_size + 1);
     int nnf_width  = (width - this->patch_size + 1);  
     this->exportMask(src_patch_mask[i], nnf_height, nnf_width, "src_patch_mask_level_" + std::to_string(i) + ".png");
@@ -715,10 +715,10 @@ void SynthesisTool::exportSrcMask()
 
 void SynthesisTool::exportTarMask()
 {
-  for (size_t i = 0; i < gptar_detail[0].size(); ++i)
+  for (size_t i = 0; i < gptar_feature[0].size(); ++i)
   {
-    int height = gptar_detail[0][i].rows;
-    int width  = gptar_detail[0][i].cols;
+    int height = gptar_feature[0][i].rows;
+    int width  = gptar_feature[0][i].cols;
     int nnf_height = (height - this->patch_size + 1);
     int nnf_width  = (width - this->patch_size + 1);  
     this->exportMask(tar_patch_mask[i], nnf_height, nnf_width, "tar_patch_mask_level_" + std::to_string(i) + ".png");
