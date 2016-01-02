@@ -24,7 +24,7 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 2048;
+  resolution = 1024;
   normalize_max = -1.0;
 }
 
@@ -1324,9 +1324,9 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //  return;
   //}
 
-  NormalTransfer normal_transfer;
+  /*NormalTransfer normal_transfer;
   std::string normal_file_name = "final_normal";
-  normal_transfer.prepareNewNormal(src_model, normal_file_name);
+  normal_transfer.prepareNewNormal(src_model, normal_file_name);*/
 
   VertexList new_vertex_list = src_model->getShapeVertexList();
   FaceList new_face_list = src_model->getShapeFaceList();
@@ -1353,19 +1353,19 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
   
-  /*computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
-  std::vector<cv::Mat> for_merge; 
+  //computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
+  /*std::vector<cv::Mat> for_merge; 
   for_merge.push_back(src_para_shape->detail_map[2]);
   for_merge.push_back(src_para_shape->detail_map[1]);
   for_merge.push_back(src_para_shape->detail_map[0]);
   cv::Mat output_detail_map;
   cv::merge(for_merge, output_detail_map);
-  cv::imwrite(src_model->getOutputPath() + "/detail_map2048x2048.png", output_detail_map * 255);
-  return;*/
+  cv::imwrite(src_model->getOutputPath() + "/detail_map2048x2048.png", output_detail_map * 255);*/
+  
   new_detail_image.clear();
   new_detail_image.push_back(displacement_mat);
   computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
-  cv::imwrite(src_model->getOutputPath() + "/displacement_map2048x2048.png", src_para_shape->detail_map[0] * 255);
+  cv::imwrite(src_model->getOutputPath() + "/displacement_map1024x1024.png", src_para_shape->detail_map[0] * 255);
   return;
   cv::Mat uv_mask;
   /*VertexList new_mesh_v;
