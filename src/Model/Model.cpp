@@ -62,6 +62,10 @@ Model::Model(const std::string path, const std::string name)
   //shape_crest->computeCrestLinesPoints();
   //shape_crest->computeCrestLinesPoints();
 
+  // keep this for vector field computation
+  shape_crest.reset(new ShapeCrest());
+  shape_crest->setShape(shape);
+
   // read photo
   cv::Mat load_img = cv::imread(path + "/photo.png");
   if (load_img.data != NULL)
@@ -69,8 +73,6 @@ Model::Model(const std::string path, const std::string name)
     load_img.convertTo(photo, CV_32FC3);
     photo = photo / 255.0;
 
-    shape_crest.reset(new ShapeCrest());
-    shape_crest->setShape(shape);
     shape_plane.reset(new ShapePlane());
     shape_plane->setShape(shape, data_path);
   }

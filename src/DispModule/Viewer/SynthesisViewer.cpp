@@ -1,6 +1,7 @@
 #include "SynthesisViewer.h"
 #include "SynthesisCanvas.h"
 
+#include "GLActor.h"
 #include "Bound.h"
 #include "Model.h"
 #include "ParameterMgr.h"
@@ -8,7 +9,7 @@
 SynthesisViewer::SynthesisViewer(QWidget* widget)
   : BasicViewer(widget)
 {
-
+  is_draw_actors = false;
 }
 
 SynthesisViewer::~SynthesisViewer()
@@ -29,6 +30,12 @@ void SynthesisViewer::draw()
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
     }
+  }
+
+  if (is_draw_actors)
+  {
+    //glClear(GL_DEPTH_BUFFER_BIT);
+    drawActors();
   }
 }
 
@@ -90,4 +97,17 @@ void SynthesisViewer::resetCamera()
     std::cout << "Load camera info successes...\n";
   else
     std::cout << "Load camera info failed...\n";
+}
+
+void SynthesisViewer::setGLActors(std::vector<GLActor>& actors)
+{
+  this->actors = actors;
+}
+
+void SynthesisViewer::drawActors()
+{
+  for (decltype(actors.size()) i = 0; i < actors.size(); ++i)
+  {
+    actors[i].draw();
+  }
 }
