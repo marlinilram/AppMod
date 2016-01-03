@@ -10,6 +10,7 @@
 #include "CurveGuidedVectorField.h"
 #include "KevinVectorField.h"
 #include "NormalTransfer.h"
+#include "GeometryTransfer.h"
 
 #include "KDTreeWrapper.h"
 #include "ShapeUtility.h"
@@ -24,7 +25,7 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 1024;
+  resolution = 512;
   normalize_max = -1.0;
 }
 
@@ -1331,8 +1332,6 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   VertexList new_vertex_list = src_model->getShapeVertexList();
   FaceList new_face_list = src_model->getShapeFaceList();
 
-  PolygonMesh old_src_mesh = (*src_model->getPolygonMesh());
-
   src_model->updateShape(original_vertex_list);
 
   std::vector<cv::Mat> detail_image(3);
@@ -1365,7 +1364,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   new_detail_image.clear();
   new_detail_image.push_back(displacement_mat);
   computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
-  cv::imwrite(src_model->getOutputPath() + "/displacement_map1024x1024.png", src_para_shape->detail_map[0] * 255);
+  //cv::imwrite(src_model->getOutputPath() + "/displacement_map2048x2048.png", src_para_shape->detail_map[0] * 255);
   return;
   cv::Mat uv_mask;
   /*VertexList new_mesh_v;
@@ -1499,6 +1498,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
   tar_para_shape->initWithExtShape(tar_model);
   computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
+  return;
 
   //cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ);
   //cv::Mat detail_reflectance_mat;
@@ -1579,4 +1579,102 @@ void DetailSynthesis::test(std::shared_ptr<Model> model)
 
   //applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, model, d2_displacement_mat);
 
+}
+
+void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
+{
+  ShapeUtility::computeNormalizedHeight(src_model);
+  ShapeUtility::computeDirectionalOcclusion(src_model);
+  ShapeUtility::computeSymmetry(src_model);
+  //ShapeUtility::computeSolidAngleCurvature(src_model);
+  ShapeUtility::computeNormalizedHeight(tar_model);
+  ShapeUtility::computeDirectionalOcclusion(tar_model);
+  ShapeUtility::computeSymmetry(tar_model);
+  //ShapeUtility::computeSolidAngleCurvature(tar_model);
+
+  // 3. third do CCA, skip for now
+
+  // 4. prepare parameterized feature map and detail map of seen part (deformed) and feature map of tar_model
+  // tar_model is parameterized by its original UV coordinate
+
+  // prepare 
+  PolygonMesh* poly_mesh = src_model->getPolygonMesh();
+  PolygonMesh::Vertex_attribute<Scalar> normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
+  PolygonMesh::Vertex_attribute<STLVectorf> directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
+  PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+  PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
+  PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
+  std::vector<std::vector<float> > vertex_feature_list(poly_mesh->n_vertices(), std::vector<float>());
+  for (auto vit : poly_mesh->vertices())
+  {
+    vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
+    /*vertex_feature_list[vit.idx()].push_back(solid_angles[vit](0));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](1));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](2));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](3));*/
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
+    for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
+    {
+      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+    }
+  }
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list);
+
+  poly_mesh = tar_model->getPolygonMesh();
+  normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
+  directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
+  v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+  v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
+  solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
+  vertex_feature_list.clear();
+  vertex_feature_list.resize(poly_mesh->n_vertices(), std::vector<float>());
+  for (auto vit : poly_mesh->vertices())
+  {
+    vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
+    vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
+    /*vertex_feature_list[vit.idx()].push_back(solid_angles[vit](0));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](1));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](2));
+    vertex_feature_list[vit.idx()].push_back(solid_angles[vit](3));*/
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
+    for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
+    {
+      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+    }
+  }
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+  computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
+
+  // not necessary
+  syn_tool.reset(new SynthesisTool);
+  syn_tool->setExportPath(tar_model->getOutputPath());
+  syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
+
+
+  // prepare the local transform for each sampled vertices from target model
+  std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+  std::vector<int> sampled_tar_model;
+  geometry_transfer->prepareSampleVertex(tar_model, sampled_tar_model);
+
+  // possible two ways here
+  // 1. use kdtree to search most similar vertex on source model by features
+  // 2. use the NNF from syn_tool
+
+  // get corresponding vertices on source
 }
