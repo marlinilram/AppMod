@@ -1,6 +1,7 @@
 #include "KevinVectorField.h"
 #include "fstream"
 #include <list>
+#include "Bound.h"
 
 #define FT_MAX DBL_MAX
 using namespace LG;
@@ -960,17 +961,25 @@ void KevinVectorField::compute_s_hvf(void)
 	}
 	delete RHV_hf;
 	// projection
-	project_harmonic_vector_field(m_s_vf, 0.2, 0.3);
+	project_harmonic_vector_field(m_s_vf, 0.0, 1.0);
 	cholmod_finish(&c);		// end CHOLMOD
 	m_is_s_hvf_utd = true;
 
+  PolygonMesh* src_poly_mesh = shape_model->getPolygonMesh();
+  PolygonMesh::Vertex_attribute<Vec3> tangent = src_poly_mesh->vertex_attribute<Vec3>("v:tangent");
+  for (auto vit : src_poly_mesh->vertices())
+  {
+    tangent[vit] = Vec3(m_s_vf[vit.idx()].x, m_s_vf[vit.idx()].y, m_s_vf[vit.idx()].z);
+  }
+
+  float vis_scale = shape_model->getBoundBox()->getRadius() / 20;
   for(int i = 0; i < shape_model->getShapeVertexList().size() / 3; i ++)
   {
     Vector3f start;
     start << (shape_model->getShapeVertexList())[3 * i], (shape_model->getShapeVertexList())[3 * i + 1], (shape_model->getShapeVertexList())[3 * i + 2];
     Vector3f end;
     //end = start + vector_field[i];
-    end << start.x() + m_s_vf[i].x, start.y() + m_s_vf[i].y, start.z() + m_s_vf[i].z;
+    end << start.x() + vis_scale * m_s_vf[i].x, start.y() + vis_scale * m_s_vf[i].y, start.z() + vis_scale * m_s_vf[i].z;
     actors[0].addElement(start.x(), start.y(), start.z(), 1.0, 0.0, 0.0);
     actors[2].addElement(start.x(), start.y(), start.z(), 0.0, 0.0, 0.0);
     actors[2].addElement(end.x(), end.y(), end.z(), 0.0, 0.0, 0.0);
