@@ -21,6 +21,11 @@ class PolygonMesh;
 class DetailSynthesis
 {
 public:
+  typedef std::shared_ptr<Model> ModelPtr;
+  typedef std::shared_ptr<ParaShape> ParaShapePtr;
+  typedef std::shared_ptr<SynthesisTool> SynToolPtr;
+
+public:
   DetailSynthesis();
   ~DetailSynthesis();
 
@@ -45,6 +50,8 @@ private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces);
   void computeDisplacementMap(ParaShape* para_shape, VertexList& new_mesh_v, FaceList& new_mesh_f, std::shared_ptr<Model> model, std::set<int>& visible_faces, cv::Mat& uv_mask);
+
+  void prepareLocalTransformCrsp(ParaShapePtr src_para, ParaShapePtr tar_para, ModelPtr src_model, ModelPtr tar_model, SynToolPtr syn_tool, const std::vector<int>& tar_sampled, std::vector<int>& src_v_ids);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;

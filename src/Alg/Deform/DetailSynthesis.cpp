@@ -1582,6 +1582,8 @@ void DetailSynthesis::test(std::shared_ptr<Model> model)
 
 void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
+  this->testMeshPara(src_model);
+
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(src_model);
   kevin_vector_field->compute_s_hvf();
@@ -1612,6 +1614,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
   PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
   std::vector<std::vector<float> > vertex_feature_list(poly_mesh->n_vertices(), std::vector<float>());
+  Vec3 src_mesh_center(0, 0, 0);
   for (auto vit : poly_mesh->vertices())
   {
     vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
@@ -1631,21 +1634,29 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     {
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
+
+    src_mesh_center += poly_mesh->position(vit);
   }
+  src_mesh_center = src_mesh_center / poly_mesh->n_vertices();
   //std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   //src_para_shape->initWithExtShape(src_model);
   //computeFeatureMap(src_para_shape.get(), vertex_feature_list);
 
+  float src_mesh_scale = src_model->getBoundBox()->getRadius();
   std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
   std::vector<float> src_feature_kd_data;
-  for (size_t i = 0; i < vertex_feature_list.size(); ++i)
+  for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
   {
-    for (size_t j = 0; j < vertex_feature_list[i].size(); ++j)
+    for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
     {
-      src_feature_kd_data.push_back(vertex_feature_list[i][j]);
+      src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
     }
+    Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
+    src_feature_kd_data.push_back(normalized_pos(0));
+    src_feature_kd_data.push_back(normalized_pos(1));
+    src_feature_kd_data.push_back(normalized_pos(2));
   }
-  src_feature_kd->initKDTree(src_feature_kd_data, vertex_feature_list.size(), vertex_feature_list[0].size());
+  src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size() + 3);
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -1655,6 +1666,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
   vertex_feature_list.clear();
   vertex_feature_list.resize(poly_mesh->n_vertices(), std::vector<float>());
+  Vec3 tar_mesh_center(0, 0, 0);
   for (auto vit : poly_mesh->vertices())
   {
     vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
@@ -1674,10 +1686,13 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     {
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
+
+    tar_mesh_center += poly_mesh->position(vit);
   }
-  //std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
-  //tar_para_shape->initWithExtShape(tar_model);
-  //computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
+  tar_mesh_center = tar_mesh_center / poly_mesh->n_vertices();
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+  computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
 
   // not necessary
   //syn_tool.reset(new SynthesisTool);
@@ -1689,6 +1704,27 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
   std::vector<int> sampled_tar_model;
   geometry_transfer->prepareSampleVertex(tar_model, sampled_tar_model);
+  {
+    std::vector<int> sampled_tar_model_boundary_filter;
+    const STLVectori& v_set = tar_para_shape->vertex_set;
+    for (size_t i = 0; i < sampled_tar_model.size(); ++i)
+    {
+      // check if this vertex has multiple uv id, it's a boundary vertex in UV mesh
+      size_t pos = std::distance(v_set.begin(), std::find(v_set.begin(), v_set.end(), sampled_tar_model[i]));
+      if (pos == v_set.size())
+      {
+       std::cout << "Warning: sampled point " << sampled_tar_model[i] << " doesn't show in its para shape." << std::endl;
+      }
+      else
+      {
+        if (!tar_para_shape->cut_shape->getPolygonMesh()->is_boundary(PolygonMesh::Vertex(int(pos))))
+        {
+          sampled_tar_model_boundary_filter.push_back(sampled_tar_model[i]);
+        }
+      }
+    }
+    sampled_tar_model.swap(sampled_tar_model_boundary_filter);
+  }
 
   // possible two ways here
   // 1. use kdtree to search most similar vertex on source model by features
@@ -1696,14 +1732,22 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
   // get corresponding vertices on source
   std::vector<int> src_v_ids;
-  for (size_t i = 0; i < sampled_tar_model.size(); ++i)
   {
-    STLVectorf tar_feature_vec = vertex_feature_list[sampled_tar_model[i]];
-    int src_v_id = 0;
-    src_feature_kd->nearestPt(tar_feature_vec, src_v_id);
-    src_v_ids.push_back(src_v_id);
+    float tar_mesh_scale = tar_model->getBoundBox()->getRadius();
+    for (size_t i = 0; i < sampled_tar_model.size(); ++i)
+    {
+      STLVectorf tar_feature_vec = vertex_feature_list[sampled_tar_model[i]];
+      Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(sampled_tar_model[i])) - tar_mesh_center) / tar_mesh_scale;
+      tar_feature_vec.push_back(normalized_pos(0));
+      tar_feature_vec.push_back(normalized_pos(1));
+      tar_feature_vec.push_back(normalized_pos(2));
+      int src_v_id = 0;
+      src_feature_kd->nearestPt(tar_feature_vec, src_v_id);
+      src_v_ids.push_back(mesh_para->seen_part->vertex_set[src_v_id]);
+    }
   }
 
+  // normal transform to get the local transform
   {
     NormalTransfer normal_transfer;
     PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
@@ -1716,5 +1760,54 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
   //ShapeUtility::savePolyMesh(tar_model->getPolygonMesh(), tar_model->getOutputPath() + "/testlocaltransform.obj");  return;
 
+  std::ofstream fdebug(tar_model->getOutputPath() + "/crsp.txt");
+  if (fdebug)
+  {
+    std::sort(src_v_ids.begin(), src_v_ids.end());
+    for (size_t i = 0; i < src_v_ids.size(); ++i)
+    {
+      fdebug << src_v_ids[i] << std::endl;
+    }
+  }
+  //return;
+
   geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+}
+
+
+void DetailSynthesis::prepareLocalTransformCrsp(
+  ParaShapePtr src_para, ParaShapePtr tar_para,
+  ModelPtr src_model, ModelPtr tar_model,
+  SynToolPtr syn_tool,
+  const std::vector<int>& tar_sampled, std::vector<int>& src_v_ids)
+{
+  src_v_ids.clear();
+
+
+  const STLVectori& tar_v_set = tar_para->vertex_set;
+  for (size_t i = 0; i < tar_sampled.size(); ++i)
+  {
+    // 1. get the uv coord
+    size_t pos = std::distance(tar_v_set.begin(), std::find(tar_v_set.begin(), tar_v_set.end(), tar_sampled[i]));
+    if (pos == tar_v_set.size())
+    {
+      std::cout << "Warning: sampled point " << tar_sampled[i] << " doesn't show in its para shape." << std::endl;
+    }
+    else
+    {
+      std::pair<int, int> tar_uv, src_uv;
+      tar_uv.first = std::min(int(tar_para->cut_shape->getUVCoord()[2 * pos + 0] * resolution), resolution - 1);
+      tar_uv.second = std::min(int(tar_para->cut_shape->getUVCoord()[2 * pos + 1] * resolution), resolution - 1);
+      tar_uv.second = resolution - tar_uv.second - 1;
+
+      // then we get the corresponding src_uv
+      src_uv.second = resolution - src_uv.second - 1;
+      std::vector<float> pt(2, 0);
+      pt[0] = float(src_uv.first) / resolution;
+      pt[1] = float(src_uv.second) / resolution;
+      int src_v_id = 0;
+      src_para->kdTree_UV->nearestPt(pt, src_v_id);
+      src_v_ids.push_back(src_para->vertex_set[src_v_id]);
+    }
+  }
 }
