@@ -6,6 +6,7 @@
 #include <memory>
 
 class GLActor;
+class QKeyEvent;
 
 class SynthesisViewer : public BasicViewer
 {
@@ -24,8 +25,13 @@ protected:
   void drawActors();
 
 private:
+  void keyPressEvent(QKeyEvent *e);
+
+private:
   std::vector<GLActor> actors;
   bool is_draw_actors;
+  bool is_draw_objects;
+  bool wireframe_;
 };
 
 #endif // !SynthesisViewer_H
