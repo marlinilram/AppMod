@@ -57,6 +57,8 @@ public:
   void exportSrcMask();
   void exportTarMask();
 
+  void findSrcCrsp(Point2D& tar_id, Point2D& src_id);
+
 private:
   void generatePyramid(ImagePyramid& pyr, int level);
   void findCandidates(std::vector<ImagePyramid>& gpsrc, std::vector<ImagePyramid>& gptar, int level, int pointX, int pointY, std::set<distance_position>& candidates);
@@ -143,6 +145,8 @@ private:
   std::vector<ImagePyramid> gptar_feature;
   std::vector<ImagePyramid> gpsrc_detail;
   std::vector<ImagePyramid> gptar_detail;
+
+  NNF tar_feature_NNF;
 
   std::vector<FBucketPryamid> gpsrc_feature_buckets;
 

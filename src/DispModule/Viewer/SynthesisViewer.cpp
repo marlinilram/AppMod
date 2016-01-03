@@ -6,10 +6,14 @@
 #include "Model.h"
 #include "ParameterMgr.h"
 
+#include <QKeyEvent>
+
 SynthesisViewer::SynthesisViewer(QWidget* widget)
   : BasicViewer(widget)
 {
   is_draw_actors = false;
+  wireframe_ = false;
+  is_draw_objects = true;
 }
 
 SynthesisViewer::~SynthesisViewer()
@@ -22,13 +26,16 @@ void SynthesisViewer::draw()
   // do nothing here
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  for (int i = 0; i < dispObjects.size(); ++i)
+  if (is_draw_objects)
   {
-    glDisable(GL_LIGHTING);
-    //drawCrestLines();
-    if (!dispObjects[i]->display())
+    for (int i = 0; i < dispObjects.size(); ++i)
     {
-      std::cerr<<"Error when drawing object " << i << ".\n";
+      glDisable(GL_LIGHTING);
+      //drawCrestLines();
+      if (!dispObjects[i]->display())
+      {
+        std::cerr<<"Error when drawing object " << i << ".\n";
+      }
     }
   }
 
@@ -109,5 +116,37 @@ void SynthesisViewer::drawActors()
   for (decltype(actors.size()) i = 0; i < actors.size(); ++i)
   {
     actors[i].draw();
+  }
+}
+
+void SynthesisViewer::keyPressEvent(QKeyEvent *e)
+{
+  // Get event modifiers key
+  const Qt::KeyboardModifiers modifiers = e->modifiers();
+
+  // A simple switch on e->key() is not sufficient if we want to take state key into account.
+  // With a switch, it would have been impossible to separate 'F' from 'CTRL+F'.
+  // That's why we use imbricated if...else and a "handled" boolean.
+  bool handled = false;
+  if ((e->key()==Qt::Key_W) && (modifiers==Qt::NoButton))
+  {
+    //std::cout << "Key Press Event OK!\n" ;
+    wireframe_ = !wireframe_;
+    if (wireframe_)
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    handled = true;
+    updateGL();
+  } else if ((e->key()==Qt::Key_O) && (modifiers==Qt::NoButton))
+  {
+    is_draw_objects = !is_draw_objects;
+    handled = true;
+    updateGL();
+  }
+
+  if (!handled)
+  {
+    QGLViewer::keyPressEvent(e);
   }
 }

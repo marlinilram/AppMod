@@ -1811,7 +1811,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
   }
   std::cout << "All levels is finished !" << " The total running time is :" << totalTime << " seconds." << std::endl;
 
-
+  tar_feature_NNF = nnf;
 }
 
 double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f, NNF& nnf, std::vector<float>& ref_cnt, int level, int iter /* = 0 */)
@@ -1948,4 +1948,35 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   //else  lambda_d_f = 0, lambda_d_d = 1;
   d =  d_f + lamd_occ * d_occ;
   return d;
+}
+
+void SynthesisTool::findSrcCrsp(Point2D& tar_id, Point2D& src_id)
+{
+  int width  = gptar_feature[0][0].cols;
+  int height = gptar_feature[0][0].rows;
+  int nnf_width  = (width - this->patch_size + 1);
+  int nnf_height = (height - this->patch_size + 1);
+  
+  std::set<distance_position> candidate;
+  for (int i = 0; i < this->patch_size; ++i)
+  {
+    for (int j = 0; j < this->patch_size; ++j)
+    {
+      // get patch position
+      int i_p = tar_id.second - i;
+      int j_p = tar_id.first - j;
+      // patch is out side of the image
+      if (i_p < 0 || i_p >= nnf_height || j_p < 0 || j_p >= nnf_width) continue;
+      Point2D patch = tar_feature_NNF[i_p * nnf_width + j_p];
+      double distance_feature;
+      distance_feature = distNeighborOnFeature(gpsrc_feature, gptar_feature, 0, patch.first + j, patch.second + i, tar_id.first, tar_id.second);
+      candidate.insert(distance_position(distance_feature, std::pair<int, int>(patch.first + j, patch.second + i)));
+    }
+  }
+  int choose = int((rand() / double(RAND_MAX)) * best_random_size);
+  choose = choose >= best_random_size ? (best_random_size - 1) : choose;
+  std::set<distance_position>::const_iterator iter = candidate.begin();
+  std::advance(iter, choose);
+  src_id.first = iter->pos.first;
+  src_id.second = iter->pos.second;
 }
