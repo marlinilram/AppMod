@@ -61,6 +61,8 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
 
   solver->problem_size = vertex_list.size();
   solver->P_Opt = Eigen::Map<VectorXf>(&(vertex_list)[0], (vertex_list).size());
+  solver->addConstraint(arap);
+  solver->addConstraint(move_constraint);
 
   arap->setSolver(solver);
   arap->initConstraint(vertex_list, face_list, adj_list);
@@ -68,6 +70,7 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
 
   move_constraint->setSolver(solver);
   move_constraint->initMatrix(v_ids, v_list);
+  move_constraint->setLamdMove(10.0f);
 
   solver->initCholesky();
   int max_iter = 20;
@@ -87,6 +90,8 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
   // map new texture
   //model->updateColor(); // this is for build uv coordinates
   //model->updateSHColor();
+
+  tar_model->exportOBJ(0);
 
   std::cout << "Update geometry finished...\n";
 }

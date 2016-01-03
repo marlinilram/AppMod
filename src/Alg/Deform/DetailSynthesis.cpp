@@ -1582,12 +1582,20 @@ void DetailSynthesis::test(std::shared_ptr<Model> model)
 
 void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
+  kevin_vector_field.reset(new KevinVectorField);
+  kevin_vector_field->init(src_model);
+  kevin_vector_field->compute_s_hvf();
+
+  kevin_vector_field.reset(new KevinVectorField);
+  kevin_vector_field->init(tar_model);
+  kevin_vector_field->compute_s_hvf();
+
   ShapeUtility::computeNormalizedHeight(src_model);
-  ShapeUtility::computeDirectionalOcclusion(src_model);
+  //ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   //ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
-  ShapeUtility::computeDirectionalOcclusion(tar_model);
+  //ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
   //ShapeUtility::computeSolidAngleCurvature(tar_model);
 
@@ -1624,9 +1632,20 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
   }
-  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
-  src_para_shape->initWithExtShape(src_model);
-  computeFeatureMap(src_para_shape.get(), vertex_feature_list);
+  //std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  //src_para_shape->initWithExtShape(src_model);
+  //computeFeatureMap(src_para_shape.get(), vertex_feature_list);
+
+  std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
+  std::vector<float> src_feature_kd_data;
+  for (size_t i = 0; i < vertex_feature_list.size(); ++i)
+  {
+    for (size_t j = 0; j < vertex_feature_list[i].size(); ++j)
+    {
+      src_feature_kd_data.push_back(vertex_feature_list[i][j]);
+    }
+  }
+  src_feature_kd->initKDTree(src_feature_kd_data, vertex_feature_list.size(), vertex_feature_list[0].size());
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -1656,14 +1675,14 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
   }
-  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
-  tar_para_shape->initWithExtShape(tar_model);
-  computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
+  //std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  //tar_para_shape->initWithExtShape(tar_model);
+  //computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
 
   // not necessary
-  syn_tool.reset(new SynthesisTool);
-  syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
+  //syn_tool.reset(new SynthesisTool);
+  //syn_tool->setExportPath(tar_model->getOutputPath());
+  //syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
 
 
   // prepare the local transform for each sampled vertices from target model
@@ -1676,4 +1695,26 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   // 2. use the NNF from syn_tool
 
   // get corresponding vertices on source
+  std::vector<int> src_v_ids;
+  for (size_t i = 0; i < sampled_tar_model.size(); ++i)
+  {
+    STLVectorf tar_feature_vec = vertex_feature_list[sampled_tar_model[i]];
+    int src_v_id = 0;
+    src_feature_kd->nearestPt(tar_feature_vec, src_v_id);
+    src_v_ids.push_back(src_v_id);
+  }
+
+  {
+    NormalTransfer normal_transfer;
+    PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
+    normal_transfer.prepareNewNormal(src_model, "final_normal");
+    ShapeUtility::computeLocalTransform(&old_src_mesh, src_model->getPolygonMesh());
+  }
+
+  STLVectorf new_v_list;
+  ShapeUtility::prepareLocalTransform(src_model->getPolygonMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, tar_model->getBoundBox()->getRadius() / src_model->getBoundBox()->getRadius());
+
+  //ShapeUtility::savePolyMesh(tar_model->getPolygonMesh(), tar_model->getOutputPath() + "/testlocaltransform.obj");  return;
+
+  geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
 }

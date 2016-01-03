@@ -1168,22 +1168,34 @@ namespace ShapeUtility
 
     PolygonMesh::Vertex_attribute<Vec3> local_transform = tar_mesh->vertex_attribute<Vec3>("v:local_transform");
     PolygonMesh::Vertex_attribute<Vec3> v_normals = src_mesh->vertex_attribute<Vec3>("v:normal");
+    PolygonMesh::Vertex_attribute<Vec3> v_tangents = src_mesh->vertex_attribute<Vec3>("v:tangent");
     for (auto vit : tar_mesh->vertices())
     {
       Vec3 new_v = tar_mesh->position(vit);
       Vec3 old_v = src_mesh->position(vit);
 
-      Vec3 centroid(0, 0, 0);
-      int n_cnt = 0;
-      for (auto vvc : src_mesh->vertices())
-      {
-        centroid += src_mesh->position(vvc);
-        ++n_cnt;
-      }
-      centroid = centroid / n_cnt;
+      //Vec3 centroid(0, 0, 0);
+      //int n_cnt = 0;
+      //for (auto vvc : src_mesh->vertices(vit))
+      //{
+      //  centroid += src_mesh->position(vvc);
+      //  ++n_cnt;
+      //}
+      //centroid = centroid / n_cnt;
 
-      Vec3 tangent = centroid - old_v; tangent.normalize();
+      //Vec3 tangent = centroid - old_v; tangent.normalize();
+      //Vec3 normal = v_normals[vit]; normal.normalize();
+
+      Vec3 tangent = v_tangents[vit]; 
+      if (isnan(tangent(0)))
+      {
+        tangent(0) = (rand() / double(RAND_MAX));
+        tangent(1) = (rand() / double(RAND_MAX));
+        tangent(2) = (rand() / double(RAND_MAX));
+      }
+      tangent.normalize();
       Vec3 normal = v_normals[vit]; normal.normalize();
+      
       Vec3 yy = normal.cross(tangent);
       tangent = yy.cross(normal);
       Matrix3f local_trans_mat;
@@ -1205,7 +1217,7 @@ namespace ShapeUtility
 
       Vec3 centroid(0, 0, 0);
       int n_cnt = 0;
-      for (auto vvc : tar_mesh->vertices())
+      for (auto vvc : tar_mesh->vertices(vit))
       {
         centroid += tar_mesh->position(vvc);
         ++n_cnt;
@@ -1214,6 +1226,7 @@ namespace ShapeUtility
 
       Vec3 tangent = centroid - t_v; tangent.normalize();
       Vec3 normal = v_normals[vit]; normal.normalize();
+
       Vec3 yy = normal.cross(tangent);
       tangent = yy.cross(normal);
       Matrix3f local_trans_mat;
@@ -1239,7 +1252,7 @@ namespace ShapeUtility
 
       Vec3 centroid(0, 0, 0);
       int n_cnt = 0;
-      for (auto vvc : tar_mesh->vertices())
+      for (auto vvc : tar_mesh->vertices(vit))
       {
         centroid += tar_mesh->position(vvc);
         ++n_cnt;
@@ -1264,39 +1277,58 @@ namespace ShapeUtility
     }
   }
 
-  void prepareLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh, const std::vector<int>& v_ids, std::vector<float>& new_v_list)
+  void prepareLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh, const STLVectori& src_v_ids, const STLVectori& v_ids, STLVectorf& new_v_list, float scale)
   {
     PolygonMesh::Vertex_attribute<Vec3> local_transform = src_mesh->vertex_attribute<Vec3>("v:local_transform");
     PolygonMesh::Vertex_attribute<Vec3> v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
+    PolygonMesh::Vertex_attribute<Vec3> v_tangents = tar_mesh->vertex_attribute<Vec3>("v:tangent");
 
     new_v_list.clear();
     new_v_list.resize(3 * v_ids.size(), 0);
     for (size_t i = 0; i < v_ids.size(); ++i)
     {
       PolygonMesh::Vertex cur_v(v_ids[i]);
+      PolygonMesh::Vertex cur_src_v(src_v_ids[i]);
       Vec3 t_v = tar_mesh->position(cur_v);
+
+      //tar_mesh->position(cur_v) = t_v + 5 * v_normals[cur_v];continue;
       
-      Vec3 centroid(0, 0, 0);
-      int n_cnt = 0;
+      //Vec3 centroid(0, 0, 0);
+      //int n_cnt = 0;
 
-      for (auto vvc : tar_mesh->vertices())
+      //for (auto vvc : tar_mesh->vertices(cur_v))
+      //{
+      //  centroid += tar_mesh->position(vvc);
+      //  ++n_cnt;
+      //}
+      //centroid = centroid / n_cnt;
+
+      //Vec3 tangent = centroid - t_v; tangent.normalize();
+      //Vec3 normal = v_normals[cur_v]; normal.normalize();
+
+      Vec3 tangent = v_tangents[cur_v]; 
+      if (isnan(tangent(0)))
       {
-        centroid += tar_mesh->position(vvc);
-        ++n_cnt;
+        tangent(0) = (rand() / double(RAND_MAX));
+        tangent(1) = (rand() / double(RAND_MAX));
+        tangent(2) = (rand() / double(RAND_MAX));
       }
-      centroid = centroid / n_cnt;
-
-      Vec3 tangent = centroid - t_v; tangent.normalize();
+      tangent.normalize();
       Vec3 normal = v_normals[cur_v]; normal.normalize();
       Vec3 yy = normal.cross(tangent);
       tangent = yy.cross(normal);
       Matrix3f local_trans_mat;
       local_trans_mat << tangent, yy, normal;
-      Vec3 n_t_v = local_trans_mat * local_transform[cur_v] + t_v;
+      Vec3 n_t_v = local_trans_mat * (scale * local_transform[cur_src_v]) + t_v;
 
       new_v_list[3 * i + 0] = n_t_v(0);
       new_v_list[3 * i + 1] = n_t_v(1);
       new_v_list[3 * i + 2] = n_t_v(2);
+    }
+
+    for (size_t i = 0; i < v_ids.size(); ++i)
+    {
+      tar_mesh->position(PolygonMesh::Vertex(v_ids[i])) = Vec3(new_v_list[3 * i + 0], new_v_list[3 * i + 1], new_v_list[3 * i + 2]);
     }
   }
 

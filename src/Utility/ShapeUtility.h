@@ -71,7 +71,7 @@ namespace ShapeUtility
   void computeLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh);
   void applyLocalTransform(std::shared_ptr<Shape> src_shape, std::shared_ptr<Shape> tar_shape);
   void applyLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh);
-  void prepareLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh, const std::vector<int>& v_ids, std::vector<float>& new_v_list);
+  void prepareLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh, const STLVectori& src_v_ids, const STLVectori& v_ids, STLVectorf& new_v_list, float scale = 1.0);
 
   void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName);
 }

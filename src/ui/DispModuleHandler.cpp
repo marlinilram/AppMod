@@ -166,9 +166,11 @@ void DispModuleHandler::showProjCrsp(int state)
 {
   main_canvas_viewer->setIsDrawActors(bool(state));
   trackball_viewer->setIsDrawActors(bool(state));
+  synthesis_viewer->setIsDrawActors(bool(state));
 
   main_canvas_viewer->updateGLOutside();
   trackball_viewer->updateGLOutside();
+  synthesis_viewer->updateGLOutside();
 }
 
 void DispModuleHandler::deleteLastCrspLine_Source()
@@ -381,7 +383,8 @@ void DispModuleHandler::updateTargetCurves()
 void DispModuleHandler::testApplyDisplacement()
 {
   alg_handler->testApplyDisplacement();
-  trackball_viewer->setGLActors(alg_handler->getGLActors());
+  //trackball_viewer->setGLActors(alg_handler->getGLActors());
+  synthesis_viewer->setGLActors(alg_handler->getGLActors());
   //main_canvas_viewer->setSynthesisReflectance();
   updateCanvas();
 }
