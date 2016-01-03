@@ -85,12 +85,12 @@ void SynthesisCanvas::drawModel()
 
   // test to draw only visible line
   // use fill to populate z-buffer
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  face_buffer->bind();
-  glDrawElements(GL_TRIANGLES, num_face * 3, GL_UNSIGNED_INT, (void*)0);
-  face_buffer->release();
+  //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  //face_buffer->bind();
+  //glDrawElements(GL_TRIANGLES, num_face * 3, GL_UNSIGNED_INT, (void*)0);
+  //face_buffer->release();
 
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   face_buffer->bind();
   glDrawElements(GL_TRIANGLES, num_face * 3, GL_UNSIGNED_INT, (void*)0);
   face_buffer->release();
