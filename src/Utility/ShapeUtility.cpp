@@ -143,6 +143,7 @@ namespace ShapeUtility
         std::cout << perc << "...";
       }
     }
+    std::cout << std::endl;
 
     for (auto i : poly_mesh->vertices())
     {
@@ -152,6 +153,10 @@ namespace ShapeUtility
       }
     }
 
+    for (int l = 0; l < numFunctions; ++l)
+    {
+      std::cout<< "sh min: " << min_coeff[l] << " sh max: " << max_coeff[l] << std::endl;
+    }
     std::cout << "Compute Directional Occlusion Feature finished.\n";
   }
 

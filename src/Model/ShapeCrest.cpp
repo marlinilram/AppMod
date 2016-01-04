@@ -27,9 +27,9 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
   shape = in_shape;
   buildCandidates();
   mergeCandidates(crest_edges, crest_lines);
-  organizeCrestLines(crest_lines);
   if(crest_lines.empty())
   {
+    std::cout << "Generate crest line from crest code." << std::endl;
     crestCode.reset(new CrestCode);
     crestCode->setShape(in_shape);
     crestCode_lines = crestCode->getCrestLines();
@@ -37,6 +37,7 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
     crest_lines = crestCode_lines;
     generateEdgesFromCrestCode();
   }
+  organizeCrestLines(crest_lines);
   buildEdgeLineMapper();
 }
 

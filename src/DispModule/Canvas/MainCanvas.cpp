@@ -576,8 +576,8 @@ void MainCanvas::drawShapeCrest()
 {
   const VertexList& vertex_list = model->getShapeVertexList();
   const std::vector<Edge>& crest_edge = model->getShapeCrestEdge();
-  //const std::vector<STLVectori>& crest_lines = model->getShapeVisbleCrestLine();
-  const std::vector<STLVectori>& crest_lines = model->getShapeCrestLine();
+  const std::vector<STLVectori>& crest_lines = model->getShapeVisbleCrestLine();
+  //const std::vector<STLVectori>& crest_lines = model->getShapeCrestLine();
   const NormalList& vertex_normal = model->getShapeNormalList();
 
   Matrix4f model_transform = Matrix4f::Identity();

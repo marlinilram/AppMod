@@ -25,7 +25,7 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 1024;
+  resolution = 512;
   normalize_max = -1.0;
 
   mesh_para = nullptr;
