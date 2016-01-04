@@ -28,10 +28,16 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
   buildCandidates();
   mergeCandidates(crest_edges, crest_lines);
   organizeCrestLines(crest_lines);
+  if(crest_lines.empty())
+  {
+    crestCode.reset(new CrestCode);
+    crestCode->setShape(in_shape);
+    crestCode_lines = crestCode->getCrestLines();
+    crest_lines.clear();
+    crest_lines = crestCode_lines;
+    generateEdgesFromCrestCode();
+  }
   buildEdgeLineMapper();
-  //crestCode.reset(new CrestCode);
-  //crestCode->setShape(in_shape);
-  //crestCode_lines = crestCode->getCrestLines();
 }
 
 const std::vector<Edge>& ShapeCrest::getCrestEdge()
@@ -352,6 +358,21 @@ void ShapeCrest::buildEdgeLineMapper()
     }
   }
 
+}
+
+void ShapeCrest::generateEdgesFromCrestCode()
+{
+  crest_edges.clear();
+  for(size_t i = 0; i < crest_lines.size(); i ++)
+  {
+    for(size_t j = 0; j < crest_lines[i].size() - 1; j ++)
+    {
+      Edge e;
+      e.first = crest_lines[i][j];
+      e.second = crest_lines[i][j + 1];
+      crest_edges.push_back(e);
+    }
+  }
 }
 
 void ShapeCrest::organizeCrestLines(std::vector<std::vector<int>>& vis_lines)
