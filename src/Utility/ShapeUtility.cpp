@@ -1277,7 +1277,7 @@ namespace ShapeUtility
     }
   }
 
-  void prepareLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh, const STLVectori& src_v_ids, const STLVectori& v_ids, STLVectorf& new_v_list, float scale)
+  void prepareLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh, const std::vector<STLVectori>& src_v_ids, const STLVectori& v_ids, STLVectorf& new_v_list, float scale)
   {
     PolygonMesh::Vertex_attribute<Vec3> local_transform = src_mesh->vertex_attribute<Vec3>("v:local_transform");
     PolygonMesh::Vertex_attribute<Vec3> v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
@@ -1288,23 +1288,6 @@ namespace ShapeUtility
     for (size_t i = 0; i < v_ids.size(); ++i)
     {
       PolygonMesh::Vertex cur_v(v_ids[i]);
-      PolygonMesh::Vertex cur_src_v(src_v_ids[i]);
-      Vec3 t_v = tar_mesh->position(cur_v);
-
-      //tar_mesh->position(cur_v) = t_v + 5 * v_normals[cur_v];continue;
-      
-      //Vec3 centroid(0, 0, 0);
-      //int n_cnt = 0;
-
-      //for (auto vvc : tar_mesh->vertices(cur_v))
-      //{
-      //  centroid += tar_mesh->position(vvc);
-      //  ++n_cnt;
-      //}
-      //centroid = centroid / n_cnt;
-
-      //Vec3 tangent = centroid - t_v; tangent.normalize();
-      //Vec3 normal = v_normals[cur_v]; normal.normalize();
 
       Vec3 tangent = v_tangents[cur_v]; 
       if (isnan(tangent(0)))
@@ -1319,7 +1302,31 @@ namespace ShapeUtility
       tangent = yy.cross(normal);
       Matrix3f local_trans_mat;
       local_trans_mat << tangent, yy, normal;
-      Vec3 n_t_v = local_trans_mat * (scale * local_transform[cur_src_v]) + t_v;
+      Vec3 t_v = tar_mesh->position(cur_v);
+
+      Vec3 n_t_v(0, 0, 0);
+      int n_cnt = 0;
+      for (size_t j = 0; j < src_v_ids[i].size(); ++j)
+      {
+        PolygonMesh::Vertex cur_src_v(src_v_ids[i][j]);
+        n_t_v += local_trans_mat * (scale * local_transform[cur_src_v]) + t_v;
+        ++n_cnt;
+      }
+      n_t_v = n_t_v / n_cnt;
+      //tar_mesh->position(cur_v) = t_v + 5 * v_normals[cur_v];continue;
+      
+      //Vec3 centroid(0, 0, 0);
+      //int n_cnt = 0;
+
+      //for (auto vvc : tar_mesh->vertices(cur_v))
+      //{
+      //  centroid += tar_mesh->position(vvc);
+      //  ++n_cnt;
+      //}
+      //centroid = centroid / n_cnt;
+
+      //Vec3 tangent = centroid - t_v; tangent.normalize();
+      //Vec3 normal = v_normals[cur_v]; normal.normalize();
 
       new_v_list[3 * i + 0] = n_t_v(0);
       new_v_list[3 * i + 1] = n_t_v(1);
@@ -1371,5 +1378,26 @@ namespace ShapeUtility
     shapes.push_back(obj_shape);
 
     WriteObj(fName, shapes, materials);
+  }
+
+  int findLeftTopUVVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_ids)
+  {
+    float max_v = std::numeric_limits<float>::min();
+    int v_id = -1;
+    std::vector<Vec2>& he_texcoord = poly_mesh->get_attribute<std::vector<Vec2> >("he:texcoord");
+    PolygonMesh::Halfedge_attribute<int> f_uv_id = poly_mesh->halfedge_attribute<int>("he:uv_id");
+    for (auto f : f_ids)
+    {
+      for (auto hefc : poly_mesh->halfedges(PolygonMesh::Face(f)))
+      {
+        Vec2 cur_uv = he_texcoord[f_uv_id[hefc]];
+        if (cur_uv(1) > max_v)
+        {
+          max_v = cur_uv(1);
+          v_id = poly_mesh->to_vertex(hefc).idx();
+        }
+      }
+    }
+    return v_id;
   }
 }

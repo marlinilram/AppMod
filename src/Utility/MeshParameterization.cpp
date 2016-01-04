@@ -273,9 +273,39 @@ void MeshParameterization::prepareCutShape(std::shared_ptr<Model> model, FaceLis
   shape->init(new_vertex_list, new_face_list, UVIdList, UVList);
 }
 
-void MeshParameterization::findBoundary(std::shared_ptr<Shape> shape, STLVectori& b_loop)
+void MeshParameterization::findBoundary(std::shared_ptr<Shape> shape, STLVectori& b_loop, int start_v_id)
 {
   // find all boundaries
+  //PolygonMesh* poly_mesh = shape->getPolygonMesh();
+  //std::vector<STLVectori> boundary_lines;
+  //for (auto vit : poly_mesh->vertices())
+  //{
+  //  if (poly_mesh->is_boundary(vit))
+  //  {
+  //    bool visited = false;
+  //    for (size_t i = 0; i < boundary_lines.size(); ++i)
+  //    {
+  //      if (std::find(boundary_lines[i].begin(), boundary_lines[i].end(), vit.idx()) != boundary_lines[i].end())
+  //      {
+  //        visited = true;
+  //        break;
+  //      }
+  //    }
+  //    if (!visited)
+  //    {
+  //      PolygonMesh::Halfedge b_halfedge = poly_mesh->halfedge(vit);
+  //      PolygonMesh::Halfedge b_iter_halfedge = b_halfedge;
+  //      STLVectori cur_b_loop;
+  //      do 
+  //      {
+  //        cur_b_loop.push_back(poly_mesh->to_vertex(b_halfedge).idx());
+  //        b_iter_halfedge = poly_mesh->next_halfedge(b_iter_halfedge);
+  //      } while (b_iter_halfedge != b_halfedge);
+  //      boundary_lines.push_back(cur_b_loop);
+  //    }
+  //  }
+  //}
+
   const STLVectori& edge_connectivity = shape->getEdgeConnectivity();
   const FaceList& face_list = shape->getFaceList();
   std::vector<Edge> boundary_edges;
@@ -305,10 +335,50 @@ void MeshParameterization::findBoundary(std::shared_ptr<Shape> shape, STLVectori
       longest_id = i;
     }
   }
+  STLVectori longest_b_loop;
   if (longest_id != -1)
   {
-    b_loop = boundary_lines[longest_id];
+    longest_b_loop = boundary_lines[longest_id];
   }
+
+  PolygonMesh* poly_mesh = shape->getPolygonMesh();
+  if (!poly_mesh->is_boundary(PolygonMesh::Vertex(longest_b_loop[0])))
+  {
+    std::cout << "\n Error in find boundary !!!\n";
+  }
+  else
+  {
+    PolygonMesh::Halfedge b_he_start = poly_mesh->halfedge(PolygonMesh::Vertex(longest_b_loop[0]));
+    PolygonMesh::Halfedge b_he_iter = b_he_start;
+    b_loop.clear();
+    do 
+    {
+      b_loop.push_back(poly_mesh->to_vertex(b_he_iter).idx());
+      b_he_iter = poly_mesh->next_halfedge(b_he_iter);
+    } while (b_he_iter != b_he_start);
+
+    if (start_v_id == -1)
+    {
+      int shuffle = std::min(int((rand() / double(RAND_MAX)) * b_loop.size()), int(b_loop.size() - 1));
+      std::rotate(b_loop.begin(), b_loop.begin() + shuffle, b_loop.end());
+    }
+    else
+    {
+      size_t pos = std::distance(b_loop.begin(), std::find(b_loop.begin(), b_loop.end(), start_v_id));
+      if (pos == b_loop.size())
+      {
+        std::cout << "\nThe start v_id in boundary loop not found!!!\n";
+      }
+      else
+      {
+        std::rotate(b_loop.begin(), b_loop.begin() + pos, b_loop.end());
+      }
+    }
+
+    //std::cout << longest_b_loop.size() << "\t" << b_loop.size() << std::endl;
+    //std::cout << longest_b_loop[0] << "\t" << longest_b_loop[longest_b_loop.size() - 1] << std::endl;
+  }
+  //b_loop = longest_b_loop;
 }
 
 void MeshParameterization::computeBaryCentericPara(std::shared_ptr<Shape>& shape, STLVectori& b_loop)
@@ -660,8 +730,16 @@ void MeshParameterization::doMeshParamterizationPatch(std::shared_ptr<Model> mod
 {
   // prepare the (plane) patch for parameterization
 
+  this->doMeshParamterizationPatch(model, model->getPlaneFaces()[plane_id], one_patch);
+
+  // save the parametrization
+  ShapeUtility::saveParameterization(model->getOutputPath(), one_patch->cut_shape, "plane_" + std::to_string(plane_id));
+}
+
+void MeshParameterization::doMeshParamterizationPatch(std::shared_ptr<Model> model, const std::set<int>& f_ids, ParaShape* one_patch, int start_v_id)
+{
   // get the patch face list
-  one_patch->cut_faces = model->getPlaneFaces()[plane_id];
+  one_patch->cut_faces = f_ids;
   one_patch->cut_face_list.clear();
   one_patch->face_set.clear();
   const FaceList& ori_face_list = model->getShapeFaceList();
@@ -679,9 +757,24 @@ void MeshParameterization::doMeshParamterizationPatch(std::shared_ptr<Model> mod
   this->prepareCutShape(model, one_patch->cut_face_list, one_patch->vertex_set, one_patch->cut_shape);
 
   // find boundary
-  this->findBoundary(one_patch->cut_shape, one_patch->boundary_loop);
+  if (start_v_id == -1)
+  {
+    this->findBoundary(one_patch->cut_shape, one_patch->boundary_loop);
+  }
+  else
+  {
+    size_t pos = std::distance(one_patch->vertex_set.begin(), std::find(one_patch->vertex_set.begin(), one_patch->vertex_set.end(), start_v_id));
+    if (pos == one_patch->vertex_set.size())
+    {
+      std::cout << "\nThe start v_id not found in para shape!!!\n";
+      this->findBoundary(one_patch->cut_shape, one_patch->boundary_loop);
+    }
+    else
+    {
+      this->findBoundary(one_patch->cut_shape, one_patch->boundary_loop, int(pos));
+    }
+  }
   this->computeBaryCentericPara(one_patch->cut_shape, one_patch->boundary_loop);
 
-  // save the parametrization
-  ShapeUtility::saveParameterization(model->getOutputPath(), one_patch->cut_shape, "plane_" + std::to_string(plane_id));
+  one_patch->initUVKDTree();
 }

@@ -25,8 +25,13 @@ using namespace LG;
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 512;
+  resolution = 1024;
   normalize_max = -1.0;
+
+  mesh_para = nullptr;
+  syn_tool = nullptr;
+  curve_guided_vector_field = nullptr;
+  kevin_vector_field = nullptr;
 }
 
 DetailSynthesis::~DetailSynthesis()
@@ -43,17 +48,17 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
   ShapeUtility::matToMesh(displacement_mat, poly_mesh, model);*/
 
   {
-    cv::FileStorage fs1(model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
-    cv::Mat smoothed_output_height;
-    fs1["smoothed_output_height"] >> smoothed_output_height;
-    PolygonMesh smoothed_output_height_mesh;
-    ShapeUtility::heightToMesh(smoothed_output_height, smoothed_output_height_mesh, model); // generate the displacement mesh
+    //cv::FileStorage fs1(model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
+    //cv::Mat smoothed_output_height;
+    //fs1["smoothed_output_height"] >> smoothed_output_height;
+    //PolygonMesh smoothed_output_height_mesh;
+    //ShapeUtility::heightToMesh(smoothed_output_height, smoothed_output_height_mesh, model); // generate the displacement mesh
 
-    cv::FileStorage fs2(model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
-    cv::Mat final_height;
-    fs2["final_height"] >> final_height;
-    PolygonMesh final_height_mesh;
-    ShapeUtility::heightToMesh(final_height, final_height_mesh, model); // generate the displacement mesh
+    //cv::FileStorage fs2(model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+    //cv::Mat final_height;
+    //fs2["final_height"] >> final_height;
+    //PolygonMesh final_height_mesh;
+    //ShapeUtility::heightToMesh(final_height, final_height_mesh, model); // generate the displacement mesh
   }
 
   mesh_para.reset(new MeshParameterization);
@@ -65,7 +70,6 @@ void DetailSynthesis::testMeshPara(std::shared_ptr<Model> model)
   //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   //{
   //  mesh_para->doMeshParamterizationPatch(model, i, &mesh_para->shape_patches[i]);
-  //  mesh_para->shape_patches[i].initUVKDTree();
   //}
 }
 
@@ -108,8 +112,8 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
     }
   }
 
-  computeFeatureMap(mesh_para->seen_part.get(), vertex_feature_list);
-  computeFeatureMap(mesh_para->unseen_part.get(), vertex_feature_list);
+  computeFeatureMap(mesh_para->seen_part.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
+  computeFeatureMap(mesh_para->unseen_part.get(), vertex_feature_list,mesh_para->unseen_part->cut_faces);
   //for (int i = 0; i < model->getPlaneFaces().size(); ++i)
   //{
   //  computeFeatureMap(&mesh_para->shape_patches[i], vertex_feature_list);
@@ -126,7 +130,7 @@ void DetailSynthesis::prepareFeatureMap(std::shared_ptr<Model> model)
   }
 }
 
-void DetailSynthesis::computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list)
+void DetailSynthesis::computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list, std::set<int>& visible_faces)
 {
   //resolution = 512;
   int dim_feature = feature_list[0].size();
@@ -150,26 +154,55 @@ void DetailSynthesis::computeFeatureMap(ParaShape* para_shape, std::vector<std::
   {
     for(int y = 0; y < resolution; y ++)
     {
-      bool inside_para = false;
       pt[0] = float(x) / resolution;
       pt[1] = float(y) / resolution;
       if (ShapeUtility::findClosestUVFace(pt, para_shape, bary_coord, f_id, v_ids))
       {
-        inside_para = true;
-      }
-
-      // put feature into feature map from feature_list
-      for (int i = 0; i < dim_feature; ++i)
-      {
-        if (inside_para)
+        if (visible_faces.find(para_shape->face_set[f_id]) != visible_faces.end())
         {
-          para_shape->feature_map[i].at<float>(resolution - y - 1,x) = bary_coord[0] * feature_list[v_set[v_ids[0]]][i] + bary_coord[1] * feature_list[v_set[v_ids[1]]][i] + bary_coord[2] * feature_list[v_set[v_ids[2]]][i];
+          for (int i = 0; i < dim_feature; ++i)
+          {
+            para_shape->feature_map[i].at<float>(resolution - y - 1,x) = bary_coord[0] * feature_list[v_set[v_ids[0]]][i] + bary_coord[1] * feature_list[v_set[v_ids[1]]][i] + bary_coord[2] * feature_list[v_set[v_ids[2]]][i];
+          }
         }
         else
+        {
+          for (int i = 0; i < dim_feature; ++i)
+          {
+            para_shape->feature_map[i].at<float>(resolution - y - 1,x) = -1.0;
+          }
+        }
+      }
+      else
+      {
+        for (int i = 0; i < dim_feature; ++i)
         {
           para_shape->feature_map[i].at<float>(resolution - y - 1,x) = -1.0;
         }
       }
+
+      //// put feature into feature map from feature_list
+      //if (visible_faces.find(para_shape->face_set[f_id]) != visible_faces.end())
+      //{
+      //  for (int i = 0; i < dim_feature; ++i)
+      //  {
+      //    if (inside_para)
+      //    {
+      //      para_shape->feature_map[i].at<float>(resolution - y - 1,x) = bary_coord[0] * feature_list[v_set[v_ids[0]]][i] + bary_coord[1] * feature_list[v_set[v_ids[1]]][i] + bary_coord[2] * feature_list[v_set[v_ids[2]]][i];
+      //    }
+      //    else
+      //    {
+      //      para_shape->feature_map[i].at<float>(resolution - y - 1,x) = -1.0;
+      //    }
+      //  }
+      //}
+      //else
+      //{
+      //  for (int i = 0; i < dim_feature; ++i)
+      //  {
+      //    para_shape->feature_map[i].at<float>(resolution - y - 1,x) = -1.0;
+      //  }
+      //}
 
 
       /*float v1_normal_original_mesh[3],v2_normal_original_mesh[3],v3_normal_original_mesh[3];
@@ -608,14 +641,14 @@ void DetailSynthesis::computeDetailMap(ParaShape* para_shape, std::vector<cv::Ma
     }
   }
 
-  /*std::cout << "detail min max: " << std::endl;
+  std::cout << "detail min max: " << std::endl;
   for (size_t i = 0; i < para_shape->detail_map.size(); ++i)
   {
     double min, max;
     cv::minMaxLoc(para_shape->detail_map[i],&min,&max);
     std::cout << min << " " << max << " ";
   }
-  std::cout << std::endl;*/
+  std::cout << std::endl;
 }
 
 //old one, useless 
@@ -1309,7 +1342,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, src_para_shape->detail_map[3]);
   //return;
 
-  VertexList original_vertex_list = src_model->getShapeVertexList();
+  //VertexList original_vertex_list = src_model->getShapeVertexList();
 
   //NormalTransfer normal_transfer;
   //PolygonMesh middle_src_mesh;
@@ -1325,14 +1358,10 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //  return;
   //}
 
-  /*NormalTransfer normal_transfer;
-  std::string normal_file_name = "final_normal";
-  normal_transfer.prepareNewNormal(src_model, normal_file_name);*/
+  //VertexList new_vertex_list = src_model->getShapeVertexList();
+  //FaceList new_face_list = src_model->getShapeFaceList();
 
-  VertexList new_vertex_list = src_model->getShapeVertexList();
-  FaceList new_face_list = src_model->getShapeFaceList();
-
-  src_model->updateShape(original_vertex_list);
+  //src_model->updateShape(original_vertex_list);
 
   std::vector<cv::Mat> detail_image(3);
   cv::split(detail_reflectance_mat, &detail_image[0]);
@@ -1347,12 +1376,12 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   new_detail_image.push_back(detail_image[0]);
   new_detail_image.push_back(detail_image[1]);
   new_detail_image.push_back(detail_image[2]);
-  //new_detail_image.push_back(displacement_mat);
+  new_detail_image.push_back(displacement_mat);
   
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
   
-  //computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
+  computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
   /*std::vector<cv::Mat> for_merge; 
   for_merge.push_back(src_para_shape->detail_map[2]);
   for_merge.push_back(src_para_shape->detail_map[1]);
@@ -1361,11 +1390,11 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::merge(for_merge, output_detail_map);
   cv::imwrite(src_model->getOutputPath() + "/detail_map2048x2048.png", output_detail_map * 255);*/
   
-  new_detail_image.clear();
-  new_detail_image.push_back(displacement_mat);
-  computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
+  //new_detail_image.clear();
+  //new_detail_image.push_back(displacement_mat);
+  //computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
   //cv::imwrite(src_model->getOutputPath() + "/displacement_map2048x2048.png", src_para_shape->detail_map[0] * 255);
-  return;
+  //return;
   cv::Mat uv_mask;
   /*VertexList new_mesh_v;
   FaceList new_mesh_f;
@@ -1386,7 +1415,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     }
   } */
   //computeDisplacementMap(src_para_shape.get(), new_mesh_v, new_mesh_f, src_model, mesh_para->seen_part->cut_faces, uv_mask);
-  computeDisplacementMap(src_para_shape.get(), new_vertex_list, new_face_list, src_model, mesh_para->seen_part->cut_faces, uv_mask);
+  //computeDisplacementMap(src_para_shape.get(), new_vertex_list, new_face_list, src_model, mesh_para->seen_part->cut_faces, uv_mask);
   cv::imshow("src detail 0", src_para_shape->detail_map[0]);
   cv::imshow("src detail 1", src_para_shape->detail_map[1]);
   cv::imshow("src detail 2", src_para_shape->detail_map[2]);
@@ -1423,6 +1452,10 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 
   // 2. second we need to compute the geometry feature on deformed src_model and tar_model;
   // normalized height, curvature, directional occlusion, surface normal
+  NormalTransfer normal_transfer;
+  std::string normal_file_name = "final_normal";
+  normal_transfer.prepareNewNormal(src_model, normal_file_name);
+
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
@@ -1465,7 +1498,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
   }
-  computeFeatureMap(src_para_shape.get(), vertex_feature_list);
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -1497,8 +1530,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   }
   std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
   tar_para_shape->initWithExtShape(tar_model);
-  computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
-  return;
+  computeFeatureMap(tar_para_shape.get(), vertex_feature_list, tar_para_shape->cut_faces);
+  //return;
 
   //cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ);
   //cv::Mat detail_reflectance_mat;
@@ -1518,14 +1551,6 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //mesh_para->seen_part->detail_map.push_back(displacement_map.clone());
 
   // 5. do synthesis
-  {
-    double min_test, max_test;
-    for (size_t i = 0; i < src_para_shape->detail_map.size(); ++i)
-    {
-      cv::minMaxLoc(src_para_shape->detail_map[i], &min_test, &max_test);
-      std::cout << "Source Detail Dim " << i << ": " << min_test << "\t" << max_test << std::endl;
-    }
-  }
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
@@ -1552,8 +1577,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     }
   }
   //need to generate a mask for tar_para_shape!!!
-  cv::Mat tar_uv_mask(result_displacement.rows, result_displacement.cols, CV_32FC1, 1);
-  applyDisplacementMap(tar_para_shape->vertex_set, tar_para_shape->cut_shape, tar_model, result_displacement, tar_uv_mask);
+  //cv::Mat tar_uv_mask(result_displacement.rows, result_displacement.cols, CV_32FC1, 1);
+  //applyDisplacementMap(tar_para_shape->vertex_set, tar_para_shape->cut_shape, tar_model, result_displacement, tar_uv_mask);
 
   cv::imwrite(tar_model->getOutputPath() + "/reflectance.png", result_reflectance*255);
   cv::imwrite(tar_model->getOutputPath() + "/tar_displacement.png", result_displacement*255);
@@ -1594,11 +1619,11 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   kevin_vector_field->compute_s_hvf();
 
   ShapeUtility::computeNormalizedHeight(src_model);
-  //ShapeUtility::computeDirectionalOcclusion(src_model);
+  ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   //ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
-  //ShapeUtility::computeDirectionalOcclusion(tar_model);
+  ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
   //ShapeUtility::computeSolidAngleCurvature(tar_model);
 
@@ -1639,9 +1664,9 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     src_mesh_center += poly_mesh->position(vit);
   }
   src_mesh_center = src_mesh_center / poly_mesh->n_vertices();
-  //std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
-  //src_para_shape->initWithExtShape(src_model);
-  //computeFeatureMap(src_para_shape.get(), vertex_feature_list);
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
 
   float src_mesh_scale = src_model->getBoundBox()->getRadius();
   std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
@@ -1693,12 +1718,16 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   tar_mesh_center = tar_mesh_center / poly_mesh->n_vertices();
   std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
   tar_para_shape->initWithExtShape(tar_model);
-  computeFeatureMap(tar_para_shape.get(), vertex_feature_list);
+  computeFeatureMap(tar_para_shape.get(), vertex_feature_list, tar_para_shape->cut_faces);
 
   // not necessary
-  //syn_tool.reset(new SynthesisTool);
-  //syn_tool->setExportPath(tar_model->getOutputPath());
-  //syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
+  syn_tool.reset(new SynthesisTool);
+  syn_tool->levels = 10;
+  syn_tool->patch_size = 10;
+  syn_tool->max_iter = 5;
+  syn_tool->best_random_size = 10;
+  syn_tool->setExportPath(tar_model->getOutputPath());
+  syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
 
 
   // prepare the local transform for each sampled vertices from target model
@@ -1714,7 +1743,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
       size_t pos = std::distance(v_set.begin(), std::find(v_set.begin(), v_set.end(), sampled_tar_model[i]));
       if (pos == v_set.size())
       {
-       std::cout << "Warning: sampled point " << sampled_tar_model[i] << " doesn't show in its para shape." << std::endl;
+       std::cout << "\nWarning: sampled point " << sampled_tar_model[i] << " doesn't show in its para shape." << std::endl;
       }
       else
       {
@@ -1732,20 +1761,25 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   // 2. use the NNF from syn_tool
 
   // get corresponding vertices on source
-  std::vector<int> src_v_ids;
+  std::vector<STLVectori> src_v_ids;
   {
-    float tar_mesh_scale = tar_model->getBoundBox()->getRadius();
-    for (size_t i = 0; i < sampled_tar_model.size(); ++i)
-    {
-      STLVectorf tar_feature_vec = vertex_feature_list[sampled_tar_model[i]];
-      Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(sampled_tar_model[i])) - tar_mesh_center) / tar_mesh_scale;
-      tar_feature_vec.push_back(normalized_pos(0));
-      tar_feature_vec.push_back(normalized_pos(1));
-      tar_feature_vec.push_back(normalized_pos(2));
-      int src_v_id = 0;
-      src_feature_kd->nearestPt(tar_feature_vec, src_v_id);
-      src_v_ids.push_back(mesh_para->seen_part->vertex_set[src_v_id]);
-    }
+    this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, src_model, tar_model, syn_tool, sampled_tar_model, src_v_ids);
+
+    //float tar_mesh_scale = tar_model->getBoundBox()->getRadius();
+    //for (size_t i = 0; i < sampled_tar_model.size(); ++i)
+    //{
+    //  STLVectorf tar_feature_vec = vertex_feature_list[sampled_tar_model[i]];
+    //  Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(sampled_tar_model[i])) - tar_mesh_center) / tar_mesh_scale;
+    //  normalized_pos(0) = normalized_pos(0) < 0 ? -normalized_pos(0) : normalized_pos(0);
+    //  tar_feature_vec.push_back(normalized_pos(0));
+    //  tar_feature_vec.push_back(normalized_pos(1));
+    //  tar_feature_vec.push_back(normalized_pos(2));
+    //  int src_v_id = 0;
+    //  src_feature_kd->nearestPt(tar_feature_vec, src_v_id);
+    //  src_v_ids.push_back(mesh_para->seen_part->vertex_set[src_v_id]);
+    //}
+
+    //this->prepareParaPatches(src_model, tar_model, sampled_tar_model, src_v_ids);
   }
 
   // normal transform to get the local transform
@@ -1760,15 +1794,15 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   ShapeUtility::prepareLocalTransform(src_model->getPolygonMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, tar_model->getBoundBox()->getRadius() / src_model->getBoundBox()->getRadius());
 
   actors.clear();
-  actors.push_back(GLActor(ML_POINT, 5.0f));
-  actors.push_back(GLActor(ML_LINE, 3.0f));
+  actors.push_back(GLActor(ML_POINT, 3.0f));
+  actors.push_back(GLActor(ML_LINE, 1.0f));
   
   for(int i = 0; i < src_v_ids.size(); i ++)
   {
     float start[3], end[3];
-    start[0] = src_model->getShapeVertexList()[3 * src_v_ids[i]];
-    start[1] = src_model->getShapeVertexList()[3 * src_v_ids[i] + 1];
-    start[2] = src_model->getShapeVertexList()[3 * src_v_ids[i] + 2];
+    start[0] = src_model->getShapeVertexList()[3 * src_v_ids[i][0]];
+    start[1] = src_model->getShapeVertexList()[3 * src_v_ids[i][0] + 1];
+    start[2] = src_model->getShapeVertexList()[3 * src_v_ids[i][0] + 2];
     end[0] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i]];
     end[1] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 1];
     end[2] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 2];
@@ -1785,7 +1819,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     std::sort(src_v_ids.begin(), src_v_ids.end());
     for (size_t i = 0; i < src_v_ids.size(); ++i)
     {
-      fdebug << src_v_ids[i] << std::endl;
+      fdebug << src_v_ids[i][0] << std::endl;
     }
   }
   //return;
@@ -1798,7 +1832,7 @@ void DetailSynthesis::prepareLocalTransformCrsp(
   ParaShapePtr src_para, ParaShapePtr tar_para,
   ModelPtr src_model, ModelPtr tar_model,
   SynToolPtr syn_tool,
-  const std::vector<int>& tar_sampled, std::vector<int>& src_v_ids)
+  const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids)
 {
   src_v_ids.clear();
 
@@ -1814,19 +1848,108 @@ void DetailSynthesis::prepareLocalTransformCrsp(
     }
     else
     {
-      std::pair<int, int> tar_uv, src_uv;
+      std::pair<int, int> tar_uv;
+      std::vector<std::pair<int, int> > src_uvs;
       tar_uv.first = std::min(int(tar_para->cut_shape->getUVCoord()[2 * pos + 0] * resolution), resolution - 1);
       tar_uv.second = std::min(int(tar_para->cut_shape->getUVCoord()[2 * pos + 1] * resolution), resolution - 1);
       tar_uv.second = resolution - tar_uv.second - 1;
 
       // then we get the corresponding src_uv
-      src_uv.second = resolution - src_uv.second - 1;
-      std::vector<float> pt(2, 0);
-      pt[0] = float(src_uv.first) / resolution;
-      pt[1] = float(src_uv.second) / resolution;
-      int src_v_id = 0;
-      src_para->kdTree_UV->nearestPt(pt, src_v_id);
-      src_v_ids.push_back(src_para->vertex_set[src_v_id]);
+      syn_tool->findSrcCrsp(tar_uv, src_uvs);
+      std::vector<int> src_v_id_mult;
+      for (size_t j = 0; j < src_uvs.size(); ++j)
+      {
+        std::pair<int, int> src_uv = src_uvs[j];
+        src_uv.second = resolution - src_uv.second - 1;
+        std::vector<float> pt(2, 0);
+        pt[0] = float(src_uv.first) / resolution;
+        pt[1] = float(src_uv.second) / resolution;
+        int src_v_id = 0;
+        src_para->kdTree_UV->nearestPt(pt, src_v_id);
+        src_v_id_mult.push_back(src_para->vertex_set[src_v_id]);
+      }
+      //std::sort(src_v_id_mult.begin(), src_v_id_mult.end());
+      //src_v_id_mult.erase(std::unique(src_v_id_mult.begin(), src_v_id_mult.end()), src_v_id_mult.end());
+      src_v_ids.push_back(src_v_id_mult);
     }
   }
+}
+
+void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids)
+{
+  // first do the mesh parametrization
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  {
+    this->testMeshPara(src_model);
+  }
+
+  // use the seen cut face to find the source patches
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+  std::vector<std::set<int> > src_components;
+  //mesh_para->connectedComponents(src_components, mesh_para->seen_part->cut_faces, src_para_shape->cut_shape->getFaceAdjList());
+  mesh_para->connectedComponents(src_components, src_para_shape->cut_faces, src_para_shape->cut_shape->getFaceAdjList());
+
+  std::vector<ParaShape> src_patches(src_components.size());
+  for (size_t i = 0; i < src_components.size(); ++i)
+  {
+    int start_v_id = ShapeUtility::findLeftTopUVVertex(src_model->getPolygonMesh(), src_components[i]);
+    mesh_para->doMeshParamterizationPatch(src_model, src_components[i], &src_patches[i], start_v_id);
+    std::cout << "src component " << i << " : " << src_components[i].size() << std::endl;
+  }
+
+  std::cout << "src components: " << src_components.size() << std::endl;
+
+  // then come to the target patches
+  // target patches depend on the parametrization
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+
+  std::vector<std::set<int> > tar_components;
+  mesh_para->connectedComponents(tar_components, tar_para_shape->cut_faces, tar_para_shape->cut_shape->getFaceAdjList());
+
+  std::vector<ParaShape> tar_patches(tar_components.size());
+  for (size_t i = 0; i < tar_components.size(); ++i)
+  {
+    int start_v_id = ShapeUtility::findLeftTopUVVertex(tar_model->getPolygonMesh(), tar_components[i]);
+    mesh_para->doMeshParamterizationPatch(tar_model, tar_components[i], &tar_patches[i], start_v_id);
+    std::cout << "tar component " << i << " : " << tar_components[i].size() << std::endl;
+  }
+
+  std::cout << "tar components: " << tar_components.size() << std::endl;
+
+  // then we find the correspondences
+  src_v_ids.clear();
+  std::vector<int> new_tar_sampled_v_ids;
+  for (size_t i = 0; i < tar_sampled_v_ids.size(); ++i)
+  {
+    // we need to search the crsp on source
+    // 1. find the patch
+    int tar_patch_id = -1;
+    int tar_patch_v_id = -1;
+    for (size_t j = 0; j < tar_patches.size(); ++j)
+    {
+      size_t pos = std::distance(tar_patches[j].vertex_set.begin(), std::find(tar_patches[j].vertex_set.begin(), tar_patches[j].vertex_set.end(), tar_sampled_v_ids[i]));
+      if (pos != tar_patches[j].vertex_set.size())
+      {
+        tar_patch_id = int(j);
+        tar_patch_v_id = int(pos);
+        break;
+      }
+    }
+
+    //if (tar_patch_v_id == -1) continue;
+
+    // 2. get target uv in this patch
+    std::vector<float> tar_uv(2, 0.0);
+    tar_uv[0] = tar_patches[tar_patch_id].cut_shape->getUVCoord()[2 * tar_patch_v_id + 0];
+    tar_uv[1] = tar_patches[tar_patch_id].cut_shape->getUVCoord()[2 * tar_patch_v_id + 1];
+
+    // 3. search closest uv in source patch
+    int src_patch_v_id = 0;
+    src_patches[0].kdTree_UV->nearestPt(tar_uv, src_patch_v_id);
+    src_v_ids.push_back(src_patches[0].vertex_set[src_patch_v_id]);
+    //new_tar_sampled_v_ids.push_back(tar_sampled_v_ids[i]);
+  }
+  //tar_sampled_v_ids.swap(new_tar_sampled_v_ids);
 }
