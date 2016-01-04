@@ -35,6 +35,7 @@ public:
   LG::PolygonMesh* getLightPolygonMesh();
   std::string getDataPath();
   std::string getOutputPath();
+  inline std::string getFileName() { return file_name; };
 
   //
   void updateShape(VertexList& new_vertex_list);

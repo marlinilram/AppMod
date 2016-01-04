@@ -1618,6 +1618,9 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   kevin_vector_field->init(tar_model);
   kevin_vector_field->compute_s_hvf();
 
+  //actors.clear();
+  //kevin_vector_field->getDrawableActors(actors);return;
+
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
@@ -1722,10 +1725,10 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
   // not necessary
   syn_tool.reset(new SynthesisTool);
-  syn_tool->levels = 10;
+  syn_tool->levels = 5;
   syn_tool->patch_size = 10;
   syn_tool->max_iter = 5;
-  syn_tool->best_random_size = 10;
+  syn_tool->best_random_size = 5;
   syn_tool->setExportPath(tar_model->getOutputPath());
   syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
 
@@ -1821,6 +1824,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     {
       fdebug << src_v_ids[i][0] << std::endl;
     }
+    fdebug.close();
   }
   //return;
 

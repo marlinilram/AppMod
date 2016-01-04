@@ -589,7 +589,7 @@ void KevinVectorField::exportCCL()
   VertexList vertex = shape_model->getShapeVertexList();
   std::vector<STLVectori> allCurves = shape_model->getShapeCrestLine();
   FILE *fp;
-  fp = fopen((shape_model->getDataPath() + "/model.ccl").c_str(),"w+");
+  fp = fopen((shape_model->getDataPath() + "/" + shape_model->getFileName() + ".ccl").c_str(),"w+");
   int line_size = allCurves.size();
   int point_size = 0;
   for(int i = 0; i < allCurves.size(); i ++)
@@ -756,7 +756,8 @@ int KevinVectorField::readCCL(std::ifstream &stream)
 void KevinVectorField::load_crestlines()
 {
   std::string sDirName = shape_model->getDataPath();
-  std::string name = sDirName + "/model.ccl";
+  std::string name = sDirName + "/" + shape_model->getFileName() + ".ccl";
+  std::cout << name << std::endl;
   FILE *fp;
   if(fp = fopen(name.c_str(), "r"))
   {
