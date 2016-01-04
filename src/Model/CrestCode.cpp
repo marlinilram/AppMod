@@ -3,6 +3,7 @@
 #include "Shape.h"
 #include "KDTreeWrapper.h"
 #include "fstream"
+#include <set>
 
 CrestCode::CrestCode()
 {
@@ -228,4 +229,24 @@ void CrestCode::computeCrestLines()
   crest_lines = tmp_crestLines;
 }
 
-
+std::vector<STLVectori>& CrestCode::getCrestLines()
+{
+  std::set<length_id> candidate;
+  for(size_t i = 0; i < crest_lines.size(); i ++)
+  {
+    length_id temp;
+    temp.id = i;
+    temp.length = crest_lines[i].size();
+    candidate.insert(temp);
+  }
+  int best_candidate = 10;
+  std::vector<STLVectori> temp_crest_lines = crest_lines;
+  crest_lines.clear();
+  std::set<length_id>::const_iterator it = candidate.begin();
+  for(int i = 0; i < best_candidate; i ++)
+  {
+    crest_lines.push_back(temp_crest_lines[it->id]);
+    it ++;
+  }
+  return crest_lines;
+}

@@ -30,6 +30,7 @@ public:
   /*std::vector<std::vector<Vector3f>>& getCrestLinesPoints(){ return crestLinesPoints; };
   std::vector<std::vector<int>>& getCrestLinesPointsId(){ return crestLinesPointsId; };
   void computeCrestLinesPoints();*/
+  void generateEdgesFromCrestCode();
 
 public:
   std::vector<Edge> crest_edges;
