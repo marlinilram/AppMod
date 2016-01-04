@@ -4,6 +4,16 @@
 #include "BasicHeader.h"
 #include <memory>
 
+struct length_id
+{
+  int length;
+  int id;
+  bool operator < (const length_id& a) const
+  {
+    return a.length < length;
+  }
+};
+
 class Shape;
 
 class CrestCode
@@ -14,7 +24,7 @@ public:
 
   void setShape(std::shared_ptr<Shape> in_shape);
   void exportInputFile();
-  std::vector<STLVectori>& getCrestLines(){ return crest_lines; };
+  std::vector<STLVectori>& getCrestLines();
   void computeCrestLines();
   void mergeCrestEdges();
 
