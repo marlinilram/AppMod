@@ -17,6 +17,7 @@ struct distance_position
 };
 
 class MeshParameterization;
+class DetailSynthesis;
 
 class SynthesisTool
 {
@@ -57,7 +58,7 @@ public:
   void exportSrcMask();
   void exportTarMask();
 
-  void findSrcCrsp(Point2D& tar_id, Point2D& src_id);
+  void findSrcCrsp(Point2D& tar_id, std::vector<Point2D>& src_id);
 
 private:
   void generatePyramid(ImagePyramid& pyr, int level);
@@ -90,7 +91,7 @@ private:
   void initializeTarDetail(ImagePyramidVec& gptar_d, int level);
   void voteImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, int level);
   void votePixel(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, int level, Point2D& tarPos);
-  void updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+  double updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
                  ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
                  NNF& nnf, std::vector<float>& ref_cnt, int level, int iter = 0);
   void updateNNFReverse(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
@@ -128,6 +129,9 @@ private:
     std::vector<float>& ref_cnt, int level, Point2D& srcPatch, Point2D& tarPatch);
   double bestPatchInSet(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
     std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch);
+
+private:
+  friend class DetailSynthesis;
 
 private:
   int levels;

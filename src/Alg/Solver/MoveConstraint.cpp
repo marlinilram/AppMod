@@ -1,6 +1,8 @@
 #include "MoveConstraint.h"
 #include "Solver.h"
 
+#include <fstream>
+
 MoveConstraint::MoveConstraint()
 {
   this->init();
@@ -43,6 +45,36 @@ void MoveConstraint::initMatrix(const STLVectori& vertex_id, const VertexList& v
     this->right_hand(3 * v_id + 0) = vertex_list[3 * i + 0];
     this->right_hand(3 * v_id + 1) = vertex_list[3 * i + 1];
     this->right_hand(3 * v_id + 2) = vertex_list[3 * i + 2];
+  }
+
+  //std::ofstream fdebug("constraint.mat");
+  //if (fdebug)
+  //{
+  //  fdebug << constraint_matrix;
+  //  fdebug.close();
+  //}
+  //fdebug.open("right_hand.mat");
+  //if (fdebug)
+  //{
+  //  fdebug << right_hand;
+  //  fdebug.close();
+  //}
+
+  if (vertex_id.size() * 3 != vertex_list.size())
+  {
+    std::cout << "Error, vertex size doesn't match the vertex list.\n";
+  }
+  else
+  {
+    std::ofstream fdebug("move_debug.txt");
+    if (fdebug)
+    {
+      for (size_t i = 0; i < vertex_id.size(); ++i)
+      {
+        fdebug << vertex_id[i] << "\t" << vertex_list[3 * i + 0] << "\t" << vertex_list[3 * i + 1] << "\t" << vertex_list[3 * i + 2] << std::endl;
+      }
+      fdebug.close();
+    }
   }
 }
 

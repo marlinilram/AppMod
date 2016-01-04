@@ -10,6 +10,8 @@
 
 #include "KDTreeWrapper.h"
 
+#include <fstream>
+
 using namespace LG;
 
 GeometryTransfer::GeometryTransfer()
@@ -70,7 +72,7 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
 
   move_constraint->setSolver(solver);
   move_constraint->initMatrix(v_ids, v_list);
-  move_constraint->setLamdMove(10.0f);
+  move_constraint->setLamdMove(5.0f);
 
   solver->initCholesky();
   int max_iter = 20;
@@ -86,8 +88,19 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
 
   std::vector<float> new_vertex_list(solver->P_Opt.data(), solver->P_Opt.data() + solver->P_Opt.rows() * solver->P_Opt.cols());
 
+  //std::ofstream fdebug(tar_model->getOutputPath() + "/v_ids.txt");
+  //if (fdebug)
+  //{
+  //  for (size_t i = 0; i < v_ids.size(); ++i)
+  //  {
+  //    fdebug << v_ids[i] << std::endl;
+  //  }
+  //  
+  //  fdebug.close();
+  //}
+
   tar_model->updateShape(new_vertex_list);
-  // map new texture
+    // map new texture
   //model->updateColor(); // this is for build uv coordinates
   //model->updateSHColor();
 

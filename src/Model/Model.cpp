@@ -576,8 +576,8 @@ const std::vector<Edge>& Model::getShapeCrestEdge()
 }
 const std::vector<STLVectori>& Model::getShapeCrestLine()
 {
-  //return shape_crest->getCrestLine();
-  return shape_crest->getCrestCodeLine();
+  return shape_crest->getCrestLine();
+  //return shape_crest->getCrestCodeLine();
 }
 const std::vector<STLVectori>& Model::getShapeVisbleCrestLine()
 {

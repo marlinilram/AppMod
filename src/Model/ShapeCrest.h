@@ -22,6 +22,7 @@ public:
   
   void buildCandidates();
   void mergeCandidates(std::vector<Edge>& vis_edges, std::vector<std::vector<int>>& vis_lines);
+  void organizeCrestLines(std::vector<std::vector<int>>& vis_lines);
   bool connectable(int v_start, int v_ori_n, int v_cur_n);
   void computeVisible(std::set<int>& vis_faces);
   void buildEdgeLineMapper();

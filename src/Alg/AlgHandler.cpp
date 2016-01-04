@@ -188,6 +188,8 @@ void AlgHandler::doLargeFeatureReg(int reg_type)
 
 void AlgHandler::testApplyDisplacement()
 {
+  //detail_synthesis->prepareParaPatches(shape_model, synthesis_model);return;
+
   detail_synthesis->doGeometryTransfer(shape_model, synthesis_model);
   actors.clear();
   std::vector<GLActor> temp_actors;

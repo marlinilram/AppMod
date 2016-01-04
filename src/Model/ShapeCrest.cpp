@@ -5,8 +5,12 @@
 #include "KDTreeWrapper.h"
 #include "ParameterMgr.h"
 
+#include "PolygonMesh.h"
+
 #include <set>
 #include <fstream>
+
+using namespace LG;
 
 ShapeCrest::ShapeCrest()
 {
@@ -25,6 +29,7 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
   mergeCandidates(crest_edges, crest_lines);
   if(crest_lines.empty())
   {
+    std::cout << "Generate crest line from crest code." << std::endl;
     crestCode.reset(new CrestCode);
     crestCode->setShape(in_shape);
     crestCode_lines = crestCode->getCrestLines();
@@ -32,6 +37,7 @@ void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape)
     crest_lines = crestCode_lines;
     generateEdgesFromCrestCode();
   }
+  organizeCrestLines(crest_lines);
   buildEdgeLineMapper();
 }
 
@@ -366,6 +372,38 @@ void ShapeCrest::generateEdgesFromCrestCode()
       e.first = crest_lines[i][j];
       e.second = crest_lines[i][j + 1];
       crest_edges.push_back(e);
+    }
+  }
+}
+
+void ShapeCrest::organizeCrestLines(std::vector<std::vector<int>>& vis_lines)
+{
+  PolygonMesh* poly_mesh = shape->getPolygonMesh();
+  std::vector<Vec3> axis_dir(3);
+  axis_dir[0] = Vec3(1, 0, 0);
+  axis_dir[1] = Vec3(0, 1, 0);
+  axis_dir[2] = Vec3(0, 0, 1);
+  for (size_t i = 0; i < vis_lines.size(); ++i)
+  {
+    Vec3 start = poly_mesh->position(PolygonMesh::Vertex(vis_lines[i][0]));
+    Vec3 end = poly_mesh->position(PolygonMesh::Vertex(vis_lines[i][vis_lines[i].size() - 1]));
+
+    float axis_cos = std::numeric_limits<float>::min();
+    int axis_id = 0;
+    Vec3 line_dir = (end - start).normalized();
+
+    for (int j = 0; j < 3; ++j)
+    {
+      if (fabs(line_dir.dot(axis_dir[j])) >= axis_cos)
+      {
+        axis_id = j;
+        axis_cos = fabs(line_dir.dot(axis_dir[j]));
+      }
+    }
+
+    if (line_dir.dot(axis_dir[axis_id]) < 0)
+    {
+      std::reverse(vis_lines[i].begin(), vis_lines[i].end());
     }
   }
 }

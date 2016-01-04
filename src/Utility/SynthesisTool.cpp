@@ -10,7 +10,7 @@
 
 SynthesisTool::SynthesisTool()
 {
-  levels = 5;
+  levels = 10;
   NeighborRange.resize(5);
   NeighborRange[0].height = 9;
   NeighborRange[0].width = 9;
@@ -26,8 +26,8 @@ SynthesisTool::SynthesisTool()
   candidate_size = 20;
   best_random_size = 5;
   patch_size = 10;
-  bias_rate = 0.5; // not sure its effect, affect the smootheness of NNF when deactivate lamd_occ
-  lamd_occ = 0.005; // must activate, but low weight
+  bias_rate = 0.1; // not sure its effect, affect the smootheness of NNF when deactivate lamd_occ
+  lamd_occ = 0.01; // must activate, but low weight
   max_iter = 5;
 
   std::ofstream outFile(outputPath + "/parameter_info.txt");
@@ -1069,8 +1069,10 @@ void SynthesisTool::doSynthesisNew()
         std::vector<float> ref_cnt(width * height, 0.0);
         //if (i_iter % 2 == 0)
         {
+          double cur_energy = 0;
           this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 0);
-          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 1);
+          cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 1);
+          std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
         }
         //else
         //{
@@ -1098,8 +1100,10 @@ void SynthesisTool::doSynthesisNew()
         std::vector<float> ref_cnt(width * height, 0.0);
         //if (i_iter % 2 == 0)
         {
+          double cur_energy = 0;
           this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 0);
-          this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 1);
+          cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l, 1);
+          std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
         }
         //else
         //{
@@ -1239,7 +1243,7 @@ void SynthesisTool::getRandomPosition(int l, std::vector<Point2D>& random_set, i
   }
 }
 
-void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
+double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
   ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
   NNF& nnf, std::vector<float>& ref_cnt, int level, int iter)
 {
@@ -1321,6 +1325,8 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
     jstart = jend - 1; jend = -1; jchange = -1;
   }
 
+  double energyNNF = 0;
+  int n_patches = 0;
 
   // deal with all pixels left
   for (int i = istart; i != iend; i += ichange)
@@ -1368,14 +1374,19 @@ void SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f
       if (d_best_rand < (bias_rate * d_best_bias))
       {
         nnf[offset] = best_rand;
+        energyNNF += d_best_rand;
       }
       else
       {
         nnf[offset] = best_bias;
+        energyNNF += d_best_bias;
       }
       this->updateRefCount(ref_cnt, nnf[offset], gpsrc_d, level);
+      ++n_patches;
     }
   }
+
+  return energyNNF / n_patches;
 }
 
 void SynthesisTool::updateNNFWithMask(std::vector<int>& source_patch_mask, ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
@@ -1599,7 +1610,7 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   //if (d_f < 0.001)  lambda_d_f = 1, lambda_d_d = 0;
   //else  lambda_d_f = 0, lambda_d_d = 1;
   beta = 1.0 / (1 + exp(5 * (d_f - 0.5)));
-  d =  d_f + lamd_occ * d_occ;// + lambda_d_d * d_d + d_occ;
+  d =  beta * d_f + (1 - beta) * d_d + lamd_occ * d_occ;// + lambda_d_d * d_d + d_occ;
   return d;
 }
 
@@ -1950,12 +1961,14 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   return d;
 }
 
-void SynthesisTool::findSrcCrsp(Point2D& tar_id, Point2D& src_id)
+void SynthesisTool::findSrcCrsp(Point2D& tar_id, std::vector<Point2D>& src_id)
 {
   int width  = gptar_feature[0][0].cols;
   int height = gptar_feature[0][0].rows;
   int nnf_width  = (width - this->patch_size + 1);
   int nnf_height = (height - this->patch_size + 1);
+
+  std::ofstream fdebug(outputPath + "/crspsize.txt", std::ofstream::app);
   
   std::set<distance_position> candidate;
   for (int i = 0; i < this->patch_size; ++i)
@@ -1973,10 +1986,22 @@ void SynthesisTool::findSrcCrsp(Point2D& tar_id, Point2D& src_id)
       candidate.insert(distance_position(distance_feature, std::pair<int, int>(patch.first + j, patch.second + i)));
     }
   }
-  int choose = int((rand() / double(RAND_MAX)) * best_random_size);
-  choose = choose >= best_random_size ? (best_random_size - 1) : choose;
-  std::set<distance_position>::const_iterator iter = candidate.begin();
-  std::advance(iter, choose);
-  src_id.first = iter->pos.first;
-  src_id.second = iter->pos.second;
+
+  if (fdebug)
+  {
+    fdebug << candidate.size() << std::endl;
+    fdebug.close();
+  }
+
+  //int choose = int((rand() / double(RAND_MAX)) * best_random_size);
+  //choose = choose >= best_random_size ? (best_random_size - 1) : choose;
+  //std::set<distance_position>::const_iterator iter = candidate.begin();
+  //std::advance(iter, choose);
+  //src_id.first = iter->pos.first;
+  //src_id.second = iter->pos.second;
+  src_id.clear();
+  for (auto i : candidate)
+  {
+    src_id.push_back(i.pos);
+  }
 }
