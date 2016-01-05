@@ -1084,10 +1084,9 @@ namespace ShapeUtility
   void computeSolidAngleCurvature(std::shared_ptr<Model> model)
   {
     // voxelize the mesh
-    double voxel_size = model->getBoundBox()->getRadius() / 200;
+    double voxel_size = model->getBoundBox()->getRadius() / 2000;
     VoxelerLibrary::Voxeler voxeler(model->getPolygonMesh(), voxel_size);
-    voxeler.fillInside();
-    std::vector<VoxelerLibrary::Voxel>& voxels = voxeler.voxels;
+    std::vector<VoxelerLibrary::Voxel>& voxels = voxeler.fillInside();
     double voxelSize = voxeler.voxelSize;
 
     std::vector<tinyobj::shape_t> shapes(1, tinyobj::shape_t());
@@ -1191,14 +1190,14 @@ namespace ShapeUtility
       //Vec3 tangent = centroid - old_v; tangent.normalize();
       //Vec3 normal = v_normals[vit]; normal.normalize();
 
-      Vec3 tangent = v_tangents[vit]; 
+      Vec3 tangent = v_tangents[vit]; tangent.normalize();
       if (isnan(tangent(0)))
       {
         tangent(0) = (rand() / double(RAND_MAX));
         tangent(1) = (rand() / double(RAND_MAX));
         tangent(2) = (rand() / double(RAND_MAX));
+        tangent.normalize();
       }
-      tangent.normalize();
       Vec3 normal = v_normals[vit]; normal.normalize();
       
       Vec3 yy = normal.cross(tangent);
@@ -1206,6 +1205,10 @@ namespace ShapeUtility
       Matrix3f local_trans_mat;
       local_trans_mat << tangent, yy, normal;
       local_transform[vit] = local_trans_mat.inverse() * (new_v - old_v);
+      if (isnan(local_transform[vit](0)))
+      {
+        std::cout << "nan happens in local transform computing, vid: " << vit.idx() << std::endl;
+      }
     }
   }
 
@@ -1294,14 +1297,14 @@ namespace ShapeUtility
     {
       PolygonMesh::Vertex cur_v(v_ids[i]);
 
-      Vec3 tangent = v_tangents[cur_v]; 
+      Vec3 tangent = v_tangents[cur_v]; tangent.normalize();
       if (isnan(tangent(0)))
       {
         tangent(0) = (rand() / double(RAND_MAX));
         tangent(1) = (rand() / double(RAND_MAX));
         tangent(2) = (rand() / double(RAND_MAX));
+        tangent.normalize();
       }
-      tangent.normalize();
       Vec3 normal = v_normals[cur_v]; normal.normalize();
       Vec3 yy = normal.cross(tangent);
       tangent = yy.cross(normal);
@@ -1314,8 +1317,14 @@ namespace ShapeUtility
       for (size_t j = 0; j < src_v_ids[i].size(); ++j)
       {
         PolygonMesh::Vertex cur_src_v(src_v_ids[i][j]);
-        n_t_v += local_trans_mat * (scale * local_transform[cur_src_v]) + t_v;
+        Vec3 cur_n_t_v = local_trans_mat * (scale * local_transform[cur_src_v]) + t_v;
+        n_t_v += cur_n_t_v;
         ++n_cnt;
+
+        if (isnan(cur_n_t_v(0)))
+        {
+          std::cout << "nan happens in local transform transferring, src_vid: " << cur_src_v.idx() << "\ttar_vid: " << cur_v.idx() << std::endl;
+        }
       }
       n_t_v = n_t_v / n_cnt;
       //tar_mesh->position(cur_v) = t_v + 5 * v_normals[cur_v];continue;
@@ -1340,7 +1349,7 @@ namespace ShapeUtility
 
     for (size_t i = 0; i < v_ids.size(); ++i)
     {
-      tar_mesh->position(PolygonMesh::Vertex(v_ids[i])) = Vec3(new_v_list[3 * i + 0], new_v_list[3 * i + 1], new_v_list[3 * i + 2]);
+      //tar_mesh->position(PolygonMesh::Vertex(v_ids[i])) = Vec3(new_v_list[3 * i + 0], new_v_list[3 * i + 1], new_v_list[3 * i + 2]);
     }
   }
 

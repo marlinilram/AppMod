@@ -5,6 +5,9 @@
 #include "BasicHeader.h"
 
 class Solver;
+namespace LG {
+class PolygonMesh;
+}
 
 class ARAP : public Constraint
 {
@@ -20,6 +23,7 @@ public:
   virtual void setSolver(std::shared_ptr<Solver> solver);
 
   void initConstraint(VertexList& vertex_list, FaceList& face_list, AdjList& adj_list);
+  void initConstraint(LG::PolygonMesh* poly_mesh);
   inline void setLamdARAP(float lamd) { this->lamd_ARAP = lamd; };
 
 private:

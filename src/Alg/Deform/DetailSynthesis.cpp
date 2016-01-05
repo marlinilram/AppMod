@@ -1608,7 +1608,53 @@ void DetailSynthesis::test(std::shared_ptr<Model> model)
 
 void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
-  this->testMeshPara(src_model);
+  //std::shared_ptr<GeometryTransfer> geometry_transfer_debug(new GeometryTransfer);
+  //geometry_transfer_debug->debugDeformation(tar_model);return;
+  //{
+  //  std::vector<int> v_ids;
+  //  std::vector<float> v_list;
+  //  std::ifstream fdebug(tar_model->getDataPath() + "/move_debug.txt");
+  //  if (fdebug.is_open())
+  //  {
+  //    std::string line;
+  //    while (getline(fdebug, line))
+  //    {
+  //      std::stringstream parser(line);
+  //      int v_id = 0;
+  //      STLVectorf v_pos(3, 0);
+  //      parser >> v_id >> v_pos[0] >> v_pos[1] >> v_pos[2];
+  //      v_ids.push_back(v_id);
+  //      v_list.push_back(v_pos[0]);
+  //      v_list.push_back(v_pos[1]);
+  //      v_list.push_back(v_pos[2]);
+  //    }
+  //    //std::cout << "Load move_debug.txt finished." << std::endl;
+  //    fdebug.close();
+  //  }
+  //  actors.clear();
+  //  actors.push_back(GLActor(ML_POINT, 3.0f));
+  //  actors.push_back(GLActor(ML_LINE, 1.0f));
+  //  for(int i = 0; i < v_ids.size(); i ++)
+  //  {
+  //    Vec3 start, end;
+  //    start[0] = tar_model->getShapeVertexList()[3 * v_ids[i] + 0];
+  //    start[1] = tar_model->getShapeVertexList()[3 * v_ids[i] + 1];
+  //    start[2] = tar_model->getShapeVertexList()[3 * v_ids[i] + 2];
+  //    end[0] = v_list[3 * i + 0];
+  //    end[1] = v_list[3 * i + 1];
+  //    end[2] = v_list[3 * i + 2];      
+  //    //if ((start - end).norm() > tar_model->getBoundBox()->getRadius())
+  //    {
+  //      actors[0].addElement(start[0], start[1], start[2], 1, 0, 0);
+  //      actors[0].addElement(end[0], end[1], end[2], 0, 0, 1);
+  //      actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
+  //      actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
+  //      std::cout << "wrong line id in move_debug.txt: " << i << std::endl;
+  //    }      
+  //  }
+  //  return;
+  //}
+
 
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(src_model);
@@ -1617,6 +1663,8 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(tar_model);
   kevin_vector_field->compute_s_hvf();
+
+  this->testMeshPara(src_model);
 
   //actors.clear();
   //kevin_vector_field->getDrawableActors(actors);return;
@@ -1628,7 +1676,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   ShapeUtility::computeNormalizedHeight(tar_model);
   ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
-  //ShapeUtility::computeSolidAngleCurvature(tar_model);
+  //ShapeUtility::computeSolidAngleCurvature(tar_model);return;
 
   // 3. third do CCA, skip for now
 
@@ -1729,6 +1777,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   syn_tool->patch_size = 10;
   syn_tool->max_iter = 5;
   syn_tool->best_random_size = 5;
+  syn_tool->lamd_occ = 0;
   syn_tool->setExportPath(tar_model->getOutputPath());
   syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
 
@@ -1800,15 +1849,15 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   actors.push_back(GLActor(ML_POINT, 3.0f));
   actors.push_back(GLActor(ML_LINE, 1.0f));
   
-  for(int i = 0; i < src_v_ids.size(); i ++)
+  for(size_t i = 0; i < sampled_tar_model.size(); i ++)
   {
-    float start[3], end[3];
-    start[0] = src_model->getShapeVertexList()[3 * src_v_ids[i][0]];
-    start[1] = src_model->getShapeVertexList()[3 * src_v_ids[i][0] + 1];
-    start[2] = src_model->getShapeVertexList()[3 * src_v_ids[i][0] + 2];
-    end[0] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i]];
-    end[1] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 1];
-    end[2] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 2];
+    Vec3 start, end;
+    start[0] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 0];
+    start[1] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 1];
+    start[2] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 2];
+    end[0] = new_v_list[3 * i + 0];
+    end[1] = new_v_list[3 * i + 1];
+    end[2] = new_v_list[3 * i + 2];
     actors[0].addElement(start[0], start[1], start[2], 1, 0, 0);
     actors[0].addElement(end[0], end[1], end[2], 0, 0, 1);
     actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
