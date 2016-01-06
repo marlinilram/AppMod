@@ -1294,7 +1294,7 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-
+  this->resolution = 1024;
   this->testMeshPara(src_model);
   
 
@@ -1553,6 +1553,11 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 5. do synthesis
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
+  syn_tool->levels = 10;
+  syn_tool->patch_size = 10;
+  syn_tool->max_iter = 5;
+  syn_tool->best_random_size = 5;
+  syn_tool->lamd_occ = 0.005;
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
   syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
   syn_tool->doSynthesisNew();
@@ -1606,7 +1611,7 @@ void DetailSynthesis::test(std::shared_ptr<Model> model)
 
 }
 
-void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
+void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, STLVectori& sampled_t_v, STLVectorf& sampled_t_new_v, bool do_complete)
 {
   //std::shared_ptr<GeometryTransfer> geometry_transfer_debug(new GeometryTransfer);
   //geometry_transfer_debug->debugDeformation(tar_model);return;
@@ -1877,7 +1882,15 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   }
   //return;
 
-  geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+  if (!do_complete)
+  {
+    geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+  }
+  else
+  {
+    sampled_t_v = sampled_tar_model;
+    sampled_t_new_v = new_v_list;
+  }
 }
 
 
@@ -2005,4 +2018,49 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
     //new_tar_sampled_v_ids.push_back(tar_sampled_v_ids[i]);
   }
   //tar_sampled_v_ids.swap(new_tar_sampled_v_ids);
+}
+
+void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
+{
+  // This function is only allowed to run when doing self completion!!!
+
+  STLVectori sampled_t_v;
+  STLVectorf sampled_t_new_v;
+
+  this->doGeometryTransfer(src_model, tar_model, sampled_t_v, sampled_t_new_v, true);
+
+  // src_model and tar_model should have same topology
+
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  {
+    this->testMeshPara(src_model);
+  }
+
+  // update the target to same shape with source
+  VertexList incomplete_src_v_list = src_model->getShapeVertexList();
+  tar_model->updateShape(incomplete_src_v_list);
+
+  // then we do geometry transfer but only the unseen part
+  STLVectori filtered_sampled_t_v;
+  STLVectorf filtered_sampled_t_new_v;
+
+  PolygonMesh* tar_poly_mesh = tar_model->getPolygonMesh();
+  PolygonMesh* src_poly_mesh = src_model->getPolygonMesh();
+  const STLVectori& seen_vertex_set = mesh_para->seen_part->vertex_set;
+
+  for (size_t i = 0; i < sampled_t_v.size(); ++i)
+  {
+    if (std::find(seen_vertex_set.begin(), seen_vertex_set.end(), sampled_t_v[i]) == seen_vertex_set.end())
+    {
+      filtered_sampled_t_v.push_back(sampled_t_v[i]);
+      filtered_sampled_t_new_v.push_back(sampled_t_new_v[3 * i + 0]);
+      filtered_sampled_t_new_v.push_back(sampled_t_new_v[3 * i + 1]);
+      filtered_sampled_t_new_v.push_back(sampled_t_new_v[3 * i + 2]);
+    }
+  }
+
+  std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+  geometry_transfer->transferDeformation(tar_model, filtered_sampled_t_v, filtered_sampled_t_new_v);
+
+  //ShapeUtility::savePolyMesh(tar_poly_mesh, tar_model->getOutputPath() + "/complete_src.obj");
 }
