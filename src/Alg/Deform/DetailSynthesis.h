@@ -44,7 +44,8 @@ public:
   // transfer
   void doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
   void test(std::shared_ptr<Model> model);
-  void doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
+  void doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, STLVectori& sampled_t_v = STLVectori(), STLVectorf& sampled_t_new_v = STLVectorf(), bool do_complete = false);
+  void doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 
   void prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids);
 
