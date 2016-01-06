@@ -1162,6 +1162,11 @@ namespace ShapeUtility
     std::cout << std::endl;
   }
 
+  void computeMeanCurvature(std::shared_ptr<Model> model)
+  {
+    
+  }
+
   void computeLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh)
   {
     // src_mesh is the base mesh, the coarse one
