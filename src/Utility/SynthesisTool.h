@@ -37,7 +37,7 @@ public:
 
   void init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail);
   void doSynthesis();
-  void doSynthesisNew();
+  void doSynthesisNew(bool is_doComplete = false);
   void doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& src_detail);
   void doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail, std::vector<cv::Mat>& tar_detail);
   void doImageSynthesis(std::vector<cv::Mat>& src_detail);
@@ -86,9 +86,9 @@ private:
 
   // patch match based method
   void getRandomPosition(int l, std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height = 0, int min_width = 0);
-  void initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level);
-  void initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new);
-  void initializeTarDetail(ImagePyramidVec& gptar_d, int level);
+  void initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level, bool is_doComplete = false);
+  void initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new, bool is_doComplete = false);
+  void initializeTarDetail(ImagePyramidVec& gptar_d, int level, bool is_doComplete = false);
   void voteImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, int level);
   void votePixel(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, int level, Point2D& tarPos);
   double updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
@@ -104,7 +104,7 @@ private:
                       ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d,
                       std::vector<float>& ref_cnt, int level, Point2D& tarPatch, std::vector<Point2D>& srcPatches, Point2D& best_patch);
 
-  void buildMask(cv::Mat& src_detail, std::vector<int>& pixel_mask, std::vector<int>& patch_mask);//0 -> valid; 1 -> invalid
+  void buildMask(cv::Mat& tar_feature, std::vector<int>& pixel_mask, std::vector<int>& patch_mask, int level, bool is_doComplete = false);//0 -> valid; 1 -> invalid
   void initializeFillingNNF(ImagePyramid& gptar_d, NNF& nnf, std::vector<int>& patch_mask, int level);
   void initializeFillingTarDetail(ImagePyramidVec& gptar_d, std::vector<int>& pixel_mask, int level);
   void updateFillingNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar_f,
@@ -140,6 +140,7 @@ private:
   int patch_size;
   double bias_rate;
   double lamd_occ;
+  double lamd_gradient;
   int max_iter;
   float py_scale;
   float feature_threshold;
@@ -149,6 +150,9 @@ private:
   std::vector<ImagePyramid> gptar_feature;
   std::vector<ImagePyramid> gpsrc_detail;
   std::vector<ImagePyramid> gptar_detail;
+
+  std::vector<cv::Mat> src_detail_gradient;
+  std::vector<cv::Mat> tar_detail_gradient;
 
   NNF tar_feature_NNF;
 

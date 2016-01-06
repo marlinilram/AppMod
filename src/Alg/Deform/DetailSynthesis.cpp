@@ -596,15 +596,14 @@ void DetailSynthesis::computeDetailMap(ParaShape* para_shape, std::vector<cv::Ma
               {
                 detail_max[i] = para_shape->detail_map[i].at<float>(resolution - y - 1,x);
               }
+              ++n_filled_pixel;
+              uv_mask.at<float>(resolution - y - 1,x) = 1;
             }
             else
             {
-              para_shape->detail_map[i].at<float>(resolution - y - 1,x) = 0;
+              para_shape->detail_map[i].at<float>(resolution - y - 1,x) = -1;
             }
           }
-
-          ++n_filled_pixel;
-          uv_mask.at<float>(resolution - y - 1,x) = 1;
         }
         else
         {
@@ -1318,7 +1317,7 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-  this->resolution = 1024;
+  this->resolution = 512;
   this->testMeshPara(src_model);
   
 
@@ -1393,7 +1392,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     // dilate the detail map in case of black
     for (int i = 0; i < 3; ++i)
     {
-      ShapeUtility::dilateImage(detail_image[i], 15);
+      //ShapeUtility::dilateImage(detail_image[i], 15);
     }
   }
   std::vector<cv::Mat> new_detail_image;
@@ -1450,7 +1449,6 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   YMLHandler::saveToMat(src_model->getOutputPath(), "d2_displacement_map.mat", src_para_shape->detail_map[3]);*/
   //applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, src_para_shape->detail_map[3], uv_mask);
   //return;
-
 
   //std::cout<<"test4"<< std::endl;
   //this->applyDisplacementMap(mesh_para->seen_part->vertex_set, mesh_para->seen_part->cut_shape, src_model, mesh_para->seen_part->detail_map[3]);
@@ -1578,14 +1576,15 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 5. do synthesis
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->levels = 10;
+  syn_tool->levels = 5;
   syn_tool->patch_size = 10;
   syn_tool->max_iter = 5;
   syn_tool->best_random_size = 5;
   syn_tool->lamd_occ = 0.005;
+  syn_tool->lamd_gradient = 0.1;
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
   syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
-  syn_tool->doSynthesisNew();
+  syn_tool->doSynthesisNew(true);
 
   std::vector<cv::Mat> result_detail;
   result_detail.push_back(syn_tool->getTargetDetail()[2][0].clone());

@@ -2,6 +2,7 @@
 #include "MeshParameterization.h"
 
 #include "KDTreeWrapper.h"
+#include "ShapeUtility.h"
 
 #include <vector>
 #include <cv.h>
@@ -29,6 +30,7 @@ SynthesisTool::SynthesisTool()
   bias_rate = 0.1; // not sure its effect, affect the smootheness of NNF when deactivate lamd_occ
   lamd_occ = 0.01; // must activate, but low weight
   max_iter = 5;
+  lamd_gradient = 0.1;
 
   std::ofstream outFile(outputPath + "/parameter_info.txt");
   if (!outFile.is_open())
@@ -1019,7 +1021,7 @@ void SynthesisTool::findCombineCandidatesFromLastLevel(std::vector<ImagePyramid>
   best_match.swap(new_candidates);
 }
 
-void SynthesisTool::doSynthesisNew()
+void SynthesisTool::doSynthesisNew(bool is_doComplete)
 {
   // synthesis based on constrained patch match
 
@@ -1034,12 +1036,22 @@ void SynthesisTool::doSynthesisNew()
 
     std::vector<int> target_patch_mask_l;
     std::vector<int> target_pixel_mask_l;
-    this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l);
+    this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l, l, is_doComplete);
     tar_pixel_mask.push_back(target_pixel_mask_l);
     tar_patch_mask.push_back(target_patch_mask_l);
   }
   this->exportSrcMask();
   this->exportTarMask();
+
+  // rebuild source detail pyramid after dialation
+  for (size_t i = 0; i < gpsrc_detail.size(); ++i)
+  {
+    cv::Mat cur_dim_src_detail = gpsrc_detail[i][0].clone();
+    ShapeUtility::dilateImage(cur_dim_src_detail, 15);
+    gpsrc_detail[i].clear();
+    gpsrc_detail[i].push_back(cur_dim_src_detail);
+    this->generatePyramid(gpsrc_detail[i], levels);
+  }
   //return;
 
   std::cout << "OK1!!!!\n";
@@ -1058,14 +1070,23 @@ void SynthesisTool::doSynthesisNew()
     this->exportTarFeature(gptar_feature, l);
     this->exportSrcDetail(gpsrc_detail, l, 0);
 
-
-
     if(l == levels - 1)
     {
-      this->initializeNNF(gptar_detail[0], nnf, l);
-      this->initializeTarDetail(gptar_detail, l);
+      this->initializeNNF(gptar_detail[0], nnf, l, is_doComplete);
+      this->initializeTarDetail(gptar_detail, l, is_doComplete);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
+        tar_detail_gradient.clear();
+        for (int i = 0; i < gptar_detail.size(); ++i)
+        {
+          cv::Mat grad_x;
+          cv::Sobel( gptar_detail[0][l], grad_x, CV_32F, 1, 0, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+          cv::Mat grad_y;
+          cv::Sobel( gptar_detail[0][l], grad_y, CV_32F, 0, 1, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+          tar_detail_gradient.push_back(grad_x);
+          tar_detail_gradient.push_back(grad_y);
+        }
+
         std::vector<float> ref_cnt(width * height, 0.0);
         //if (i_iter % 2 == 0)
         {
@@ -1091,9 +1112,27 @@ void SynthesisTool::doSynthesisNew()
         //cv::pyrUp(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
         cv::resize(gptar_detail[k].at(l + 1), gptar_detail[k].at(l), cv::Size(gptar_detail[k].at(l).cols, gptar_detail[k].at(l).rows));
       }
+      if(is_doComplete)
+      {
+        for(int i = 0; i < gpsrc_detail[0].at(l).rows; i ++)
+        {
+          for(int j = 0; j < gpsrc_detail[0].at(l).cols; j ++)
+          {
+            //if(gpsrc_detail[k].at(l).at<float>(i, j) > 0)
+            if (tar_pixel_mask[l][i * gpsrc_detail[0].at(l).cols + j] == 1)
+            {
+              for(int k = 0; k < gpsrc_detail.size(); k ++)
+              {
+
+                gptar_detail[k].at(l).at<float>(i, j) = gpsrc_detail[k].at(l).at<float>(i, j);
+              }
+            }
+          }
+        }
+      }
 
       std::vector<Point2D> nnf_new;
-      this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
+      this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new, is_doComplete);
       nnf.swap(nnf_new);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
@@ -1123,7 +1162,7 @@ void SynthesisTool::doSynthesisNew()
   std::cout << "All levels is finished !" << " The total running time is :" << totalTime << " seconds." << std::endl;
 }
 
-void SynthesisTool::initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level)
+void SynthesisTool::initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level, bool is_doComplete)
 {
   // first check if the level is the coarsest level
   if (level != (gptar_d.size() - 1))
@@ -1141,9 +1180,23 @@ void SynthesisTool::initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level)
 
   // initialize the nnf with random position
   this->getRandomPosition(level, nnf, nnf_height * nnf_width, nnf_height, nnf_width);
+
+  if (is_doComplete)
+  {
+    for (int i = 0; i < nnf_height; i++)
+    {
+      for (int j = 0; j < nnf_width; j++)
+      {
+        if (tar_patch_mask[level][i * nnf_width + j] == 1)
+        {
+          nnf[i * nnf_width + j] = Point2D(j, i);
+        }
+      }
+    }
+  }
 }
 
-void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new)
+void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new, bool is_doComplete)
 {
   int height = gptar_d[level].rows;
   int width  = gptar_d[level].cols;
@@ -1197,9 +1250,23 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gptar_d, NNF& nnf_l
       }
     }
   }
+
+  if (is_doComplete)
+  {
+    for (int i = 0; i < nnf_height; i++)
+    {
+      for (int j = 0; j < nnf_width; j++)
+      {
+        if (tar_patch_mask[level][i * nnf_width + j] == 1)
+        {
+          nnf_new[i * nnf_width + j] = Point2D(j, i);
+        }
+      }
+    }
+  }
 }
 
-void SynthesisTool::initializeTarDetail(ImagePyramidVec& gptar_d, int level)
+void SynthesisTool::initializeTarDetail(ImagePyramidVec& gptar_d, int level, bool is_doComplete)
 {
   // first check if the level is the coarsest level
   if (level != (gptar_d[0].size() - 1))
@@ -1219,6 +1286,23 @@ void SynthesisTool::initializeTarDetail(ImagePyramidVec& gptar_d, int level)
       for (int k = 0; k < ddim; ++k)
       {
         gptar_d[k][level].at<float>(i, j) = (rand() / double(RAND_MAX));
+      }
+    }
+  }
+  if(is_doComplete)
+  {
+    for(int i = 0; i < height; i ++)
+    {
+      for(int j = 0; j < width; j ++)
+      {
+        //if(gpsrc_detail[k][level].at<float>(i, j) >= 0)
+        if (tar_pixel_mask[level][i * width + j] == 1)
+        {
+          for(int k = 0; k < ddim; k ++)
+          {
+            gptar_d[k][level].at<float>(i, j) = gpsrc_detail[k][level].at<float>(i, j);
+          }
+        }
       }
     }
   }
@@ -1574,6 +1658,7 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   double d_f = 0.0;
   double d_d = 0.0;
   double d_occ = 0.0;
+  double d_g = 0.0;
   double lambda_d_f = 0;
   double lambda_d_d = 0;
   double beta = 0.0;
@@ -1758,7 +1843,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
 
     std::vector<int> target_patch_mask_l;
     std::vector<int> target_pixel_mask_l;
-    this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l);
+    this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l, l);
     tar_pixel_mask.push_back(target_pixel_mask_l);
     tar_patch_mask.push_back(target_patch_mask_l);
   }
