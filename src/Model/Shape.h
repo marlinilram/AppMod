@@ -31,6 +31,8 @@ public:
   const VertexList& getOriVertexList();
   const FaceList& getFaceList();
   const STLVectorf& getUVCoord();
+  const STLVectorf& getFaceVaringUVCoord();
+  const FaceList& getFaceVaringUVId();
   const NormalList& getNormalList();
   const NormalList& getFaceNormal();
   const STLVectorf& getColorList();
@@ -77,7 +79,9 @@ private:
   // attribute
   NormalList vertex_normal;
   NormalList face_normal;
+  FaceList UV_id_list;
   STLVectorf UV_list;
+  STLVectorf face_varying_UV_list;
   STLVectorf color_list;
   STLVectorf face_color_list;
 

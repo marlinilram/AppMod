@@ -11,9 +11,9 @@ using namespace LG;
 
 namespace LFReg {
 
-  const static double energyGradAngleStep = 0.5 * M_PI / 180.0; // 0.1 degree
+  const static double energyGradAngleStep = 0.05 * M_PI / 180.0; // 0.1 degree
   const static double energyGradTransStep = 0.01; // assume the mesh is normalized
-  const static double energyGradScaleStep = 0.01;
+  const static double energyGradScaleStep = 0.001;
 
   double efunc(const std::vector<double>&x, std::vector<double>& grad, void *func_data)
   {
@@ -32,11 +32,15 @@ namespace LFReg {
       double step;
       if (i < 3)
       {
-        step = energyGradTransStep * lf_reg->modelRadius();
+        step = energyGradTransStep / (2 * lf_reg->modelRadius());
       }
-      else if (i < 6)
+      else if (i < 4)
       {
         step = energyGradAngleStep;
+      }
+      else if (i < 7)
+      {
+        step = 0.01;
       }
       //else
       //{
@@ -50,6 +54,7 @@ namespace LFReg {
     //std::cout << "f(X) = " << fx0 << std::endl;
     return fx0;
   }
+
 };
 
 double LargeFeatureReg::energyFunc(const std::vector<double>& X)
@@ -63,10 +68,11 @@ double LargeFeatureReg::energyFunc(const std::vector<double>& X)
   // build transform matrix from X
   Matrix4f& cur_transform = GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   cur_transform = 
-    (Eigen::Translation3f(X[0], X[1], X[2])
-    * Eigen::AngleAxisf(X[5], Vector3f::UnitZ())
-    * Eigen::AngleAxisf(X[4], Vector3f::UnitY())
-    * Eigen::AngleAxisf(X[3], Vector3f::UnitZ())).matrix();
+    (Eigen::Translation3f(X[0], X[1], X[2]) * Eigen::AngleAxisf(X[3], Eigen::Vector3f(X[4], X[5], X[6]))).matrix();
+    //(Eigen::Translation3f(X[0], X[1], X[2])
+    //* Eigen::AngleAxisf(X[5], Vector3f::UnitZ())
+    //* Eigen::AngleAxisf(X[4], Vector3f::UnitY())
+    //* Eigen::AngleAxisf(X[3], Vector3f::UnitZ())).matrix();
     //* Eigen::Scaling(float(X[6]))).matrix();
 
   // update the renderer here

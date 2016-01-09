@@ -2,6 +2,10 @@
 #include "Solver.h"
 #include "WunderSVD3x3.h"
 
+#include "PolygonMesh.h"
+
+using namespace LG;
+
 ARAP::ARAP()
 {
   this->init();
@@ -18,6 +22,66 @@ void ARAP::init()
   this->lamd_ARAP = 0.0;
   this->P_Num = 0;
   this->solver = nullptr;
+}
+
+void ARAP::initConstraint(LG::PolygonMesh* poly_mesh)
+{
+  this->P_Num = poly_mesh->n_vertices();
+  P_vec.resize(3 * this->P_Num);
+  R = std::vector<Matrix3f>(this->P_Num, Matrix3f::Identity());
+
+  // build adj_list from poly_mesh and initialize P_vec
+  this->adj_list.clear();
+  this->adj_list.resize(this->P_Num, std::vector<int>());
+  for (auto vit : poly_mesh->vertices())
+  {
+    std::vector<int> cur_adj;
+    for (auto vvc_it : poly_mesh->vertices(vit))
+    {
+      cur_adj.push_back(vvc_it.idx());
+    }
+    this->adj_list[vit.idx()].swap(cur_adj);
+
+    P_vec[3 * vit.idx() + 0] = poly_mesh->position(vit)[0];
+    P_vec[3 * vit.idx() + 1] = poly_mesh->position(vit)[1];
+    P_vec[3 * vit.idx() + 2] = poly_mesh->position(vit)[2];
+  }
+
+  // we don't need face list anymore, it is used to compute L matrix
+
+  // build laplacian matrix
+  TripletList weight_list;
+  TripletList weight_sum_list;
+  PolygonMesh::Edge_attribute<Scalar> laplacian_cot = poly_mesh->get_edge_attribute<Scalar>("e:laplacian_cot");
+
+  for (int i = 0; i < this->P_Num; ++i) 
+  {
+    float wi = 0.0f;
+    for (auto hevc : poly_mesh->halfedges(PolygonMesh::Vertex(i)))
+    {
+      int vj = poly_mesh->to_vertex(hevc).idx();
+      double wij = laplacian_cot[poly_mesh->edge(hevc)];
+
+      weight_list.push_back(Triplet(3 * i + 0, 3 * vj + 0, wij));
+      weight_list.push_back(Triplet(3 * i + 1, 3 * vj + 1, wij));
+      weight_list.push_back(Triplet(3 * i + 2, 3 * vj + 2, wij));
+
+      wi += (float)wij;
+    }
+
+    weight_sum_list.push_back(Triplet(3 * i + 0, 3 * i + 0, wi));
+    weight_sum_list.push_back(Triplet(3 * i + 1, 3 * i + 1, wi));
+    weight_sum_list.push_back(Triplet(3 * i + 2, 3 * i + 2, wi));
+  }
+
+  SparseMatrix Weight_sum_matrx;
+  Weight_sum_matrx.resize(3*P_Num, 3*P_Num);
+  Weight_sum_matrx.setFromTriplets(weight_sum_list.begin(), weight_sum_list.end());
+
+  Weight_matrix.resize(3*P_Num, 3*P_Num);
+  Weight_matrix.setFromTriplets(weight_list.begin(), weight_list.end());
+
+  L_matrix = Weight_sum_matrx - Weight_matrix;
 }
 
 void ARAP::initConstraint(VertexList& vertex_list, FaceList& face_list, AdjList& adj_list)

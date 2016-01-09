@@ -31,7 +31,7 @@ private slots:
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
-  void runDetailSynthesis();
+  void runLFRegRigid();
   void setDistAttenuation(int val);
   void setShowTrackball(int state);
   void changeToLightball(int state);
@@ -54,10 +54,14 @@ private slots:
   void setLamdSField(double val);
   void setSourceCurvesThreshold(double val);
   void setTargetCurvesThreshold(double val);
+  void setSynthesisScale(double val);
 
   void setLFRegMethod(int state);
   void runLFRegNonRigid();
-
+  void testApplyDisplacement();
+  void runApplyDisplacement();
+  void isGoAhead();
+  
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;
 };

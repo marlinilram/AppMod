@@ -29,12 +29,13 @@ public:
   void exportOBJ(int cur_iter);
 
   Bound* getBoundBox();
-  //std::shared_ptr<Shape> getShape() { return shape; };
+  inline std::shared_ptr<Shape> getShape() { return shape; };
   //std::shared_ptr<ShapeCrest> getShapeCrest();
   LG::PolygonMesh* getPolygonMesh();
   LG::PolygonMesh* getLightPolygonMesh();
   std::string getDataPath();
   std::string getOutputPath();
+  inline std::string getFileName() { return file_name; };
 
   //
   void updateShape(VertexList& new_vertex_list);

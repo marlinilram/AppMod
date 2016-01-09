@@ -28,7 +28,7 @@ public:
 
   void initTargetImage(std::string targetFile);
   void initRegister();
-  void initSrcRegister();
+  void initSrcRegister(int type = 0);
   void initTarRegister(int type = 0);
   void updateSourceVectorField();
   void updateScalarField();

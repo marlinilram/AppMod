@@ -80,6 +80,10 @@ void VectorFieldViewer::init()
 {
   BasicViewer::init();
 
+  qglClearColor(QColor(Qt::white));
+  setBackgroundColor(QColor(Qt::white));
+  setForegroundColor(QColor(Qt::white));
+
   //set camera
   camera()->setType(qglviewer::Camera::Type::ORTHOGRAPHIC);
   camera()->setPosition(qglviewer::Vec(0.5, 0.5, 1.0));

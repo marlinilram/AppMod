@@ -27,7 +27,7 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_ARAP", 10.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_flat", 0.01);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_data", 0.5);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_SField", 0.01);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_SField", 0.5);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("SnapShot:SaveToFile", 1);
 
@@ -35,7 +35,10 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<Matrix4f>("Lightball:cameraTransform", Matrix4f::Identity());
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("ShapCrest:source_curves_threshhold", 0.75);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("FeatureGuided:target_curves_threshhold", 0.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("FeatureGuided:target_curves_threshhold", 0.5);
+
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:scale", 1.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:is_wait", true);
 }
 
 #endif

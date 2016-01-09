@@ -20,15 +20,18 @@ void LargeFeatureReg::runReg(int method_id)
   unsigned time1 = clock();
 
   // init the data term (correspondences)
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform") = Matrix4f::Identity();
   feature_model->BuildClosestPtPair(feature_model->source_curves, data_crsp);
   feature_model->source_model->getProjectionMatrix(vpPMV_mat);
-  lamd_data = 0.5 * feature_model->curve_scale;
+  //lamd_data = 0.5 * feature_model->curve_scale;
   // init SField term
-  lamd_SField = 0.1;
+  //lamd_SField = 0.1;
+  lamd_data = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_data") * feature_model->curve_scale;
+  lamd_SField = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_SField");
 
   // start point
-  int x_dim = 6;
-  std::vector<double> x0(x_dim, 0.0);
+  int x_dim = 7;
+  std::vector<double> x0(x_dim, 0.0);x0[6] = 1.0;
   //x0[x_dim - 1] = 1.0; // scale start from 1
 
   double start_func_val = this->energyFunc(x0);
@@ -52,10 +55,25 @@ void LargeFeatureReg::runReg(int method_id)
       lb[i] = -0.5 * modelRadius();
       ub[i] = 0.5 * modelRadius();
     }
-    else if (i < 6)
+    //else if (i < 4)
+    //{
+    //  lb[i] = -M_PI / 15;
+    //  ub[i] = M_PI / 15;
+    //}
+    //else if (i < 5)
+    //{
+    //  lb[i] = -M_PI / 30;
+    //  ub[i] = M_PI / 30;
+    //}
+    else if (i < 4)
     {
       lb[i] = -M_PI / 15;
       ub[i] = M_PI / 15;
+    }
+    else if (i < 7)
+    {
+      lb[i] = -1.0;
+      ub[i] = 1.0;
     }
     //else
     //{
@@ -91,10 +109,11 @@ void LargeFeatureReg::runReg(int method_id)
   std::cout << "NLopt Stop Result: " << result << std::endl;
   Matrix4f& cur_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   cur_transform = 
-    (Eigen::Translation3f(x0[0], x0[1], x0[2])
-    * Eigen::AngleAxisf(x0[5], Vector3f::UnitZ())
-    * Eigen::AngleAxisf(x0[4], Vector3f::UnitY())
-    * Eigen::AngleAxisf(x0[3], Vector3f::UnitZ())).matrix();
+    (Eigen::Translation3f(x0[0], x0[1], x0[2]) * Eigen::AngleAxisf(x0[3], Eigen::Vector3f(x0[4], x0[5], x0[6]).normalized())).matrix();
+    //(Eigen::Translation3f(x0[0], x0[1], x0[2])
+    //* Eigen::AngleAxisf(x0[5], Vector3f::UnitZ())
+    //* Eigen::AngleAxisf(x0[4], Vector3f::UnitY())
+    //* Eigen::AngleAxisf(x0[3], Vector3f::UnitZ())).matrix();
     //* Eigen::Scaling(float(x0[6]))).matrix();
 
   std::stringstream log_stream;

@@ -16,16 +16,26 @@
 
 #include <QWidget>
 #include <QGridLayout>
+#include <QDockWidget>
 
 DispModuleHandler::DispModuleHandler(QWidget* parent)
 {
   QGridLayout *gridLayout_3;
   gridLayout_3 = new QGridLayout(parent);
   gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
+
+  QDockWidget* centerDock = new QDockWidget(parent);
+  centerDock->setWindowTitle("centerDock");
+  centerDock->setAllowedAreas(Qt::BottomDockWidgetArea);
+  centerDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
+  centerDock->setFloating(true);
+  //this->setCentralWidget(centerDock);
+
   
-  main_canvas_viewer.reset(new MainCanvasViewer(parent));
+  main_canvas_viewer.reset(new MainCanvasViewer(centerDock));
   main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
-  gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
+  //gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
+  centerDock->setWidget(main_canvas_viewer.get());
   
   trackball_viewer.reset(new TrackballViewer(parent));
   trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
@@ -166,9 +176,11 @@ void DispModuleHandler::showProjCrsp(int state)
 {
   main_canvas_viewer->setIsDrawActors(bool(state));
   trackball_viewer->setIsDrawActors(bool(state));
+  synthesis_viewer->setIsDrawActors(bool(state));
 
   main_canvas_viewer->updateGLOutside();
   trackball_viewer->updateGLOutside();
+  synthesis_viewer->updateGLOutside();
 }
 
 void DispModuleHandler::deleteLastCrspLine_Source()
@@ -269,7 +281,7 @@ void DispModuleHandler::runNormalCompute()
   ////cv::imshow("Normal_(-1 ~ 1)",normal);
 }
 
-void DispModuleHandler::runDetailSynthesis()
+void DispModuleHandler::runLFRegRigid()
 {
   //alg_handler->doDetailSynthesis();
 
@@ -281,6 +293,12 @@ void DispModuleHandler::runDetailSynthesis()
 
   // new trial from 11/10/2015 for large feature reg
   alg_handler->doLargeFeatureReg();
+  trackball_viewer->updateCamera();
+  trackball_viewer->updateGLOutside();
+  main_canvas_viewer->updateGLOutside();
+  source_vector_viewer->updateSourceField(2);
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
 }
 
 void DispModuleHandler::toggleMainViewMode(int state)
@@ -332,6 +350,8 @@ void DispModuleHandler::setSFieldPara(int set_type)
 
 void DispModuleHandler::setMainCanvasRenderMode()
 {
+  trackball_viewer->updateCamera();
+  trackball_viewer->updateGLOutside();
   source_vector_viewer->updateSourceField(2);
   source_vector_viewer->updateGLOutside();
   target_vector_viewer->updateGLOutside();
@@ -376,4 +396,23 @@ void DispModuleHandler::updateTargetCurves()
 {
   //source_vector_viewer->updateSourceField(5);
   source_vector_viewer->updateGLOutside();
+}
+
+void DispModuleHandler::testApplyDisplacement()
+{
+  alg_handler->testApplyDisplacement();
+  //trackball_viewer->setGLActors(alg_handler->getGLActors());
+  synthesis_viewer->setGLActors(alg_handler->getGLActors());
+  //main_canvas_viewer->setSynthesisReflectance();
+  updateCanvas();
+}
+
+void DispModuleHandler::runApplyDisplacement()
+{
+  alg_handler->runApplyDisplacement();
+}
+
+void DispModuleHandler::loadDetailMap()
+{
+  alg_handler->loadDetailMap();
 }

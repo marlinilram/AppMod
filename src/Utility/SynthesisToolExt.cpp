@@ -62,7 +62,7 @@ void SynthesisTool::doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv:
     {
       std::vector<int> pixel_mask;
       std::vector<int> patch_mask;
-      this->buildMask(gpsrc_detail[0][l], pixel_mask, patch_mask);
+      this->buildMask(gpsrc_detail[0][l], pixel_mask, patch_mask, l);
       this->initializeFillingNNF(gptar_detail[0], nnf, patch_mask, l);
       this->initializeFillingTarDetail(gptar_detail, pixel_mask, l);
       for (int i_iter = 0; i_iter < 5; ++i_iter)
@@ -84,7 +84,7 @@ void SynthesisTool::doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv:
       std::vector<Point2D> nnf_new;
       std::vector<int> pixel_mask;
       std::vector<int> patch_mask;
-      this->buildMask(gpsrc_detail[0][l], pixel_mask, patch_mask);
+      this->buildMask(gpsrc_detail[0][l], pixel_mask, patch_mask, l);
       this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
       this->initializeFillingUpTarDetail(gpsrc_detail, gptar_detail, pixel_mask, l);
       nnf.swap(nnf_new);
@@ -111,36 +111,65 @@ void SynthesisTool::doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv:
   std::cout << "All levels is finished !" << " The total running time is :" << totalTime << " seconds." << std::endl;
 }
 
-void SynthesisTool::buildMask(cv::Mat& src_detail, std::vector<int>& pixel_mask, std::vector<int>& patch_mask)
+void SynthesisTool::buildMask(cv::Mat& tar_feature, std::vector<int>& pixel_mask, std::vector<int>& patch_mask, int level, bool is_doComplete)
 {
-  int img_height = src_detail.rows;
-  int img_width  = src_detail.cols;
+  int img_height = tar_feature.rows;
+  int img_width  = tar_feature.cols;
   int nnf_height = (img_height - this->patch_size + 1);
   int nnf_width  = (img_width - this->patch_size + 1);
 
   patch_mask.clear();
-  patch_mask.resize(nnf_width * nnf_height, 0);
+  patch_mask.resize(nnf_width * nnf_height, 1);
   pixel_mask.clear();
-  pixel_mask.resize(img_width * img_height, 0);
+  pixel_mask.resize(img_width * img_height, 1);
 
-  for (int i = 0; i < img_height; ++i)
+  if(!is_doComplete)
   {
-    for (int j = 0; j < img_width; ++j)
+    for (int i = 0; i < img_height; ++i)
     {
-      if (src_detail.at<float>(i, j) < 0)
+      for (int j = 0; j < img_width; ++j)
       {
-        pixel_mask[i * img_width + j] = 1;
-
-        // set mask for all patch cover this pixel
-        for (int i_off = 0; i_off < this->patch_size; ++i_off)
+        if (tar_feature.at<float>(i, j) >= 0)
         {
-          for (int j_off = 0; j_off < this->patch_size; ++j_off)
+          pixel_mask[i * img_width + j] = 0;
+
+          // set mask for all patch cover this pixel
+          for (int i_off = 0; i_off < this->patch_size; ++i_off)
           {
-            // patch position
-            int i_p = i - i_off;
-            int j_p = j - j_off;
-            if (i_p < 0 || i_p >= nnf_height || j_p < 0 || j_p >= nnf_width) continue;
-            patch_mask[i_p * nnf_width + j_p] = 1;
+            for (int j_off = 0; j_off < this->patch_size; ++j_off)
+            {
+              // patch position
+              int i_p = i - i_off;
+              int j_p = j - j_off;
+              if (i_p < 0 || i_p >= nnf_height || j_p < 0 || j_p >= nnf_width) continue;
+              patch_mask[i_p * nnf_width + j_p] = 0;
+            }
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    for (int i = 0; i < img_height; ++i)
+    {
+      for (int j = 0; j < img_width; ++j)
+      {
+        if (gpsrc_detail[0].at(level).at<float>(i, j) < 0)
+        {
+          pixel_mask[i * img_width + j] = 0;
+
+          // set mask for all patch cover this pixel
+          for (int i_off = 0; i_off < this->patch_size; ++i_off)
+          {
+            for (int j_off = 0; j_off < this->patch_size; ++j_off)
+            {
+              // patch position
+              int i_p = i - i_off;
+              int j_p = j - j_off;
+              if (i_p < 0 || i_p >= nnf_height || j_p < 0 || j_p >= nnf_width) continue;
+              patch_mask[i_p * nnf_width + j_p] = 0;
+            }
           }
         }
       }
@@ -532,7 +561,7 @@ void SynthesisTool::doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::
   std::vector<std::vector<int> > pixel_masks(levels, std::vector<int>());
   for (int i = 0; i < levels; ++i)
   {
-    this->buildMask(gptar_detail[0][i], pixel_masks[i], patch_masks[i]);
+    this->buildMask(gptar_detail[0][i], pixel_masks[i], patch_masks[i], i);
   }
 
   std::cout << "MaskSynthesisTool Init success !" << std::endl;
@@ -685,4 +714,43 @@ void SynthesisTool::exportNNF(NNF& nnf, ImagePyramidVec& gptar, int level, int i
   }
 
   cv::imwrite(outputPath + "/nnf_level_" + std::to_string(level) + "_iter_" + std::to_string(iter) + ".png", nnf_img * 255);
+}
+
+void SynthesisTool::exportMask(std::vector<int> mask, int mask_height, int mask_width, std::string fname)
+{
+  cv::Mat mask_img(mask_height, mask_width, CV_32FC1);
+  for(int i = 0; i < mask_height; ++i)
+  {
+    for(int j = 0; j < mask_width; ++j)
+    {
+      mask_img.at<float>(i, j) = mask[i * mask_width + j];
+    }
+  }
+  cv::imwrite(outputPath + "/" + fname , 255*mask_img);
+}
+
+void SynthesisTool::exportSrcMask()
+{
+  // only patch mask
+  for (size_t i = 0; i < gpsrc_feature[0].size(); ++i)
+  {
+    int height = gpsrc_feature[0][i].rows;
+    int width  = gpsrc_feature[0][i].cols;
+    int nnf_height = (height - this->patch_size + 1);
+    int nnf_width  = (width - this->patch_size + 1);  
+    this->exportMask(src_patch_mask[i], nnf_height, nnf_width, "src_patch_mask_level_" + std::to_string(i) + ".png");
+  }
+}
+
+void SynthesisTool::exportTarMask()
+{
+  for (size_t i = 0; i < gptar_feature[0].size(); ++i)
+  {
+    int height = gptar_feature[0][i].rows;
+    int width  = gptar_feature[0][i].cols;
+    int nnf_height = (height - this->patch_size + 1);
+    int nnf_width  = (width - this->patch_size + 1);  
+    this->exportMask(tar_patch_mask[i], nnf_height, nnf_width, "tar_patch_mask_level_" + std::to_string(i) + ".png");
+    this->exportMask(tar_pixel_mask[i], height, width, "tar_pixel_mask_level_" + std::to_string(i) + ".png");
+  }
 }

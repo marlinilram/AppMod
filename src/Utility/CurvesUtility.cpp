@@ -502,10 +502,10 @@ void CurveSpSaliency(std::vector<std::vector<double> >& edges_sp_sl, CURVES& cur
         if (cur_idx >= 0 && cur_idx < curves[i].size())
         {
           // get the saliency
-          int img_i = saliency_img.rows - (curves[i][cur_idx].y + 0.5);
+          int img_i = saliency_img.rows - 1 - int(curves[i][cur_idx].y + 0.5);
           int img_j = curves[i][cur_idx].x + 0.5;
-          img_i = img_i < 0 ? 0 : (img_i < saliency_img.rows ? img_i : saliency_img.rows);
-          img_j = img_j < 0 ? 0 : (img_j < saliency_img.cols ? img_j : saliency_img.cols);
+          img_i = img_i < 0 ? 0 : (img_i < saliency_img.rows ? img_i : (saliency_img.rows - 1));
+          img_j = img_j < 0 ? 0 : (img_j < saliency_img.cols ? img_j : (saliency_img.cols - 1));
           saliency += saliency_img.at<float>(img_i, img_j);
           ++n_sample;
         }
@@ -659,6 +659,11 @@ void CurvesAvgDir(CURVES& curves, std::vector<Vector2f>& cur_avg_dir, int sp_rat
     {
       dir += Vector2f(curves[i][j].x - curves[i][j - sp_rate].x,
                       curves[i][j].y - curves[i][j - sp_rate].y);
+    }
+    if (curves[i].size() <= sp_rate)
+    {
+      dir = Vector2f(curves[i][curves[i].size() - 1].x - curves[i][0].x,
+        curves[i][curves[i].size() - 1].y - curves[i][0].y);
     }
     dir.normalize();
     cur_avg_dir.push_back(dir);

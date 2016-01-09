@@ -520,3 +520,15 @@ void TrackballViewer::updateShapeCrest()
     }
   }
 }
+
+void TrackballViewer::updateCamera()
+{
+  GLdouble m[16];
+  camera()->getModelViewMatrix(m);
+  Eigen::Map<Eigen::Matrix4d>model_view(m, 4, 4);
+
+  model_view = model_view * LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform").cast<double>();
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform") = Matrix4f::Identity();
+  camera()->setFromModelViewMatrix(model_view.data());
+  syncCamera();
+}

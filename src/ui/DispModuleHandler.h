@@ -46,7 +46,7 @@ public:
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
-  void runDetailSynthesis();
+  void runLFRegRigid();
   void resetCamera();
   void setSFieldDistAttenuation();
   void setShowTrackball();
@@ -58,6 +58,9 @@ public:
   void updateShapeCrest();
   void updateTargetCurves();
   void loadSynthesisTarget(std::shared_ptr<Model> model, std::string model_file_path);
+  void testApplyDisplacement();
+  void runApplyDisplacement();
+  void loadDetailMap();
 
 public slots:
   void updateGeometryInteractive();
