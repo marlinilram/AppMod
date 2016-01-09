@@ -32,7 +32,7 @@ SynthesisTool::SynthesisTool()
   max_iter = 5;
   lamd_gradient = 0.1;
 
-  std::ofstream outFile(outputPath + "/parameter_info.txt");
+  /*std::ofstream outFile(outputPath + "/parameter_info.txt");
   if (!outFile.is_open())
   {
     std::cout << "failed to open parameter_info.txt file, return." << std::endl;
@@ -45,7 +45,7 @@ SynthesisTool::SynthesisTool()
   outFile << "lamd_occ: " << lamd_occ << std::endl;
   outFile << "max_iter: " << max_iter << std::endl;
   outFile << "levels: " << levels << std::endl;
-  outFile.close();
+  outFile.close();*/
 }
 
 void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>& tar_feature, std::vector<cv::Mat>& src_detail)
@@ -1044,14 +1044,14 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
   this->exportTarMask();
 
   // rebuild source detail pyramid after dialation
-  for (size_t i = 0; i < gpsrc_detail.size(); ++i)
+  /*for (size_t i = 0; i < gpsrc_detail.size(); ++i)
   {
     cv::Mat cur_dim_src_detail = gpsrc_detail[i][0].clone();
     ShapeUtility::dilateImage(cur_dim_src_detail, 15);
     gpsrc_detail[i].clear();
     gpsrc_detail[i].push_back(cur_dim_src_detail);
     this->generatePyramid(gpsrc_detail[i], levels);
-  }
+  }*/
   //return;
 
   std::cout << "OK1!!!!\n";
@@ -1123,7 +1123,6 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
             {
               for(int k = 0; k < gpsrc_detail.size(); k ++)
               {
-
                 gptar_detail[k].at(l).at<float>(i, j) = gpsrc_detail[k].at(l).at<float>(i, j);
               }
             }

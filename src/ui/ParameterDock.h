@@ -60,6 +60,8 @@ private slots:
   void runLFRegNonRigid();
   void testApplyDisplacement();
   void runApplyDisplacement();
+  void isGoAhead();
+  
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;
 };

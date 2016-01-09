@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-223</y>
+         <y>-252</y>
          <width>320</width>
-         <height>1048</height>
+         <height>1077</height>
         </rect>
        </property>
        <attribute name="label">
@@ -766,6 +766,13 @@
              </item>
             </layout>
            </item>
+           <item>
+            <widget class="QPushButton" name="GoAhead_PushButton">
+             <property name="text">
+              <string>Load Detail_Map</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -794,8 +801,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>337</width>
-         <height>825</height>
+         <width>98</width>
+         <height>28</height>
         </rect>
        </property>
        <attribute name="label">

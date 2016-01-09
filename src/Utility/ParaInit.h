@@ -38,6 +38,7 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("FeatureGuided:target_curves_threshhold", 0.0);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:scale", 1.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:is_wait", true);
 }
 
 #endif

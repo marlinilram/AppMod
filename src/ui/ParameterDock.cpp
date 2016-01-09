@@ -43,6 +43,7 @@ ParameterDock::ParameterDock()
   connect(TestApplyDisplacement_PushButton, SIGNAL(clicked()), this, SLOT(testApplyDisplacement()));
   connect(RunApplyDisplacement_pushButton, SIGNAL(clicked()), this, SLOT(runApplyDisplacement()));
   connect(Synthesis_Scale_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynthesisScale(double)));
+  connect(GoAhead_PushButton, SIGNAL(clicked()), this, SLOT(isGoAhead()));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -281,4 +282,9 @@ void ParameterDock::setSynthesisScale(double val)
 void ParameterDock::runApplyDisplacement()
 {
   disp_modules->runApplyDisplacement();
+}
+
+void ParameterDock::isGoAhead()
+{
+  disp_modules->loadDetailMap();
 }

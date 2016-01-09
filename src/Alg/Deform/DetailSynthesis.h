@@ -18,6 +18,30 @@ namespace LG {
 class PolygonMesh;
 }
 
+struct MouseArgs{
+    IplImage* img;
+    CvPoint p_start;
+    CvPoint p_end;
+    CvSeq* seq;
+    CvMemStorage* storage;
+    int points;
+    // init
+    MouseArgs():img(0),points(0){
+        p_start = cvPoint(-1,-1);
+        p_end = cvPoint(-1,-1);
+        storage = cvCreateMemStorage(0);
+        seq = cvCreateSeq( CV_32SC2,sizeof(CvSeq),sizeof(CvPoint), storage );
+    }
+    // destroy
+    void Destroy(){
+        if(!img)
+            cvReleaseImage(&img);
+        cvReleaseMemStorage(&storage );
+        seq = NULL;
+        img = NULL;
+    }
+};
+
 class DetailSynthesis
 {
 public:
@@ -48,6 +72,7 @@ public:
   void doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 
   void prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids);
+  void loadDetailMap(std::shared_ptr<Model> src_model);
 
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list, std::set<int>& visible_faces);
@@ -66,6 +91,7 @@ private:
   double normalize_max;
   std::vector<float> detail_min, detail_max;
   float displacement_min, displacement_max;
+  std::vector<cv::Mat> masked_detail_image;
  
 private:
   DetailSynthesis(const DetailSynthesis&);
