@@ -34,6 +34,8 @@ public:
   std::vector<cv::Mat> detail_map;
   int filled;
   float fill_ratio;
+  int n_filled_detail;
+  int n_filled_feature;
 
 //private:
 //  ParaShape(const ParaShape&);

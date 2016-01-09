@@ -199,3 +199,13 @@ void AlgHandler::testApplyDisplacement()
     actors.push_back(temp_actors[i]);
   }
 }
+
+void AlgHandler::runApplyDisplacement()
+{
+  detail_synthesis->test(shape_model);
+}
+
+void AlgHandler::loadDetailMap()
+{
+  detail_synthesis->loadDetailMap(shape_model);
+}

@@ -38,6 +38,8 @@ public:
   void doProjICP();
   void doLargeFeatureReg(int reg_type = 0);
   void testApplyDisplacement();
+  void runApplyDisplacement();
+  void loadDetailMap();
 
 private:
   std::shared_ptr<ProjOptimize> proj_optimize;
