@@ -31,7 +31,7 @@ private slots:
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
-  void runDetailSynthesis();
+  void runLFRegRigid();
   void setDistAttenuation(int val);
   void setShowTrackball(int state);
   void changeToLightball(int state);

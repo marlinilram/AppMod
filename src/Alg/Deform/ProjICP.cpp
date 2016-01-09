@@ -96,8 +96,8 @@ void ProjICP::buildCrsp(std::shared_ptr<FeatureGuided> feature_model)
     CURVEIDX curve_idx = it->second;
     int img_i = feature_model->target_edge_saliency.rows - 1 - int(feature_model->target_curves[curve_idx.first][curve_idx.second].y + 0.5);
     int img_j = feature_model->target_curves[curve_idx.first][curve_idx.second].x + 0.5;
-    img_i = img_i < 0 ? 0 : (img_i < feature_model->target_edge_saliency.rows ? img_i : feature_model->target_edge_saliency.rows);
-    img_j = img_j < 0 ? 0 : (img_j < feature_model->target_edge_saliency.cols ? img_j : feature_model->target_edge_saliency.cols);
+    img_i = img_i < 0 ? 0 : (img_i < feature_model->target_edge_saliency.rows ? img_i : (feature_model->target_edge_saliency.rows - 1));
+    img_j = img_j < 0 ? 0 : (img_j < feature_model->target_edge_saliency.cols ? img_j : (feature_model->target_edge_saliency.cols - 1));
     Vector3f proj_ray; // it's a direction
     feature_model->source_model->getProjRay(proj_ray.data(), img_j, img_i);
 

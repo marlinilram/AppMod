@@ -8,7 +8,7 @@ void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_pa
 {
   shape = _shape;
 
-  if (!this->loadExtPlaneInfo(ext_info_path))
+  //if (!this->loadExtPlaneInfo(ext_info_path))
   {
     this->findFlats();
     this->writeExtPlaneInfo(ext_info_path);
@@ -79,7 +79,7 @@ void ShapePlane::flatSurface(std::set<int>& surface, int f_id, float ref_normal[
   //ref_normal[0] = shape->getFaceNormal()[3 * f_id + 0];
   //ref_normal[1] = shape->getFaceNormal()[3 * f_id + 1];
   //ref_normal[2] = shape->getFaceNormal()[3 * f_id + 2];
-  if (face_cos < 0.8)
+  if (face_cos < 0.99)
   {
     return;
   }

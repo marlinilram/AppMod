@@ -339,10 +339,13 @@ bool VectorFieldCanvas::displayTargetCurves()
     glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;    
   }
   double threshold = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold");
+  glLineWidth(2);
   for (int i = 0; i < target_curves.size(); ++i)
   {
-    if(feature_model->getEdgesAverageSpSl()[i] > threshold)
+    float saliency = feature_model->getEdgesAverageSpSl()[i];
+    //if(saliency > threshold)
     {
+      glColor4f( 1 - saliency - threshold, 1 - saliency - threshold, 1 - saliency - threshold, alpha ) ;    
       glBegin(GL_LINE_STRIP);
       for (int j = 0; j < target_curves[i].size(); ++j)
       {
@@ -366,7 +369,7 @@ bool VectorFieldCanvas::displaySourceCurves()
   glLineWidth(2);
   if (render_mode == VectorField::SOURCE_MODE)      
   {
-    glColor4f( 1.0f, 1.0f, 1.0f, alpha ) ;
+    glColor4f( 0.0f, 0.0f, 0.0f, alpha ) ;
   }
   else if(render_mode == VectorField::TARGET_MODE)
   {
@@ -375,6 +378,10 @@ bool VectorFieldCanvas::displaySourceCurves()
 
   for (int i = 0; i < source_curves.size(); ++i)
   {
+    //QColor color = 
+    //  qtJetColor(double(i)/source_curves.size());
+    //glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+
     glBegin(GL_LINE_STRIP);
 
     for (int j = 0; j < source_curves[i].size(); ++j)

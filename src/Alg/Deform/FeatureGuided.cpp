@@ -30,10 +30,10 @@ FeatureGuided::FeatureGuided(std::shared_ptr<Model> source_model, std::string ta
 
 void FeatureGuided::initTargetImage(std::string targetFile)
 {
-  cv::imread(targetFile + "/featurePPnms.png", CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_img, CV_32FC1);
+  cv::imread(targetFile + "/feature_nms_1.png", CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_img, CV_32FC1);
   this->target_img = this->target_img / 255.0;
 
-  cv::imread(targetFile + "/featurePP.png", CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_edge_saliency, CV_32FC1);
+  cv::imread(targetFile + "/feature_nms_0.png", CV_LOAD_IMAGE_GRAYSCALE).convertTo(this->target_edge_saliency, CV_32FC1);
   this->target_edge_saliency = this->target_edge_saliency / 255.0;
 }
 
@@ -124,12 +124,18 @@ void FeatureGuided::initTarRegister(int type)
   target_scalar_field->setTeleRegister(target_tele_register);
 }
 
-void FeatureGuided::initSrcRegister()
+void FeatureGuided::initSrcRegister(int type)
 {
-
-  this->source_curves.clear();
-  this->edge_threshold = 0.9;
-  this->ExtractSrcCurves(source_model->getEdgeImg(), this->source_curves);
+  if (type == 0)
+  {
+    this->source_curves.clear();
+    this->edge_threshold = 0.9;
+    this->ExtractSrcCurves(source_model->getEdgeImg(), this->source_curves);
+  }
+  else if (type == 1)
+  {
+    // do nothing
+  }
 
   CURVES temp_source_curves;
   this->NormalizedSourceCurves(temp_source_curves);
@@ -648,6 +654,7 @@ void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<V
   {
     double2& temp = target_curves[i.second.first][i.second.second];
     Vector2f& temp_dir = tar_avg_direction[i.second.first]; // use average curve direction as current line direction
+    //if (_isnan(temp_dir[0])) std::cout << "nan happen for target curve" << i.second.first << std::endl;
     data_crsp[src_vid_mapper[i.first]] = std::pair<Vector2f, Vector2f>(Vector2f(temp.x, temp.y), temp_dir); // for detected correspondence we minimize point to line distance
   }
 
@@ -784,6 +791,7 @@ void FeatureGuided::deleteTargetCurves(std::vector<int>& deleted_tags)
   target_curves.swap(new_tar_curves);
 
   target_edges_sp_sl.clear();
+  target_edges_average_sp_sl.clear();
   CurvesUtility::CurveSpSaliency(target_edges_sp_sl, target_curves, target_edge_saliency, target_edges_average_sp_sl);
 
   target_edges_sp_len.clear();
@@ -791,6 +799,7 @@ void FeatureGuided::deleteTargetCurves(std::vector<int>& deleted_tags)
 
   AnalyzeTargetRelationship();
 
+  this->setNormalizePara();
   this->initTarRegister(1);
 }
 
@@ -801,6 +810,14 @@ void FeatureGuided::addTargetCurves(std::vector<double2>& add_curve)
     target_curves.push_back(add_curve);
     target_edges_sp_sl.push_back(std::vector<double>(add_curve.size(), 1.0));
     target_edges_average_sp_sl.push_back(1.0);
+
+    for (size_t i = 0; i < add_curve.size(); ++i)
+    {
+      int img_x = std::max(0, std::min(target_edge_saliency.cols - 1, int(add_curve[i].x + 0.5)));
+      int img_y = std::max(0, std::min(target_edge_saliency.rows - 1, target_edge_saliency.rows - 1 - int(add_curve[i].y + 0.5)));
+      target_edge_saliency.at<float>(img_y, img_x) = 1.0;
+    }
+
   }
 
   target_edges_sp_len.clear();

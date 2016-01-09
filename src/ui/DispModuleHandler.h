@@ -46,7 +46,7 @@ public:
   void showBackgroundImage(int state);
   void runNormalTransfer();
   void runNormalCompute();
-  void runDetailSynthesis();
+  void runLFRegRigid();
   void resetCamera();
   void setSFieldDistAttenuation();
   void setShowTrackball();
