@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-252</y>
-         <width>320</width>
-         <height>1077</height>
+         <y>0</y>
+         <width>295</width>
+         <height>1017</height>
         </rect>
        </property>
        <attribute name="label">
@@ -538,7 +538,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.010000000000000</double>
+                <double>0.500000000000000</double>
                </property>
               </widget>
              </item>
@@ -588,7 +588,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>0.000000000000000</double>
+                <double>0.500000000000000</double>
                </property>
               </widget>
              </item>
@@ -697,7 +697,7 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
              <item>
-              <widget class="QPushButton" name="DetailSynthesis_PushButton">
+              <widget class="QPushButton" name="LFReg_Rigid_PushButton">
                <property name="text">
                 <string>LFReg</string>
                </property>

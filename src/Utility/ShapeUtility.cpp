@@ -1084,7 +1084,7 @@ namespace ShapeUtility
   void computeSolidAngleCurvature(std::shared_ptr<Model> model)
   {
     // voxelize the mesh
-    double voxel_size = model->getBoundBox()->getRadius() / 2000;
+    double voxel_size = model->getBoundBox()->getRadius() / 200;
     VoxelerLibrary::Voxeler voxeler(model->getPolygonMesh(), voxel_size);
     std::vector<VoxelerLibrary::Voxel>& voxels = voxeler.fillInside();
     double voxelSize = voxeler.voxelSize;
@@ -1114,6 +1114,9 @@ namespace ShapeUtility
     sphereVol = (sphereVol.array() * sphereVol.array() * sphereVol.array()).matrix();
     sphereVol = 4 * M_PI / 3 * sphereVol; // volume
 
+    Vector4f n_voxel_in_sphere = sphereVol / voxelVol;
+    std::cout << "n voxels in shpere: " << n_voxel_in_sphere.transpose() << std::endl;
+
     PolygonMesh* poly_mesh = model->getPolygonMesh();
     PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
     float perc = 0;
@@ -1128,11 +1131,12 @@ namespace ShapeUtility
 
       std::vector<float> dis;
       voxel_kd.rNearestPt(sphereR(3) * sphereR(3), query, dis);
+      std::cout << dis.size() << std::endl;system("pause");
       int r_id = 0;
       solid_angles[vit] << 0, 0, 0, 0;
       for (size_t i = 0; i < dis.size(); ++i)
       {
-        if (dis[i] >= (sphereR(r_id) * sphereR(r_id)))
+        if (dis[i] >= (pow(sphereR(r_id) - voxel_size, 2)))
         {
           solid_angles[vit](r_id) = voxelVol * i / sphereVol(r_id);
           if (maxs[r_id] < solid_angles[vit](r_id)) maxs[r_id] = solid_angles[vit](r_id);
@@ -1162,9 +1166,107 @@ namespace ShapeUtility
     std::cout << std::endl;
   }
 
+  void computeCurvature(std::shared_ptr<Model> model)
+  {
+    computeHalfedgeAngle(model->getPolygonMesh());
+    computeMeanCurvature(model);
+    computeGaussianCurvature(model);
+  }
+
   void computeMeanCurvature(std::shared_ptr<Model> model)
   {
+    PolygonMesh* poly_mesh = model->getPolygonMesh();
+    PolygonMesh::Halfedge_attribute<Scalar> halfedge_angle = poly_mesh->halfedge_attribute<Scalar>("he:halfedge_angle");
+    PolygonMesh::Vertex_attribute<Scalar> mean_curvature = poly_mesh->vertex_attribute<Scalar>("v:mean_curvature");
+
+    Scalar min_curv = std::numeric_limits<Scalar>::max();
+    Scalar max_curv = std::numeric_limits<Scalar>::min();
     
+    for (auto vit : poly_mesh->vertices())
+    {
+      Vec3 delta(0, 0, 0);
+      for (auto hevc : poly_mesh->halfedges(vit))
+      {
+        PolygonMesh::Vertex vj = poly_mesh->to_vertex(hevc);
+        Scalar cot_alpha = 0;
+        if (!poly_mesh->is_boundary(hevc))
+        {
+          cot_alpha = cos(halfedge_angle[hevc]) / sin(halfedge_angle[hevc]);
+        }
+        Scalar cot_beta = 0;
+        if (!poly_mesh->is_boundary(poly_mesh->opposite_halfedge(hevc)))
+        {
+          cot_beta = cos(halfedge_angle[poly_mesh->opposite_halfedge(hevc)]) / sin(halfedge_angle[poly_mesh->opposite_halfedge(hevc)]);
+        }
+        delta += (cot_alpha + cot_beta) * (poly_mesh->position(vj) - poly_mesh->position(vit));
+      }
+      mean_curvature[vit] = (delta / 2).norm() / 2;
+      if (mean_curvature[vit] > max_curv) max_curv = mean_curvature[vit];
+      if (mean_curvature[vit] < min_curv) min_curv = mean_curvature[vit];
+    }
+
+    for (auto vit : poly_mesh->vertices())
+    {
+      mean_curvature[vit] = (mean_curvature[vit] - min_curv) / (max_curv - min_curv);
+    }
+
+    std::cout << "max mean curvature: " << max_curv << "\tmin mean curvature: " << min_curv << std::endl;
+  }
+
+  void computeGaussianCurvature(std::shared_ptr<Model> model)
+  {
+    PolygonMesh* poly_mesh = model->getPolygonMesh();
+    PolygonMesh::Halfedge_attribute<Scalar> halfedge_angle = poly_mesh->halfedge_attribute<Scalar>("he:halfedge_angle");
+    PolygonMesh::Vertex_attribute<Scalar> gaussian_curvature = poly_mesh->vertex_attribute<Scalar>("v:gaussian_curvature");
+
+    Scalar min_curv = std::numeric_limits<Scalar>::max();
+    Scalar max_curv = std::numeric_limits<Scalar>::min();
+
+    for (auto vit : poly_mesh->vertices())
+    {
+      Scalar theta_j = 0;
+      for (auto hevc : poly_mesh->halfedges(vit))
+      {
+        if (!poly_mesh->is_boundary(hevc))
+        {
+          theta_j += halfedge_angle[poly_mesh->next_halfedge(hevc)];
+        }
+      }
+      gaussian_curvature[vit] = 2 * M_PI - theta_j;
+
+      if (gaussian_curvature[vit] > max_curv) max_curv = gaussian_curvature[vit];
+      if (gaussian_curvature[vit] < min_curv) min_curv = gaussian_curvature[vit];
+    }
+
+    for (auto vit : poly_mesh->vertices())
+    {
+      gaussian_curvature[vit] = (gaussian_curvature[vit] - min_curv) / (max_curv - min_curv);
+    }
+
+    std::cout << "max gaussian curvature: " << max_curv << "\tmin gaussian curvature: " << min_curv << std::endl;
+  }
+
+  void computeHalfedgeAngle(LG::PolygonMesh* poly_mesh)
+  {
+    PolygonMesh::Halfedge_attribute<Scalar> halfedge_angle = poly_mesh->halfedge_attribute<Scalar>("he:halfedge_angle");
+    for (auto heit : poly_mesh->halfedges())
+    {
+      if (poly_mesh->is_boundary(heit))
+      {
+        halfedge_angle[heit] = 0;
+      }
+      else
+      {
+        // assume it is triangle mesh
+        Vec3 v0 = poly_mesh->position(poly_mesh->from_vertex(heit));
+        Vec3 v1 = poly_mesh->position(poly_mesh->to_vertex(heit));
+        Vec3 v2 = poly_mesh->position(poly_mesh->to_vertex(poly_mesh->next_halfedge(heit)));
+        Scalar c = (v1 - v0).norm();
+        Scalar a = (v2 - v1).norm();
+        Scalar b = (v0 - v2).norm();
+        halfedge_angle[heit] = acos((a * a + b * b - c * c) / (2 * a * b));
+      }
+    }
   }
 
   void computeLocalTransform(PolygonMesh* src_mesh, PolygonMesh* tar_mesh)

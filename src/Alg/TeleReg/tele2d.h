@@ -93,7 +93,7 @@ public:
 	void setInputField(){ // only for visualization
 		std::vector<std::vector<double2>> curves_backup = curves ;
 		curves = initialCurves ;
-		computeVectorField() ;
+		//computeVectorField() ;
 		//interpolateBetweenPairedCurves() ;
 		//computeOsculatingCircle(  ) ;
 		//getDis() ;

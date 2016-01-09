@@ -479,13 +479,18 @@ void LargeFeatureReg::updateDataCrsp(const std::vector<double>& X)
 double LargeFeatureReg::energyDataTerm(const std::vector<double>& X)
 {
   //updateDataCrsp(X);
-
+  bool meet_nan = false;
   double sum = 0.0;
   for (auto i : data_crsp)
   {
     Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * i.first + 0], X[3 * i.first + 1], X[3 * i.first + 2], 1.0);
     Vector2f diff = Vector2f(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) - i.second.first;
     sum += diff.squaredNorm() - pow(diff.dot(i.second.second), 2); // point to line distance
+    //if (_isnan(diff.squaredNorm() - pow(diff.dot(i.second.second), 2)))
+    //{
+    //  
+    //  std::cout << v_proj.transpose() << "\t" << diff.transpose() << "\t" << i.second.second.transpose() << std::endl;
+    //}
   }
   return sum;
 }

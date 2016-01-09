@@ -16,7 +16,7 @@ ParameterDock::ParameterDock()
   connect(Show_Image_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(showBackgroundImage(int)));
   connect(NormalTransfer_PushButton, SIGNAL(clicked()), this, SLOT(runNormalTransfer()));
   connect(NormalCompute_PushButton, SIGNAL(clicked()), this, SLOT(runNormalCompute()));
-  connect(DetailSynthesis_PushButton, SIGNAL(clicked()), this, SLOT(runDetailSynthesis()));
+  connect(LFReg_Rigid_PushButton, SIGNAL(clicked()), this, SLOT(runLFRegRigid()));
   connect(Main_Interact_Mode_ComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setInteractiveMainView(int)));
   connect(Show_Trackball_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(setShowTrackball(int)));
   connect(SField_rad_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldRad(double)));
@@ -128,9 +128,9 @@ void ParameterDock::runNormalCompute()
   disp_modules->runNormalCompute();
 }
 
-void ParameterDock::runDetailSynthesis()
+void ParameterDock::runLFRegRigid()
 {
-  disp_modules->runDetailSynthesis();
+  disp_modules->runLFRegRigid();
 }
 
 void ParameterDock::setInteractiveMainView(int state)
@@ -206,8 +206,8 @@ void ParameterDock::setSFieldWinWidth(int val)
 
 void ParameterDock::setMainRenderMode(int state)
 {
-  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform") = state;
-  disp_modules->setMainCanvasRenderMode();
+  //LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:renderWithTransform") = state;
+  //disp_modules->setMainCanvasRenderMode();
 }
 
 void ParameterDock::setLFRegMethod(int state)

@@ -18,6 +18,7 @@
 #include "GLActor.h"
 #include "YMLHandler.h"
 #include "Ray.h"
+#include "Colormap.h"
 #include "ParameterMgr.h"
 
 #include <string>
@@ -2289,7 +2290,31 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
 
 void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
+  kevin_vector_field.reset(new KevinVectorField);
+  kevin_vector_field->init(tar_model);
+  kevin_vector_field->compute_s_hvf();
+
+  actors.clear();
+  kevin_vector_field->getDrawableActors(actors);return;
+
+
   // This function is only allowed to run when doing self completion!!!
+
+  ShapeUtility::computeSolidAngleCurvature(tar_model); return;
+
+  ShapeUtility::computeCurvature(tar_model);
+  PolygonMesh* test_tar_poly_mesh = tar_model->getPolygonMesh();
+  PolygonMesh::Vertex_attribute<Scalar> mean_curvature = test_tar_poly_mesh->vertex_attribute<Scalar>("v:gaussian_curvature");
+  actors.clear();
+  actors.push_back(GLActor(ML_POINT, 3.0f));
+  for (auto vit : test_tar_poly_mesh->vertices())
+  {
+    QColor color = 
+      qtJetColor(mean_curvature[vit]);
+    Vec3 pos = test_tar_poly_mesh->position(vit);
+    actors[0].addElement(pos[0], pos[1], pos[2], color.redF(), color.greenF(), color.blueF());
+  }
+  return;
 
   STLVectori sampled_t_v;
   STLVectorf sampled_t_new_v;

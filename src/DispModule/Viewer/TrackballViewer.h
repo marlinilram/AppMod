@@ -28,6 +28,8 @@ public:
   inline void setIsDrawActors(bool state) { is_draw_actors = state; };
   inline void setShowTrackball(bool state) { show_trackball = state; };
   void updateShapeCrest();
+
+  void updateCamera();
   
 protected:
   virtual void draw();

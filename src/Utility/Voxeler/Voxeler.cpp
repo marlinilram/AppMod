@@ -339,7 +339,7 @@ std::vector<Voxel> Voxeler::fillInside()
 	std::vector<Voxel> innerVoxels;
 
 	KDTreeWrapper outside;
-	fillOuter(outside);
+	fillOuter(outside);std::cout<<"fill out finished.\n";
 
 	// Compute inner as complement of outside
 	for(int x = minVox.x - 1; x <= maxVox.x + 1; x++){
@@ -356,7 +356,7 @@ std::vector<Voxel> Voxeler::fillInside()
 			}
 		}
 	}
-
+  std::cout<<"fill inside finished.\n";
 	return innerVoxels;
 }
 
