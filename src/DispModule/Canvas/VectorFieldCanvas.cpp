@@ -968,10 +968,21 @@ void VectorFieldCanvas::deleteTargetCurves(std::vector<double2>& line, int& w, i
       }
       else
       {
-        if(primitive_buffer.at<float>(height - 1 - screen_pos.second, screen_pos.first) == 0.5)
+        if (LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("LFeature:delete_interactive_reverse") == false)
         {
-          deleted_tags[i] = 1;
-          break;
+          if(primitive_buffer.at<float>(height - 1 - screen_pos.second, screen_pos.first) == 0.5)
+          {
+            deleted_tags[i] = 1;
+            break;
+          }
+        }
+        else
+        {
+          if(primitive_buffer.at<float>(height - 1 - screen_pos.second, screen_pos.first) != 0.5)
+          {
+            deleted_tags[i] = 1;
+            break;
+          }
         }
       }
     }

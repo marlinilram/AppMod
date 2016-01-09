@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
-         <width>295</width>
-         <height>1017</height>
+         <y>-245</y>
+         <width>320</width>
+         <height>1077</height>
         </rect>
        </property>
        <attribute name="label">
@@ -646,6 +646,11 @@
                <item>
                 <property name="text">
                  <string>Delete Target Curves</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Delete Target Curves Inverse</string>
                 </property>
                </item>
                <item>

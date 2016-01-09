@@ -220,12 +220,24 @@ void DispModuleHandler::toggleVectorFieldMode(int state)
     source_vector_viewer->setInteractionMode(VectorField::CORRECT_CRSP);
     disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
   }
-  else if (state == 3)
+  else if (state == 3 || state == 4)
   {
     source_vector_viewer->setInteractionMode(VectorField::DELETE_TARGET_CURVES);
     disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
+
+    switch (state)
+    {
+    case 3:
+      LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("LFeature:delete_interactive_reverse") = false;
+      break;
+    case 4:
+      LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("LFeature:delete_interactive_reverse") = true;
+      break;
+    default:
+      break;
+    }
   }
-  else if (state == 4)
+  else if (state == 5)
   {
     source_vector_viewer->setInteractionMode(VectorField::ADD_TARGET_CURVES);
     disconnect(source_vector_viewer.get(), SIGNAL(triggeredInteractiveCrsp()), this, SLOT(updateGeometryInteractive()));
