@@ -406,3 +406,13 @@ void DispModuleHandler::testApplyDisplacement()
   //main_canvas_viewer->setSynthesisReflectance();
   updateCanvas();
 }
+
+void DispModuleHandler::runApplyDisplacement()
+{
+  alg_handler->runApplyDisplacement();
+}
+
+void DispModuleHandler::loadDetailMap()
+{
+  alg_handler->loadDetailMap();
+}

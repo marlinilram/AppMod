@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>330</width>
+    <width>355</width>
     <height>917</height>
    </rect>
   </property>
@@ -744,6 +744,34 @@
               </widget>
              </item>
             </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_14">
+             <item>
+              <widget class="QDoubleSpinBox" name="Synthesis_Scale_doubleSpinBox">
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
+               <property name="text">
+                <string>Run_ApplyDisplacement</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QPushButton" name="GoAhead_PushButton">
+             <property name="text">
+              <string>Load Detail_Map</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>
