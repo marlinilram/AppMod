@@ -64,7 +64,7 @@ void MouseDraw(int event,int x,int y,int flags,void* param)
 
 DetailSynthesis::DetailSynthesis()
 {
-  resolution = 512;
+  resolution = 1024;
   normalize_max = -1.0;
 
   mesh_para = nullptr;
@@ -820,77 +820,171 @@ void DetailSynthesis::computeDisplacementMap(std::shared_ptr<Model> model)
   //applyDisplacementMap(mesh_para->vertex_set, mesh_para->cut_shape, model, displacement_map);
 }
 
-void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> model, cv::Mat disp_map, cv::Mat mask)
+void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask)
 {
+  std::set<int> crest_lines_points;
+  std::set<int>::iterator crest_lines_points_it;
+  for(size_t i = 0; i < src_model->getShapeCrestLine().size(); i ++)
+  {
+    for(size_t j = 0; j < src_model->getShapeCrestLine()[i].size(); j ++)
+    {
+      crest_lines_points.insert(src_model->getShapeCrestLine()[i][j]);
+    }
+  }
+
   double scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
 
-  std::string fname = model->getFileName();
+  /*std::string fname = model->getFileName();
   fname = fname.substr(0, fname.find_last_of('.'));
   std::cout << fname << std::endl;
   PolygonMesh ori_poly_mesh;
   read_poly(ori_poly_mesh, model->getDataPath() + "/" + fname + "_ori.obj");
   ori_poly_mesh.update_face_normals();
   ori_poly_mesh.update_vertex_normals();
-  PolygonMesh::Vertex_attribute<Vec3> ori_v_normals = ori_poly_mesh.vertex_attribute<Vec3>("v:normal");
+  PolygonMesh::Vertex_attribute<Vec3> ori_v_normals = ori_poly_mesh.vertex_attribute<Vec3>("v:normal");*/
+
+  std::vector<bool> visited_tag(tar_model->getPolygonMesh()->n_vertices(), false);
+
+  PolygonMesh* tar_mesh = tar_model->getPolygonMesh();
+  PolygonMesh::Vertex_attribute<Vec3> tar_v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
 
   VertexList vertex_check;
   //vertex_check =  mesh_para->vertex_original_mesh;
-  vertex_check = model->getShapeVertexList();
-  const NormalList& ori_normal = model->getShapeNormalList();
+  vertex_check = tar_model->getShapeVertexList();
+  const NormalList& ori_normal = src_model->getShapeNormalList();
+  std::vector<int> all_v_list(tar_mesh->n_vertices(), 0);
+  for (size_t i = 0; i < all_v_list.size(); ++i)
+  {
+    all_v_list[i] = int(i);
+  }
   for(int i = 0; i < vertex_set.size(); i ++)
   {
-    float pt_check[3];
-    pt_check[0] = vertex_check[3 * vertex_set[i]];
-    pt_check[1] = vertex_check[3 * vertex_set[i] + 1];
-    pt_check[2] = vertex_check[3 * vertex_set[i] + 2];
-    float normal_check[3];
-    /*normal_check[0] = ori_normal[3 * vertex_set[i]];
-    normal_check[1] = ori_normal[3 * vertex_set[i] + 1];
-    normal_check[2] = ori_normal[3 * vertex_set[i] + 2];*/
-    normal_check[0] = ori_v_normals[PolygonMesh::Vertex(vertex_set[i])][0];
-    normal_check[1] = ori_v_normals[PolygonMesh::Vertex(vertex_set[i])][1];
-    normal_check[2] = ori_v_normals[PolygonMesh::Vertex(vertex_set[i])][2];
-    float displacement;
-    float U,V;
-    U = (cut_shape->getUVCoord())[2 * i];
-    V = (cut_shape->getUVCoord())[2 * i + 1];
-    //std::cout << "U : " << U << " , " << "V : " << V << std::endl;
-    int img_x,img_y;
-    img_x = int(U * (float)resolution);
-    img_y = int(V * (float)resolution);
-    if(img_x == resolution)
+    if (visited_tag[vertex_set[i]]) continue;
+    visited_tag[vertex_set[i]] = true;
+
+    crest_lines_points_it = crest_lines_points.find(vertex_set[i]);
+    if(crest_lines_points_it == crest_lines_points.end())
     {
-      img_x --;
+      float pt_check[3];
+      pt_check[0] = vertex_check[3 * vertex_set[i]];
+      pt_check[1] = vertex_check[3 * vertex_set[i] + 1];
+      pt_check[2] = vertex_check[3 * vertex_set[i] + 2];
+      float normal_check[3];
+      normal_check[0] = ori_normal[3 * vertex_set[i]];
+      normal_check[1] = ori_normal[3 * vertex_set[i] + 1];
+      normal_check[2] = ori_normal[3 * vertex_set[i] + 2];
+      /*normal_check[0] = ori_v_normals[PolygonMesh::Vertex(vertex_set[i])][0];
+      normal_check[1] = ori_v_normals[PolygonMesh::Vertex(vertex_set[i])][1];
+      normal_check[2] = ori_v_normals[PolygonMesh::Vertex(vertex_set[i])][2];*/
+      float displacement;
+      float U,V;
+      U = (cut_shape->getUVCoord())[2 * i];
+      V = (cut_shape->getUVCoord())[2 * i + 1];
+      //std::cout << "U : " << U << " , " << "V : " << V << std::endl;
+      int img_x,img_y;
+      img_x = int(U * (float)resolution);
+      img_y = int(V * (float)resolution);
+      if(img_x == resolution)
+      {
+        img_x --;
+      }
+      if(img_y == resolution)
+      {
+        img_y --;    
+      }
+     if(mask.at<float>(resolution - img_y - 1, img_x) == 1)
+     {
+      displacement = disp_map.at<float>(resolution - img_y - 1, img_x);
+      vertex_check[3 * vertex_set[i]] = pt_check[0] + normal_check[0] * (displacement - 0.0) * scale;
+      vertex_check[3 * vertex_set[i] + 1] = pt_check[1] + normal_check[1] * (displacement - 0.0) * scale;
+      vertex_check[3 * vertex_set[i] + 2] = pt_check[2] + normal_check[2] * (displacement - 0.0) * scale;
+     }
     }
-    if(img_y == resolution)
+    else
     {
-      img_y --;    
+      float displacement = 0;
+      float normal_check[3];
+      float pt_check[3];
+      Vec3 normal;
+      normal << 0, 0, 0;
+      normal_check[0] = 0; normal_check[1] = 0; normal_check[2] = 0;
+      pt_check[0] = vertex_check[3 * vertex_set[i]];
+      pt_check[1] = vertex_check[3 * vertex_set[i] + 1];
+      pt_check[2] = vertex_check[3 * vertex_set[i] + 2];
+      float U0,V0;
+      U0 = (cut_shape->getUVCoord())[2 * i];
+      V0 = (cut_shape->getUVCoord())[2 * i + 1];
+      //std::cout << "U : " << U << " , " << "V : " << V << std::endl;
+      int img_x0,img_y0;
+      img_x0 = int(U0 * (float)resolution);
+      img_y0 = int(V0 * (float)resolution);
+      if(img_x0 == resolution)
+      {
+        img_x0 --;
+      }
+      if(img_y0 == resolution)
+      {
+        img_y0 --;    
+      }
+      int count = 0;
+      for (auto vvc : tar_mesh->vertices(PolygonMesh::Vertex(*crest_lines_points_it)))
+      {
+        normal += tar_v_normals[PolygonMesh::Vertex(vvc.idx())];
+        /*normal_check[0] += tar_v_normals[PolygonMesh::Vertex(vvc.idx())][0];
+        normal_check[1] += tar_v_normals[PolygonMesh::Vertex(vvc.idx())][1];
+        normal_check[2] += tar_v_normals[PolygonMesh::Vertex(vvc.idx())][2];*/
+        //float U,V;
+        //U = (cut_shape->getUVCoord())[2 * ];
+        //V = (cut_shape->getUVCoord())[2 *  + 1];
+        ////std::cout << "U : " << U << " , " << "V : " << V << std::endl;
+        //int img_x,img_y;
+        //img_x = int(U * (float)resolution);
+        //img_y = int(V * (float)resolution);
+        //if(img_x == resolution)
+        //{
+        //  img_x --;
+        //}
+        //if(img_y == resolution)
+        //{
+        //  img_y --;    
+        //}
+        //displacement += disp_map.at<float>(resolution - img_y - 1, img_x);
+        count ++;
+      }
+      if(mask.at<float>(resolution - img_y0 - 1, img_x0) == 1)
+      {
+        normal /= 3;
+        normal.normalize();
+        displacement = 0.5 * disp_map.at<float>(resolution - img_y0 - 1, img_x0);
+        vertex_check[3 * vertex_set[i]] = pt_check[0] + normal(0) * (displacement - 0.0) * scale;
+        vertex_check[3 * vertex_set[i] + 1] = pt_check[1] + normal(1) * (displacement - 0.0) * scale;
+        vertex_check[3 * vertex_set[i] + 2] = pt_check[2] + normal(2) * (displacement - 0.0) * scale;
+      }
     }
-   if(mask.at<float>(resolution - img_y - 1, img_x) == 1)
-   {
-    displacement = disp_map.at<float>(resolution - img_y - 1, img_x);
-    vertex_check[3 * vertex_set[i]] = pt_check[0] + normal_check[0] * (displacement - 0.0) * scale;
-    vertex_check[3 * vertex_set[i] + 1] = pt_check[1] + normal_check[1] * (displacement - 0.0) * scale;
-    vertex_check[3 * vertex_set[i] + 2] = pt_check[2] + normal_check[2] * (displacement - 0.0) * scale;
-   }
   }
 
-  //model->updateShape(vertex_check);
+  //tar_model->updateShape(vertex_check);
 
-  std::vector<tinyobj::shape_t> shapes;
-  std::vector<tinyobj::material_t> materials;
-  tinyobj::shape_t obj_shape;
-  obj_shape.mesh.positions = vertex_check;
-  obj_shape.mesh.indices = model->getShapeFaceList();
-  //obj_shape.mesh.texcoords = model->getShapeUVCoord();
-  shapes.push_back(obj_shape);
+  std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+  geometry_transfer->transferDeformation(tar_model, all_v_list, vertex_check, 10.0f);
 
   char time_postfix[50];
   time_t current_time = time(NULL);
   strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
   std::string file_time_postfix = time_postfix;
+  std::string output_name = tar_model->getOutputPath() + "/detail_synthesis" + file_time_postfix + ".obj";
+  ShapeUtility::savePolyMesh(tar_model->getPolygonMesh(), output_name);
 
-  std::string output_name = model->getOutputPath() + "/detail_synthesis" + file_time_postfix + ".obj";
+  return;
+
+  std::vector<tinyobj::shape_t> shapes;
+  std::vector<tinyobj::material_t> materials;
+  tinyobj::shape_t obj_shape;
+  obj_shape.mesh.positions = vertex_check;
+  obj_shape.mesh.indices = tar_model->getShapeFaceList();
+  //obj_shape.mesh.texcoords = model->getShapeUVCoord();
+  shapes.push_back(obj_shape);
+
   WriteObj(output_name, shapes, materials);
 }
 
@@ -1442,7 +1536,7 @@ void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model)
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-  this->resolution = 512;
+  this->resolution = 1024;
   this->testMeshPara(src_model);
   
 
@@ -1835,11 +1929,12 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
       result_displacement.at<float>(y, x) = result_displacement.at<float>(y, x) * (displacement_max - displacement_min) + displacement_min;
     }
   }*/
+
   //need to generate a mask for tar_para_shape!!!
-  cv::Mat tar_uv_mask(result_displacement.rows, result_displacement.cols, CV_32FC1, 1);
+  //cv::Mat tar_uv_mask(result_displacement.rows, result_displacement.cols, CV_32FC1, 1);
   /*double src_tar_scale;
   src_tar_scale = src_model->getBoundBox()->getRadius() / tar_model->getBoundBox()->getRadius();*/
-  applyDisplacementMap(tar_para_shape->vertex_set, tar_para_shape->cut_shape, tar_model, result_displacement, tar_uv_mask);
+  //applyDisplacementMap(tar_para_shape->vertex_set, tar_para_shape->cut_shape, tar_model, result_displacement, tar_uv_mask);
 
 
   cv::imwrite(tar_model->getOutputPath() + "/reflectance.png", result_reflectance*255);
@@ -1854,7 +1949,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   cv::imwrite(src_model->getOutputPath() + "/src_displacement.png", 255*src_para_shape->detail_map[3]);
 }
 
-void DetailSynthesis::test(std::shared_ptr<Model> model)
+void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   /*this->testMeshPara(model);
   cv::FileStorage fs2(model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
@@ -1869,13 +1964,13 @@ void DetailSynthesis::test(std::shared_ptr<Model> model)
   applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, model, src_para_shape->detail_map[0], mask);*/
 
 
-  cv::FileStorage fs2(model->getDataPath() + "/d2_displacement.yml", cv::FileStorage::READ);
+  cv::FileStorage fs2(tar_model->getDataPath() + "/d2_displacement.yml", cv::FileStorage::READ);
   cv::Mat d2_displacement_mat;
   fs2["d2_displacement"] >> d2_displacement_mat;
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
-  src_para_shape->initWithExtShape(model);
+  src_para_shape->initWithExtShape(tar_model);
   cv::Mat mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
-  applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, model, d2_displacement_mat, mask);
+  applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, tar_model, d2_displacement_mat, mask);
 
 }
 
@@ -1943,11 +2038,11 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   //kevin_vector_field->getDrawableActors(actors);return;
 
   ShapeUtility::computeNormalizedHeight(src_model);
-  ShapeUtility::computeDirectionalOcclusion(src_model);
+  //ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   //ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
-  ShapeUtility::computeDirectionalOcclusion(tar_model);
+  //ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
   //ShapeUtility::computeSolidAngleCurvature(tar_model);return;
 
@@ -1982,7 +2077,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
-      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+      //vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
 
     src_mesh_center += poly_mesh->position(vit);
@@ -2034,7 +2129,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
-      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+      //vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
 
     tar_mesh_center += poly_mesh->position(vit);
@@ -2290,32 +2385,6 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
 
 void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
-  kevin_vector_field.reset(new KevinVectorField);
-  kevin_vector_field->init(tar_model);
-  kevin_vector_field->compute_s_hvf();
-
-  actors.clear();
-  kevin_vector_field->getDrawableActors(actors);return;
-
-
-  // This function is only allowed to run when doing self completion!!!
-
-  ShapeUtility::computeSolidAngleCurvature(tar_model); return;
-
-  ShapeUtility::computeCurvature(tar_model);
-  PolygonMesh* test_tar_poly_mesh = tar_model->getPolygonMesh();
-  PolygonMesh::Vertex_attribute<Scalar> mean_curvature = test_tar_poly_mesh->vertex_attribute<Scalar>("v:gaussian_curvature");
-  actors.clear();
-  actors.push_back(GLActor(ML_POINT, 3.0f));
-  for (auto vit : test_tar_poly_mesh->vertices())
-  {
-    QColor color = 
-      qtJetColor(mean_curvature[vit]);
-    Vec3 pos = test_tar_poly_mesh->position(vit);
-    actors[0].addElement(pos[0], pos[1], pos[2], color.redF(), color.greenF(), color.blueF());
-  }
-  return;
-
   STLVectori sampled_t_v;
   STLVectorf sampled_t_new_v;
 
