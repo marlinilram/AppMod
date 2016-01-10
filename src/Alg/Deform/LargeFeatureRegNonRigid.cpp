@@ -104,14 +104,14 @@ void LargeFeatureReg::updateScalarFieldGrad(const std::vector<double>& X, std::v
       int vid = crest_lines[i][j];
       Vector4f v_proj = vpPMV_mat * Vector4f(X[3 * vid + 0], X[3 * vid + 1], X[3 * vid + 2], 1.0);
       double2 n_curve_pt = (double2(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) + feature_model->curve_translate - double2(0.5, 0.5)) * feature_model->curve_scale + double2(0.5, 0.5);
-      double field_grad_x, field_grad_y;
-      feature_model->target_scalar_field->getDistanceMapGrad(n_curve_pt, field_grad_x, field_grad_y);
-      grad[3 * vid + 0] = field_grad_x * (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])
-                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 0) - v_proj[1] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3]);
-      grad[3 * vid + 1] = field_grad_x * (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])
-                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
-      grad[3 * vid + 2] = field_grad_x * (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])
-                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
+      double field_grad_x, field_grad_y, field_value;
+      feature_model->target_scalar_field->getDistanceMapGrad(n_curve_pt, field_grad_x, field_grad_y, field_value);
+      grad[3 * vid + 0] = (field_grad_x * (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])
+                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 0) - v_proj[1] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])) * 2 * field_value;
+      grad[3 * vid + 1] = (field_grad_x * (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])
+                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])) * 2 * field_value;
+      grad[3 * vid + 2] = (field_grad_x * (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])
+                        + field_grad_y * (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])) * 2 * field_value;
     }
   }
   //std::cout << std::endl;
@@ -473,7 +473,7 @@ void LargeFeatureReg::updateDataCrsp(const std::vector<double>& X)
   
   // 2. find correspondence
   data_crsp.clear();
-  feature_model->BuildClosestPtPair(src_new_curves, data_crsp);
+  feature_model->BuildClosestPtPair(src_new_curves, data_crsp, true);
 }
 
 double LargeFeatureReg::energyDataTerm(const std::vector<double>& X)

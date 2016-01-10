@@ -502,7 +502,9 @@ void FeatureGuided::AnalyzeTargetRelationship()
     {
       for (int k = 0; k < target_curves[j].size(); ++k)
       {
-        contour.at<uchar>(target_img.rows - 1 - target_curves[j][k].y, target_curves[j][k].x) = 255;
+        int imgx = std::max(double(0), std::min(target_curves[j][k].x, double(target_img.cols - 1)));
+        int imgy = std::max(double(0), std::min(target_img.rows - 1 - target_curves[j][k].y, double(target_img.rows - 1)));
+        contour.at<uchar>(imgy, imgx) = 255;
       }
     }
     cv::imwrite(source_model->getDataPath() + "/curve_imgs/relation_" + std::to_string(i) + ".png", contour);
@@ -642,9 +644,8 @@ void FeatureGuided::BuildClosestPtPair()
   //}
 }
 
-void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<Vector2f, Vector2f> >& data_crsp)
+void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<Vector2f, Vector2f> >& data_crsp, bool update_saliency)
 {
-  typedef std::pair<int, int> CurvePt;
   std::map<CurvePt, CurvePt> crsp_map;
   std::map<CurvePt, CurvePt>::iterator it;
   std::shared_ptr<LargeFeatureCrsp> lf_crsp(new LargeFeatureCrsp(this));
@@ -664,7 +665,59 @@ void FeatureGuided::BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<V
     int v_id = i.first;
     data_crsp[v_id] = std::pair<Vector2f, Vector2f>(Vector2f(i.second.x, i.second.y), Vector2f(0, 0)); // for user correspondence we minimize absolute distance
   }
+
+  if (update_saliency)
+  {
+    this->updateSliencyFromCrsp(crsp_map);
+  }
 }
+
+void FeatureGuided::updateSliencyFromCrsp(std::map<CurvePt, CurvePt>& crsp_map)
+{
+  std::vector<float> crsp_cnt(target_curves.size(), 0);
+  float max_cnt = std::numeric_limits<float>::min();
+  for (auto i : crsp_map)
+  {
+    crsp_cnt[i.second.first] += 1;
+    if (crsp_cnt[i.second.first] > max_cnt)
+    {
+      max_cnt = crsp_cnt[i.second.first];
+    }
+  }
+
+  // update saliency map
+  for (size_t i = 0; i < crsp_cnt.size(); ++i)
+  {
+    if (crsp_cnt[i] > 0.5)
+    {
+      for (size_t j = 0; j < target_curves[i].size(); ++j)
+      {
+        int img_x = std::max(0, std::min(target_edge_saliency.cols - 1, int(target_curves[i][j].x + 0.5)));
+        int img_y = std::max(0, std::min(target_edge_saliency.rows - 1, target_edge_saliency.rows - 1 - int(target_curves[i][j].y + 0.5)));
+        float cur_sl = target_edge_saliency.at<float>(img_y, img_x);
+        target_edge_saliency.at<float>(img_y, img_x) = std::min(1.0, cur_sl * (1 + (crsp_cnt[i] / max_cnt) * 0.1));
+      }
+    }
+    else
+    {
+      for (size_t j = 0; j < target_curves[i].size(); ++j)
+      {
+        int img_x = std::max(0, std::min(target_edge_saliency.cols - 1, int(target_curves[i][j].x + 0.5)));
+        int img_y = std::max(0, std::min(target_edge_saliency.rows - 1, target_edge_saliency.rows - 1 - int(target_curves[i][j].y + 0.5)));
+        float cur_sl = target_edge_saliency.at<float>(img_y, img_x);
+        target_edge_saliency.at<float>(img_y, img_x) = std::max(0.0, cur_sl * (1 - 0.1));
+      }
+    }
+  }
+
+  // recompute target saliency
+  target_edges_sp_sl.clear();
+  target_edges_average_sp_sl.clear();
+  CurvesUtility::CurveSpSaliency(target_edges_sp_sl, target_curves, target_edge_saliency, target_edges_average_sp_sl);
+
+  cv::imshow("saliency map", target_edge_saliency);
+}
+
 
 void FeatureGuided::setUserCrspPair(double start[2], double end[2])
 {
@@ -808,14 +861,18 @@ void FeatureGuided::addTargetCurves(std::vector<double2>& add_curve)
   if (add_curve.size() > 0)
   {
     target_curves.push_back(add_curve);
-    target_edges_sp_sl.push_back(std::vector<double>(add_curve.size(), 1.0));
-    target_edges_average_sp_sl.push_back(1.0);
+
+    // find the current largest saliency
+    float max_saliency = *(std::max_element(target_edges_average_sp_sl.begin(), target_edges_average_sp_sl.end()));
+
+    target_edges_sp_sl.push_back(std::vector<double>(add_curve.size(), max_saliency));
+    target_edges_average_sp_sl.push_back(max_saliency);
 
     for (size_t i = 0; i < add_curve.size(); ++i)
     {
       int img_x = std::max(0, std::min(target_edge_saliency.cols - 1, int(add_curve[i].x + 0.5)));
       int img_y = std::max(0, std::min(target_edge_saliency.rows - 1, target_edge_saliency.rows - 1 - int(add_curve[i].y + 0.5)));
-      target_edge_saliency.at<float>(img_y, img_x) = 1.0;
+      target_edge_saliency.at<float>(img_y, img_x) = max_saliency;
     }
 
   }

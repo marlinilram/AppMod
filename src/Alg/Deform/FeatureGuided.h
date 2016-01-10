@@ -22,6 +22,9 @@ typedef std::vector<std::vector<double> >  HISTS;
 class FeatureGuided
 {
 public:
+  typedef std::pair<int, int> CurvePt;
+
+public:
   FeatureGuided(std::shared_ptr<Model> source_model, std::string targetFile);
   FeatureGuided();
   virtual ~FeatureGuided();
@@ -72,7 +75,8 @@ public:
   void BuildClosestPtPair();
   void GetCurrentCrspList(std::vector<std::pair<int, double2> >& crsp_list);
   void setUserCrspPair(double start[2], double end[2]);
-  void BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<Vector2f, Vector2f> >& data_crsp); // data_crsp stores corresponding vid-pixel pair
+  void BuildClosestPtPair(CURVES& curves, std::map<int, std::pair<Vector2f, Vector2f> >& data_crsp, bool update_saliency = false); // data_crsp stores corresponding vid-pixel pair
+  void updateSliencyFromCrsp(std::map<CurvePt, CurvePt>& crsp_map);
 
   void ExtractCurves(const cv::Mat& source, CURVES& curves);
   void ExtractSrcCurves(const cv::Mat& source, CURVES& curves);

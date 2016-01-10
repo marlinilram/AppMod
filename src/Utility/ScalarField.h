@@ -24,7 +24,7 @@ public:
   void computeMatchingMap(std::vector<double2>& ext_vector_field);
   void computeDistanceMap(FeatureGuided* feature_model);
   void updateDistanceMapGrad();
-  void getDistanceMapGrad(double2& n_curve_pt, double& grad_x, double& grad_y);
+  void getDistanceMapGrad(double2& n_curve_pt, double& grad_x, double& grad_y, double& field_value);
 
   double curveIntegrate(std::vector<std::vector<double2> >& curves, FeatureGuided* feature_model);
 

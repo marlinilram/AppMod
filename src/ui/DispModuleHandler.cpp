@@ -17,40 +17,58 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QDockWidget>
+#include <QMainWindow>
 
 DispModuleHandler::DispModuleHandler(QWidget* parent)
 {
-  QGridLayout *gridLayout_3;
-  gridLayout_3 = new QGridLayout(parent);
-  gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
+  //QGridLayout *gridLayout_3;
+  //gridLayout_3 = new QGridLayout(parent);
+  //gridLayout_3->setObjectName(QStringLiteral("gridLayout_3"));
 
-  QDockWidget* centerDock = new QDockWidget(parent);
-  centerDock->setWindowTitle("centerDock");
-  centerDock->setAllowedAreas(Qt::BottomDockWidgetArea);
-  centerDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
-  centerDock->setFloating(true);
-  //this->setCentralWidget(centerDock);
+  QDockWidget* main_canvas_dock = new QDockWidget(parent);
+  main_canvas_dock->setWindowTitle("centerDock");
+  main_canvas_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+  main_canvas_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
+  main_canvas_dock->setMinimumHeight(500);
+  main_canvas_dock->setMinimumWidth(500);
+  QMainWindow* main_window = dynamic_cast<QMainWindow*>(parent);
+  main_window->setCentralWidget(main_canvas_dock);
 
-  
-  main_canvas_viewer.reset(new MainCanvasViewer(centerDock));
+  QDockWidget* trackball_dock = new QDockWidget(parent);
+  QDockWidget* synthesis_dock = new QDockWidget(parent);
+  QDockWidget* src_vector_dock = new QDockWidget(parent);
+  QDockWidget* tar_vector_dock = new QDockWidget(parent);
+
+  trackball_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+  synthesis_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+  src_vector_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+  tar_vector_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+
+  main_window->addDockWidget(Qt::BottomDockWidgetArea, trackball_dock);
+  main_window->addDockWidget(Qt::BottomDockWidgetArea, synthesis_dock);
+  main_window->addDockWidget(Qt::BottomDockWidgetArea, src_vector_dock);
+  main_window->addDockWidget(Qt::BottomDockWidgetArea, tar_vector_dock);
+
+
+  main_canvas_viewer.reset(new MainCanvasViewer(main_canvas_dock));
   main_canvas_viewer->setObjectName(QStringLiteral("main_canvas_viewer"));
   //gridLayout_3->addWidget(main_canvas_viewer.get(), 0, 0, 2, 2);
-  centerDock->setWidget(main_canvas_viewer.get());
+  main_canvas_dock->setWidget(main_canvas_viewer.get());
   
   trackball_viewer.reset(new TrackballViewer(parent));
   trackball_viewer->setObjectName(QStringLiteral("trackball_viewer"));
-  gridLayout_3->addWidget(trackball_viewer.get(), 0, 2, 1, 1);
+  trackball_dock->setWidget(trackball_viewer.get());
 
   synthesis_viewer.reset(new SynthesisViewer(parent));
   synthesis_viewer->setObjectName(QStringLiteral("synthesis_viewer"));
-  gridLayout_3->addWidget(synthesis_viewer.get(), 0, 3, 1, 1);
+  synthesis_dock->setWidget(synthesis_viewer.get());
 
   source_vector_viewer.reset(new VectorFieldViewer(parent));
   source_vector_viewer->setObjectName(QStringLiteral("src_vec_field_viewer"));
-  gridLayout_3->addWidget(source_vector_viewer.get(),1,2,1,1);
+  src_vector_dock->setWidget(source_vector_viewer.get());
   target_vector_viewer.reset(new VectorFieldViewer(parent));
   target_vector_viewer->setObjectName(QStringLiteral("trg_vec_field_viewer"));
-  gridLayout_3->addWidget(target_vector_viewer.get(),1,3,1,1);
+  tar_vector_dock->setWidget(target_vector_viewer.get());
 
   main_canvas.reset(new MainCanvas);
   trackball_canvas.reset(new TrackballCanvas);

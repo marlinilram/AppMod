@@ -329,7 +329,7 @@ bool VectorFieldCanvas::displayTargetCurves()
   CURVES target_curves;
   feature_model->NormalizedTargetCurves(target_curves);
   glPointSize(2) ;
-  glLineWidth(1);
+
   if (render_mode == VectorField::SOURCE_MODE)
   {
     glColor4f( 148.0/225.0, 178.0/225.0, 53.0/225.0, alpha ) ;
@@ -339,7 +339,7 @@ bool VectorFieldCanvas::displayTargetCurves()
     glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;    
   }
   double threshold = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold");
-  glLineWidth(2);
+  glLineWidth(3);
   for (int i = 0; i < target_curves.size(); ++i)
   {
     float saliency = feature_model->getEdgesAverageSpSl()[i];
@@ -366,10 +366,10 @@ bool VectorFieldCanvas::displaySourceCurves()
   CURVES source_curves;
   this->feature_model->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
-  glLineWidth(2);
+  glLineWidth(3);
   if (render_mode == VectorField::SOURCE_MODE)      
   {
-    glColor4f( 0.0f, 0.0f, 0.0f, alpha ) ;
+    glColor4f( 66.0 / 255.0, 152.0 / 255.0f, 23.0/255.0f, alpha ) ;
   }
   else if(render_mode == VectorField::TARGET_MODE)
   {
@@ -747,12 +747,14 @@ bool VectorFieldCanvas::displaySourceCrspList()
   }
 
   glPointSize(5) ;
+  glLineWidth(2);
 
   for (size_t i = 0; i < src_crsp_list.size(); ++i)
   {
     QColor color = 
       qtJetColor(double(i)/src_crsp_list.size());
     glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+    glColor4f( 66.0 / 255.0, 152.0 / 255.0f, 23.0/255.0f, alpha ) ;
 
     glBegin(GL_LINES);
     double2 pos_src = source_curves[src_crsp_list[i].first][src_crsp_list[i].second];
@@ -777,7 +779,7 @@ bool VectorFieldCanvas::displaySourceCrspList()
     glEnd();
   }
 
-  glColor4f( 0.75f, 0.75f, 0.75f, 0.1f );
+  glColor4f( 0.0f, 0.0f, 0.0f, 0.0f );
   std::pair<int, int> cur_src_curve_id;
   for (auto i : user_correct_crsp_map)
   {

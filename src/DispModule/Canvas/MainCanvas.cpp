@@ -611,7 +611,8 @@ void MainCanvas::drawShapeCrest()
   {
     QColor color = 
       qtJetColor(double(i)/crest_lines.size());
-    glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+    //glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+    glColor4f( 66.0 / 255.0, 220.0 / 255.0f, 23.0/255.0f, 0 ) ;
     //glColor4f(0.0f, 1.0f, 0.0f, 0.0f);
     glBegin(GL_LINE_STRIP);
 

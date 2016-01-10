@@ -25,8 +25,8 @@ MainWindow::MainWindow()
   connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
   connect(action_Load_Synthesis_Target, SIGNAL(triggered()), this, SLOT(loadSynthesisTarget()));
 
-  disp_modules.reset(new DispModuleHandler(centralwidget));
-  this->setCentralWidget(centralwidget);
+  disp_modules.reset(new DispModuleHandler(this));
+  //this->setCentralWidget(centralwidget);
 
   parameter_dock.reset(new ParameterDock);
   //parameter_dock->setFixedWidth(250);

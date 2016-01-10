@@ -307,7 +307,7 @@ double ScalarField::curveIntegrate(std::vector<std::vector<double2> >& curves, F
       int field_i = int(pos.y * resolution);
       field_j = (field_j < 0) ? 0 : ((field_j >= resolution) ? (resolution - 1) : field_j);
       field_i = (field_i < 0) ? 0 : ((field_i >= resolution) ? (resolution - 1) : field_i);
-      integ += distance_map[field_i * resolution + field_j];
+      integ += pow(distance_map[field_i * resolution + field_j], 2);
     }
   }
   //std::cout << "curve integrate: " << integ << std::endl;
@@ -345,7 +345,7 @@ void ScalarField::updateDistanceMapGrad()
   //cv::imwrite("gmag.png", 255 * gmag);
 }
 
-void ScalarField::getDistanceMapGrad(double2& n_curve_pt, double& grad_x, double& grad_y)
+void ScalarField::getDistanceMapGrad(double2& n_curve_pt, double& grad_x, double& grad_y, double& field_value)
 {
   int field_j = int(n_curve_pt.x * resolution);
   int field_i = int(n_curve_pt.y * resolution);
@@ -360,4 +360,5 @@ void ScalarField::getDistanceMapGrad(double2& n_curve_pt, double& grad_x, double
   field_i = (field_i < 0) ? 0 : ((field_i >= resolution) ? (resolution - 1) : field_i);
   grad_x = distance_map_grad_x[field_i * resolution + field_j];
   grad_y = distance_map_grad_y[field_i * resolution + field_j];
+  field_value = distance_map[field_i * resolution + field_j];
 }

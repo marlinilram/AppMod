@@ -245,6 +245,7 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
   /*std::vector<Edge> crest_edges_cache = crest_edges;
   std::vector<STLVectori> crest_lines_cache = crest_lines;*/
   const STLVectori& edge_connectivity = shape->getEdgeConnectivity();
+  PolygonMesh* poly_mesh = shape->getPolygonMesh();
 
   /*crest_edges.clear();
   crest_lines.clear();*/
@@ -254,10 +255,20 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
   std::map<int, std::vector<Edge> >::iterator visible_edges_it;
   visible_edges.clear();
   visible_lines.clear();
-  for (it = candidates.begin(); it != candidates.end(); ++it)
+
+  for (auto it : crest_edges)
   {
-    int f_0 = (*it) / 3;
-    int f_1 = edge_connectivity[(*it)] / 3;
+    int f_0, f_1;
+    f_0 = f_1 = -1;
+    for (auto hevc : poly_mesh->halfedges(PolygonMesh::Vertex(it.first)))
+    {
+      if (poly_mesh->to_vertex(hevc).idx() == it.second)
+      {
+        f_0 = poly_mesh->is_boundary(hevc) ? -1 : poly_mesh->face(hevc).idx();
+        f_1 = poly_mesh->is_boundary(poly_mesh->opposite_halfedge(hevc)) ? -1 : poly_mesh->face(poly_mesh->opposite_halfedge(hevc)).idx();
+        break;
+      }
+    }
 
     if (vis_faces.find(f_0) != vis_faces.end() || vis_faces.find(f_1) != vis_faces.end())
     {
@@ -272,12 +283,36 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
         visible_edges[curve_id] = std::vector<Edge>();
         visible_edges[curve_id].push_back(crest_edges[i]);
       }
-      
+
       /*crest_edges.push_back(crest_edges_cache[i]);*/
     }
 
     ++i;
   }
+
+  //for (it = candidates.begin(); it != candidates.end(); ++it)
+  //{
+  //  int f_0 = (*it) / 3;
+  //  int f_1 = edge_connectivity[(*it)] / 3;
+  //  if (vis_faces.find(f_0) != vis_faces.end() || vis_faces.find(f_1) != vis_faces.end())
+  //  {
+  //    int curve_id = edge_line_mapper[crest_edges[i]];
+  //    visible_edges_it = visible_edges.find(curve_id);
+  //    if (visible_edges_it != visible_edges.end())
+  //    {
+  //      visible_edges[curve_id].push_back(crest_edges[i]);
+  //    }
+  //    else
+  //    {
+  //      visible_edges[curve_id] = std::vector<Edge>();
+  //      visible_edges[curve_id].push_back(crest_edges[i]);
+  //    }
+  //    
+  //    /*crest_edges.push_back(crest_edges_cache[i]);*/
+  //  }
+  //  ++i;
+  //}
+
   visible_global_mapper.clear();
   global_visible_mapper.clear();
   std::vector<std::vector<int>> temp_visible_lines;
@@ -288,6 +323,7 @@ void ShapeCrest::computeVisible(std::set<int>& vis_faces)
     mergeCandidates(i.second, temp_visible_lines);
     for(size_t j = 0; j < temp_visible_lines.size(); j ++)
     {
+      if (temp_visible_lines[j].size() < 3) continue;
       visible_lines.push_back(temp_visible_lines[j]);
       visible_global_mapper[vis_line_count] = i.first;
       global_visible_mapper[i.first].push_back(vis_line_count);
