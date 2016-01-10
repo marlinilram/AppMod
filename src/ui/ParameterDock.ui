@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>355</width>
-    <height>917</height>
+    <height>883</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
         </rect>
        </property>
        <attribute name="label">
-        <string>Page 1</string>
+        <string/>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_7">
         <item>
@@ -801,17 +801,9 @@
        <zorder>groupBox_3</zorder>
        <zorder>groupBox_2</zorder>
       </widget>
-      <widget class="QWidget" name="page_2">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>98</width>
-         <height>28</height>
-        </rect>
-       </property>
+      <widget class="QWidget" name="toolBoxPage2" native="true">
        <attribute name="label">
-        <string>Page 2</string>
+        <string/>
        </attribute>
       </widget>
      </widget>
