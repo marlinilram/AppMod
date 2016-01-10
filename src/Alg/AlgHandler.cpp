@@ -202,7 +202,7 @@ void AlgHandler::testApplyDisplacement()
 
 void AlgHandler::runApplyDisplacement()
 {
-  detail_synthesis->test(shape_model);
+  detail_synthesis->test(shape_model, synthesis_model);
 }
 
 void AlgHandler::loadDetailMap()
