@@ -50,7 +50,7 @@ void GeometryTransfer::prepareSampleVertex(std::shared_ptr<Model> tar_model, std
   v_ids.erase(std::unique(v_ids.begin(), v_ids.end()), v_ids.end());
 }
 
-void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list)
+void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move)
 {
   FaceList face_list = tar_model->getShapeFaceList();
   VertexList vertex_list = tar_model->getShapeVertexList();
@@ -73,7 +73,7 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
 
   move_constraint->setSolver(solver);
   move_constraint->initMatrix(v_ids, v_list);
-  move_constraint->setLamdMove(5.0f);
+  move_constraint->setLamdMove(lamd_move);
 
   solver->initCholesky();
   int max_iter = 20;

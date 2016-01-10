@@ -57,7 +57,7 @@ public:
   void computeDisplacementMap(std::shared_ptr<Model> model); //old one; useless
   void prepareFeatureMap(std::shared_ptr<Model> model);
   void prepareDetailMap(std::shared_ptr<Model> model);
-  void applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> model, cv::Mat disp_map, cv::Mat mask);
+  void applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask);
   void startDetailSynthesis(std::shared_ptr<Model> model);
   void computeVectorField(std::shared_ptr<Model> model);
   void getDrawableActors(std::vector<GLActor>& actors);
@@ -67,7 +67,7 @@ public:
 
   // transfer
   void doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
-  void test(std::shared_ptr<Model> model);
+  void test(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
   void doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, STLVectori& sampled_t_v = STLVectori(), STLVectorf& sampled_t_new_v = STLVectorf(), bool do_complete = false);
   void doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 

@@ -143,7 +143,8 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   solver->P_Opt = Eigen::Map<VectorXf>(&(vertex_list)[0], (vertex_list).size());
 
   arap->setSolver(solver);
-  arap->initConstraint(vertex_list, face_list,adj_list);
+  arap->initConstraint(model->getPolygonMesh());
+  //arap->initConstraint(vertex_list, face_list,adj_list);
   arap->setLamdARAP(5.0f);
 
   normal_constraint->setSolver(solver);
