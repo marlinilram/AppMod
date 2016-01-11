@@ -988,6 +988,85 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
   WriteObj(output_name, shapes, materials);
 }
 
+void DetailSynthesis::applyDisplacementMap2(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask)
+{
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+
+  std::set<int> crest_lines_points;
+  for(size_t i = 0; i < src_model->getShapeCrestLine().size(); i ++)
+  {
+    for(size_t j = 0; j < src_model->getShapeCrestLine()[i].size(); j ++)
+    {
+      crest_lines_points.insert(src_model->getShapeCrestLine()[i][j]);
+    }
+  }
+
+  double scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
+
+  std::vector<bool> visited_tag(tar_model->getPolygonMesh()->n_vertices(), false);
+
+  PolygonMesh* tar_mesh = tar_model->getPolygonMesh();
+  PolygonMesh* src_mesh = src_model->getPolygonMesh();
+
+  PolygonMesh new_tar_mesh = (*tar_mesh);
+
+  const STLVectori& vertex_set = tar_para_shape->vertex_set;
+  std::shared_ptr<Shape> cut_shape = tar_para_shape->cut_shape;
+  for(int i = 0; i < vertex_set.size(); i ++)
+  {
+    if (visited_tag[vertex_set[i]]) continue;
+    visited_tag[vertex_set[i]] = true;
+    
+    float U,V;
+    U = (cut_shape->getUVCoord())[2 * i + 0];
+    V = (cut_shape->getUVCoord())[2 * i + 1];
+    std::vector<float> pt(2, 0);
+    pt[0] = U; pt[1] = V;
+    int face_id;
+    std::vector<int> id;
+    std::vector<float> lambda;
+
+    bool in_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), lambda, face_id, id);
+    int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
+    bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+
+    Vec3 normal_check(0, 0, 0);
+    if (in_uv_mesh && !in_crest_line)
+    {
+      // use face normal here
+      normal_check = src_mesh->face_attribute<Vec3>("f:normal")[PolygonMesh::Face(src_para_shape->face_set[face_id])];
+    }
+    else
+    {
+      // use the target average normal around this vertex
+      ShapeUtility::getAverageNormalAroundVertex(tar_mesh, vertex_set[i], normal_check, 2);
+    }
+    
+    // get vertex position and its displacement
+    Vec3 pt_check = tar_mesh->position(PolygonMesh::Vertex(vertex_set[i]));
+    int img_x,img_y;
+    img_x = std::max(0, std::min(int(U * (float)resolution), resolution - 1));
+    img_y = std::max(0, std::min(int(V * (float)resolution), resolution - 1));
+    float cur_disp = 0;
+    if(mask.at<float>(resolution - img_y - 1, img_x) == 1)
+    {
+      cur_disp = disp_map.at<float>(resolution - img_y - 1, img_x);
+      pt_check = pt_check + scale * cur_disp * normal_check;
+      new_tar_mesh.position(PolygonMesh::Vertex(vertex_set[i])) = pt_check;
+    }
+  }
+
+  char time_postfix[50];
+  time_t current_time = time(NULL);
+  strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+  std::string file_time_postfix = time_postfix;
+  std::string output_name = tar_model->getOutputPath() + "/detail_synthesis" + file_time_postfix + ".obj";
+  ShapeUtility::savePolyMesh(&new_tar_mesh, output_name);
+}
 
 void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
 {

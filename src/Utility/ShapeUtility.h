@@ -80,6 +80,10 @@ namespace ShapeUtility
   void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName);
 
   int findLeftTopUVVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_ids);
+
+  int closestVertex(LG::PolygonMesh* src_mesh, std::vector<int>& src_v_ids, LG::PolygonMesh* tar_mesh, int tar_v_id);
+
+  void getAverageNormalAroundVertex(LG::PolygonMesh* poly_mesh, int v_id, LG::Vec3& normal, int n_ring = 1);
 }
 
 #endif

@@ -425,6 +425,7 @@ namespace ShapeUtility
 
   void getNRingFacesAroundVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_id, int v_id, int n_ring)
   {
+    // actually get (n_ring + 1) faces around vertex
     // first get the center faces around vertex 
     f_id.clear();
     for (auto fcc : poly_mesh->faces(PolygonMesh::Vertex(v_id)))
@@ -1520,5 +1521,37 @@ namespace ShapeUtility
       }
     }
     return v_id;
+  }
+
+  int closestVertex(PolygonMesh* src_mesh, std::vector<int>& src_v_ids, PolygonMesh* tar_mesh, int tar_v_id)
+  {
+    int closest_v_id = -1;
+    Scalar min_dist = std::numeric_limits<Scalar>::max();
+    for (size_t i = 0; i < src_v_ids.size(); ++i)
+    {
+      Scalar cur_dist = (src_mesh->position(PolygonMesh::Vertex(src_v_ids[i])) - tar_mesh->position(PolygonMesh::Vertex(tar_v_id))).norm();
+      if (cur_dist < min_dist)
+      {
+        min_dist = cur_dist;
+        closest_v_id = src_v_ids[i];
+      }
+    }
+    return closest_v_id;
+  }
+
+  void getAverageNormalAroundVertex(LG::PolygonMesh* poly_mesh, int v_id, LG::Vec3& normal, int n_ring)
+  {
+    //
+    PolygonMesh::Face_attribute<Vec3> f_normals = poly_mesh->face_attribute<Vec3>("f:normal");
+    
+    std::set<int> f_ids;
+    getNRingFacesAroundVertex(poly_mesh, f_ids, v_id, n_ring - 1);
+
+    normal = LG::Vec3(0, 0, 0);
+    for (auto i : f_ids)
+    {
+      normal += f_normals[PolygonMesh::Face(i)];
+    }
+    normal.normalize();
   }
 }
