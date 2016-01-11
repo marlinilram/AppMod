@@ -4,7 +4,10 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <set>
 #include "GLActor.h"
+
+#include "BasicHeader.h"
 
 class Model;
 class Solver;
@@ -19,6 +22,8 @@ public:
 
   void prepareNewNormal(std::shared_ptr<Model> model, std::string normal_file_name);
   void getDrawableActors(std::vector<GLActor>& actors);
+  void visibleFaceInNormalMap(std::shared_ptr<Model> model, std::string normal_file_name, std::set<int>& face_in_normal);
+  void visibleVertexInNormalMap(std::shared_ptr<Model> model, std::string normal_file_name, STLVectori& vertex_in_normal);
 
 private:
   std::vector<GLActor> actors;

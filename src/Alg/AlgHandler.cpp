@@ -107,7 +107,7 @@ void AlgHandler::doNormalTransfer()
   }
 
   //shape_model->updateSHColor();
-  std::string normal_file_name = "smoothed_normal";
+  std::string normal_file_name = "final_normal";
 
   normal_transfer->prepareNewNormal(shape_model, normal_file_name);
   actors.clear();

@@ -276,6 +276,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
     new_shape.push_back(v_with_transform(2, i));
   }
   feature_model->source_model->updateShape(new_shape);
+  feature_model->source_model->getPolygonMesh()->update_laplacian_cot();// try update laplacian coefficient
 
   std::stringstream log_stream;
   log_stream << "LFReg Log:" << std::endl;

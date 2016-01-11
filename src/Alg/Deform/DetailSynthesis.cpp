@@ -2023,6 +2023,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   //  return;
   //}
 
+  resolution = 512;
 
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(src_model);
@@ -2031,8 +2032,6 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(tar_model);
   kevin_vector_field->compute_s_hvf();
-
-  this->testMeshPara(src_model);
 
   //actors.clear();
   //kevin_vector_field->getDrawableActors(actors);return;
@@ -2085,23 +2084,28 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   src_mesh_center = src_mesh_center / poly_mesh->n_vertices();
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
-  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
+  std::set<int> face_in_normal;
+  {
+    NormalTransfer normal_transfer;
+    normal_transfer.visibleFaceInNormalMap(src_model, "final_normal", face_in_normal);
+  }
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, face_in_normal);
 
   float src_mesh_scale = src_model->getBoundBox()->getRadius();
   std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
   std::vector<float> src_feature_kd_data;
-  for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
-  {
-    for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
-    {
-      src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
-    }
-    Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
-    src_feature_kd_data.push_back(normalized_pos(0));
-    src_feature_kd_data.push_back(normalized_pos(1));
-    src_feature_kd_data.push_back(normalized_pos(2));
-  }
-  src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size() + 3);
+  //for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
+  //{
+  //  for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
+  //  {
+  //    src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
+  //  }
+  //  Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
+  //  src_feature_kd_data.push_back(normalized_pos(0));
+  //  src_feature_kd_data.push_back(normalized_pos(1));
+  //  src_feature_kd_data.push_back(normalized_pos(2));
+  //}
+  //src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size() + 3);
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -2385,17 +2389,18 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
 
 void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
+  cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  cv::Mat final_height_mat;
+  fs2["final_height"] >> final_height_mat;
+  PolygonMesh new_mesh;
+  ShapeUtility::heightToMesh(final_height_mat, new_mesh, src_model);return;
+
   STLVectori sampled_t_v;
   STLVectorf sampled_t_new_v;
 
   this->doGeometryTransfer(src_model, tar_model, sampled_t_v, sampled_t_new_v, true);
 
   // src_model and tar_model should have same topology
-
-  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
-  {
-    this->testMeshPara(src_model);
-  }
 
   // update the target to same shape with source
   VertexList incomplete_src_v_list = src_model->getShapeVertexList();
@@ -2407,7 +2412,11 @@ void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::
 
   PolygonMesh* tar_poly_mesh = tar_model->getPolygonMesh();
   PolygonMesh* src_poly_mesh = src_model->getPolygonMesh();
-  const STLVectori& seen_vertex_set = mesh_para->seen_part->vertex_set;
+  STLVectori seen_vertex_set;
+  {
+    NormalTransfer normal_transfer;
+    normal_transfer.visibleVertexInNormalMap(src_model, "final_normal", seen_vertex_set);
+  }
 
   for (size_t i = 0; i < sampled_t_v.size(); ++i)
   {
