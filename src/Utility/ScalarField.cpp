@@ -149,19 +149,32 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
     // build tuned kdtree
     std::vector<float> tree_data;
     size_t n_pts = 0;
-    for (size_t i = 0; i < feature_model->target_curves.size(); ++i)
+
+    for (int i = 0; i < feature_model->target_edge_saliency.rows; ++i)
     {
-      for (size_t j = 0; j < feature_model->target_curves[i].size(); ++j)
+      for (int j = 0; j < feature_model->target_edge_saliency.cols; ++j)
       {
-        tree_data.push_back((float)feature_model->target_curves[i][j].x);
-        tree_data.push_back((float)feature_model->target_curves[i][j].y);
-        // to normalize the distance and saliency
-        // saliency need to multiply the scale
-        // para_a control the importance
-        tree_data.push_back((float)((para_w / (1 - para_w + 1e-3)) / scale * feature_model->target_edges_sp_sl[i][j]));
+        tree_data.push_back((float)j);
+        tree_data.push_back((float)(feature_model->target_edge_saliency.rows - 1 - i));
+        tree_data.push_back(feature_model->target_edge_saliency.at<float>(i, j) / scale);
         ++ n_pts;
       }
     }
+
+
+    //for (size_t i = 0; i < feature_model->target_curves.size(); ++i)
+    //{
+    //  for (size_t j = 0; j < feature_model->target_curves[i].size(); ++j)
+    //  {
+    //    tree_data.push_back((float)feature_model->target_curves[i][j].x);
+    //    tree_data.push_back((float)feature_model->target_curves[i][j].y);
+    //    // to normalize the distance and saliency
+    //    // saliency need to multiply the scale
+    //    // para_a control the importance
+    //    tree_data.push_back((float)((para_w / (1 - para_w + 1e-3)) / scale * feature_model->target_edges_sp_sl[i][j]));
+    //    ++ n_pts;
+    //  }
+    //}
     tuned_kdTree->initKDTree(tree_data, n_pts, 3);
   }
 
@@ -203,6 +216,11 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
       {
         pos[2] = para_w / (1 - para_w + 1e-3) / scale;
         tuned_kdTree->nearestPt(1, pos, nearest_sp, nearest_sp_dist, nearest_sp_id);
+        //nearest_sp.resize(3, 0.0);nearest_sp_id.push_back(0);
+        //int imgy = std::max(0, std::min(feature_model->target_edge_saliency.rows - 1 - int(pos[1] + 0.5), feature_model->target_edge_saliency.rows - 1));
+        //int imgx = std::max(0, std::min(int(pos[0] + 0.5), feature_model->target_edge_saliency.cols - 1));
+        //float s = feature_model->target_edge_saliency.at<float>(imgy, imgx);
+        //nearest_sp_dist.push_back(s * s);
       }
       float cur_dist = std::numeric_limits<float>::min();
       for (size_t k = 0; k < nearest_sp_id.size(); ++k)

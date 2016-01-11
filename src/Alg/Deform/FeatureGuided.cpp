@@ -120,7 +120,7 @@ void FeatureGuided::initTarRegister(int type)
   target_KDTree.reset(new KDTreeWrapper);
   BuildTargetEdgeKDTree();
 
-  target_scalar_field.reset(new ScalarField(300, 50));
+  target_scalar_field.reset(new ScalarField(500, 50));
   target_scalar_field->setTeleRegister(target_tele_register);
 }
 

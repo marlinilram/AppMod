@@ -339,7 +339,7 @@ bool VectorFieldCanvas::displayTargetCurves()
     glColor4f( 1.0f, 0.0f, 1.0f, alpha ) ;    
   }
   double threshold = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold");
-  glLineWidth(3);
+  glLineWidth(6);
   for (int i = 0; i < target_curves.size(); ++i)
   {
     float saliency = feature_model->getEdgesAverageSpSl()[i];
@@ -347,7 +347,7 @@ bool VectorFieldCanvas::displayTargetCurves()
     {
       glColor4f( 1 - saliency - threshold, 1 - saliency - threshold, 1 - saliency - threshold, alpha ) ;    
       glBegin(GL_LINE_STRIP);
-      for (int j = 0; j < target_curves[i].size(); ++j)
+      for (int j = 0; j < target_curves[i].size(); j += 5)
       {
         double2 pos = target_curves[i][j];
         glVertex3f( pos.x,pos.y, 0 ) ;
@@ -366,7 +366,7 @@ bool VectorFieldCanvas::displaySourceCurves()
   CURVES source_curves;
   this->feature_model->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
-  glLineWidth(3);
+  glLineWidth(12);
   if (render_mode == VectorField::SOURCE_MODE)      
   {
     glColor4f( 66.0 / 255.0, 152.0 / 255.0f, 23.0/255.0f, alpha ) ;
