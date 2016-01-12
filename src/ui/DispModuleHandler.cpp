@@ -446,3 +446,9 @@ void DispModuleHandler::loadDetailMap()
 {
   alg_handler->loadDetailMap();
 }
+
+void DispModuleHandler::updateSField(int type)
+{
+  source_vector_viewer->updateSourceField(type);
+  source_vector_viewer->updateGLOutside();
+}

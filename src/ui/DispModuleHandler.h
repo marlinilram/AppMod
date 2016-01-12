@@ -61,6 +61,7 @@ public:
   void testApplyDisplacement();
   void runApplyDisplacement();
   void loadDetailMap();
+  void updateSField(int type);
 
 public slots:
   void updateGeometryInteractive();
