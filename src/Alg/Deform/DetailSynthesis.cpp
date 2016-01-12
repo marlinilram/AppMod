@@ -915,6 +915,100 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
   std::cout << "OK IN COMPUTE DISPLACEMENT MAP HERE!" ;
 }
 
+void DetailSynthesis::computeDisplacementMap(cv::Mat& final_height, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map)
+{
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+  std::set<int> visible_faces;
+  ShapeUtility::visibleFacesInModel(src_model, visible_faces);
+  PolygonMesh* src_mesh = src_model->getPolygonMesh();
+
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+  PolygonMesh* tar_mesh = tar_model->getPolygonMesh();
+
+  //resolution = 512;
+  displacement_map = cv::Mat(resolution, resolution, CV_32FC1, -1);
+  displacement_max = std::numeric_limits<double>::min(), displacement_min = std::numeric_limits<double>::max();
+
+  double z_scale = src_model->getZScale();
+  std::vector<float> pt(2, 0);
+
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      pt[0] = float(x) / resolution;
+      pt[1] = float(y) / resolution;
+      int tar_face_id, src_face_id;
+      std::vector<int> tar_ids, src_ids;
+      std::vector<float> tar_lambda, src_lambda;
+      //ShapeUtility::findFaceId(x, y, resolution, kdTree, adjFaces_list, shape, face_id, lambda, id1, id2, id3);
+
+      bool in_tar_uv_mesh = ShapeUtility::findClosestUVFace(pt, tar_para_shape.get(), tar_lambda, tar_face_id, tar_ids);
+      pt[0] = float(x) / resolution; pt[1] = float(y) / resolution;
+      bool in_src_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), src_lambda, src_face_id, src_ids);
+      bool in_visible_faces = visible_faces.find(src_face_id) == visible_faces.end() ? false : true;
+      bool in_uv_mask = uv_mask.at<float>(resolution - 1 - y, x) > 0.5 ? true : false;
+      if (in_tar_uv_mesh && in_src_uv_mesh && in_visible_faces && in_uv_mask)
+      {
+        Vector3f tar_pos = tar_lambda[0] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[0]]))
+              + tar_lambda[1] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[1]]))
+              + tar_lambda[2] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[2]]));
+
+        Vector3f src_pos = src_lambda[0] * src_mesh->position(PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[0]]))
+              + src_lambda[1] * src_mesh->position(PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[1]]))
+              + src_lambda[2] * src_mesh->position(PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[2]]));
+
+        float winx, winy;
+        src_model->getProjectPt(src_pos.data(), winx, winy);
+        winy = winy < 0 ? 0 : (winy >= final_height.rows ? final_height.rows - 1 : winy);
+        winx = winx < 0 ? 0 : (winx >= final_height.cols ? final_height.cols - 1 : winx);
+        if(final_height.at<float>(winy, winx) > -1)
+        {
+          Vector3f height_pos;
+          if(!src_model->getUnprojectPt(winx, winy, (1 - final_height.at<float>(winy, winx) / z_scale), height_pos.data()))
+          {
+            displacement_map.at<float>(resolution - y - 1,x) = 0;
+          }
+          else
+          {
+            Vector3f dir = src_mesh->face_attribute<Vec3>("f:normal")[PolygonMesh::Face(src_para_shape->face_set[src_face_id])];
+            dir.normalize();
+            displacement_map.at<float>(resolution - y - 1,x) = (height_pos - tar_pos).dot(dir);
+            if(displacement_map.at<float>(resolution - y - 1,x) > displacement_max)
+            {
+              displacement_max = displacement_map.at<float>(resolution - y - 1,x);
+            }
+            if(displacement_map.at<float>(resolution - y - 1,x) < displacement_min)
+            {
+              displacement_min = displacement_map.at<float>(resolution - y - 1,x);
+            }
+          }
+        }
+        else
+        {
+          displacement_map.at<float>(resolution - y - 1,x) = 0;
+        }
+      }
+    }
+  }
+  
+  // normalize displacement : only for display, need to denormalize when it is used to applyDisplacementMap
+  std::cout << "min_displacement:" << displacement_min << std::endl;
+  std::cout << "max_displacement:" << displacement_max << std::endl;
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      if(uv_mask.at<float>(x, y) > 0.5)
+      {
+        displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+      }
+    }
+  }
+  std::cout << "OK IN COMPUTE DISPLACEMENT MAP HERE!" ;
+}
 
 void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask)
 {
@@ -2201,9 +2295,9 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, visible_faces, mask);
 
   // compute height mesh
-  //cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
-  //cv::Mat final_height_mat;
-  //fs2["final_height"] >> final_height_mat;
+  cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  cv::Mat final_height_mat;
+  fs2["final_height"] >> final_height_mat;
   //PolygonMesh height_mesh;
   //ShapeUtility::heightToMesh(final_height_mat, height_mesh, src_model);
   PolygonMesh height_mesh;
@@ -2211,7 +2305,8 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
 
   // compute displacement map
   cv::Mat displacement_map;
-  computeDisplacementMap(&height_mesh, src_model, tar_model, mask, displacement_map);
+  //computeDisplacementMap(&height_mesh, src_model, tar_model, mask, displacement_map);
+  computeDisplacementMap(final_height_mat, src_model, tar_model, mask, displacement_map);
   cv:imshow("displacement map", displacement_map);
 
   // denormalize displacement map
