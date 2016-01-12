@@ -5,6 +5,7 @@
 #include <cv.h>
 #include <set>
 #include "BasicHeader.h"
+#include "LgMeshTypes.h"
 
 class Model;
 class Shape;
@@ -13,6 +14,7 @@ namespace LG {
 class PolygonMesh;
 }
 class ParaShape;
+class Ray;
 
 namespace ShapeUtility
 {
@@ -84,6 +86,11 @@ namespace ShapeUtility
   int closestVertex(LG::PolygonMesh* src_mesh, std::vector<int>& src_v_ids, LG::PolygonMesh* tar_mesh, int tar_v_id);
 
   void getAverageNormalAroundVertex(LG::PolygonMesh* poly_mesh, int v_id, LG::Vec3& normal, int n_ring = 1);
+
+  void initBSPTreeRayFromPolyMesh(Ray* ray, LG::PolygonMesh* poly_mesh);
+  void visibleFacesInModel(std::shared_ptr<Model> model, std::set<int>& visible_faces);
+  void visibleVerticesInModel(std::shared_ptr<Model> model, std::set<int>& visible_vertices);
+  void nRingVertices(LG::PolygonMesh* poly_mesh, int v_id, std::set<int>& vertices, int n_ring = 1);
 }
 
 #endif

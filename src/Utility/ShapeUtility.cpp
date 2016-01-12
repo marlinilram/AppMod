@@ -1554,4 +1554,69 @@ namespace ShapeUtility
     }
     normal.normalize();
   }
+
+  void initBSPTreeRayFromPolyMesh(Ray* ray, LG::PolygonMesh* poly_mesh)
+  {
+    VertexList vertex_list;
+    for (auto vit : poly_mesh->vertices())
+    {
+      const Vec3& pt = poly_mesh->position(vit);
+      vertex_list.push_back(pt[0]);
+      vertex_list.push_back(pt[1]);
+      vertex_list.push_back(pt[2]);
+    }
+    FaceList face_list;
+    for (auto fit : poly_mesh->faces())
+    {
+      for (auto vfc_it : poly_mesh->vertices(fit))
+      {
+        face_list.push_back(vfc_it.idx());
+      }
+    } 
+    ray->passModel(vertex_list, face_list); // initialize the displacement mesh ray
+  }
+
+  void visibleFacesInModel(std::shared_ptr<Model> model, std::set<int>& visible_faces)
+  {
+    cv::Mat& primitive_ID_img = model->getPrimitiveIDImg();
+    visible_faces.clear();
+    for (int i = 0; i < primitive_ID_img.rows; ++i)
+    {
+      for (int j = 0; j < primitive_ID_img.cols; ++j)
+      {
+        int face_id = primitive_ID_img.at<int>(i, j);
+        if (face_id >= 0)
+        {
+          visible_faces.insert(face_id);
+        }
+      }
+    }
+  }
+  void visibleVerticesInModel(std::shared_ptr<Model> model, std::set<int>& visible_vertices)
+  {
+    std::set<int> visible_faces;
+    visible_vertices.clear();
+    const FaceList& face_list = model->getShapeFaceList();
+    for (auto i : visible_faces)
+    {
+      visible_vertices.insert(face_list[3 * i + 0]);
+      visible_vertices.insert(face_list[3 * i + 1]);
+      visible_vertices.insert(face_list[3 * i + 2]);
+    }
+  }
+
+  void nRingVertices(LG::PolygonMesh* poly_mesh, int v_id, std::set<int>& vertices, int n_ring)
+  {
+    std::set<int> f_ids;
+    getNRingFacesAroundVertex(poly_mesh, f_ids, v_id, n_ring);
+
+    vertices.clear();
+    for (auto i : f_ids)
+    {
+      for (auto vfc : poly_mesh->vertices(PolygonMesh::Face(i)))
+      {
+        vertices.insert(vfc.idx());
+      }
+    }
+  }
 }
