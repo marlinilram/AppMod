@@ -836,8 +836,9 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
   PolygonMesh* tar_mesh = tar_model->getPolygonMesh();
 
   //resolution = 512;
-  displacement_map = cv::Mat(resolution, resolution, CV_32FC1, -1);
+  displacement_map = cv::Mat(resolution, resolution, CV_32FC1, -100);
   displacement_max = std::numeric_limits<double>::min(), displacement_min = std::numeric_limits<double>::max();
+  std::vector<float> disp_records;
 
   std::vector<float> pt(2, 0);
   for(int x = 0; x < resolution; x ++)
@@ -863,6 +864,7 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
               + tar_lambda[2] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[2]]));
         Vector3f dir = src_mesh->face_attribute<Vec3>("f:normal")[PolygonMesh::Face(src_para_shape->face_set[src_face_id])];
         dir.normalize();
+        // what if use average normal here ?
         Vector3f end = pos + tar_model->getBoundBox()->getRadius() * dir;
         Vector3f neg_end = pos - tar_model->getBoundBox()->getRadius() * dir;
         Vector3f epslon(1e-5, 1e-5, 1e-5);
@@ -872,15 +874,16 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
         is_neg_intersected = ray_instance->intersectModel((pos - epslon).cast<double>(), neg_end.cast<double>(), neg_intersect_point.data());
         if(is_intersected == false && is_neg_intersected == false)
         {
-          displacement_map.at<float>(resolution - y - 1,x) = 0;
+          displacement_map.at<float>(resolution - y - 1,x) = -100;
+          uv_mask.at<float>(resolution - 1 - y, x) = 0; // if no intersection, we don't store this point and make it and outlier
         }
         else
         {
-          float distance;
-          float neg_distance;
-          distance = (intersect_point.cast<float>() - pos).norm();
-          neg_distance = (neg_intersect_point.cast<float>() - pos).norm();
-          displacement_map.at<float>(resolution - y - 1,x) = distance > neg_distance ? -neg_distance : distance;
+          float distance = (intersect_point.cast<float>() - pos).norm();;
+          float neg_distance = (neg_intersect_point.cast<float>() - pos).norm();;
+          float actual_distance = distance > neg_distance ? -neg_distance : distance;
+          displacement_map.at<float>(resolution - y - 1,x) = actual_distance;
+          disp_records.push_back(actual_distance);
           if(displacement_map.at<float>(resolution - y - 1,x) > displacement_max)
           {
             displacement_max = displacement_map.at<float>(resolution - y - 1,x);
@@ -898,20 +901,63 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
       }
     }
   }
+
+  // we need to deal with outlier here
+  // we can use histogram to filtered out outlier?
+  // ok use z-score to filtered out outlier
+  Eigen::Map<VectorXf>disp_records_vec(&disp_records[0], disp_records.size());
+  float disp_mean = disp_records_vec.mean();
+  float disp_sdev = sqrt((disp_records_vec.array() - disp_mean).matrix().squaredNorm() / disp_records.size());
+  float filter_scale = 3;
+  std::cout << "mean displacement: " << disp_mean << "\tstd displacement: " << disp_sdev << std::endl;
+
+  YMLHandler::saveToMat(tar_model->getOutputPath(), "displacement.mat", displacement_map);
   
   // normalize displacement : only for display, need to denormalize when it is used to applyDisplacementMap
-  std::cout << "min_displacement:" << displacement_min << std::endl;
-  std::cout << "max_displacement:" << displacement_max << std::endl;
-  for(int x = 0; x < resolution; x ++)
+  std::cout << "min_displacement before outlier filtering:" << displacement_min << std::endl;
+  std::cout << "max_displacement before outlier filtering:" << displacement_max << std::endl;
+  displacement_min = std::numeric_limits<float>::max();
+  displacement_max = std::numeric_limits<float>::min();
+
+  for (int x = 0; x < resolution; ++x)
   {
-    for(int y = 0; y < resolution; y ++)
+    for (int y = 0; y < resolution; ++y)
     {
-      if(uv_mask.at<float>(x, y) > 0.5)
+      if (uv_mask.at<float>(y, x) > 0.5)
       {
-        displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+        float z_score = (displacement_map.at<float>(y, x) - disp_mean) / disp_sdev;
+        if (fabs(z_score) > filter_scale * disp_sdev)
+        {
+          uv_mask.at<float>(y, x) = 0;
+          displacement_map.at<float>(y, x) = -100;
+        }
+        else
+        {
+          displacement_map.at<float>(y, x) = (displacement_map.at<float>(y, x) - (disp_mean - filter_scale * disp_sdev)) / (2 * filter_scale * disp_sdev);
+          if (displacement_map.at<float>(y, x) < displacement_min) displacement_min = displacement_map.at<float>(y, x);
+          if (displacement_map.at<float>(y, x) > displacement_max) displacement_max = displacement_map.at<float>(y, x);
+        }
       }
     }
   }
+
+  //for(int x = 0; x < resolution; x ++)
+  //{
+  //  for(int y = 0; y < resolution; y ++)
+  //  {
+  //    if(uv_mask.at<float>(x, y) > 0.5)
+  //    {
+  //      displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+  //    }
+  //  }
+  //}
+
+  displacement_min = disp_mean - filter_scale * disp_sdev;
+  displacement_max = displacement_min + 2 * filter_scale * disp_sdev;
+
+  std::cout << "min_displacement after outlier filtering:" << displacement_min << std::endl;
+  std::cout << "max_displacement after outlier filtering:" << displacement_max << std::endl;
+
   std::cout << "OK IN COMPUTE DISPLACEMENT MAP HERE!" ;
 }
 
@@ -1130,18 +1176,19 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
 
     bool in_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), lambda, face_id, id);
     int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
-    std::set<int> near_vertices;
-    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 1); // near_vertices stores the vertex id in source mesh not para shape
-    bool in_crest_line = false;
-    for (auto i_near : near_vertices)
-    {
-      if (crest_lines_points.find(i_near) != crest_lines_points.end())
-      {
-        in_crest_line = true;
-        break;
-      }
-    }
-    //bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+    //std::set<int> near_vertices;
+    //ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 1); // near_vertices stores the vertex id in source mesh not para shape
+    //bool in_crest_line = false;
+    //for (auto i_near : near_vertices)
+    //{
+    //  if (crest_lines_points.find(i_near) != crest_lines_points.end())
+    //  {
+    //    in_crest_line = true;
+    //    break;
+    //  }
+    //}
+    bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+    //bool in_crest_line = false; // test if using outlier filter can allow not use feature line detect now
 
     Vec3 normal_check(0, 0, 0);
     if (in_uv_mesh && !in_crest_line)
@@ -1164,7 +1211,9 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
     if(mask.at<float>(resolution - img_y - 1, img_x) == 1)
     {
       cur_disp = disp_map.at<float>(resolution - img_y - 1, img_x);
-      if (in_uv_mesh && !in_crest_line)
+      //bool outlier = cur_disp < -1 ? true : (cur_disp > 1 ? true : false);
+      bool outlier = false; // outlier has been put outside of the uv_mask now, determined by z-score
+      if (in_uv_mesh && !in_crest_line && !outlier)
       {
         pt_check = pt_check + scale * cur_disp * normal_check;
       }
@@ -1175,7 +1224,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
       
       new_tar_mesh.position(PolygonMesh::Vertex(vertex_set[i])) = pt_check;
 
-      //if (in_uv_mesh && !in_crest_line)
+      if (in_uv_mesh && !in_crest_line && !outlier)
       {
         displaced_vertex.push_back(vertex_set[i]);
         displaced_positions.push_back(pt_check[0]);
@@ -1186,7 +1235,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
   }
 
   std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
-  geometry_transfer->transferDeformation(tar_model, displaced_vertex, displaced_positions, 10.0f);
+  geometry_transfer->transferDeformation(tar_model, displaced_vertex, displaced_positions, 10.0f, false);
 
   char time_postfix[50];
   time_t current_time = time(NULL);

@@ -5,7 +5,11 @@
 #include "ARAP.h"
 #include "NormalConstraint.h"
 
+#include "PolygonMesh.h"
+
 #include <cv.h>
+
+using namespace LG;
 
 NormalTransfer::NormalTransfer()
 {
@@ -82,11 +86,25 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
     }
   }
 
+  std::set<int> crest_lines_faces;
+  PolygonMesh* mesh = model->getPolygonMesh();
+  for(size_t i = 0; i < model->getShapeCrestLine().size(); i ++)
+  {
+    for(size_t j = 0; j < model->getShapeCrestLine()[i].size(); j ++)
+    {
+      for (auto fvc : mesh->faces(PolygonMesh::Vertex(model->getShapeCrestLine()[i][j])))
+      {
+        crest_lines_faces.insert(fvc.idx());
+      }
+    }
+  }
+
   std::vector<int> faces_in_photo;
   std::vector<Vector3f> faces_new_normal;
   int count = 0;
   for (iter_map = normal_map.begin(); iter_map != normal_map.end(); ++iter_map)
   {
+    //if (crest_lines_faces.find(iter_map->first) != crest_lines_faces.end()) continue; // this face is around the shapr feature line
     faces_in_photo.push_back(iter_map->first);
     faces_new_normal.push_back(iter_map->second.normalized());
 
@@ -152,7 +170,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals, faces_in_photo);
   //normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals);
   normal_constraint->setLamdNormal(3.0f);
-  normal_constraint->setLamdVMove(5.0f);
+  normal_constraint->setLamdVMove(1.0f);
 
   solver->initCholesky();
   int max_iter = 20;
