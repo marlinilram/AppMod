@@ -2389,11 +2389,11 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
 
 void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
-  cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
-  cv::Mat final_height_mat;
-  fs2["final_height"] >> final_height_mat;
-  PolygonMesh new_mesh;
-  ShapeUtility::heightToMesh(final_height_mat, new_mesh, src_model);return;
+  //cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  //cv::Mat final_height_mat;
+  //fs2["final_height"] >> final_height_mat;
+  //PolygonMesh new_mesh;
+  //ShapeUtility::heightToMesh(final_height_mat, new_mesh, src_model);return;
 
   STLVectori sampled_t_v;
   STLVectorf sampled_t_new_v;

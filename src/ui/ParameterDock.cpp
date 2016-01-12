@@ -43,7 +43,7 @@ ParameterDock::ParameterDock()
   connect(TestApplyDisplacement_PushButton, SIGNAL(clicked()), this, SLOT(testApplyDisplacement()));
   connect(RunApplyDisplacement_pushButton, SIGNAL(clicked()), this, SLOT(runApplyDisplacement()));
   connect(Synthesis_Scale_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynthesisScale(double)));
-  connect(Crsp_Type_ComboBox, SIGNAL(stateChanged(int)), this, SLOT(setCrspTypeMode(int)));
+  connect(Crsp_Type_ComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setCrspTypeMode(int)));
   connect(GoAhead_PushButton, SIGNAL(clicked()), this, SLOT(isGoAhead()));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();

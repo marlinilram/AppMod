@@ -747,14 +747,14 @@ bool VectorFieldCanvas::displaySourceCrspList()
   }
 
   glPointSize(5) ;
-  glLineWidth(2);
+  glLineWidth(4);
 
   for (size_t i = 0; i < src_crsp_list.size(); ++i)
   {
     QColor color = 
       qtJetColor(double(i)/src_crsp_list.size());
     glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
-    glColor4f( 66.0 / 255.0, 152.0 / 255.0f, 23.0/255.0f, alpha ) ;
+    glColor4f( 322.0 / 255.0, 95.0 / 255.0f, 93.0/255.0f, alpha ) ;
 
     glBegin(GL_LINES);
     double2 pos_src = source_curves[src_crsp_list[i].first][src_crsp_list[i].second];
