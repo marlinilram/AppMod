@@ -58,6 +58,7 @@ public:
   void prepareFeatureMap(std::shared_ptr<Model> model);
   void prepareDetailMap(std::shared_ptr<Model> model);
   void applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask);
+  void applyDisplacementMap(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask);
   void startDetailSynthesis(std::shared_ptr<Model> model);
   void computeVectorField(std::shared_ptr<Model> model);
   void getDrawableActors(std::vector<GLActor>& actors);
@@ -78,6 +79,7 @@ private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list, std::set<int>& visible_faces);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces, cv::Mat& mask);
   void computeDisplacementMap(ParaShape* para_shape, VertexList& new_mesh_v, FaceList& new_mesh_f, std::shared_ptr<Model> model, std::set<int>& visible_faces, cv::Mat& uv_mask);
+  void computeDisplacementMap(LG::PolygonMesh* height_mesh, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map);
 
   void prepareLocalTransformCrsp(ParaShapePtr src_para, ParaShapePtr tar_para, ModelPtr src_model, ModelPtr tar_model, SynToolPtr syn_tool, const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids);
 
