@@ -559,7 +559,11 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
     }
   }*/
 
-  //crsp_map_out = crsp_map; return;
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:crsp_type") == 0)
+  {
+    crsp_map_out = crsp_map;
+    return;
+  }
 
   crsp_map_out.clear();
   std::vector<std::pair<int, int>> test_tar, test_src, test_path;
@@ -618,23 +622,30 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
     for(auto j : tar_id_candidate)
     {
       double2 previous_point;
+      double accu_dist = 0;
       for(size_t k = 0; k < n_tar_curves[j].size(); k ++)
       {
         if(k == 0)
         {
           test_tar.push_back(std::pair<int, int>(j, k));
-          previous_point = n_tar_curves[j][k];
+          //previous_point = n_tar_curves[j][k];
         }
         else
         {
-          double2 current_point;
-          current_point = n_tar_curves[j][k];
-          double2 diff = current_point - previous_point;
-          if(sqrt(diff.x * diff.x + diff.y * diff.y) >= feature_model->src_sample_rate[i] / 2)
+          //double2 current_point;
+          //current_point = n_tar_curves[j][k];
+          //double2 diff = current_point - previous_point;
+          accu_dist += (n_tar_curves[j][k] - n_tar_curves[j][k - 1]).norm();
+          if (accu_dist >= feature_model->src_sample_rate[i] / 2)
           {
             test_tar.push_back(std::pair<int, int>(j, k));
-            previous_point = n_tar_curves[j][k];
+            accu_dist = 0;
           }
+          //if(sqrt(diff.x * diff.x + diff.y * diff.y) >= feature_model->src_sample_rate[i] / 10)
+          //{
+          //  test_tar.push_back(std::pair<int, int>(j, k));
+          //  previous_point = n_tar_curves[j][k];
+          //}
           else if (k == (n_tar_curves[j].size() - 1))
           {
             test_tar.push_back(std::pair<int, int>(j, k));
@@ -655,7 +666,10 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
       }
     }
   }
-
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:crsp_type") == 2)
+  {
+    return;
+  }
   std::map<CurvePt, CrspCurvePt> t2s_map;
   for(auto i : crsp_map_out)
   {
@@ -882,7 +896,7 @@ void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, 
             //probability_continuity_k2j = 1;
             double cos_penalty = (hidden_diff.x * observation_diff.x + hidden_diff.y * observation_diff.y);
             double mag = hidden_diff.norm() * observation_diff.norm();
-            if (mag < 1e-4) cos_penalty = 0;
+            if (mag < 1e-9) cos_penalty = 0;
             else cos_penalty = cos_penalty / mag ;
             probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_d, 2) + 0.5 * pow((cos_penalty - 1) / para_e, 2);
           }

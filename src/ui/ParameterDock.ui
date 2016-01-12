@@ -24,8 +24,8 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-245</y>
-         <width>320</width>
+         <y>-148</y>
+         <width>336</width>
          <height>1077</height>
         </rect>
        </property>
@@ -347,6 +347,25 @@
                <property name="value">
                 <double>0.500000000000000</double>
                </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="Crsp_Type_ComboBox">
+               <item>
+                <property name="text">
+                 <string>Bi-Dir</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>HMM Prune</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>HMM</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -801,7 +820,15 @@
        <zorder>groupBox_3</zorder>
        <zorder>groupBox_2</zorder>
       </widget>
-      <widget class="QWidget" name="toolBoxPage2" native="true">
+      <widget class="QWidget" name="toolBoxPage2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>337</width>
+         <height>791</height>
+        </rect>
+       </property>
        <attribute name="label">
         <string/>
        </attribute>
