@@ -33,6 +33,7 @@ namespace ShapeUtility
   // an image tool
   void dilateImage(cv::Mat& mat, int max_n_dilate);
   void dilateImageMeetBoundary(cv::Mat& mat, cv::Mat& filled_mat, int i, int j);
+  void fillImageWithMask(cv::Mat& mat, cv::Mat& mask);
 
   void matToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model);
 

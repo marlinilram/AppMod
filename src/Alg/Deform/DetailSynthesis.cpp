@@ -887,7 +887,7 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
         if(is_intersected == false && is_neg_intersected == false)
         {
           displacement_map.at<float>(resolution - y - 1,x) = -100;
-          uv_mask.at<float>(resolution - 1 - y, x) = 0; // if no intersection, we don't store this point and make it and outlier
+          //uv_mask.at<float>(resolution - 1 - y, x) = 0; // if no intersection, we don't store this point and make it and outlier
         }
         else
         {
@@ -920,49 +920,49 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
   Eigen::Map<VectorXf>disp_records_vec(&disp_records[0], disp_records.size());
   float disp_mean = disp_records_vec.mean();
   float disp_sdev = sqrt((disp_records_vec.array() - disp_mean).matrix().squaredNorm() / disp_records.size());
-  float filter_scale = 10;
+  float filter_scale = 4;
   std::cout << "mean displacement: " << disp_mean << "\tstd displacement: " << disp_sdev << std::endl;
 
   YMLHandler::saveToMat(tar_model->getOutputPath(), "displacement.mat", displacement_map);
   
   // normalize displacement : only for display, need to denormalize when it is used to applyDisplacementMap
-  //std::cout << "min_displacement before outlier filtering:" << displacement_min << std::endl;
-  //std::cout << "max_displacement before outlier filtering:" << displacement_max << std::endl;
-  //displacement_min = std::numeric_limits<float>::max();
-  //displacement_max = std::numeric_limits<float>::min();
+  std::cout << "min_displacement before outlier filtering:" << displacement_min << std::endl;
+  std::cout << "max_displacement before outlier filtering:" << displacement_max << std::endl;
+  displacement_min = std::numeric_limits<float>::max();
+  displacement_max = std::numeric_limits<float>::min();
 
-  //for (int x = 0; x < resolution; ++x)
-  //{
-  //  for (int y = 0; y < resolution; ++y)
-  //  {
-  //    if (uv_mask.at<float>(y, x) > 0.5)
-  //    {
-  //      float z_score = (displacement_map.at<float>(y, x) - disp_mean) / disp_sdev;
-  //      if (fabs(z_score) > filter_scale * disp_sdev)
-  //      {
-  //        uv_mask.at<float>(y, x) = 0;
-  //        displacement_map.at<float>(y, x) = -100;
-  //      }
-  //      else
-  //      {
-  //        displacement_map.at<float>(y, x) = (displacement_map.at<float>(y, x) - (disp_mean - filter_scale * disp_sdev)) / (2 * filter_scale * disp_sdev);
-  //        if (displacement_map.at<float>(y, x) < displacement_min) displacement_min = displacement_map.at<float>(y, x);
-  //        if (displacement_map.at<float>(y, x) > displacement_max) displacement_max = displacement_map.at<float>(y, x);
-  //      }
-  //    }
-  //  }
-  //}
-
-  for(int x = 0; x < resolution; x ++)
+  for (int x = 0; x < resolution; ++x)
   {
-    for(int y = 0; y < resolution; y ++)
+    for (int y = 0; y < resolution; ++y)
     {
-      if(uv_mask.at<float>(x, y) > 0.5)
+      if (uv_mask.at<float>(y, x) > 0.5)
       {
-        displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+        float z_score = (displacement_map.at<float>(y, x) - disp_mean) / disp_sdev;
+        if (fabs(z_score) > filter_scale)
+        {
+          //uv_mask.at<float>(y, x) = 0;
+          displacement_map.at<float>(y, x) = -100;
+        }
+        else
+        {
+          displacement_map.at<float>(y, x) = (displacement_map.at<float>(y, x) - (disp_mean - filter_scale * disp_sdev)) / (2 * filter_scale * disp_sdev);
+          if (displacement_map.at<float>(y, x) < displacement_min) displacement_min = displacement_map.at<float>(y, x);
+          if (displacement_map.at<float>(y, x) > displacement_max) displacement_max = displacement_map.at<float>(y, x);
+        }
       }
     }
   }
+
+  //for(int x = 0; x < resolution; x ++)
+  //{
+  //  for(int y = 0; y < resolution; y ++)
+  //  {
+  //    if(uv_mask.at<float>(x, y) > 0.5)
+  //    {
+  //      displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+  //    }
+  //  }
+  //}
 
   //displacement_min = disp_mean - filter_scale * disp_sdev;
   //displacement_max = displacement_min + 2 * filter_scale * disp_sdev;
@@ -1991,14 +1991,26 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
   
-  cv::Mat mask;
+  this->test(src_model, tar_model);
+
+  //cv::Mat mask;
   if (masked_detail_image.empty())
   {
     std::cout << "please load detail image first." << std::endl;
     return;
   }
 
-  computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, mask);
+  cv::FileStorage fs(src_model->getOutputPath() + "/detail_map.xml", cv::FileStorage::READ);
+  cv::Mat ext_detail_map;
+  fs["detail_map"] >> ext_detail_map;
+
+  src_para_shape->detail_map.clear();
+  src_para_shape->detail_map.resize(4);
+  cv::split(ext_detail_map, &src_para_shape->detail_map[0]);
+
+  //computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, mask);
+
+
   /*std::vector<cv::Mat> for_merge; 
   for_merge.push_back(src_para_shape->detail_map[2]);
   for_merge.push_back(src_para_shape->detail_map[1]);
@@ -2012,7 +2024,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
   //cv::imwrite(src_model->getOutputPath() + "/displacement_map2048x2048.png", src_para_shape->detail_map[0] * 255);
   //return;
-  cv::Mat uv_mask;
+  //cv::Mat uv_mask;
   /*VertexList new_mesh_v;
   FaceList new_mesh_f;
   new_mesh_v.clear();
@@ -2374,9 +2386,23 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   cv::Mat displacement_map;
   computeDisplacementMap(&height_mesh, src_model, tar_model, mask, displacement_map);
   //computeDisplacementMap(final_height_mat, src_model, tar_model, mask, displacement_map);
-  cv:imshow("displacement map", displacement_map);
+  cv::imshow("displacement map", displacement_map.clone());
+  cv::imshow("uv mask", mask);
+  ShapeUtility::fillImageWithMask(displacement_map, cv::Mat(resolution, resolution, CV_32FC1, 1.0));
+  cv::imshow("displacement map after filling", displacement_map);
 
-  
+  src_para_shape->detail_map.push_back(displacement_map);
+  cv::Mat detail_rgbd;
+  cv::merge(src_para_shape->detail_map, detail_rgbd);
+  YMLHandler::saveToFile(src_model->getOutputPath(), "detail_map.xml", detail_rgbd);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance0.xml", src_para_shape->detail_map[0]);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance1.xml", src_para_shape->detail_map[1]);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance2.xml", src_para_shape->detail_map[2]);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "detail_map3.xml", src_para_shape->detail_map[3]);
+
+  return;
+
+
   // denormalize displacement map
   for(int x = 0; x < displacement_map.cols; x ++)
   {
