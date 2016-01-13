@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-130</y>
+         <y>0</y>
          <width>336</width>
-         <height>1077</height>
+         <height>1079</height>
         </rect>
        </property>
        <attribute name="label">
@@ -56,14 +56,25 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
-            <widget class="QCheckBox" name="Show_Image_CheckBox">
-             <property name="text">
-              <string>Show Image</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_15">
+             <item>
+              <widget class="QCheckBox" name="Show_Image_CheckBox">
+               <property name="text">
+                <string>Show Image</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="Show_Color_Crest_CheckBox">
+               <property name="text">
+                <string>Show Color Crest</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout">
@@ -614,6 +625,29 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QLabel" name="label_19">
+               <property name="text">
+                <string>t3</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="source_curves_t3_doubleSpinBox">
+               <property name="minimum">
+                <double>-1.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>-0.750000000000000</double>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
           </layout>
@@ -828,8 +862,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>98</width>
-         <height>28</height>
+         <width>337</width>
+         <height>791</height>
         </rect>
        </property>
        <attribute name="label">

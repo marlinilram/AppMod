@@ -218,6 +218,7 @@ bool ShapeCrest::connectable(int v_start, int v_ori_n, int v_cur_n)
   // as a crest line
   // Only if the cosine of between them is less than -0.75
   const VertexList& vertex_list = shape->getVertexList();
+  double connect_threshold = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("ShapCrest:source_curves_conntect_threshhold");
 
   Vector3f dir_0;
   dir_0 << vertex_list[3 * v_ori_n + 0] - vertex_list[3 * v_start + 0],
@@ -230,7 +231,7 @@ bool ShapeCrest::connectable(int v_start, int v_ori_n, int v_cur_n)
            vertex_list[3 * v_cur_n + 2] - vertex_list[3 * v_start + 2];
 
   float cur_cos = dir_0.dot(dir_1) / dir_0.norm() / dir_1.norm();
-  if (cur_cos < -0.75)
+  if (cur_cos < connect_threshold)
   {
     return true;
   }
