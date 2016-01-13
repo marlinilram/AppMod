@@ -61,6 +61,8 @@ private slots:
   void testApplyDisplacement();
   void runApplyDisplacement();
   void isGoAhead();
+
+  void setCrspTypeMode(int type_mode);
   
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;

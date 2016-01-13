@@ -5,6 +5,7 @@
 #include <cv.h>
 #include <set>
 #include "BasicHeader.h"
+#include "LgMeshTypes.h"
 
 class Model;
 class Shape;
@@ -13,6 +14,7 @@ namespace LG {
 class PolygonMesh;
 }
 class ParaShape;
+class Ray;
 
 namespace ShapeUtility
 {
@@ -31,6 +33,7 @@ namespace ShapeUtility
   // an image tool
   void dilateImage(cv::Mat& mat, int max_n_dilate);
   void dilateImageMeetBoundary(cv::Mat& mat, cv::Mat& filled_mat, int i, int j);
+  void fillImageWithMask(cv::Mat& mat, cv::Mat& mask);
 
   void matToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model);
 
@@ -80,6 +83,15 @@ namespace ShapeUtility
   void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName);
 
   int findLeftTopUVVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_ids);
+
+  int closestVertex(LG::PolygonMesh* src_mesh, std::vector<int>& src_v_ids, LG::PolygonMesh* tar_mesh, int tar_v_id);
+
+  void getAverageNormalAroundVertex(LG::PolygonMesh* poly_mesh, int v_id, LG::Vec3& normal, int n_ring = 1);
+
+  void initBSPTreeRayFromPolyMesh(Ray* ray, LG::PolygonMesh* poly_mesh);
+  void visibleFacesInModel(std::shared_ptr<Model> model, std::set<int>& visible_faces);
+  void visibleVerticesInModel(std::shared_ptr<Model> model, std::set<int>& visible_vertices);
+  void nRingVertices(LG::PolygonMesh* poly_mesh, int v_id, std::set<int>& vertices, int n_ring = 1);
 }
 
 #endif

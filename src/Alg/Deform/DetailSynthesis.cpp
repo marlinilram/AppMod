@@ -820,6 +820,254 @@ void DetailSynthesis::computeDisplacementMap(std::shared_ptr<Model> model)
   //applyDisplacementMap(mesh_para->vertex_set, mesh_para->cut_shape, model, displacement_map);
 }
 
+void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map)
+{
+  std::shared_ptr<Ray> ray_instance(new Ray);
+  ShapeUtility::initBSPTreeRayFromPolyMesh(ray_instance.get(), height_mesh);
+
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+  std::set<int> visible_faces;
+  ShapeUtility::visibleFacesInModel(src_model, visible_faces);
+  PolygonMesh* src_mesh = src_model->getPolygonMesh();
+
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+  PolygonMesh* tar_mesh = tar_model->getPolygonMesh();
+
+  //resolution = 512;
+  displacement_map = cv::Mat(resolution, resolution, CV_32FC1, -100);
+  displacement_max = std::numeric_limits<double>::min(), displacement_min = std::numeric_limits<double>::max();
+  std::vector<float> disp_records;
+
+  std::vector<float> pt(2, 0);
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      pt[0] = float(x) / resolution;
+      pt[1] = float(y) / resolution;
+      int tar_face_id, src_face_id;
+      std::vector<int> tar_ids, src_ids;
+      std::vector<float> tar_lambda, src_lambda;
+      //ShapeUtility::findFaceId(x, y, resolution, kdTree, adjFaces_list, shape, face_id, lambda, id1, id2, id3);
+
+      bool in_tar_uv_mesh = ShapeUtility::findClosestUVFace(pt, tar_para_shape.get(), tar_lambda, tar_face_id, tar_ids);
+      pt[0] = float(x) / resolution; pt[1] = float(y) / resolution;
+      bool in_src_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), src_lambda, src_face_id, src_ids);
+      bool in_visible_faces = visible_faces.find(src_face_id) == visible_faces.end() ? false : true;
+      bool in_uv_mask = uv_mask.at<float>(resolution - 1 - y, x) > 0.5 ? true : false;
+      /*int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), src_ids, tar_para_shape->cut_shape->getPolygonMesh(), i);
+      bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;*/
+      if (in_tar_uv_mesh && in_src_uv_mesh && in_visible_faces && in_uv_mask)
+      {
+        Vector3f pos = tar_lambda[0] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[0]]))
+              + tar_lambda[1] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[1]]))
+              + tar_lambda[2] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[2]]));
+        Vector3f dir = src_lambda[0] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[0]])]
+              + src_lambda[1] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[1]])]
+              + src_lambda[2] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[2]])];
+        dir.normalize();
+        /*Vector3f dir(0, 0, 0);
+        for (int it_v = 0; it_v < 3; ++it_v)
+        {
+          Vector3f cur_dir;
+          ShapeUtility::getAverageNormalAroundVertex(tar_mesh, tar_para_shape->vertex_set[tar_ids[it_v]], cur_dir, 2);
+          dir += tar_lambda[it_v] * cur_dir;
+        }
+        dir.normalize();*/
+        // what if use average normal here ?
+        Vector3f end = pos + tar_model->getBoundBox()->getRadius() * dir;
+        Vector3f neg_end = pos - tar_model->getBoundBox()->getRadius() * dir;
+        Vector3f epslon(1e-5, 1e-5, 1e-5);
+        Eigen::Vector3d intersect_point, neg_intersect_point;
+        bool is_intersected, is_neg_intersected;
+        is_intersected = ray_instance->intersectModel((pos + epslon).cast<double>(), end.cast<double>(), intersect_point.data());
+        is_neg_intersected = ray_instance->intersectModel((pos - epslon).cast<double>(), neg_end.cast<double>(), neg_intersect_point.data());
+        if(is_intersected == false && is_neg_intersected == false)
+        {
+          displacement_map.at<float>(resolution - y - 1,x) = -100;
+          //uv_mask.at<float>(resolution - 1 - y, x) = 0; // if no intersection, we don't store this point and make it and outlier
+        }
+        else
+        {
+          float distance = (intersect_point.cast<float>() - pos).norm();;
+          float neg_distance = (neg_intersect_point.cast<float>() - pos).norm();;
+          float actual_distance = distance > neg_distance ? -neg_distance : distance;
+          displacement_map.at<float>(resolution - y - 1,x) = actual_distance;
+          disp_records.push_back(actual_distance);
+          if(displacement_map.at<float>(resolution - y - 1,x) > displacement_max)
+          {
+            displacement_max = displacement_map.at<float>(resolution - y - 1,x);
+          }
+          if(displacement_map.at<float>(resolution - y - 1,x) < displacement_min)
+          {
+            displacement_min = displacement_map.at<float>(resolution - y - 1,x);
+          }
+        }
+      }
+      else
+      {
+        // fill with -1
+        // do nothing, initialzed with -1
+      }
+    }
+  }
+
+  // we need to deal with outlier here
+  // we can use histogram to filtered out outlier?
+  // ok use z-score to filtered out outlier
+  Eigen::Map<VectorXf>disp_records_vec(&disp_records[0], disp_records.size());
+  float disp_mean = disp_records_vec.mean();
+  float disp_sdev = sqrt((disp_records_vec.array() - disp_mean).matrix().squaredNorm() / disp_records.size());
+  float filter_scale = 4;
+  std::cout << "mean displacement: " << disp_mean << "\tstd displacement: " << disp_sdev << std::endl;
+
+  YMLHandler::saveToMat(tar_model->getOutputPath(), "displacement.mat", displacement_map);
+  
+  // normalize displacement : only for display, need to denormalize when it is used to applyDisplacementMap
+  std::cout << "min_displacement before outlier filtering:" << displacement_min << std::endl;
+  std::cout << "max_displacement before outlier filtering:" << displacement_max << std::endl;
+  displacement_min = std::numeric_limits<float>::max();
+  displacement_max = std::numeric_limits<float>::min();
+
+  for (int x = 0; x < resolution; ++x)
+  {
+    for (int y = 0; y < resolution; ++y)
+    {
+      if (uv_mask.at<float>(y, x) > 0.5)
+      {
+        float z_score = (displacement_map.at<float>(y, x) - disp_mean) / disp_sdev;
+        if (fabs(z_score) > filter_scale)
+        {
+          //uv_mask.at<float>(y, x) = 0;
+          displacement_map.at<float>(y, x) = -100;
+        }
+        else
+        {
+          displacement_map.at<float>(y, x) = (displacement_map.at<float>(y, x) - (disp_mean - filter_scale * disp_sdev)) / (2 * filter_scale * disp_sdev);
+          if (displacement_map.at<float>(y, x) < displacement_min) displacement_min = displacement_map.at<float>(y, x);
+          if (displacement_map.at<float>(y, x) > displacement_max) displacement_max = displacement_map.at<float>(y, x);
+        }
+      }
+    }
+  }
+
+  //for(int x = 0; x < resolution; x ++)
+  //{
+  //  for(int y = 0; y < resolution; y ++)
+  //  {
+  //    if(uv_mask.at<float>(x, y) > 0.5)
+  //    {
+  //      displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+  //    }
+  //  }
+  //}
+
+  //displacement_min = disp_mean - filter_scale * disp_sdev;
+  //displacement_max = displacement_min + 2 * filter_scale * disp_sdev;
+
+  std::cout << "min_displacement after outlier filtering:" << displacement_min << std::endl;
+  std::cout << "max_displacement after outlier filtering:" << displacement_max << std::endl;
+
+  std::cout << "OK IN COMPUTE DISPLACEMENT MAP HERE!" ;
+}
+
+void DetailSynthesis::computeDisplacementMap(cv::Mat& final_height, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map)
+{
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+  std::set<int> visible_faces;
+  ShapeUtility::visibleFacesInModel(src_model, visible_faces);
+  PolygonMesh* src_mesh = src_model->getPolygonMesh();
+
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+  PolygonMesh* tar_mesh = tar_model->getPolygonMesh();
+
+  //resolution = 512;
+  displacement_map = cv::Mat(resolution, resolution, CV_32FC1, -1);
+  displacement_max = std::numeric_limits<double>::min(), displacement_min = std::numeric_limits<double>::max();
+
+  double z_scale = src_model->getZScale();
+  std::vector<float> pt(2, 0);
+
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      pt[0] = float(x) / resolution;
+      pt[1] = float(y) / resolution;
+      int tar_face_id, src_face_id;
+      std::vector<int> tar_ids, src_ids;
+      std::vector<float> tar_lambda, src_lambda;
+      //ShapeUtility::findFaceId(x, y, resolution, kdTree, adjFaces_list, shape, face_id, lambda, id1, id2, id3);
+
+      bool in_tar_uv_mesh = ShapeUtility::findClosestUVFace(pt, tar_para_shape.get(), tar_lambda, tar_face_id, tar_ids);
+      pt[0] = float(x) / resolution; pt[1] = float(y) / resolution;
+      bool in_src_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), src_lambda, src_face_id, src_ids);
+      bool in_visible_faces = visible_faces.find(src_face_id) == visible_faces.end() ? false : true;
+      bool in_uv_mask = uv_mask.at<float>(resolution - 1 - y, x) > 0.5 ? true : false;
+      if (in_tar_uv_mesh && in_src_uv_mesh && in_visible_faces && in_uv_mask)
+      {
+        Vector3f tar_pos = tar_lambda[0] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[0]]))
+              + tar_lambda[1] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[1]]))
+              + tar_lambda[2] * tar_mesh->position(PolygonMesh::Vertex(tar_para_shape->vertex_set[tar_ids[2]]));
+
+        Vector3f src_pos = src_lambda[0] * src_mesh->position(PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[0]]))
+              + src_lambda[1] * src_mesh->position(PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[1]]))
+              + src_lambda[2] * src_mesh->position(PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[2]]));
+
+        float winx, winy;
+        src_model->getProjectPt(src_pos.data(), winx, winy);
+        winy = winy < 0 ? 0 : (winy >= final_height.rows ? final_height.rows - 1 : winy);
+        winx = winx < 0 ? 0 : (winx >= final_height.cols ? final_height.cols - 1 : winx);
+        if(final_height.at<float>(winy, winx) > -1)
+        {
+          Vector3f height_pos;
+          if(!src_model->getUnprojectPt(winx, winy, (1 - final_height.at<float>(winy, winx) / z_scale), height_pos.data()))
+          {
+            displacement_map.at<float>(resolution - y - 1,x) = 0;
+          }
+          else
+          {
+            Vector3f dir = src_mesh->face_attribute<Vec3>("f:normal")[PolygonMesh::Face(src_para_shape->face_set[src_face_id])];
+            dir.normalize();
+            displacement_map.at<float>(resolution - y - 1,x) = (height_pos - tar_pos).dot(dir);
+            if(displacement_map.at<float>(resolution - y - 1,x) > displacement_max)
+            {
+              displacement_max = displacement_map.at<float>(resolution - y - 1,x);
+            }
+            if(displacement_map.at<float>(resolution - y - 1,x) < displacement_min)
+            {
+              displacement_min = displacement_map.at<float>(resolution - y - 1,x);
+            }
+          }
+        }
+        else
+        {
+          displacement_map.at<float>(resolution - y - 1,x) = 0;
+        }
+      }
+    }
+  }
+  
+  // normalize displacement : only for display, need to denormalize when it is used to applyDisplacementMap
+  std::cout << "min_displacement:" << displacement_min << std::endl;
+  std::cout << "max_displacement:" << displacement_max << std::endl;
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      if(uv_mask.at<float>(x, y) > 0.5)
+      {
+        displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+      }
+    }
+  }
+  std::cout << "OK IN COMPUTE DISPLACEMENT MAP HERE!" ;
+}
+
 void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_ptr<Shape> cut_shape, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask)
 {
   std::set<int> crest_lines_points;
@@ -988,6 +1236,126 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
   WriteObj(output_name, shapes, materials);
 }
 
+void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask)
+{
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  tar_para_shape->initWithExtShape(tar_model);
+
+  std::set<int> crest_lines_points;
+  for(size_t i = 0; i < src_model->getShapeCrestLine().size(); i ++)
+  {
+    for(size_t j = 0; j < src_model->getShapeCrestLine()[i].size(); j ++)
+    {
+      crest_lines_points.insert(src_model->getShapeCrestLine()[i][j]);
+    }
+  }
+
+  double scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
+
+  std::vector<bool> visited_tag(tar_model->getPolygonMesh()->n_vertices(), false);
+
+  PolygonMesh* tar_mesh = tar_model->getPolygonMesh();
+  PolygonMesh* src_mesh = src_model->getPolygonMesh();
+
+  PolygonMesh new_tar_mesh = (*tar_mesh);
+  std::vector<int> displaced_vertex;
+  std::vector<float> displaced_positions;
+
+  const STLVectori& vertex_set = tar_para_shape->vertex_set;
+  std::shared_ptr<Shape> cut_shape = tar_para_shape->cut_shape;
+  for(int i = 0; i < vertex_set.size(); i ++)
+  {
+    if (visited_tag[vertex_set[i]]) continue;
+    visited_tag[vertex_set[i]] = true;
+    
+    float U,V;
+    U = (cut_shape->getUVCoord())[2 * i + 0];
+    V = (cut_shape->getUVCoord())[2 * i + 1];
+    std::vector<float> pt(2, 0);
+    pt[0] = U; pt[1] = V;
+    int face_id;
+    std::vector<int> id;
+    std::vector<float> lambda;
+
+    bool in_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), lambda, face_id, id);
+    int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
+    //bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+    std::set<int> near_vertices;
+    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 1); // near_vertices stores the vertex id in source mesh not para shape
+    bool in_crest_line = false;
+    for (auto i_near : near_vertices)
+    {
+      if (crest_lines_points.find(i_near) != crest_lines_points.end())
+      {
+        in_crest_line = true;
+        break;
+      }
+    }
+    //bool in_crest_line = false; // test if using outlier filter can allow not use feature line detect now
+
+    Vec3 normal_check(0, 0, 0);
+    if (in_uv_mesh && !in_crest_line)
+    {
+      // use face normal here
+      //normal_check = src_mesh->face_attribute<Vec3>("f:normal")[PolygonMesh::Face(src_para_shape->face_set[face_id])];
+      // use source mesh normal
+      normal_check = lambda[0] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[0]])]
+                   + lambda[1] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[1]])]
+                   + lambda[1] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[2]])];
+      normal_check.normalize();
+      /*ShapeUtility::getAverageNormalAroundVertex(tar_mesh, vertex_set[i], normal_check, 2);*/
+    }
+    else
+    {
+      // use the target average normal around this vertex
+      ShapeUtility::getAverageNormalAroundVertex(tar_mesh, vertex_set[i], normal_check, 2);
+    }
+    
+    // get vertex position and its displacement
+    Vec3 pt_check = tar_mesh->position(PolygonMesh::Vertex(vertex_set[i]));
+    int img_x,img_y;
+    img_x = std::max(0, std::min(int(U * (float)resolution), resolution - 1));
+    img_y = std::max(0, std::min(int(V * (float)resolution), resolution - 1));
+    float cur_disp = 0;
+    if(mask.at<float>(resolution - img_y - 1, img_x) == 1)
+    {
+      cur_disp = disp_map.at<float>(resolution - img_y - 1, img_x);
+      //bool outlier = cur_disp < -1 ? true : (cur_disp > 1 ? true : false);
+      bool outlier = false; // outlier has been put outside of the uv_mask now, determined by z-score
+      if (in_uv_mesh && !in_crest_line && !outlier)
+      {
+        pt_check = pt_check + scale * cur_disp * normal_check;
+      }
+      else if (in_crest_line && in_uv_mesh)
+      {
+        pt_check = pt_check + scale * cur_disp * normal_check;
+      }
+      
+      new_tar_mesh.position(PolygonMesh::Vertex(vertex_set[i])) = pt_check;
+
+      if (in_uv_mesh && !in_crest_line && !outlier)
+      {
+        displaced_vertex.push_back(vertex_set[i]);
+        displaced_positions.push_back(pt_check[0]);
+        displaced_positions.push_back(pt_check[1]);
+        displaced_positions.push_back(pt_check[2]);
+      }
+    }
+  }
+
+  std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+  geometry_transfer->transferDeformation(tar_model, displaced_vertex, displaced_positions, 10.0f, false);
+
+  char time_postfix[50];
+  time_t current_time = time(NULL);
+  strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+  std::string file_time_postfix = time_postfix;
+  std::string output_name = tar_model->getOutputPath() + "/detail_synthesis" + file_time_postfix + ".obj";
+  ShapeUtility::savePolyMesh(&new_tar_mesh, output_name);
+}
 
 void DetailSynthesis::startDetailSynthesis(std::shared_ptr<Model> model)
 {
@@ -1460,9 +1828,9 @@ void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model)
   cv::Mat detail_reflectance_mat;
   fs["reflectance"] >> detail_reflectance_mat;
 
-  cv::FileStorage fs2(src_model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
-  cv::Mat displacement_mat;
-  fs2["displacement"] >> displacement_mat;
+  //cv::FileStorage fs2(src_model->getDataPath() + "/displacement.xml", cv::FileStorage::READ);
+  //cv::Mat displacement_mat;
+  //fs2["displacement"] >> displacement_mat;
 
   std::vector<cv::Mat> temp_detail_image(3);
   cv::split(detail_reflectance_mat, &temp_detail_image[0]);
@@ -1490,7 +1858,7 @@ void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model)
   masked_detail_image.push_back(temp_detail_image[0]);
   masked_detail_image.push_back(temp_detail_image[1]);
   masked_detail_image.push_back(temp_detail_image[2]);
-  masked_detail_image.push_back(displacement_mat);
+  //masked_detail_image.push_back(displacement_mat);
 
   if(m_arg->points < 1)
   {
@@ -1623,14 +1991,26 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
   
-  cv::Mat mask;
+  this->test(src_model, tar_model);
+
+  //cv::Mat mask;
   if (masked_detail_image.empty())
   {
     std::cout << "please load detail image first." << std::endl;
     return;
   }
 
-  computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, mask);
+  cv::FileStorage fs(src_model->getOutputPath() + "/detail_map.xml", cv::FileStorage::READ);
+  cv::Mat ext_detail_map;
+  fs["detail_map"] >> ext_detail_map;
+
+  src_para_shape->detail_map.clear();
+  src_para_shape->detail_map.resize(4);
+  cv::split(ext_detail_map, &src_para_shape->detail_map[0]);
+
+  //computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, mask);
+
+
   /*std::vector<cv::Mat> for_merge; 
   for_merge.push_back(src_para_shape->detail_map[2]);
   for_merge.push_back(src_para_shape->detail_map[1]);
@@ -1644,7 +2024,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //computeDetailMap(src_para_shape.get(), new_detail_image, src_model, mesh_para->seen_part->cut_faces);
   //cv::imwrite(src_model->getOutputPath() + "/displacement_map2048x2048.png", src_para_shape->detail_map[0] * 255);
   //return;
-  cv::Mat uv_mask;
+  //cv::Mat uv_mask;
   /*VertexList new_mesh_v;
   FaceList new_mesh_f;
   new_mesh_v.clear();
@@ -1964,14 +2344,79 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, model, src_para_shape->detail_map[0], mask);*/
 
 
-  cv::FileStorage fs2(tar_model->getDataPath() + "/d2_displacement.yml", cv::FileStorage::READ);
+  /*cv::FileStorage fs2(tar_model->getDataPath() + "/d2_displacement.yml", cv::FileStorage::READ);
   cv::Mat d2_displacement_mat;
   fs2["d2_displacement"] >> d2_displacement_mat;
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(tar_model);
   cv::Mat mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
-  applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, tar_model, d2_displacement_mat, mask);
+  applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, tar_model, d2_displacement_mat, mask);*/
 
+  // test displacement map computation and apply
+
+  // load user decide masked detail map
+  this->loadDetailMap(src_model);
+
+  // prepare uv mask from computeDetailMap
+  this->resolution = 1024;
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+  
+  cv::Mat mask;
+  if (masked_detail_image.empty())
+  {
+    std::cout << "please load detail image first." << std::endl;
+    return;
+  }
+
+  std::set<int> visible_faces;
+  ShapeUtility::visibleFacesInModel(src_model, visible_faces);
+  computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, visible_faces, mask);
+
+  // compute height mesh
+  /*cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  cv::Mat final_height_mat;
+  fs2["final_height"] >> final_height_mat;*/
+  //PolygonMesh height_mesh;
+  //ShapeUtility::heightToMesh(final_height_mat, height_mesh, src_model);
+  PolygonMesh height_mesh;
+  read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj");
+
+  // compute displacement map
+  cv::Mat displacement_map;
+  computeDisplacementMap(&height_mesh, src_model, tar_model, mask, displacement_map);
+  //computeDisplacementMap(final_height_mat, src_model, tar_model, mask, displacement_map);
+  cv::imshow("displacement map", displacement_map.clone());
+  cv::imshow("uv mask", mask);
+  ShapeUtility::fillImageWithMask(displacement_map, cv::Mat(resolution, resolution, CV_32FC1, 1.0));
+  cv::imshow("displacement map after filling", displacement_map);
+
+  src_para_shape->detail_map.push_back(displacement_map);
+  cv::Mat detail_rgbd;
+  cv::merge(src_para_shape->detail_map, detail_rgbd);
+  YMLHandler::saveToFile(src_model->getOutputPath(), "detail_map.xml", detail_rgbd);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance0.xml", src_para_shape->detail_map[0]);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance1.xml", src_para_shape->detail_map[1]);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance2.xml", src_para_shape->detail_map[2]);
+  //YMLHandler::saveToFile(src_model->getOutputPath(), "detail_map3.xml", src_para_shape->detail_map[3]);
+
+  return;
+
+
+  // denormalize displacement map
+  for(int x = 0; x < displacement_map.cols; x ++)
+  {
+    for(int y = 0; y < displacement_map.rows; y ++)
+    {
+      if (mask.at<float>(y, x) > 0.5)
+      {
+        displacement_map.at<float>(y, x) = displacement_map.at<float>(y, x) * (displacement_max - displacement_min) + displacement_min;
+      }
+    }
+  }
+
+  // apply displacement map
+  applyDisplacementMap(src_model, tar_model, displacement_map, mask);
 }
 
 void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, STLVectori& sampled_t_v, STLVectorf& sampled_t_new_v, bool do_complete)
@@ -2023,6 +2468,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   //  return;
   //}
 
+  resolution = 512;
 
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(src_model);
@@ -2031,8 +2477,6 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(tar_model);
   kevin_vector_field->compute_s_hvf();
-
-  this->testMeshPara(src_model);
 
   //actors.clear();
   //kevin_vector_field->getDrawableActors(actors);return;
@@ -2085,23 +2529,28 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   src_mesh_center = src_mesh_center / poly_mesh->n_vertices();
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
-  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
+  std::set<int> face_in_normal;
+  {
+    NormalTransfer normal_transfer;
+    normal_transfer.visibleFaceInNormalMap(src_model, "final_normal", face_in_normal);
+  }
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, face_in_normal);
 
   float src_mesh_scale = src_model->getBoundBox()->getRadius();
   std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
   std::vector<float> src_feature_kd_data;
-  for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
-  {
-    for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
-    {
-      src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
-    }
-    Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
-    src_feature_kd_data.push_back(normalized_pos(0));
-    src_feature_kd_data.push_back(normalized_pos(1));
-    src_feature_kd_data.push_back(normalized_pos(2));
-  }
-  src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size() + 3);
+  //for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
+  //{
+  //  for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
+  //  {
+  //    src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
+  //  }
+  //  Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
+  //  src_feature_kd_data.push_back(normalized_pos(0));
+  //  src_feature_kd_data.push_back(normalized_pos(1));
+  //  src_feature_kd_data.push_back(normalized_pos(2));
+  //}
+  //src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size() + 3);
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -2385,17 +2834,18 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
 
 void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
+  //cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  //cv::Mat final_height_mat;
+  //fs2["final_height"] >> final_height_mat;
+  //PolygonMesh new_mesh;
+  //ShapeUtility::heightToMesh(final_height_mat, new_mesh, src_model);return;
+
   STLVectori sampled_t_v;
   STLVectorf sampled_t_new_v;
 
   this->doGeometryTransfer(src_model, tar_model, sampled_t_v, sampled_t_new_v, true);
 
   // src_model and tar_model should have same topology
-
-  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
-  {
-    this->testMeshPara(src_model);
-  }
 
   // update the target to same shape with source
   VertexList incomplete_src_v_list = src_model->getShapeVertexList();
@@ -2407,7 +2857,11 @@ void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::
 
   PolygonMesh* tar_poly_mesh = tar_model->getPolygonMesh();
   PolygonMesh* src_poly_mesh = src_model->getPolygonMesh();
-  const STLVectori& seen_vertex_set = mesh_para->seen_part->vertex_set;
+  STLVectori seen_vertex_set;
+  {
+    NormalTransfer normal_transfer;
+    normal_transfer.visibleVertexInNormalMap(src_model, "final_normal", seen_vertex_set);
+  }
 
   for (size_t i = 0; i < sampled_t_v.size(); ++i)
   {

@@ -6,6 +6,7 @@
 
 #include "Solver.h"
 #include "ARAP.h"
+#include "FastMassSpring.h"
 #include "MoveConstraint.h"
 
 #include "KDTreeWrapper.h"
@@ -50,7 +51,7 @@ void GeometryTransfer::prepareSampleVertex(std::shared_ptr<Model> tar_model, std
   v_ids.erase(std::unique(v_ids.begin(), v_ids.end()), v_ids.end());
 }
 
-void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move)
+void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move, bool use_arap)
 {
   FaceList face_list = tar_model->getShapeFaceList();
   VertexList vertex_list = tar_model->getShapeVertexList();
@@ -59,17 +60,36 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
   AdjList adj_list = tar_model->getShapeVertexAdjList();
 
   std::shared_ptr<Solver> solver(new Solver);
+  std::shared_ptr<FastMassSpring> fms(new FastMassSpring);
   std::shared_ptr<ARAP> arap(new ARAP);
   std::shared_ptr<MoveConstraint> move_constraint(new MoveConstraint);
 
   solver->problem_size = vertex_list.size();
   solver->P_Opt = Eigen::Map<VectorXf>(&(vertex_list)[0], (vertex_list).size());
-  solver->addConstraint(arap);
+  if (use_arap)
+  {
+    solver->addConstraint(arap);
+  }
+  else
+  {
+    solver->addConstraint(fms);
+  }
   solver->addConstraint(move_constraint);
 
-  arap->setSolver(solver);
-  arap->initConstraint(tar_model->getPolygonMesh());
-  arap->setLamdARAP(5.0f);
+  if (use_arap)
+  {
+    arap->setSolver(solver);
+    arap->initConstraint(tar_model->getPolygonMesh());
+    arap->setLamdARAP(5.0);
+  }
+  else
+  {
+    fms->setSolver(solver);
+    fms->initEdgeGraph(face_list, vertex_list, vertex_shared_faces);
+    fms->buildMatrix();
+    fms->setkStrech(1.0);
+    fms->setkBending(5.0);
+  }
 
   move_constraint->setSolver(solver);
   move_constraint->initMatrix(v_ids, v_list);

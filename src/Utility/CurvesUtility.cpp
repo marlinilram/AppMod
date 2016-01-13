@@ -124,6 +124,9 @@ bool closestPtFromSaliencyCurves(double2& tar_pt, std::vector<std::vector<double
       double2 diff = tar_pt - src_curves[i][j];
       double cur_score = sqrt(diff.x * diff.x + diff.y * diff.y);
       cur_score = pow(paras[0], paras[1]) / pow(cur_score + 0.0001, paras[2]);
+      // tuned kd score: 1 / sqrt(diff.x * diff.x + diff.y * diff.y + w / (1 - w) * (1 - s)^2)
+      // bigger is better
+      // cur_score = sqrt(diff.x * diff.x + diff.y * diff.y + 0.1 / 0.9 * pow(1 - paras[0], 2));
       if (cur_score > dis)
       {
         src_i = int(i);

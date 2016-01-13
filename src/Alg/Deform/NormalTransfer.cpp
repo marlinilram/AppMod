@@ -5,7 +5,11 @@
 #include "ARAP.h"
 #include "NormalConstraint.h"
 
+#include "PolygonMesh.h"
+
 #include <cv.h>
+
+using namespace LG;
 
 NormalTransfer::NormalTransfer()
 {
@@ -82,11 +86,25 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
     }
   }
 
+  std::set<int> crest_lines_faces;
+  PolygonMesh* mesh = model->getPolygonMesh();
+  for(size_t i = 0; i < model->getShapeCrestLine().size(); i ++)
+  {
+    for(size_t j = 0; j < model->getShapeCrestLine()[i].size(); j ++)
+    {
+      for (auto fvc : mesh->faces(PolygonMesh::Vertex(model->getShapeCrestLine()[i][j])))
+      {
+        crest_lines_faces.insert(fvc.idx());
+      }
+    }
+  }
+
   std::vector<int> faces_in_photo;
   std::vector<Vector3f> faces_new_normal;
   int count = 0;
   for (iter_map = normal_map.begin(); iter_map != normal_map.end(); ++iter_map)
   {
+    //if (crest_lines_faces.find(iter_map->first) != crest_lines_faces.end()) continue; // this face is around the shapr feature line
     faces_in_photo.push_back(iter_map->first);
     faces_new_normal.push_back(iter_map->second.normalized());
 
@@ -152,7 +170,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals, faces_in_photo);
   //normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals);
   normal_constraint->setLamdNormal(3.0f);
-  normal_constraint->setLamdVMove(5.0f);
+  normal_constraint->setLamdVMove(1.0f);
 
   solver->initCholesky();
   int max_iter = 20;
@@ -181,4 +199,63 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
 void NormalTransfer::getDrawableActors(std::vector<GLActor>& actors)
 {
    actors = this->actors;
+}
+
+void NormalTransfer::visibleFaceInNormalMap(std::shared_ptr<Model> model, std::string normal_file_name, std::set<int>& face_in_normal)
+{
+  cv::Mat photo_normal;
+
+  cv::FileStorage fs(model->getDataPath() + "/" + normal_file_name.c_str() + ".xml", cv::FileStorage::READ);
+  fs[normal_file_name.c_str()] >> photo_normal;
+  cv::imshow("normal_img", photo_normal);
+
+  // the origin of coordinate system of normal image
+  // is top left corner
+  // channel 1 -> n_y
+  // channel 2 -> n_x
+  // channel 3 -> n_z
+  // screen system origin bottom left corner
+
+  cv::Mat &primitive_id_img = model->getPrimitiveIDImg();
+  int *primitive_id_ptr = (int *)primitive_id_img.data;
+
+  face_in_normal.clear();
+  std::set<int>::iterator iter_set;
+
+  for (int i = 0; i < primitive_id_img.rows; ++i)
+  {
+    for (int j = 0; j < primitive_id_img.cols; ++j)
+    {
+      int face_id = primitive_id_ptr[i * primitive_id_img.cols + j];
+      if (face_id >= 0)
+      {
+        int x = j;
+        int y = i;
+        cv::Vec3f normal_in_photo = photo_normal.at<cv::Vec3f>(y, x);
+
+        if (normal_in_photo[0] < -1 || normal_in_photo[1] < -1 || normal_in_photo[2] < -1) continue;
+
+        face_in_normal.insert(face_id);
+      }
+    }
+  }
+}
+
+void NormalTransfer::visibleVertexInNormalMap(std::shared_ptr<Model> model, std::string normal_file_name, STLVectori& vertex_in_normal)
+{
+  std::set<int> face_in_normal;
+  this->visibleFaceInNormalMap(model, normal_file_name, face_in_normal);
+
+  vertex_in_normal.clear();
+  const FaceList& face_list = model->getShapeFaceList();
+  for (auto i : face_in_normal)
+  {
+    vertex_in_normal.push_back(face_list[3 * i + 0]);
+    vertex_in_normal.push_back(face_list[3 * i + 1]);
+    vertex_in_normal.push_back(face_list[3 * i + 2]);
+  }
+
+  std::sort(vertex_in_normal.begin(), vertex_in_normal.end());
+  vertex_in_normal.erase(std::unique(vertex_in_normal.begin(), vertex_in_normal.end()), vertex_in_normal.end());
+  vertex_in_normal.shrink_to_fit();
 }

@@ -13,9 +13,10 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:a", 0.7);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:b", 0.5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:w", 0.1);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:c", 1.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:c", 2.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:d", 5.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:e", 5.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("SField:crsp_type", 1);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:WinWidth", 1.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:WinCenter", 0.5);
@@ -28,6 +29,7 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_flat", 0.01);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_data", 0.5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_SField", 0.5);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("LFeature:delete_interactive_reverse", false);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("SnapShot:SaveToFile", 1);
 
