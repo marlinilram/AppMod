@@ -868,6 +868,7 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
               + src_lambda[1] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[1]])]
               + src_lambda[2] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[src_ids[2]])];
         dir.normalize();
+        if (_isnan(dir[0])) std::cout << "nan in normal computing!!!" << std::endl;
         /*Vector3f dir(0, 0, 0);
         for (int it_v = 0; it_v < 3; ++it_v)
         {
@@ -945,7 +946,7 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
         }
         else
         {
-          displacement_map.at<float>(y, x) = (displacement_map.at<float>(y, x) - (disp_mean - filter_scale * disp_sdev)) / (2 * filter_scale * disp_sdev);
+          //displacement_map.at<float>(y, x) = (displacement_map.at<float>(y, x) - (disp_mean - filter_scale * disp_sdev)) / (2 * filter_scale * disp_sdev);
           if (displacement_map.at<float>(y, x) < displacement_min) displacement_min = displacement_map.at<float>(y, x);
           if (displacement_map.at<float>(y, x) > displacement_max) displacement_max = displacement_map.at<float>(y, x);
         }
@@ -953,16 +954,16 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
     }
   }
 
-  //for(int x = 0; x < resolution; x ++)
-  //{
-  //  for(int y = 0; y < resolution; y ++)
-  //  {
-  //    if(uv_mask.at<float>(x, y) > 0.5)
-  //    {
-  //      displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
-  //    }
-  //  }
-  //}
+  for(int x = 0; x < resolution; x ++)
+  {
+    for(int y = 0; y < resolution; y ++)
+    {
+      if(uv_mask.at<float>(x, y) > 0.5)
+      {
+        displacement_map.at<float>(x, y) = (displacement_map.at<float>(x, y) - displacement_min) / (displacement_max - displacement_min);
+      }
+    }
+  }
 
   //displacement_min = disp_mean - filter_scale * disp_sdev;
   //displacement_max = displacement_min + 2 * filter_scale * disp_sdev;
@@ -1264,6 +1265,11 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
   std::vector<int> displaced_vertex;
   std::vector<float> displaced_positions;
 
+  // for debug
+  float min = std::numeric_limits<float>::max();
+  float max = std::numeric_limits<float>::min();
+  std::vector<Vec3> cache_normal;
+
   const STLVectori& vertex_set = tar_para_shape->vertex_set;
   std::shared_ptr<Shape> cut_shape = tar_para_shape->cut_shape;
   for(int i = 0; i < vertex_set.size(); i ++)
@@ -1304,8 +1310,9 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
       // use source mesh normal
       normal_check = lambda[0] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[0]])]
                    + lambda[1] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[1]])]
-                   + lambda[1] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[2]])];
+                   + lambda[2] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[2]])];
       normal_check.normalize();
+      if (_isnan(normal_check[0])) std::cout << "nan in normal computing!!!" << std::endl;
       /*ShapeUtility::getAverageNormalAroundVertex(tar_mesh, vertex_set[i], normal_check, 2);*/
     }
     else
@@ -1320,7 +1327,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
     img_x = std::max(0, std::min(int(U * (float)resolution), resolution - 1));
     img_y = std::max(0, std::min(int(V * (float)resolution), resolution - 1));
     float cur_disp = 0;
-    if(mask.at<float>(resolution - img_y - 1, img_x) == 1)
+    if(mask.at<float>(resolution - img_y - 1, img_x) > 0.5)
     {
       cur_disp = disp_map.at<float>(resolution - img_y - 1, img_x);
       //bool outlier = cur_disp < -1 ? true : (cur_disp > 1 ? true : false);
@@ -1342,8 +1349,23 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
         displaced_positions.push_back(pt_check[0]);
         displaced_positions.push_back(pt_check[1]);
         displaced_positions.push_back(pt_check[2]);
+
+        if (cur_disp > max) max = cur_disp;
+        if (cur_disp < min) min = cur_disp;
+        cache_normal.push_back(normal_check);
       }
     }
+  }
+  
+  std::cout << "min: " << min << "\tmax: " << max <<std::endl;
+  std::ofstream fdebug(tar_model->getOutputPath() + "/displace_info.txt");
+  if (fdebug)
+  {
+    for (size_t i = 0; i < displaced_vertex.size(); ++i)
+    {
+      fdebug << displaced_vertex[i] << " " << displaced_positions[3 * i + 0] << " " << displaced_positions[3 * i + 1] << " " << displaced_positions[3 * i + 2] << " " << cache_normal[i].transpose() << std::endl;
+    }
+    fdebug.close();
   }
 
   std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
@@ -2000,15 +2022,20 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     return;
   }
 
-  cv::FileStorage fs(src_model->getOutputPath() + "/detail_map.xml", cv::FileStorage::READ);
-  cv::Mat ext_detail_map;
-  fs["detail_map"] >> ext_detail_map;
+  {
+    cv::FileStorage fs(src_model->getOutputPath() + "/detail_map.xml", cv::FileStorage::READ);
+    cv::Mat ext_detail_map;
+    fs["detail_map"] >> ext_detail_map;
 
-  src_para_shape->detail_map.clear();
-  src_para_shape->detail_map.resize(4);
-  cv::split(ext_detail_map, &src_para_shape->detail_map[0]);
+    std::vector<cv::Mat> detail_map_splitter(4);
+    cv::split(ext_detail_map, &detail_map_splitter[0]);
+    cv::Mat displacement_map;
+    displacement_map = detail_map_splitter[3];
 
-  //computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, mask);
+    cv::Mat src_uv_mask;
+    computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, src_uv_mask);
+    src_para_shape->detail_map.push_back(displacement_map);
+  }
 
 
   /*std::vector<cv::Mat> for_merge; 
@@ -2217,10 +2244,10 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 
   // finished CCA, go ahead
 
-  cv::FileStorage fs3(src_model->getDataPath() + "/new_X1.xml", cv::FileStorage::READ); 
+  cv::FileStorage fs3(src_model->getOutputPath() + "/new_X1.xml", cv::FileStorage::READ); 
   cv::Mat new_X1;
   fs3["new_X1"] >> new_X1;
-  cv::FileStorage fs4(src_model->getDataPath() + "/new_X2.xml", cv::FileStorage::READ); 
+  cv::FileStorage fs4(tar_model->getOutputPath() + "/new_X2.xml", cv::FileStorage::READ); 
   cv::Mat new_X2;
   fs4["new_X2"] >> new_X2;
 
@@ -2400,7 +2427,6 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance2.xml", src_para_shape->detail_map[2]);
   //YMLHandler::saveToFile(src_model->getOutputPath(), "detail_map3.xml", src_para_shape->detail_map[3]);
 
-  return;
 
 
   // denormalize displacement map
