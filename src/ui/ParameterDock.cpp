@@ -36,6 +36,7 @@ ParameterDock::ParameterDock()
   connect(lamd_data_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdData(double)));
   connect(lamd_SField_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdSField(double)));
   connect(source_curves_t1_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSourceCurvesThreshold(double)));
+  connect(source_curves_t3_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSourceCurvesConnectThreshold(double)));
   connect(target_curves_t2_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setTargetCurvesThreshold(double)));
   connect(SField_c_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpc(double)));
   connect(SField_d_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpd(double)));
@@ -45,6 +46,7 @@ ParameterDock::ParameterDock()
   connect(Synthesis_Scale_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynthesisScale(double)));
   connect(Crsp_Type_ComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setCrspTypeMode(int)));
   connect(GoAhead_PushButton, SIGNAL(clicked()), this, SLOT(isGoAhead()));
+  connect(Show_Color_Crest_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(setShowColorCrest(int)));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -264,6 +266,12 @@ void ParameterDock::setSourceCurvesThreshold(double val)
   disp_modules->updateShapeCrest();
 }
 
+void ParameterDock::setSourceCurvesConnectThreshold(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("ShapCrest:source_curves_conntect_threshhold") = val;
+  disp_modules->updateShapeCrest();
+}
+
 void ParameterDock::setTargetCurvesThreshold(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold") = val;
@@ -294,4 +302,10 @@ void ParameterDock::setCrspTypeMode(int type_mode)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:crsp_type") = type_mode;
   disp_modules->updateSField(6);
+}
+
+void ParameterDock::setShowColorCrest(int state)
+{
+  if (state != 0) LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("ShapCrest:source_curves_show_color") = true;
+  else LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("ShapCrest:source_curves_show_color") = false;
 }

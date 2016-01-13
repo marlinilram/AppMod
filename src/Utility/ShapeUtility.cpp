@@ -257,11 +257,12 @@ namespace ShapeUtility
     bool regenerate = false;
     // test if the file exist
     std::ifstream inFile(model->getDataPath() + "/symmetry.txt");
-    if (!inFile.is_open())
+    //if (!inFile.is_open())
     {
       std::cout << "Not existed or failed to load." << std::endl;
       regenerate = true;
     }
+    inFile.close();
 
     PolygonMesh* poly_mesh = model->getPolygonMesh();
     PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");

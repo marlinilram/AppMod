@@ -37,6 +37,8 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<Matrix4f>("Lightball:cameraTransform", Matrix4f::Identity());
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("ShapCrest:source_curves_threshhold", 0.75);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("ShapCrest:source_curves_conntect_threshhold", -0.75);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("ShapCrest:source_curves_show_color", false);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("FeatureGuided:target_curves_threshhold", 0.5);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:scale", 1.0);

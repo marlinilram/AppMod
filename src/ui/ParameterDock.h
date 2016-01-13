@@ -53,6 +53,8 @@ private slots:
   void setLamdData(double val);
   void setLamdSField(double val);
   void setSourceCurvesThreshold(double val);
+  void setSourceCurvesConnectThreshold(double val);
+  void setShowColorCrest(int state);
   void setTargetCurvesThreshold(double val);
   void setSynthesisScale(double val);
 

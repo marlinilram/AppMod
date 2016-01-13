@@ -1369,7 +1369,9 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
   }
 
   std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+  VertexList old_tar_v_positions = tar_model->getShapeVertexList();
   geometry_transfer->transferDeformation(tar_model, displaced_vertex, displaced_positions, 10.0f, false);
+  tar_model->updateShape(old_tar_v_positions); // return to old shape
 
   char time_postfix[50];
   time_t current_time = time(NULL);
