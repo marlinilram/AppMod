@@ -170,7 +170,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals, faces_in_photo);
   //normal_constraint->initMatrix(face_list, vertex_list, vertex_shared_faces, normal_list, new_normals);
   normal_constraint->setLamdNormal(3.0f);
-  normal_constraint->setLamdVMove(1.0f);
+  normal_constraint->setLamdVMove(5.0f);
 
   solver->initCholesky();
   int max_iter = 20;
