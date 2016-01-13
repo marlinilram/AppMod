@@ -469,7 +469,7 @@ namespace ShapeUtility
         for (int j = 0; j < mat.cols; ++j)
         {
           int offset = i * mat.cols + j;
-          if (mat_ptr[offset] <= 0)
+          if (mat_ptr[offset] < 0)
           {
             dilateImageMeetBoundary(mat, temp_mat, i, j);
           }
@@ -517,7 +517,7 @@ namespace ShapeUtility
         row_id = std::max(std::min(row_id, mat.rows - 1), 0);
         col_id = std::max(std::min(col_id, mat.cols - 1), 0);
         int ooffset = row_id * mat.cols + col_id;
-        if (mat_ptr[ooffset] > 0)
+        if (mat_ptr[ooffset] >= 0)
         {
           value += mat_ptr[ooffset];
           ++n_value;
@@ -526,8 +526,37 @@ namespace ShapeUtility
     }
     if (n_value != 0)
     {
-      filled_mat_ptr[offset] = 1 + value / n_value;
+      filled_mat_ptr[offset] = value / n_value;
     }
+    else
+    {
+      filled_mat_ptr[offset] = 0;
+    }
+  }
+
+  void fillImageWithMask(cv::Mat& mat, cv::Mat& mask)
+  {
+    bool full_in_mask = true;
+    do
+    {
+      full_in_mask = true;
+      cv::Mat this_iter_mat = mat.clone();
+      for (int i = 0; i < mat.rows; i++)
+      {
+        for (int j = 0; j < mat.cols; j++)
+        {
+          if (mask.at<float>(i, j) > 0.5)
+          {
+            if (mat.at<float>(i, j) < 0)
+            {
+              dilateImageMeetBoundary(mat, this_iter_mat, i, j);
+              full_in_mask = false;
+            }
+          }
+        }
+      }
+      mat = this_iter_mat;
+    } while (!full_in_mask);
   }
 
   void matToMesh(cv::Mat& mat, LG::PolygonMesh& mesh, std::shared_ptr<Model> shape_model)
