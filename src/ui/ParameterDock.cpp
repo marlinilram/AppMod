@@ -36,6 +36,7 @@ ParameterDock::ParameterDock()
   connect(lamd_data_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdData(double)));
   connect(lamd_SField_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setLamdSField(double)));
   connect(source_curves_t1_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSourceCurvesThreshold(double)));
+  connect(source_curves_t3_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSourceCurvesConnectThreshold(double)));
   connect(target_curves_t2_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setTargetCurvesThreshold(double)));
   connect(SField_c_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpc(double)));
   connect(SField_d_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSFieldExpd(double)));
@@ -45,12 +46,15 @@ ParameterDock::ParameterDock()
   connect(Synthesis_Scale_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynthesisScale(double)));
   connect(Crsp_Type_ComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setCrspTypeMode(int)));
   connect(GoAhead_PushButton, SIGNAL(clicked()), this, SLOT(isGoAhead()));
+  connect(Show_Color_Crest_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(setShowColorCrest(int)));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
   {
     connect(checkBox_FeatureRenderMode.at(i), SIGNAL(stateChanged(int)), this, SLOT(setFeatureRender(int)));
   }
+
+  this->setSlotsSynParamters();
 }
 
 ParameterDock::~ParameterDock()
@@ -264,6 +268,12 @@ void ParameterDock::setSourceCurvesThreshold(double val)
   disp_modules->updateShapeCrest();
 }
 
+void ParameterDock::setSourceCurvesConnectThreshold(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("ShapCrest:source_curves_conntect_threshhold") = val;
+  disp_modules->updateShapeCrest();
+}
+
 void ParameterDock::setTargetCurvesThreshold(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("FeatureGuided:target_curves_threshhold") = val;
@@ -294,4 +304,71 @@ void ParameterDock::setCrspTypeMode(int type_mode)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:crsp_type") = type_mode;
   disp_modules->updateSField(6);
+}
+
+void ParameterDock::setShowColorCrest(int state)
+{
+  if (state != 0) LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("ShapCrest:source_curves_show_color") = true;
+  else LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("ShapCrest:source_curves_show_color") = false;
+}
+
+void ParameterDock::setSlotsSynParamters()
+{
+  connect(Synthesis_Res_spinBox, SIGNAL(valueChanged(int)), this, SLOT(setSynResolution(int)));
+  connect(Synthesis_PryLevels_spinBox, SIGNAL(valueChanged(int)), this, SLOT(setSynPryLevels(int)));
+  connect(Synthesis_PatchSize_spinBox, SIGNAL(valueChanged(int)), this, SLOT(setSynPatchSize(int)));
+  connect(Synthesis_MaxIter_spinBox, SIGNAL(valueChanged(int)), this, SLOT(setSynMaxIter(int)));
+  connect(Synthesis_RandSize_spinBox, SIGNAL(valueChanged(int)), this, SLOT(setSynRandSize(int)));
+
+  connect(Synthesis_occ_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynOcc(double)));
+  connect(Synthesis_biasrate_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBiasRate(double)));
+  connect(Synthesis_betacenter_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBetaCenter(double)));
+  connect(Synthesis_betamultdoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBetaMult(double)));
+}
+
+void ParameterDock::setSynResolution(int val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution") = val;
+;
+}
+
+void ParameterDock::setSynPryLevels(int val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels") = val;
+
+}
+
+void ParameterDock::setSynPatchSize(int val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size") = val;
+}
+
+void ParameterDock::setSynMaxIter(int val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter") = val;
+}
+
+void ParameterDock::setSynRandSize(int val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size") = val;
+}
+
+void ParameterDock::setSynOcc(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ") = val;
+}
+
+void ParameterDock::setSynBiasRate(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate") = val;
+}
+
+void ParameterDock::setSynBetaCenter(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_center") = val;
+}
+
+void ParameterDock::setSynBetaMult(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult") = val;
 }

@@ -31,7 +31,16 @@ void GeometryTransfer::prepareSampleVertex(std::shared_ptr<Model> tar_model, std
   // load sampled mesh
 
   PolygonMesh sample_mesh;
-  read_poly(sample_mesh, tar_model->getDataPath() + "/sampled.obj");
+  if (!read_poly(sample_mesh, tar_model->getDataPath() + "/sampled.obj"))
+  {
+    std::cout << "no sampled.obj exist, use all vertices instead." << std::endl;
+    v_ids.clear();
+    for (size_t i = 0; i < tar_model->getPolygonMesh()->n_vertices(); ++i)
+    {
+      v_ids.push_back((int)i);
+    }
+    return;
+  }
 
   v_ids.clear();
   std::shared_ptr<Shape> tar_shape = tar_model->getShape();

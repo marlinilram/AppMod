@@ -580,6 +580,8 @@ void MainCanvas::drawShapeCrest()
   //const std::vector<STLVectori>& crest_lines = model->getShapeCrestLine();
   const NormalList& vertex_normal = model->getShapeNormalList();
 
+  bool use_color_crest = LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("ShapCrest:source_curves_show_color");
+
   Matrix4f model_transform = Matrix4f::Identity();
   if (render_with_model_transform != 0)
   {
@@ -609,10 +611,16 @@ void MainCanvas::drawShapeCrest()
 
   for (size_t i = 0; i < crest_lines.size(); ++i)
   {
-    QColor color = 
-      qtJetColor(double(i)/crest_lines.size());
-    //glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
-    glColor4f( 66.0 / 255.0, 220.0 / 255.0f, 23.0/255.0f, 0 ) ;
+    if (use_color_crest)
+    {
+      QColor color = 
+        qtJetColor(double(i)/crest_lines.size());
+      glColor4f( color.redF(), color.greenF(), color.blueF(), 0.1f );
+    }
+    else
+    {
+      glColor4f( 66.0 / 255.0, 220.0 / 255.0f, 23.0/255.0f, 0 ) ;
+    }
     //glColor4f(0.0f, 1.0f, 0.0f, 0.0f);
     glBegin(GL_LINE_STRIP);
 

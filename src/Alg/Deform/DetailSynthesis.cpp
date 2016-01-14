@@ -1288,18 +1288,18 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
 
     bool in_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), lambda, face_id, id);
     int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
-    //bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
-    std::set<int> near_vertices;
-    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 1); // near_vertices stores the vertex id in source mesh not para shape
-    bool in_crest_line = false;
-    for (auto i_near : near_vertices)
-    {
-      if (crest_lines_points.find(i_near) != crest_lines_points.end())
-      {
-        in_crest_line = true;
-        break;
-      }
-    }
+    bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+    //std::set<int> near_vertices;
+    //ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 1); // near_vertices stores the vertex id in source mesh not para shape
+    //bool in_crest_line = false;
+    //for (auto i_near : near_vertices)
+    //{
+    //  if (crest_lines_points.find(i_near) != crest_lines_points.end())
+    //  {
+    //    in_crest_line = true;
+    //    break;
+    //  }
+    //}
     //bool in_crest_line = false; // test if using outlier filter can allow not use feature line detect now
 
     Vec3 normal_check(0, 0, 0);
@@ -1369,7 +1369,9 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
   }
 
   std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+  VertexList old_tar_v_positions = tar_model->getShapeVertexList();
   geometry_transfer->transferDeformation(tar_model, displaced_vertex, displaced_positions, 10.0f, false);
+  tar_model->updateShape(old_tar_v_positions); // return to old shape
 
   char time_postfix[50];
   time_t current_time = time(NULL);
@@ -1626,9 +1628,16 @@ void DetailSynthesis::computeVectorField(std::shared_ptr<Model> model)
   }
 }
 
-void DetailSynthesis::getDrawableActors(std::vector<GLActor>& actors)
+void DetailSynthesis::getDrawableActors(std::vector<GLActor>& actors, int actros_id)
 {
-  actors = this->actors;
+  if (actros_id == 0)
+  {
+    actors = this->actors;
+  }
+  else
+  {
+    actors = this->syn_actors;
+  }
 }
 
 void DetailSynthesis::testShapePlane(std::shared_ptr<Model> model)
@@ -2311,7 +2320,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   syn_tool->patch_size = 10;
   syn_tool->max_iter = 5;
   syn_tool->best_random_size = 5;
-  syn_tool->lamd_occ = 0.005;
+  syn_tool->lamd_occ = 0.00;
   syn_tool->lamd_gradient = 0.1;
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
   syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
@@ -2407,7 +2416,23 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   //PolygonMesh height_mesh;
   //ShapeUtility::heightToMesh(final_height_mat, height_mesh, src_model);
   PolygonMesh height_mesh;
-  read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj");
+  if (!read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj"))
+  {
+    cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+    cv::Mat final_height_mat;
+    fs2["final_height"] >> final_height_mat;
+    PolygonMesh new_mesh;
+    ShapeUtility::heightToMesh(final_height_mat, new_mesh, src_model);
+    ShapeUtility::savePolyMesh(&new_mesh, tar_model->getDataPath() + "/height_mesh.obj");
+    std::cout << "plese cut height mesh!!!" << std::endl;
+    system("pause");
+    if (!read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj"))
+    {
+      std::cout << "failed to load height_mesh.obj" << std::endl;
+      return;
+    }
+  }
+
 
   // compute displacement map
   cv::Mat displacement_map;
@@ -2494,25 +2519,32 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   //  return;
   //}
 
-  resolution = 512;
+  resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
 
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(src_model);
   kevin_vector_field->compute_s_hvf();
 
+  actors.clear();
+  kevin_vector_field->getDrawableActors(actors);
+
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(tar_model);
   kevin_vector_field->compute_s_hvf();
 
+  syn_actors.clear();
+  kevin_vector_field->getDrawableActors(syn_actors);
+
   //actors.clear();
   //kevin_vector_field->getDrawableActors(actors);return;
+  //return;
 
   ShapeUtility::computeNormalizedHeight(src_model);
-  //ShapeUtility::computeDirectionalOcclusion(src_model);
+  ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   //ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
-  //ShapeUtility::computeDirectionalOcclusion(tar_model);
+  ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
   //ShapeUtility::computeSolidAngleCurvature(tar_model);return;
 
@@ -2533,9 +2565,9 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   for (auto vit : poly_mesh->vertices())
   {
     vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
+    //vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
+    //vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
+    //vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
     /*vertex_feature_list[vit.idx()].push_back(solid_angles[vit](0));
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](1));
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](2));
@@ -2547,7 +2579,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
-      //vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
 
     src_mesh_center += poly_mesh->position(vit);
@@ -2557,26 +2589,27 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   src_para_shape->initWithExtShape(src_model);
   std::set<int> face_in_normal;
   {
-    NormalTransfer normal_transfer;
-    normal_transfer.visibleFaceInNormalMap(src_model, "final_normal", face_in_normal);
+    //NormalTransfer normal_transfer;
+    //normal_transfer.visibleFaceInNormalMap(src_model, "final_normal", face_in_normal);
+    ShapeUtility::visibleFacesInModel(src_model, face_in_normal);
   }
   computeFeatureMap(src_para_shape.get(), vertex_feature_list, face_in_normal);
 
   float src_mesh_scale = src_model->getBoundBox()->getRadius();
   std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
   std::vector<float> src_feature_kd_data;
-  //for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
-  //{
-  //  for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
-  //  {
-  //    src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
-  //  }
-  //  Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
-  //  src_feature_kd_data.push_back(normalized_pos(0));
-  //  src_feature_kd_data.push_back(normalized_pos(1));
-  //  src_feature_kd_data.push_back(normalized_pos(2));
-  //}
-  //src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size() + 3);
+  for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
+  {
+    for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
+    {
+      src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
+    }
+    //Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
+    //src_feature_kd_data.push_back(normalized_pos(0));
+    //src_feature_kd_data.push_back(normalized_pos(1));
+    //src_feature_kd_data.push_back(normalized_pos(2));
+  }
+  src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size());
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -2590,9 +2623,9 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   for (auto vit : poly_mesh->vertices())
   {
     vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
-    vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
+    //vertex_feature_list[vit.idx()].push_back((v_normals[vit][0] + 1.0) / 2.0);
+    //vertex_feature_list[vit.idx()].push_back((v_normals[vit][1] + 1.0) / 2.0);
+    //vertex_feature_list[vit.idx()].push_back((v_normals[vit][2] + 1.0) / 2.0);
     /*vertex_feature_list[vit.idx()].push_back(solid_angles[vit](0));
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](1));
     vertex_feature_list[vit.idx()].push_back(solid_angles[vit](2));
@@ -2604,7 +2637,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
-      //vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
+      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
     }
 
     tar_mesh_center += poly_mesh->position(vit);
@@ -2616,11 +2649,12 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
   // not necessary
   syn_tool.reset(new SynthesisTool);
-  syn_tool->levels = 5;
-  syn_tool->patch_size = 10;
-  syn_tool->max_iter = 5;
-  syn_tool->best_random_size = 5;
-  syn_tool->lamd_occ = 0;
+  syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+  syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+  syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+  syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+  syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+  syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
   syn_tool->setExportPath(tar_model->getOutputPath());
   syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
 
@@ -2654,21 +2688,20 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   // possible two ways here
   // 1. use kdtree to search most similar vertex on source model by features
   // 2. use the NNF from syn_tool
-
   // get corresponding vertices on source
   std::vector<STLVectori> src_v_ids;
   {
-    this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, src_model, tar_model, syn_tool, sampled_tar_model, src_v_ids);
+    this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, src_model, tar_model, syn_tool, sampled_tar_model, src_v_ids);std::cout << "test" << std::endl;
 
     //float tar_mesh_scale = tar_model->getBoundBox()->getRadius();
     //for (size_t i = 0; i < sampled_tar_model.size(); ++i)
     //{
     //  STLVectorf tar_feature_vec = vertex_feature_list[sampled_tar_model[i]];
-    //  Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(sampled_tar_model[i])) - tar_mesh_center) / tar_mesh_scale;
-    //  normalized_pos(0) = normalized_pos(0) < 0 ? -normalized_pos(0) : normalized_pos(0);
-    //  tar_feature_vec.push_back(normalized_pos(0));
-    //  tar_feature_vec.push_back(normalized_pos(1));
-    //  tar_feature_vec.push_back(normalized_pos(2));
+    //  //Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(sampled_tar_model[i])) - tar_mesh_center) / tar_mesh_scale;
+    //  //normalized_pos(0) = normalized_pos(0) < 0 ? -normalized_pos(0) : normalized_pos(0);
+    //  //tar_feature_vec.push_back(normalized_pos(0));
+    //  //tar_feature_vec.push_back(normalized_pos(1));
+    //  //tar_feature_vec.push_back(normalized_pos(2));
     //  int src_v_id = 0;
     //  src_feature_kd->nearestPt(tar_feature_vec, src_v_id);
     //  src_v_ids.push_back(mesh_para->seen_part->vertex_set[src_v_id]);
@@ -2678,19 +2711,18 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   }
 
   // normal transform to get the local transform
+  PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
   {
     NormalTransfer normal_transfer;
-    PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
     normal_transfer.prepareNewNormal(src_model, "final_normal");
     ShapeUtility::computeLocalTransform(&old_src_mesh, src_model->getPolygonMesh());
   }
 
   STLVectorf new_v_list;
   ShapeUtility::prepareLocalTransform(src_model->getPolygonMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, tar_model->getBoundBox()->getRadius() / src_model->getBoundBox()->getRadius());
-
-  actors.clear();
-  actors.push_back(GLActor(ML_POINT, 3.0f));
-  actors.push_back(GLActor(ML_LINE, 1.0f));
+  syn_actors.clear();
+  syn_actors.push_back(GLActor(ML_POINT, 3.0f));
+  syn_actors.push_back(GLActor(ML_LINE, 1.0f));
   
   for(size_t i = 0; i < sampled_tar_model.size(); i ++)
   {
@@ -2698,13 +2730,14 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     start[0] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 0];
     start[1] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 1];
     start[2] = tar_model->getShapeVertexList()[3 * sampled_tar_model[i] + 2];
-    end[0] = new_v_list[3 * i + 0];
-    end[1] = new_v_list[3 * i + 1];
-    end[2] = new_v_list[3 * i + 2];
-    actors[0].addElement(start[0], start[1], start[2], 1, 0, 0);
-    actors[0].addElement(end[0], end[1], end[2], 0, 0, 1);
-    actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
-    actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
+    //end[0] = new_v_list[3 * i + 0];
+    //end[1] = new_v_list[3 * i + 1];
+    //end[2] = new_v_list[3 * i + 2];
+    end = old_src_mesh.position(PolygonMesh::Vertex(src_v_ids[i][0]));
+    syn_actors[0].addElement(start[0], start[1], start[2], 1, 0, 0);
+    syn_actors[0].addElement(end[0], end[1], end[2], 0, 0, 1);
+    syn_actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
+    syn_actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
   }
   //ShapeUtility::savePolyMesh(tar_model->getPolygonMesh(), tar_model->getOutputPath() + "/testlocaltransform.obj");  return;
 
@@ -2770,10 +2803,29 @@ void DetailSynthesis::prepareLocalTransformCrsp(
         pt[1] = float(src_uv.second) / resolution;
         int src_v_id = 0;
         src_para->kdTree_UV->nearestPt(pt, src_v_id);
+        //auto iter = src_v_id_mult.find(src_para->vertex_set[src_v_id]);
+        //if (iter == src_v_id_mult.end())
+        //{
+        //  src_v_id_mult[src_para->vertex_set[src_v_id]] = 1;
+        //}
+        //else
+        //{
+        //  iter->second += 1;
+        //}
         src_v_id_mult.push_back(src_para->vertex_set[src_v_id]);
       }
       //std::sort(src_v_id_mult.begin(), src_v_id_mult.end());
       //src_v_id_mult.erase(std::unique(src_v_id_mult.begin(), src_v_id_mult.end()), src_v_id_mult.end());
+      //int most_src_v_id = -1;
+      //int most_cnt = 0;
+      //for (auto iter : src_v_id_mult)
+      //{
+      //  if (iter.second > most_cnt)
+      //  {
+      //    most_cnt = iter.second;
+      //    most_src_v_id = iter.first;
+      //  }
+      //}
       src_v_ids.push_back(src_v_id_mult);
     }
   }
@@ -2782,10 +2834,13 @@ void DetailSynthesis::prepareLocalTransformCrsp(
 void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids)
 {
   // first do the mesh parametrization
-  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
-  {
-    this->testMeshPara(src_model);
-  }
+  //if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  //{
+  //  this->testMeshPara(src_model);
+  //}
+
+  std::set<int> visible_faces;
+  ShapeUtility::visibleFacesInModel(src_model, visible_faces);
 
   // use the seen cut face to find the source patches
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
@@ -2801,6 +2856,7 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
     mesh_para->doMeshParamterizationPatch(src_model, src_components[i], &src_patches[i], start_v_id);
     std::cout << "src component " << i << " : " << src_components[i].size() << std::endl;
   }
+  int visible_patches = ShapeUtility::getVisiblePatchIDinPatches(src_patches);
 
   std::cout << "src components: " << src_components.size() << std::endl;
 

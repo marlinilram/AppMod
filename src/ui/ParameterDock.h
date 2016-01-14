@@ -53,8 +53,22 @@ private slots:
   void setLamdData(double val);
   void setLamdSField(double val);
   void setSourceCurvesThreshold(double val);
+  void setSourceCurvesConnectThreshold(double val);
+  void setShowColorCrest(int state);
   void setTargetCurvesThreshold(double val);
   void setSynthesisScale(double val);
+
+  void setSlotsSynParamters();
+  void setSynResolution(int val);
+  void setSynPryLevels(int val);
+  void setSynPatchSize(int val);
+  void setSynMaxIter(int val);
+  void setSynRandSize(int val);
+  void setSynOcc(double val);
+  void setSynBiasRate(double val);
+  void setSynBetaCenter(double val);
+  void setSynBetaMult(double val);
+
 
   void setLFRegMethod(int state);
   void runLFRegNonRigid();

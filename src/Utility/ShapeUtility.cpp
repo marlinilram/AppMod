@@ -257,11 +257,12 @@ namespace ShapeUtility
     bool regenerate = false;
     // test if the file exist
     std::ifstream inFile(model->getDataPath() + "/symmetry.txt");
-    if (!inFile.is_open())
+    //if (!inFile.is_open())
     {
       std::cout << "Not existed or failed to load." << std::endl;
       regenerate = true;
     }
+    inFile.close();
 
     PolygonMesh* poly_mesh = model->getPolygonMesh();
     PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
@@ -1647,5 +1648,28 @@ namespace ShapeUtility
         vertices.insert(vfc.idx());
       }
     }
+  }
+
+  int getVisiblePatchIDinPatches(std::vector<ParaShape>& patches, std::set<int>& ori_visible_faces)
+  {
+    int best_id = 0;
+    int best_face_cnt = 0;
+    for (size_t i = 0; i < patches.size(); ++i)
+    {
+      int cur_face_cnt = 0;
+      for (auto j : ori_visible_faces)
+      {
+        if (patches[i].cut_faces.find(j) != patches[i].cut_faces.end())
+        {
+          ++cur_face_cnt;
+        }
+      }
+      if (cur_face_cnt > best_face_cnt)
+      {
+        best_face_cnt = cur_face_cnt;
+        best_id = int(i);
+      }
+    }
+    return best_id;
   }
 }
