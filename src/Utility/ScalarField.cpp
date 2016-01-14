@@ -150,31 +150,31 @@ void ScalarField::computeDistanceMap(FeatureGuided* feature_model)
     std::vector<float> tree_data;
     size_t n_pts = 0;
 
-    for (int i = 0; i < feature_model->target_edge_saliency.rows; ++i)
-    {
-      for (int j = 0; j < feature_model->target_edge_saliency.cols; ++j)
-      {
-        tree_data.push_back((float)j);
-        tree_data.push_back((float)(feature_model->target_edge_saliency.rows - 1 - i));
-        tree_data.push_back(feature_model->target_edge_saliency.at<float>(i, j) / scale);
-        ++ n_pts;
-      }
-    }
-
-
-    //for (size_t i = 0; i < feature_model->target_curves.size(); ++i)
+    //for (int i = 0; i < feature_model->target_edge_saliency.rows; ++i)
     //{
-    //  for (size_t j = 0; j < feature_model->target_curves[i].size(); ++j)
+    //  for (int j = 0; j < feature_model->target_edge_saliency.cols; ++j)
     //  {
-    //    tree_data.push_back((float)feature_model->target_curves[i][j].x);
-    //    tree_data.push_back((float)feature_model->target_curves[i][j].y);
-    //    // to normalize the distance and saliency
-    //    // saliency need to multiply the scale
-    //    // para_a control the importance
-    //    tree_data.push_back((float)((para_w / (1 - para_w + 1e-3)) / scale * feature_model->target_edges_sp_sl[i][j]));
+    //    tree_data.push_back((float)j);
+    //    tree_data.push_back((float)(feature_model->target_edge_saliency.rows - 1 - i));
+    //    tree_data.push_back(feature_model->target_edge_saliency.at<float>(i, j) / scale);
     //    ++ n_pts;
     //  }
     //}
+
+
+    for (size_t i = 0; i < feature_model->target_curves.size(); ++i)
+    {
+      for (size_t j = 0; j < feature_model->target_curves[i].size(); ++j)
+      {
+        tree_data.push_back((float)feature_model->target_curves[i][j].x);
+        tree_data.push_back((float)feature_model->target_curves[i][j].y);
+        // to normalize the distance and saliency
+        // saliency need to multiply the scale
+        // para_a control the importance
+        tree_data.push_back((float)((para_w / (1 - para_w + 1e-3)) / scale * feature_model->target_edges_sp_sl[i][j]));
+        ++ n_pts;
+      }
+    }
     tuned_kdTree->initKDTree(tree_data, n_pts, 3);
   }
 

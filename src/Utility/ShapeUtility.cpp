@@ -1649,4 +1649,27 @@ namespace ShapeUtility
       }
     }
   }
+
+  int getVisiblePatchIDinPatches(std::vector<ParaShape>& patches, std::set<int>& ori_visible_faces)
+  {
+    int best_id = 0;
+    int best_face_cnt = 0;
+    for (size_t i = 0; i < patches.size(); ++i)
+    {
+      int cur_face_cnt = 0;
+      for (auto j : ori_visible_faces)
+      {
+        if (patches[i].cut_faces.find(j) != patches[i].cut_faces.end())
+        {
+          ++cur_face_cnt;
+        }
+      }
+      if (cur_face_cnt > best_face_cnt)
+      {
+        best_face_cnt = cur_face_cnt;
+        best_id = int(i);
+      }
+    }
+    return best_id;
+  }
 }

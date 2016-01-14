@@ -431,8 +431,8 @@ void DispModuleHandler::updateTargetCurves()
 void DispModuleHandler::testApplyDisplacement()
 {
   alg_handler->testApplyDisplacement();
-  //trackball_viewer->setGLActors(alg_handler->getGLActors());
-  synthesis_viewer->setGLActors(alg_handler->getGLActors());
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
+  synthesis_viewer->setGLActors(alg_handler->getSynGLActors());
   //main_canvas_viewer->setSynthesisReflectance();
   updateCanvas();
 }

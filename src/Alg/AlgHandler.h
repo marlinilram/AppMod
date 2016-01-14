@@ -25,6 +25,7 @@ public:
   void setShapeModel(std::shared_ptr<Model> model);
   void setSynthesisModel(std::shared_ptr<Model> model);
   std::vector<GLActor>& getGLActors() { return actors; };
+  std::vector<GLActor>& getSynGLActors() { return syn_actors; };
   bool workable();
 
   void doProjOptimize();
@@ -56,6 +57,7 @@ private:
   // parameters for algorithms
   //float sample_density;
   std::vector<GLActor> actors;
+  std::vector<GLActor> syn_actors;
 
 private:
   AlgHandler(const AlgHandler&);
