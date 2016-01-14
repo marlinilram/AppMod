@@ -47,6 +47,7 @@ ParameterDock::ParameterDock()
   connect(Crsp_Type_ComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setCrspTypeMode(int)));
   connect(GoAhead_PushButton, SIGNAL(clicked()), this, SLOT(isGoAhead()));
   connect(Show_Color_Crest_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(setShowColorCrest(int)));
+  connect(N_Ring_DoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNRing(double)));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -304,6 +305,11 @@ void ParameterDock::setCrspTypeMode(int type_mode)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:crsp_type") = type_mode;
   disp_modules->updateSField(6);
+}
+
+void ParameterDock::setNRing(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:n_ring") = int(val);
 }
 
 void ParameterDock::setShowColorCrest(int state)

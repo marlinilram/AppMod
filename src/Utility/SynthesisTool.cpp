@@ -31,6 +31,8 @@ SynthesisTool::SynthesisTool()
   lamd_occ = 0.01; // must activate, but low weight
   max_iter = 5;
   lamd_gradient = 0.1;
+  beta_func_center = 0.5;
+  beta_func_mult = 5;
 
   /*std::ofstream outFile(outputPath + "/parameter_info.txt");
   if (!outFile.is_open())
@@ -1076,16 +1078,16 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
       this->initializeTarDetail(gptar_detail, l, is_doComplete);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
-        tar_detail_gradient.clear();
-        for (int i = 0; i < gptar_detail.size(); ++i)
-        {
-          cv::Mat grad_x;
-          cv::Sobel( gptar_detail[0][l], grad_x, CV_32F, 1, 0, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
-          cv::Mat grad_y;
-          cv::Sobel( gptar_detail[0][l], grad_y, CV_32F, 0, 1, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
-          tar_detail_gradient.push_back(grad_x);
-          tar_detail_gradient.push_back(grad_y);
-        }
+        //tar_detail_gradient.clear();
+        //for (int i = 0; i < gptar_detail.size(); ++i)
+        //{
+        //  cv::Mat grad_x;
+        //  cv::Sobel( gptar_detail[0][l], grad_x, CV_32F, 1, 0, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+        //  cv::Mat grad_y;
+        //  cv::Sobel( gptar_detail[0][l], grad_y, CV_32F, 0, 1, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+        //  tar_detail_gradient.push_back(grad_x);
+        //  tar_detail_gradient.push_back(grad_y);
+        //}
 
         std::vector<float> ref_cnt(width * height, 0.0);
         //if (i_iter % 2 == 0)
@@ -1135,6 +1137,17 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
       nnf.swap(nnf_new);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
+        //tar_detail_gradient.clear();
+        //for (int i = 0; i < gptar_detail.size(); ++i)
+        //{
+        //  cv::Mat grad_x;
+        //  cv::Sobel( gptar_detail[0][l], grad_x, CV_32F, 1, 0, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+        //  cv::Mat grad_y;
+        //  cv::Sobel( gptar_detail[0][l], grad_y, CV_32F, 0, 1, 3, 1.0 / 8, 0, cv::BORDER_DEFAULT );
+        //  tar_detail_gradient.push_back(grad_x);
+        //  tar_detail_gradient.push_back(grad_y);
+        //}
+
         std::vector<float> ref_cnt(width * height, 0.0);
         //if (i_iter % 2 == 0)
         {

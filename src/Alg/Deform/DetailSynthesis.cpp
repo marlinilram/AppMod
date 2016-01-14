@@ -1239,6 +1239,7 @@ void DetailSynthesis::applyDisplacementMap(STLVectori vertex_set, std::shared_pt
 
 void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask)
 {
+  int n_ring = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:n_ring");
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
 
@@ -1253,7 +1254,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
       crest_lines_points.insert(src_model->getShapeCrestLine()[i][j]);
     }
   }
-
+  
   double scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
 
   std::vector<bool> visited_tag(tar_model->getPolygonMesh()->n_vertices(), false);
@@ -1272,6 +1273,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
 
   const STLVectori& vertex_set = tar_para_shape->vertex_set;
   std::shared_ptr<Shape> cut_shape = tar_para_shape->cut_shape;
+  
   for(int i = 0; i < vertex_set.size(); i ++)
   {
     if (visited_tag[vertex_set[i]]) continue;
@@ -1288,18 +1290,18 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
 
     bool in_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), lambda, face_id, id);
     int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
-    bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
-    //std::set<int> near_vertices;
-    //ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 1); // near_vertices stores the vertex id in source mesh not para shape
-    //bool in_crest_line = false;
-    //for (auto i_near : near_vertices)
-    //{
-    //  if (crest_lines_points.find(i_near) != crest_lines_points.end())
-    //  {
-    //    in_crest_line = true;
-    //    break;
-    //  }
-    //}
+    //bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+    std::set<int> near_vertices;
+    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, n_ring); // near_vertices stores the vertex id in source mesh not para shape
+    bool in_crest_line = false;
+    for (auto i_near : near_vertices)
+    {
+      if (crest_lines_points.find(i_near) != crest_lines_points.end())
+      {
+        in_crest_line = true;
+        break;
+      }
+    }
     //bool in_crest_line = false; // test if using outlier filter can allow not use feature line detect now
 
     Vec3 normal_check(0, 0, 0);
@@ -1355,6 +1357,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
         cache_normal.push_back(normal_check);
       }
     }
+    std::cout << "OK1!\n";
   }
   
   std::cout << "min: " << min << "\tmax: " << max <<std::endl;
@@ -1935,7 +1938,7 @@ void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model)
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-  this->resolution = 1024;
+  this->resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
   this->testMeshPara(src_model);
   
 
@@ -2022,7 +2025,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
   
-  this->test(src_model, tar_model);
+  //this->test(src_model, tar_model);
 
   //cv::Mat mask;
   if (masked_detail_image.empty())
@@ -2124,9 +2127,11 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
   //ShapeUtility::computeSolidAngleCurvature(src_model);
+  ShapeUtility::computeCurvature(src_model);
   ShapeUtility::computeNormalizedHeight(tar_model);
   ShapeUtility::computeDirectionalOcclusion(tar_model);
   ShapeUtility::computeSymmetry(tar_model);
+  ShapeUtility::computeCurvature(tar_model);
   //ShapeUtility::computeSolidAngleCurvature(tar_model);
 
   // 3. third do CCA, skip for now
@@ -2141,6 +2146,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
   PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
   PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
+  PolygonMesh::Vertex_attribute<Scalar> mean_curvature = poly_mesh->vertex_attribute<Scalar>("v:mean_curvature");
+  PolygonMesh::Vertex_attribute<Scalar> gaussian_curvature = poly_mesh->vertex_attribute<Scalar>("v:gaussian_curvature");
   std::vector<std::vector<float> > vertex_feature_list(poly_mesh->n_vertices(), std::vector<float>());
   for (auto vit : poly_mesh->vertices())
   {
@@ -2157,6 +2164,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
+    vertex_feature_list[vit.idx()].push_back(mean_curvature[vit]);
+    vertex_feature_list[vit.idx()].push_back(gaussian_curvature[vit]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
@@ -2198,6 +2207,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
   v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
   solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
+  mean_curvature = poly_mesh->vertex_attribute<Scalar>("v:mean_curvature");
+  gaussian_curvature = poly_mesh->vertex_attribute<Scalar>("v:gaussian_curvature");
   vertex_feature_list.clear();
   vertex_feature_list.resize(poly_mesh->n_vertices(), std::vector<float>());
   for (auto vit : poly_mesh->vertices())
@@ -2215,6 +2226,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
     vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
+    vertex_feature_list[vit.idx()].push_back(mean_curvature[vit]);
+    vertex_feature_list[vit.idx()].push_back(gaussian_curvature[vit]);
     for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
     {
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]/directional_occlusion[vit].size());
@@ -2316,12 +2329,15 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 5. do synthesis
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->levels = 5;
-  syn_tool->patch_size = 10;
-  syn_tool->max_iter = 5;
-  syn_tool->best_random_size = 5;
-  syn_tool->lamd_occ = 0.00;
   syn_tool->lamd_gradient = 0.1;
+  syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+  syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+  syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+  syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+  syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+  syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+  syn_tool->beta_func_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_center");
+  syn_tool->beta_func_mult = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult");
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
   syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
   syn_tool->doSynthesisNew();
@@ -2355,7 +2371,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 
   cv::imwrite(tar_model->getOutputPath() + "/reflectance.png", result_reflectance*255);
   cv::imwrite(tar_model->getOutputPath() + "/tar_displacement.png", result_displacement*255);
-  YMLHandler::saveToFile(tar_model->getOutputPath(), "d2_displacement.yml", result_displacement);
+  YMLHandler::saveToFile(tar_model->getOutputPath(), "new_d2_displacement.yml", result_displacement);
 
   std::cout << "transfer finished." << std::endl;
 
@@ -2379,22 +2395,13 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   computeDetailMap(src_para_shape.get(), new_detail_image, model, mesh_para->seen_part->cut_faces, mask);
   applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, model, src_para_shape->detail_map[0], mask);*/
 
-
-  /*cv::FileStorage fs2(tar_model->getDataPath() + "/d2_displacement.yml", cv::FileStorage::READ);
-  cv::Mat d2_displacement_mat;
-  fs2["d2_displacement"] >> d2_displacement_mat;
-  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
-  src_para_shape->initWithExtShape(tar_model);
-  cv::Mat mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
-  applyDisplacementMap(src_para_shape->vertex_set, src_para_shape->cut_shape, src_model, tar_model, d2_displacement_mat, mask);*/
-
   // test displacement map computation and apply
 
   // load user decide masked detail map
   this->loadDetailMap(src_model);
 
   // prepare uv mask from computeDetailMap
-  this->resolution = 1024;
+  this->resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");;
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
   
@@ -2468,6 +2475,15 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
 
   // apply displacement map
   applyDisplacementMap(src_model, tar_model, displacement_map, mask);
+}
+
+void DetailSynthesis::applyNewDisp(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
+{
+  cv::FileStorage fs2(tar_model->getDataPath() + "/new_d2_displacement.yml", cv::FileStorage::READ);
+  cv::Mat d2_displacement_mat;
+  fs2["new_d2_displacement"] >> d2_displacement_mat;
+  cv::Mat mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
+  applyDisplacementMap(src_model, tar_model, d2_displacement_mat, mask);
 }
 
 void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, STLVectori& sampled_t_v, STLVectorf& sampled_t_new_v, bool do_complete)
@@ -2834,10 +2850,10 @@ void DetailSynthesis::prepareLocalTransformCrsp(
 void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids)
 {
   // first do the mesh parametrization
-  //if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
-  //{
-  //  this->testMeshPara(src_model);
-  //}
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  {
+    this->testMeshPara(src_model);
+  }
 
   std::set<int> visible_faces;
   ShapeUtility::visibleFacesInModel(src_model, visible_faces);
@@ -2856,7 +2872,7 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
     mesh_para->doMeshParamterizationPatch(src_model, src_components[i], &src_patches[i], start_v_id);
     std::cout << "src component " << i << " : " << src_components[i].size() << std::endl;
   }
-  int visible_patches = ShapeUtility::getVisiblePatchIDinPatches(src_patches);
+  int visible_patches = ShapeUtility::getVisiblePatchIDinPatches(src_patches, mesh_para->seen_part->cut_faces);
 
   std::cout << "src components: " << src_components.size() << std::endl;
 
@@ -2925,8 +2941,8 @@ void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::
   STLVectori sampled_t_v;
   STLVectorf sampled_t_new_v;
 
-  this->doGeometryTransfer(src_model, tar_model, sampled_t_v, sampled_t_new_v, true);
-
+  this->doGeometryTransfer(src_model, tar_model, sampled_t_v, sampled_t_new_v, false);
+  return ;
   // src_model and tar_model should have same topology
 
   // update the target to same shape with source

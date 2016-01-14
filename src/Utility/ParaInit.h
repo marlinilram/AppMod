@@ -43,8 +43,7 @@ void InitGlobalParameter()
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:scale", 1.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:is_wait", true);
-
-
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:n_ring", 1);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:resolution", 512);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:pry_levels", 5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:patch_size", 10);
@@ -54,7 +53,6 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:bias_rate", 0.1);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_center", 0.2);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_mult", 5.0);
-
 }
 
 #endif
