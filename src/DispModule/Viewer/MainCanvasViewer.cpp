@@ -99,6 +99,7 @@ void MainCanvasViewer::getSnapShot()
       double world_width = (point_1 - point_2).norm();
       double z_scale = clipping_range * img_width / world_width;
       main_canvas->drawInfo(z_scale);
+      std::cout << "z_scale: " << z_scale << std::endl;
     }
   }
 
