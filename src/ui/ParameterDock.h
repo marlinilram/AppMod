@@ -57,6 +57,7 @@ private slots:
   void setShowColorCrest(int state);
   void setTargetCurvesThreshold(double val);
   void setSynthesisScale(double val);
+  void setNRing(double val);
 
   void setSlotsSynParamters();
   void setSynResolution(int val);

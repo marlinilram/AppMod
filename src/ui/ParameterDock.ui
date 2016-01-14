@@ -17,7 +17,18 @@
    <layout class="QVBoxLayout" name="verticalLayout_6">
     <item>
      <widget class="QToolBox" name="toolBox">
-      <widget class="QWidget" name="toolBoxPage1" native="true">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="page">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>-305</y>
+         <width>336</width>
+         <height>1079</height>
+        </rect>
+       </property>
        <attribute name="label">
         <string/>
        </attribute>
@@ -740,7 +751,7 @@
            <item>
             <widget class="QPushButton" name="TestApplyDisplacement_PushButton">
              <property name="text">
-              <string>Test Apply_Displacement</string>
+              <string>Do_Geometry_Transfer</string>
              </property>
             </widget>
            </item>
@@ -810,18 +821,38 @@
              <item>
               <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
                <property name="text">
-                <string>Run_ApplyDisplacement</string>
+                <string>Test_Self_Apply</string>
                </property>
               </widget>
              </item>
             </layout>
            </item>
            <item>
-            <widget class="QPushButton" name="GoAhead_PushButton">
-             <property name="text">
-              <string>Load Detail_Map</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_15">
+             <item>
+              <widget class="QDoubleSpinBox" name="N_Ring_DoubleSpinBox">
+               <property name="decimals">
+                <number>0</number>
+               </property>
+               <property name="minimum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>100.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="GoAhead_PushButton">
+               <property name="text">
+                <string>Apply_New_Disp</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -846,7 +877,15 @@
        <zorder>groupBox_3</zorder>
        <zorder>groupBox_2</zorder>
       </widget>
-      <widget class="QWidget" name="toolBoxPage2" native="true">
+      <widget class="QWidget" name="toolBoxPage2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>337</width>
+         <height>791</height>
+        </rect>
+       </property>
        <attribute name="label">
         <string/>
        </attribute>
