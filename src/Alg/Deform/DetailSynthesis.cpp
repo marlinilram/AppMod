@@ -1288,18 +1288,18 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
 
     bool in_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), lambda, face_id, id);
     int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
-    bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
-    //std::set<int> near_vertices;
-    //ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 1); // near_vertices stores the vertex id in source mesh not para shape
-    //bool in_crest_line = false;
-    //for (auto i_near : near_vertices)
-    //{
-    //  if (crest_lines_points.find(i_near) != crest_lines_points.end())
-    //  {
-    //    in_crest_line = true;
-    //    break;
-    //  }
-    //}
+    //bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+    std::set<int> near_vertices;
+    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 0); // near_vertices stores the vertex id in source mesh not para shape
+    bool in_crest_line = false;
+    for (auto i_near : near_vertices)
+    {
+      if (crest_lines_points.find(i_near) != crest_lines_points.end())
+      {
+        in_crest_line = true;
+        break;
+      }
+    }
     //bool in_crest_line = false; // test if using outlier filter can allow not use feature line detect now
 
     Vec3 normal_check(0, 0, 0);
@@ -2595,21 +2595,21 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   }
   computeFeatureMap(src_para_shape.get(), vertex_feature_list, face_in_normal);
 
-  float src_mesh_scale = src_model->getBoundBox()->getRadius();
-  std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
-  std::vector<float> src_feature_kd_data;
-  for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
-  {
-    for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
-    {
-      src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
-    }
-    //Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
-    //src_feature_kd_data.push_back(normalized_pos(0));
-    //src_feature_kd_data.push_back(normalized_pos(1));
-    //src_feature_kd_data.push_back(normalized_pos(2));
-  }
-  src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size());
+  //float src_mesh_scale = src_model->getBoundBox()->getRadius();
+  //std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
+  //std::vector<float> src_feature_kd_data;
+  //for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
+  //{
+  //  for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
+  //  {
+  //    src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
+  //  }
+  //  //Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
+  //  //src_feature_kd_data.push_back(normalized_pos(0));
+  //  //src_feature_kd_data.push_back(normalized_pos(1));
+  //  //src_feature_kd_data.push_back(normalized_pos(2));
+  //}
+  //src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size());
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -2707,7 +2707,12 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     //  src_v_ids.push_back(mesh_para->seen_part->vertex_set[src_v_id]);
     //}
 
-    //this->prepareParaPatches(src_model, tar_model, sampled_tar_model, src_v_ids);
+    //STLVectori src_v_ids_mono;
+    //this->prepareParaPatches(src_model, tar_model, sampled_tar_model, src_v_ids_mono);
+    //for (auto i : src_v_ids_mono)
+    //{
+    //  src_v_ids.push_back(STLVectori(1, i));
+    //}
   }
 
   // normal transform to get the local transform
@@ -2834,10 +2839,10 @@ void DetailSynthesis::prepareLocalTransformCrsp(
 void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids)
 {
   // first do the mesh parametrization
-  //if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
-  //{
-  //  this->testMeshPara(src_model);
-  //}
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  {
+    this->testMeshPara(src_model);
+  }
 
   std::set<int> visible_faces;
   ShapeUtility::visibleFacesInModel(src_model, visible_faces);
@@ -2856,7 +2861,7 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
     mesh_para->doMeshParamterizationPatch(src_model, src_components[i], &src_patches[i], start_v_id);
     std::cout << "src component " << i << " : " << src_components[i].size() << std::endl;
   }
-  int visible_patches = ShapeUtility::getVisiblePatchIDinPatches(src_patches);
+  int visible_patches = ShapeUtility::getVisiblePatchIDinPatches(src_patches, mesh_para->seen_part->cut_faces);
 
   std::cout << "src components: " << src_components.size() << std::endl;
 
@@ -2907,8 +2912,8 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
 
     // 3. search closest uv in source patch
     int src_patch_v_id = 0;
-    src_patches[0].kdTree_UV->nearestPt(tar_uv, src_patch_v_id);
-    src_v_ids.push_back(src_patches[0].vertex_set[src_patch_v_id]);
+    src_patches[visible_patches].kdTree_UV->nearestPt(tar_uv, src_patch_v_id);
+    src_v_ids.push_back(src_patches[visible_patches].vertex_set[src_patch_v_id]);
     //new_tar_sampled_v_ids.push_back(tar_sampled_v_ids[i]);
   }
   //tar_sampled_v_ids.swap(new_tar_sampled_v_ids);
