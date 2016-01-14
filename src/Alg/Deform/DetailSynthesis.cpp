@@ -1254,7 +1254,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
       crest_lines_points.insert(src_model->getShapeCrestLine()[i][j]);
     }
   }
-
+  
   double scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
 
   std::vector<bool> visited_tag(tar_model->getPolygonMesh()->n_vertices(), false);
@@ -1273,6 +1273,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
 
   const STLVectori& vertex_set = tar_para_shape->vertex_set;
   std::shared_ptr<Shape> cut_shape = tar_para_shape->cut_shape;
+  
   for(int i = 0; i < vertex_set.size(); i ++)
   {
     if (visited_tag[vertex_set[i]]) continue;
@@ -1356,6 +1357,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
         cache_normal.push_back(normal_check);
       }
     }
+    std::cout << "OK1!\n";
   }
   
   std::cout << "min: " << min << "\tmax: " << max <<std::endl;
@@ -1936,7 +1938,7 @@ void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model)
 void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // 1. to do transfer, we first need to apply the displacement to src_model;
-  this->resolution = 1024;
+  this->resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
   this->testMeshPara(src_model);
   
 
@@ -2327,14 +2329,15 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   // 5. do synthesis
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->levels = 5;
-  syn_tool->patch_size = 10;
-  syn_tool->max_iter = 5;
-  syn_tool->best_random_size = 5;
-  syn_tool->lamd_occ = 0.00;
   syn_tool->lamd_gradient = 0.1;
-  syn_tool->beta_func_center = 0.5;
-  syn_tool->bias_rate = 0.5;
+  syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+  syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+  syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+  syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+  syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+  syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+  syn_tool->beta_func_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_center");
+  syn_tool->beta_func_mult = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult");
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
   syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
   syn_tool->doSynthesisNew();
@@ -2398,7 +2401,7 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   this->loadDetailMap(src_model);
 
   // prepare uv mask from computeDetailMap
-  this->resolution = 1024;
+  this->resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");;
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
   
@@ -2847,10 +2850,10 @@ void DetailSynthesis::prepareLocalTransformCrsp(
 void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids)
 {
   // first do the mesh parametrization
-  //if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
-  //{
-  //  this->testMeshPara(src_model);
-  //}
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  {
+    this->testMeshPara(src_model);
+  }
 
   std::set<int> visible_faces;
   ShapeUtility::visibleFacesInModel(src_model, visible_faces);
@@ -2869,7 +2872,7 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
     mesh_para->doMeshParamterizationPatch(src_model, src_components[i], &src_patches[i], start_v_id);
     std::cout << "src component " << i << " : " << src_components[i].size() << std::endl;
   }
-  int visible_patches = ShapeUtility::getVisiblePatchIDinPatches(src_patches);
+  int visible_patches = ShapeUtility::getVisiblePatchIDinPatches(src_patches, mesh_para->seen_part->cut_faces);
 
   std::cout << "src components: " << src_components.size() << std::endl;
 
