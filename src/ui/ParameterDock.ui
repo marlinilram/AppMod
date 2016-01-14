@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>355</width>
-    <height>883</height>
+    <width>325</width>
+    <height>904</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,18 +17,7 @@
    <layout class="QVBoxLayout" name="verticalLayout_6">
     <item>
      <widget class="QToolBox" name="toolBox">
-      <property name="currentIndex">
-       <number>0</number>
-      </property>
-      <widget class="QWidget" name="page">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>336</width>
-         <height>1079</height>
-        </rect>
-       </property>
+      <widget class="QWidget" name="toolBoxPage1" native="true">
        <attribute name="label">
         <string/>
        </attribute>
@@ -644,7 +633,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>-0.750000000000000</double>
+                <double>-0.850000000000000</double>
                </property>
               </widget>
              </item>
@@ -857,18 +846,210 @@
        <zorder>groupBox_3</zorder>
        <zorder>groupBox_2</zorder>
       </widget>
-      <widget class="QWidget" name="toolBoxPage2">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>337</width>
-         <height>791</height>
-        </rect>
-       </property>
+      <widget class="QWidget" name="toolBoxPage2" native="true">
        <attribute name="label">
         <string/>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <widget class="QGroupBox" name="groupBox_4">
+          <property name="title">
+           <string>Synthesis Paramters</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_9">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_16">
+             <item>
+              <widget class="QLabel" name="label_20">
+               <property name="text">
+                <string>Resolution</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="Synthesis_Res_spinBox">
+               <property name="minimum">
+                <number>64</number>
+               </property>
+               <property name="maximum">
+                <number>3000</number>
+               </property>
+               <property name="value">
+                <number>512</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_17">
+             <item>
+              <widget class="QLabel" name="label_21">
+               <property name="text">
+                <string>Pry Levels</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="Synthesis_PryLevels_spinBox">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_18">
+             <item>
+              <widget class="QLabel" name="label_22">
+               <property name="text">
+                <string>Patch Size</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="Synthesis_PatchSize_spinBox">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>10</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_19">
+             <item>
+              <widget class="QLabel" name="label_23">
+               <property name="text">
+                <string>Max iter</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="Synthesis_MaxIter_spinBox">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_20">
+             <item>
+              <widget class="QLabel" name="label_24">
+               <property name="text">
+                <string>Random Size</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="Synthesis_RandSize_spinBox">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_21">
+             <item>
+              <widget class="QLabel" name="label_25">
+               <property name="text">
+                <string>lamd occ</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="Synthesis_occ_doubleSpinBox"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_22">
+             <item>
+              <widget class="QLabel" name="label_26">
+               <property name="text">
+                <string>lamd bias rate</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="Synthesis_biasrate_doubleSpinBox">
+               <property name="value">
+                <double>0.100000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_23">
+             <item>
+              <widget class="QLabel" name="label_27">
+               <property name="text">
+                <string>Beta func center</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="Synthesis_betacenter_doubleSpinBox">
+               <property name="value">
+                <double>0.200000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_24">
+             <item>
+              <widget class="QLabel" name="label_28">
+               <property name="text">
+                <string>Beta func mult</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="Synthesis_betamultdoubleSpinBox">
+               <property name="value">
+                <double>5.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>507</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>

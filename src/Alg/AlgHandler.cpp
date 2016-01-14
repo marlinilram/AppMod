@@ -190,7 +190,7 @@ void AlgHandler::testApplyDisplacement()
 {
   //detail_synthesis->prepareParaPatches(shape_model, synthesis_model);return;
 
-  detail_synthesis->doGeometryComplete(shape_model, synthesis_model);
+  detail_synthesis->doGeometryTransfer(shape_model, synthesis_model);
   actors.clear();
   std::vector<GLActor> temp_actors;
   detail_synthesis->getDrawableActors(temp_actors);
@@ -198,6 +198,8 @@ void AlgHandler::testApplyDisplacement()
   {
     actors.push_back(temp_actors[i]);
   }
+  syn_actors.clear();
+  detail_synthesis->getDrawableActors(syn_actors, 1);
 }
 
 void AlgHandler::runApplyDisplacement()

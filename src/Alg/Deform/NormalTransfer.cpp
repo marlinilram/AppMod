@@ -6,6 +6,7 @@
 #include "NormalConstraint.h"
 
 #include "PolygonMesh.h"
+#include "ImageUtility.h"
 
 #include <cv.h>
 
@@ -44,6 +45,9 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   fs[normal_file_name.c_str()] >> photo_normal;
   cv::imshow("normal_img", photo_normal);
 
+  cv::Mat normal_mask(photo_normal.rows, photo_normal.cols, CV_32FC1, 1.0);
+  ImageUtility::generateMask(photo_normal, normal_mask);
+
   // the origin of coordinate system of normal image
   // is top left corner
   // channel 1 -> n_y
@@ -67,6 +71,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
         int x = j;
         int y = i;
         cv::Vec3f normal_in_photo = photo_normal.at<cv::Vec3f>(y, x);
+        if ((normal_in_photo[0] < -1) || (normal_mask.at<float>(y, x) < 0.5)) continue;
         Vector3f new_normal;
         new_normal << normal_in_photo[1],
                       -normal_in_photo[0],

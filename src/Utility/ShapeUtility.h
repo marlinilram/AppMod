@@ -92,6 +92,8 @@ namespace ShapeUtility
   void visibleFacesInModel(std::shared_ptr<Model> model, std::set<int>& visible_faces);
   void visibleVerticesInModel(std::shared_ptr<Model> model, std::set<int>& visible_vertices);
   void nRingVertices(LG::PolygonMesh* poly_mesh, int v_id, std::set<int>& vertices, int n_ring = 1);
+
+  int getVisiblePatchIDinPatches(std::vector<ParaShape>& patches, std::set<int>& ori_visible_faces);
 }
 
 #endif

@@ -61,7 +61,7 @@ public:
   void applyDisplacementMap(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat disp_map, cv::Mat mask);
   void startDetailSynthesis(std::shared_ptr<Model> model);
   void computeVectorField(std::shared_ptr<Model> model);
-  void getDrawableActors(std::vector<GLActor>& actors);
+  void getDrawableActors(std::vector<GLActor>& actors, int actros_id = 0);
   void testShapePlane(std::shared_ptr<Model> model);
   void mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Model> model);
   void patchSynthesis(std::shared_ptr<Model> model);
@@ -90,6 +90,7 @@ private:
   std::shared_ptr<CurveGuidedVectorField> curve_guided_vector_field;
   std::shared_ptr<KevinVectorField> kevin_vector_field;
   std::vector<GLActor> actors;
+  std::vector<GLActor> syn_actors;
   int resolution;
   double normalize_max;
   std::vector<float> detail_min, detail_max;
