@@ -207,5 +207,6 @@ void AlgHandler::runApplyDisplacement()
 
 void AlgHandler::loadDetailMap()
 {
-  detail_synthesis->loadDetailMap(shape_model);
+  //detail_synthesis->loadDetailMap(shape_model);
+  detail_synthesis->applyNewDisp(shape_model, synthesis_model);
 }

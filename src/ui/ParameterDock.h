@@ -55,6 +55,7 @@ private slots:
   void setSourceCurvesThreshold(double val);
   void setTargetCurvesThreshold(double val);
   void setSynthesisScale(double val);
+  void setNRing(double val);
 
   void setLFRegMethod(int state);
   void runLFRegNonRigid();

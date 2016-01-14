@@ -69,6 +69,7 @@ public:
   // transfer
   void doTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
   void test(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
+  void applyNewDisp(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
   void doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, STLVectori& sampled_t_v = STLVectori(), STLVectorf& sampled_t_new_v = STLVectorf(), bool do_complete = false);
   void doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 

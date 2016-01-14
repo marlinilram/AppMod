@@ -41,6 +41,7 @@ void InitGlobalParameter()
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:scale", 1.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:is_wait", true);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:n_ring", 1);
 }
 
 #endif

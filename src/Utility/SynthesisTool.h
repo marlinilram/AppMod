@@ -144,6 +144,8 @@ private:
   int max_iter;
   float py_scale;
   float feature_threshold;
+  float beta_func_center;
+  float beta_func_mult;
   std::vector<cv::Size> NeighborRange;
 
   std::vector<ImagePyramid> gpsrc_feature;

@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-130</y>
+         <y>-305</y>
          <width>336</width>
-         <height>1077</height>
+         <height>1079</height>
         </rect>
        </property>
        <attribute name="label">
@@ -717,7 +717,7 @@
            <item>
             <widget class="QPushButton" name="TestApplyDisplacement_PushButton">
              <property name="text">
-              <string>Test Apply_Displacement</string>
+              <string>Do_Geometry_Transfer</string>
              </property>
             </widget>
            </item>
@@ -787,18 +787,38 @@
              <item>
               <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
                <property name="text">
-                <string>Run_ApplyDisplacement</string>
+                <string>Test_Self_Apply</string>
                </property>
               </widget>
              </item>
             </layout>
            </item>
            <item>
-            <widget class="QPushButton" name="GoAhead_PushButton">
-             <property name="text">
-              <string>Load Detail_Map</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_15">
+             <item>
+              <widget class="QDoubleSpinBox" name="N_Ring_DoubleSpinBox">
+               <property name="decimals">
+                <number>0</number>
+               </property>
+               <property name="minimum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>100.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="GoAhead_PushButton">
+               <property name="text">
+                <string>Apply_New_Disp</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -828,8 +848,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>98</width>
-         <height>28</height>
+         <width>337</width>
+         <height>791</height>
         </rect>
        </property>
        <attribute name="label">
