@@ -443,6 +443,7 @@ namespace ShapeUtility
       {
         for (auto hecc : poly_mesh->halfedges(PolygonMesh::Face(j)))
         {
+          if (poly_mesh->is_boundary(poly_mesh->opposite_halfedge(hecc))) continue;
           int cur_f_id = poly_mesh->face(poly_mesh->opposite_halfedge(hecc)).idx();
           iter = f_id.find(cur_f_id);
           if (iter == f_id.end())

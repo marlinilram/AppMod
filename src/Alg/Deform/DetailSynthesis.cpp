@@ -14,6 +14,7 @@
 
 #include "KDTreeWrapper.h"
 #include "ShapeUtility.h"
+#include "ImageUtility.h"
 #include "obj_writer.h"
 #include "GLActor.h"
 #include "YMLHandler.h"
@@ -1278,6 +1279,19 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
   {
     if (visited_tag[vertex_set[i]]) continue;
     visited_tag[vertex_set[i]] = true;
+
+    std::set<int> test_boundary_vertices;
+    ShapeUtility::nRingVertices(cut_shape->getPolygonMesh(), i, test_boundary_vertices, n_ring);
+    bool is_para_boundary = false;
+    for (auto i_bound : test_boundary_vertices)
+    {
+      if (cut_shape->getPolygonMesh()->is_boundary(PolygonMesh::Vertex(i_bound)))
+      {
+        is_para_boundary = true;
+        break;
+      }
+    }
+    if (is_para_boundary) continue;
     
     float U,V;
     U = (cut_shape->getUVCoord())[2 * i + 0];
@@ -1357,7 +1371,6 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
         cache_normal.push_back(normal_check);
       }
     }
-    std::cout << "OK1!\n";
   }
   
   std::cout << "min: " << min << "\tmax: " << max <<std::endl;
@@ -2449,7 +2462,7 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   cv::imshow("uv mask", mask);
   ShapeUtility::fillImageWithMask(displacement_map, cv::Mat(resolution, resolution, CV_32FC1, 1.0));
   cv::imshow("displacement map after filling", displacement_map);
-
+  YMLHandler::saveToFile(tar_model->getOutputPath(), "new_d2_displacement.yml", displacement_map);
   src_para_shape->detail_map.push_back(displacement_map);
   cv::Mat detail_rgbd;
   cv::merge(src_para_shape->detail_map, detail_rgbd);
@@ -2483,6 +2496,37 @@ void DetailSynthesis::applyNewDisp(std::shared_ptr<Model> src_model, std::shared
   cv::Mat d2_displacement_mat;
   fs2["new_d2_displacement"] >> d2_displacement_mat;
   cv::Mat mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
+  cv::imshow("before", d2_displacement_mat.clone());
+  {
+    cv::Mat temp_mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
+    ImageUtility::generateMask(d2_displacement_mat.clone(), temp_mask);
+    // centerize
+    float value = 0;
+    int value_cnt = 0;
+    for (int i = 0; i < d2_displacement_mat.rows; i++)
+    {
+      for (int j = 0; j < d2_displacement_mat.cols; j++)
+      {
+        if (temp_mask.at<float>(i, j) > 0.5)
+        {
+          value += d2_displacement_mat.at<float>(i, j);
+          ++value_cnt;
+        }
+      }
+    }
+    value = value / value_cnt;
+    std::cout << "value: " << value << std::endl;
+    for (int i = 0; i < d2_displacement_mat.rows; i++)
+    {
+      for (int j = 0; j < d2_displacement_mat.cols; j++)
+      {
+        d2_displacement_mat.at<float>(i, j) = d2_displacement_mat.at<float>(i, j) - value;
+      }
+    }
+    cv::imshow("after", d2_displacement_mat);
+  }
+
+  this->resolution = std::min(d2_displacement_mat.rows, d2_displacement_mat.cols);
   applyDisplacementMap(src_model, tar_model, d2_displacement_mat, mask);
 }
 
