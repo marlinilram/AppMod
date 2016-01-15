@@ -2467,6 +2467,22 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   cv::Mat detail_rgbd;
   cv::merge(src_para_shape->detail_map, detail_rgbd);
   YMLHandler::saveToFile(src_model->getOutputPath(), "detail_map.xml", detail_rgbd);
+
+  //cv::Mat reflectance_map;
+  //std::vector<cv::Mat> reflectance;
+  //reflectance.push_back(src_para_shape->detail_map[2]);
+  //reflectance.push_back(src_para_shape->detail_map[1]);
+  //reflectance.push_back(src_para_shape->detail_map[0]);
+  //{
+  //  // dilate the detail map in case of black
+  //  for (int i = 0; i < 3; ++i)
+  //  {
+  //    ShapeUtility::dilateImage(reflectance[i], 20);
+  //  }
+  //}
+  //cv::merge(reflectance, reflectance_map);
+  //cv::imwrite(src_model->getOutputPath() + "/src_reflectance.png", 255 * reflectance_map);
+
   //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance0.xml", src_para_shape->detail_map[0]);
   //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance1.xml", src_para_shape->detail_map[1]);
   //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance2.xml", src_para_shape->detail_map[2]);
@@ -2499,7 +2515,8 @@ void DetailSynthesis::applyNewDisp(std::shared_ptr<Model> src_model, std::shared
   cv::imshow("before", d2_displacement_mat.clone());
   {
     cv::Mat temp_mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
-    ImageUtility::generateMask(d2_displacement_mat.clone(), temp_mask);
+    ImageUtility::generateMultiMask(d2_displacement_mat.clone(), temp_mask);
+    return;
     // centerize
     float value = 0;
     int value_cnt = 0;
