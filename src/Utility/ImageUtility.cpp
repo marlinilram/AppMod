@@ -37,9 +37,10 @@ namespace ImageUtility
     }
   }
 
-  void generateMask(cv::Mat& img_in, cv::Mat& mask_out)
+  bool generateMask(cv::Mat& img_in, cv::Mat& mask_out)
   {
     // Attention!!! it will modify the img_in photo
+    bool is_finished = false;
     IplImage reflectance_map_iplimage = IplImage(img_in);
 
     MouseArgs* m_arg = new MouseArgs();
@@ -51,6 +52,12 @@ namespace ImageUtility
       cvShowImage("Draw ROI", m_arg->img);
       if(cvWaitKey(100) == 27)
         break;
+      
+      if(cvWaitKey(100) == 32)
+      {
+        is_finished = true;
+        break;
+      }
     }
 
     if(m_arg->points < 1)
@@ -87,8 +94,45 @@ namespace ImageUtility
     delete m_arg;
 
     cvDestroyWindow("Draw ROI");
+    return is_finished;
   }
 
-
-
+  void generateMultiMask(cv::Mat& img_in, cv::Mat& mask_out)
+  {
+    bool is_finished = false;
+    bool is_cur_finished = false;
+    std::vector<cv::Mat>  mask_group;
+    while (!is_finished)
+    {
+      cv::Mat cur_mask(img_in.rows, img_in.cols, CV_32FC1, 1);
+      if (generateMask(img_in, cur_mask))
+      {
+        is_finished = true;
+      }
+      mask_group.push_back(cur_mask);
+    }
+    
+    
+    for (int i = 0; i < mask_out.rows; i++)
+    {
+      for (int j = 0; j < mask_out.cols; j++)
+      {
+        bool in_mask = false;
+        for(size_t k = 0; k < mask_group.size(); k ++)
+        {
+          if (mask_group[k].at<float>(i, j) > 0.5)
+          {
+            in_mask = true;
+            break;
+          }
+        }
+        if (!in_mask)
+        {
+          mask_out.at<float>(i, j) = 0;
+        }
+      }
+    }
+    cv::imshow("mask_out", mask_out);
+    cvDestroyWindow("Draw ROI");
+  }
 }
