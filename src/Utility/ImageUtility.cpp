@@ -39,6 +39,7 @@ namespace ImageUtility
 
   void generateMask(cv::Mat& img_in, cv::Mat& mask_out)
   {
+    // Attention!!! it will modify the img_in photo
     IplImage reflectance_map_iplimage = IplImage(img_in);
 
     MouseArgs* m_arg = new MouseArgs();

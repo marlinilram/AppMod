@@ -46,7 +46,7 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   cv::imshow("normal_img", photo_normal);
 
   cv::Mat normal_mask(photo_normal.rows, photo_normal.cols, CV_32FC1, 1.0);
-  ImageUtility::generateMask(photo_normal, normal_mask);
+  ImageUtility::generateMask(photo_normal.clone(), normal_mask);
 
   // the origin of coordinate system of normal image
   // is top left corner
