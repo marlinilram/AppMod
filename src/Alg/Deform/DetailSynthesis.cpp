@@ -2732,6 +2732,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   }
 
   // normal transform to get the local transform
+  VertexList old_src_vertex_list = src_model->getShapeVertexList();
   PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
   {
     NormalTransfer normal_transfer;
@@ -2777,6 +2778,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   if (!do_complete)
   {
     geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+    src_model->updateShape(old_src_vertex_list);// go back to old one, so we can re-run
   }
   else
   {
