@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-288</y>
          <width>336</width>
-         <height>1081</height>
+         <height>1083</height>
         </rect>
        </property>
        <attribute name="label">
@@ -749,11 +749,22 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="TestApplyDisplacement_PushButton">
-             <property name="text">
-              <string>Do_Geometry_Transfer</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_25">
+             <item>
+              <widget class="QPushButton" name="TestApplyDisplacement_PushButton">
+               <property name="text">
+                <string>Do_Geometry_Transfer</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="Synthesis_GeometryTransfer_ParaMap_checkBox">
+               <property name="text">
+                <string>Use Para Mapping</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -1019,6 +1030,9 @@
                 <number>5</number>
                </property>
                <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
+               <property name="value">
                 <double>0.001000000000000</double>
                </property>
               </widget>

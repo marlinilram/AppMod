@@ -77,6 +77,8 @@ private slots:
   void runApplyDisplacement();
   void isGoAhead();
 
+  void setSynGeometryTransferParaMap(int state);
+
   void setCrspTypeMode(int type_mode);
   
 private:

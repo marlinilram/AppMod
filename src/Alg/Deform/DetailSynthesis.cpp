@@ -2132,12 +2132,13 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
 
   // 2. second we need to compute the geometry feature on deformed src_model and tar_model;
   // normalized height, curvature, directional occlusion, surface normal
+  VertexList old_src_v_list = src_model->getShapeVertexList();
   NormalTransfer normal_transfer;
   std::string normal_file_name = "final_normal";
   normal_transfer.prepareNewNormal(src_model, normal_file_name);
 
   ShapeUtility::computeNormalizedHeight(src_model);
-  ShapeUtility::computeDirectionalOcclusion(src_model);
+  ShapeUtility::computeDirectionalOcclusion(src_model, true);
   ShapeUtility::computeSymmetry(src_model);
   //ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeCurvature(src_model);
@@ -2352,6 +2353,21 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   syn_tool->beta_func_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_center");
   syn_tool->beta_func_mult = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult");
   //syn_tool->init(mesh_para->seen_part->feature_map, tar_para_shape->feature_map, mesh_para->seen_part->detail_map);
+
+  std::ofstream paraOutput(tar_model->getOutputPath() + "/synpara.txt");
+  if (paraOutput)
+  {
+    paraOutput << "levels: " << syn_tool->levels << std::endl;
+    paraOutput << "patch size: " << syn_tool->patch_size << std::endl;
+    paraOutput << "max iter: " << syn_tool->max_iter << std::endl;
+    paraOutput << "random size: " << syn_tool->best_random_size << std::endl;
+    paraOutput << "lamd occ: " << syn_tool->lamd_occ << std::endl;
+    paraOutput << "bias rate: " << syn_tool->bias_rate << std::endl;
+    paraOutput << "beta center: " << syn_tool->beta_func_center << std::endl;
+    paraOutput << "beta mult: " << syn_tool->beta_func_mult << std::endl;
+    paraOutput.close();
+  }
+
   syn_tool->init(src_para_shape->feature_map, tar_para_shape->feature_map, src_para_shape->detail_map);
   syn_tool->doSynthesisNew();
 
@@ -2392,6 +2408,8 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   //this->startDetailSynthesis(src_model);
 
   cv::imwrite(src_model->getOutputPath() + "/src_displacement.png", 255*src_para_shape->detail_map[3]);
+
+  src_model->updateShape(old_src_v_list);// go back to shape before normal transfer
 }
 
 void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
@@ -2428,6 +2446,21 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   std::set<int> visible_faces;
   ShapeUtility::visibleFacesInModel(src_model, visible_faces);
   computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, visible_faces, mask);
+
+  //cv::Mat reflectance_map;
+  //std::vector<cv::Mat> reflectance;
+  //reflectance.push_back(src_para_shape->detail_map[2]);
+  //reflectance.push_back(src_para_shape->detail_map[1]);
+  //reflectance.push_back(src_para_shape->detail_map[0]);
+  //{
+  //  // dilate the detail map in case of black
+  //  for (int i = 0; i < 3; ++i)
+  //  {
+  //    ShapeUtility::dilateImage(reflectance[i], 20);
+  //  }
+  //}
+  //cv::merge(reflectance, reflectance_map);
+  //cv::imwrite(src_model->getOutputPath() + "/src_reflectance.png", 255 * reflectance_map);
 
   // compute height mesh
   /*cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
@@ -2471,7 +2504,6 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance1.xml", src_para_shape->detail_map[1]);
   //YMLHandler::saveToFile(src_model->getOutputPath(), "reflectance2.xml", src_para_shape->detail_map[2]);
   //YMLHandler::saveToFile(src_model->getOutputPath(), "detail_map3.xml", src_para_shape->detail_map[3]);
-
 
 
   // denormalize displacement map
@@ -2580,6 +2612,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   //}
 
   resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
+  bool use_geo_para_mapping = LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("Synthesis:geo_transfer_use_para_map");
 
   kevin_vector_field.reset(new KevinVectorField);
   kevin_vector_field->init(src_model);
@@ -2708,15 +2741,18 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   computeFeatureMap(tar_para_shape.get(), vertex_feature_list, tar_para_shape->cut_faces);
 
   // not necessary
-  syn_tool.reset(new SynthesisTool);
-  syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
-  syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
-  syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
-  syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
-  syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
-  syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
-  syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
+  if (!use_geo_para_mapping)
+  {
+    syn_tool.reset(new SynthesisTool);
+    syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+    syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+    syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+    syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+    syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+    syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+    syn_tool->setExportPath(tar_model->getOutputPath());
+    syn_tool->doNNFOptimization(src_para_shape->feature_map, tar_para_shape->feature_map);
+  }
 
 
   // prepare the local transform for each sampled vertices from target model
@@ -2751,7 +2787,20 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   // get corresponding vertices on source
   std::vector<STLVectori> src_v_ids;
   {
-    this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, src_model, tar_model, syn_tool, sampled_tar_model, src_v_ids);std::cout << "test" << std::endl;
+    if (!use_geo_para_mapping)
+    {
+      this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, src_model, tar_model, syn_tool, sampled_tar_model, src_v_ids);std::cout << "test" << std::endl;
+    }
+    else
+    {
+      STLVectori src_v_ids_mono;
+      this->prepareParaPatches(src_model, tar_model, sampled_tar_model, src_v_ids_mono);
+      for (auto i : src_v_ids_mono)
+      {
+        src_v_ids.push_back(STLVectori(1, i));
+      }
+    }
+    
 
     //float tar_mesh_scale = tar_model->getBoundBox()->getRadius();
     //for (size_t i = 0; i < sampled_tar_model.size(); ++i)
@@ -2765,13 +2814,6 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     //  int src_v_id = 0;
     //  src_feature_kd->nearestPt(tar_feature_vec, src_v_id);
     //  src_v_ids.push_back(mesh_para->seen_part->vertex_set[src_v_id]);
-    //}
-
-    //STLVectori src_v_ids_mono;
-    //this->prepareParaPatches(src_model, tar_model, sampled_tar_model, src_v_ids_mono);
-    //for (auto i : src_v_ids_mono)
-    //{
-    //  src_v_ids.push_back(STLVectori(1, i));
     //}
   }
 

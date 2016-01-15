@@ -77,87 +77,150 @@ namespace ShapeUtility
     }
   }
 
-  void computeDirectionalOcclusion(std::shared_ptr<Model> model)
+  void computeDirectionalOcclusion(std::shared_ptr<Model> model, bool enforce_update)
   {
     // only called when the shape is changed
 
-    // 1. initialize BSPTree
-    int num_band = 2;
-    std::cout << "Initialize BSPTree.\n";
-    std::shared_ptr<Ray> ray(new Ray);
-    ray->passModel(model->getShapeVertexList(), model->getShapeFaceList());
-
-    // 2. generate direction samples
-    std::cout << "Generate samples.\n";
-    int sqrtNumSamples = 10;
-    int numSamples = sqrtNumSamples * sqrtNumSamples;
-    std::vector<SAMPLE> samples(numSamples);
-    GenerateSamples(sqrtNumSamples, num_band, &samples[0]);
-
-    // 3. compute coeffs
-    std::cout << "Compute Directional Occlusion Feature.\n";
-    int numBand = num_band;
-    int numFunctions = numBand * numBand;
-    Bound* bound = model->getBoundBox();
-    PolygonMesh* poly_mesh = model->getPolygonMesh();
-    PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeff = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
-    PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
-    STLVectorf max_coeff(numFunctions, -std::numeric_limits<float>::max());
-    STLVectorf min_coeff(numFunctions, std::numeric_limits<float>::max());
-    float perc = 0;
-    for (auto i : poly_mesh->vertices())
+    std::string file_name = model->getDataPath() + "/" + model->getFileName() + ".SH.txt";
+    if (enforce_update)
     {
-      shadowCoeff[i].clear();
-      shadowCoeff[i].resize(numFunctions, 0.0f);
-      for (int k = 0; k < numSamples; ++k)
-      {
-        double dot = (double)samples[k].direction.dot(v_normals[i]);
+      file_name = model->getDataPath() + "/" + model->getFileName() + ".normal_transferred_SH.txt";
+    }
 
-        if (dot > 0.0)
+    std::cout << "Generate or Load directional occlusion feature." << std::endl;
+    bool regenerate = true;
+    // test if the file exist
+    std::ifstream inFile(file_name);
+    if (inFile.is_open())
+    {
+      std::cout << "Load feature." << std::endl;
+      regenerate = false;
+
+      PolygonMesh* poly_mesh = model->getPolygonMesh();
+      PolygonMesh::Vertex_attribute<std::vector<float>> v_sh = poly_mesh->vertex_attribute<std::vector<float>>("v:DirectionalOcclusion");
+
+      std::string line_str;
+      int n_line = 0;
+      for (auto vit : poly_mesh->vertices())
+      {
+        getline(inFile, line_str);
+        std::stringstream line_parser(line_str);
+        //Vec3 cur_v_symmetry(0,0,0);
+        std::vector<float> cur_v_sh;
+        cur_v_sh.resize(4);
+        line_parser >> cur_v_sh[0] >> cur_v_sh[1] >> cur_v_sh[2] >> cur_v_sh[3];
+        v_sh[vit] = cur_v_sh;
+        ++n_line;
+      }
+
+      inFile.close();
+      if (n_line == poly_mesh->n_vertices()) 
+      {
+        std::cout << "Loading directional occlusion feature finished." << std::endl;
+      }
+      else 
+      {
+        std::cout << "Loading errors. Need to regenerate." << std::endl;
+        regenerate = true;
+      }
+    }
+
+
+
+    // 1. initialize BSPTree
+    if (regenerate)
+    {
+      int num_band = 2;
+      std::cout << "Initialize BSPTree.\n";
+      std::shared_ptr<Ray> ray(new Ray);
+      ray->passModel(model->getShapeVertexList(), model->getShapeFaceList());
+
+      // 2. generate direction samples
+      std::cout << "Generate samples.\n";
+      int sqrtNumSamples = 10;
+      int numSamples = sqrtNumSamples * sqrtNumSamples;
+      std::vector<SAMPLE> samples(numSamples);
+      GenerateSamples(sqrtNumSamples, num_band, &samples[0]);
+
+      // 3. compute coeffs
+      std::cout << "Compute Directional Occlusion Feature.\n";
+      int numBand = num_band;
+      int numFunctions = numBand * numBand;
+      Bound* bound = model->getBoundBox();
+      PolygonMesh* poly_mesh = model->getPolygonMesh();
+      PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeff = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
+      PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+      STLVectorf max_coeff(numFunctions, -std::numeric_limits<float>::max());
+      STLVectorf min_coeff(numFunctions, std::numeric_limits<float>::max());
+      float perc = 0;
+      for (auto i : poly_mesh->vertices())
+      {
+        shadowCoeff[i].clear();
+        shadowCoeff[i].resize(numFunctions, 0.0f);
+        for (int k = 0; k < numSamples; ++k)
         {
-          Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
-          Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
-          if (ray->intersectModel(ray_start, ray_end))
+          double dot = (double)samples[k].direction.dot(v_normals[i]);
+
+          if (dot > 0.0)
           {
-            for (int l = 0; l < numFunctions; ++l)
+            Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
+            Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
+            if (ray->intersectModel(ray_start, ray_end))
             {
-              shadowCoeff[i][l] += dot * samples[k].shValues[l];
+              for (int l = 0; l < numFunctions; ++l)
+              {
+                shadowCoeff[i][l] += dot * samples[k].shValues[l];
+              }
             }
           }
         }
+
+        // rescale
+        for (int l = 0; l < numFunctions; ++l)
+        {
+          shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
+
+          if (shadowCoeff[i][l] > max_coeff[l]) max_coeff[l] = shadowCoeff[i][l];
+          if (shadowCoeff[i][l] < min_coeff[l]) min_coeff[l] = shadowCoeff[i][l];
+        }
+
+        float cur_perc = (float)i.idx() / poly_mesh->n_vertices();
+        if (cur_perc - perc >= 0.05)
+        {
+          perc = cur_perc;
+          std::cout << perc << "...";
+        }
+      }
+      std::cout << std::endl;
+
+      for (auto i : poly_mesh->vertices())
+      {
+        for (int l = 0; l < numFunctions; ++l)
+        {
+          shadowCoeff[i][l] = (shadowCoeff[i][l] - min_coeff[l]) / (max_coeff[l] - min_coeff[l]);
+        }
       }
 
-      // rescale
       for (int l = 0; l < numFunctions; ++l)
       {
-        shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
-
-        if (shadowCoeff[i][l] > max_coeff[l]) max_coeff[l] = shadowCoeff[i][l];
-        if (shadowCoeff[i][l] < min_coeff[l]) min_coeff[l] = shadowCoeff[i][l];
+        std::cout<< "sh min: " << min_coeff[l] << " sh max: " << max_coeff[l] << std::endl;
       }
+      std::cout << "Compute Directional Occlusion Feature finished.\n";
 
-      float cur_perc = (float)i.idx() / poly_mesh->n_vertices();
-      if (cur_perc - perc >= 0.05)
+      std::ofstream outFile(file_name);
+      if (outFile.is_open())
       {
-        perc = cur_perc;
-        std::cout << perc << "...";
+        for (auto i : poly_mesh->vertices())
+        {
+          outFile << shadowCoeff[i][0] << "\t" << shadowCoeff[i][1] << "\t" << shadowCoeff[i][2] << "\t" << shadowCoeff[i][3] << std::endl;
+        }
+        outFile.close();
       }
-    }
-    std::cout << std::endl;
-
-    for (auto i : poly_mesh->vertices())
-    {
-      for (int l = 0; l < numFunctions; ++l)
+      else
       {
-        shadowCoeff[i][l] = (shadowCoeff[i][l] - min_coeff[l]) / (max_coeff[l] - min_coeff[l]);
+        std::cout << "failed to open output file." << std::endl;
       }
     }
-
-    for (int l = 0; l < numFunctions; ++l)
-    {
-      std::cout<< "sh min: " << min_coeff[l] << " sh max: " << max_coeff[l] << std::endl;
-    }
-    std::cout << "Compute Directional Occlusion Feature finished.\n";
   }
 
 
@@ -461,24 +524,21 @@ namespace ShapeUtility
   void dilateImage(cv::Mat& mat, int max_n_dilate)
   {
     // assume to be single channel float
-    float* mat_ptr = (float*)mat.data;
-    // let
     for (int n_dilate = 0; n_dilate < max_n_dilate; ++n_dilate)
     {
-      cv::Mat temp_mat = cv::Mat::zeros(mat.rows, mat.cols, CV_32FC1);
-      for (int i = 0; i < mat.rows; ++i)
+      cv::Mat this_iter_mat = mat.clone();
+      for (int i = 0; i < mat.rows; i++)
       {
-        for (int j = 0; j < mat.cols; ++j)
+        for (int j = 0; j < mat.cols; j++)
         {
-          int offset = i * mat.cols + j;
-          if (mat_ptr[offset] < 0)
+          if (mat.at<float>(i, j) < 0)
           {
-            dilateImageMeetBoundary(mat, temp_mat, i, j);
+            dilateImageMeetBoundary(mat, this_iter_mat, i, j);
           }
         }
       }
-      mat = mat + temp_mat;
-    }
+      mat = this_iter_mat;
+    };
   }
 
   void dilateImageMeetBoundary(cv::Mat& mat, cv::Mat& filled_mat, int i, int j)

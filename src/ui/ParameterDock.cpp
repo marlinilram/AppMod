@@ -330,6 +330,8 @@ void ParameterDock::setSlotsSynParamters()
   connect(Synthesis_biasrate_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBiasRate(double)));
   connect(Synthesis_betacenter_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBetaCenter(double)));
   connect(Synthesis_betamultdoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBetaMult(double)));
+
+  connect(Synthesis_GeometryTransfer_ParaMap_checkBox, SIGNAL(stateChanged(int)), this, SLOT(setSynGeometryTransferParaMap(int)));
 }
 
 void ParameterDock::setSynResolution(int val)
@@ -377,4 +379,9 @@ void ParameterDock::setSynBetaCenter(double val)
 void ParameterDock::setSynBetaMult(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult") = val;
+}
+
+void ParameterDock::setSynGeometryTransferParaMap(int state)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("Synthesis:geo_transfer_use_para_map") = ((state == 0) ? false : true);
 }

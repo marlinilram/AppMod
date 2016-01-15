@@ -24,7 +24,7 @@ namespace ShapeUtility
 
   void computeNormalizedHeight(std::shared_ptr<Model> model);
   void computeMultiScaleSolidAngleCurvature(std::shared_ptr<Model> model);
-  void computeDirectionalOcclusion(std::shared_ptr<Model> model);
+  void computeDirectionalOcclusion(std::shared_ptr<Model> model, bool enforce_update = false);
   void computeSymmetry(std::shared_ptr<Model> model);
   void computeRMSCurvature(std::shared_ptr<Model> model);
 
