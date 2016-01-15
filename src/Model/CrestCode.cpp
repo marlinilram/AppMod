@@ -239,7 +239,7 @@ std::vector<STLVectori>& CrestCode::getCrestLines()
     temp.length = crest_lines[i].size();
     candidate.insert(temp);
   }
-  int best_candidate = 10;
+  int best_candidate = std::min(10, int(candidate.size()));
   std::vector<STLVectori> temp_crest_lines = crest_lines;
   crest_lines.clear();
   std::set<length_id>::const_iterator it = candidate.begin();

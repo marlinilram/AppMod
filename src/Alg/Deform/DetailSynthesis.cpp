@@ -1306,7 +1306,7 @@ void DetailSynthesis::applyDisplacementMap(std::shared_ptr<Model> src_model, std
     int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
     //bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
     std::set<int> near_vertices;
-    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, n_ring); // near_vertices stores the vertex id in source mesh not para shape
+    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 0); // near_vertices stores the vertex id in source mesh not para shape
     bool in_crest_line = false;
     for (auto i_near : near_vertices)
     {
@@ -2655,21 +2655,21 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   }
   computeFeatureMap(src_para_shape.get(), vertex_feature_list, face_in_normal);
 
-  float src_mesh_scale = src_model->getBoundBox()->getRadius();
-  std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
-  std::vector<float> src_feature_kd_data;
-  for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
-  {
-    for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
-    {
-      src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
-    }
-    //Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
-    //src_feature_kd_data.push_back(normalized_pos(0));
-    //src_feature_kd_data.push_back(normalized_pos(1));
-    //src_feature_kd_data.push_back(normalized_pos(2));
-  }
-  src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size());
+  //float src_mesh_scale = src_model->getBoundBox()->getRadius();
+  //std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
+  //std::vector<float> src_feature_kd_data;
+  //for (size_t i = 0; i < mesh_para->seen_part->vertex_set.size(); ++i)
+  //{
+  //  for (size_t j = 0; j < vertex_feature_list[mesh_para->seen_part->vertex_set[i]].size(); ++j)
+  //  {
+  //    src_feature_kd_data.push_back(vertex_feature_list[mesh_para->seen_part->vertex_set[i]][j]);
+  //  }
+  //  //Vec3 normalized_pos = (poly_mesh->position(PolygonMesh::Vertex(int(mesh_para->seen_part->vertex_set[i]))) - src_mesh_center) / src_mesh_scale;
+  //  //src_feature_kd_data.push_back(normalized_pos(0));
+  //  //src_feature_kd_data.push_back(normalized_pos(1));
+  //  //src_feature_kd_data.push_back(normalized_pos(2));
+  //}
+  //src_feature_kd->initKDTree(src_feature_kd_data, mesh_para->seen_part->vertex_set.size(), vertex_feature_list[0].size());
 
   poly_mesh = tar_model->getPolygonMesh();
   normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
@@ -2767,10 +2767,16 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
     //  src_v_ids.push_back(mesh_para->seen_part->vertex_set[src_v_id]);
     //}
 
-    //this->prepareParaPatches(src_model, tar_model, sampled_tar_model, src_v_ids);
+    //STLVectori src_v_ids_mono;
+    //this->prepareParaPatches(src_model, tar_model, sampled_tar_model, src_v_ids_mono);
+    //for (auto i : src_v_ids_mono)
+    //{
+    //  src_v_ids.push_back(STLVectori(1, i));
+    //}
   }
 
   // normal transform to get the local transform
+  VertexList old_src_vertex_list = src_model->getShapeVertexList();
   PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
   {
     NormalTransfer normal_transfer;
@@ -2816,6 +2822,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   if (!do_complete)
   {
     geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+    src_model->updateShape(old_src_vertex_list);// go back to old one, so we can re-run
   }
   else
   {
@@ -2967,8 +2974,8 @@ void DetailSynthesis::prepareParaPatches(std::shared_ptr<Model> src_model, std::
 
     // 3. search closest uv in source patch
     int src_patch_v_id = 0;
-    src_patches[0].kdTree_UV->nearestPt(tar_uv, src_patch_v_id);
-    src_v_ids.push_back(src_patches[0].vertex_set[src_patch_v_id]);
+    src_patches[visible_patches].kdTree_UV->nearestPt(tar_uv, src_patch_v_id);
+    src_v_ids.push_back(src_patches[visible_patches].vertex_set[src_patch_v_id]);
     //new_tar_sampled_v_ids.push_back(tar_sampled_v_ids[i]);
   }
   //tar_sampled_v_ids.swap(new_tar_sampled_v_ids);

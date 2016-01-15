@@ -18,15 +18,15 @@
     <item>
      <widget class="QToolBox" name="toolBox">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="page">
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-305</y>
+         <y>0</y>
          <width>336</width>
-         <height>1079</height>
+         <height>1081</height>
         </rect>
        </property>
        <attribute name="label">
@@ -835,7 +835,7 @@
                 <number>0</number>
                </property>
                <property name="minimum">
-                <double>1.000000000000000</double>
+                <double>0.000000000000000</double>
                </property>
                <property name="maximum">
                 <double>100.000000000000000</double>
@@ -882,8 +882,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>337</width>
-         <height>791</height>
+         <width>307</width>
+         <height>812</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1014,7 +1014,14 @@
               </widget>
              </item>
              <item>
-              <widget class="QDoubleSpinBox" name="Synthesis_occ_doubleSpinBox"/>
+              <widget class="QDoubleSpinBox" name="Synthesis_occ_doubleSpinBox">
+               <property name="decimals">
+                <number>5</number>
+               </property>
+               <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>
