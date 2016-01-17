@@ -51,7 +51,7 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:rand_size", 5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:occ", 0.001);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:bias_rate", 0.1);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_center", 0.2);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_center", 0.4);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_mult", 5.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:geo_transfer_use_para_map", false);
 }

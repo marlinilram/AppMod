@@ -135,4 +135,65 @@ namespace ImageUtility
     cv::imshow("mask_out", mask_out);
     cvDestroyWindow("Draw ROI");
   }
+
+  void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask)
+  {
+    mat_vec_out.clear();
+    for (size_t i = 0; i < mat_vec_in.size(); ++i)
+    {
+      mat_vec_out.push_back(mat_vec_in[i].clone());
+    }
+
+    int vec_dim = (int)mat_vec_out.size();
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        if (mask.at<float>(i, j) < 0.5)
+        {
+          for (int k = 0; k < vec_dim; ++k)
+          {
+            mat_vec_out[k].at<float>(i, j) = -1;
+          }
+        }
+      }
+    }
+  }
+
+  void mergeMatVecFromMask(std::vector<cv::Mat>& mat_vec_src, std::vector<cv::Mat>& mat_vec_tar, cv::Mat& mask)
+  {
+    if (mat_vec_src.size() != mat_vec_tar.size())
+    {
+      std::cout << "size doesn't match!!!" << std::endl;
+    }
+    std::cout << "DEBUG" << std::endl;
+    int dim_vec = int(mat_vec_src.size());
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        if (mask.at<float>(i, j) > 0.5)
+        {
+          for (int k = 0; k < dim_vec; ++k)
+          {
+            mat_vec_tar[k].at<float>(i, j) = mat_vec_src[k].at<float>(i, j);
+          }
+        }
+      }
+    }
+    std::cout << "DEBUG" << std::endl;
+  }
+
+  void exportMatVecImage(std::vector<cv::Mat>& mat_vec, std::string fname)
+  {
+    cv::Mat for_merge;
+    std::vector<cv::Mat> temp_mat_vec;
+    for (size_t i = 0; i < mat_vec.size(); ++i)
+    {
+      temp_mat_vec.push_back(mat_vec[i].clone());
+    }
+    std::swap(temp_mat_vec[0], temp_mat_vec[2]);
+    cv::merge(temp_mat_vec, for_merge);
+    cv::imwrite(fname, 255 * for_merge);
+  }
 }
