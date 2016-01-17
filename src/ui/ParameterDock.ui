@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>325</width>
+    <width>379</width>
     <height>904</height>
    </rect>
   </property>
@@ -18,14 +18,14 @@
     <item>
      <widget class="QToolBox" name="toolBox">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="page">
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-288</y>
-         <width>336</width>
+         <y>0</y>
+         <width>344</width>
          <height>1083</height>
         </rect>
        </property>
@@ -832,7 +832,7 @@
              <item>
               <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
                <property name="text">
-                <string>Test_Self_Apply</string>
+                <string>Generate Detail Map</string>
                </property>
               </widget>
              </item>
@@ -893,8 +893,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>307</width>
-         <height>812</height>
+         <width>196</width>
+         <height>302</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1069,7 +1069,7 @@
              <item>
               <widget class="QDoubleSpinBox" name="Synthesis_betacenter_doubleSpinBox">
                <property name="value">
-                <double>0.200000000000000</double>
+                <double>0.400000000000000</double>
                </property>
               </widget>
              </item>

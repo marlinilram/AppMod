@@ -80,7 +80,7 @@ void MeshParameterization::cutMesh(std::shared_ptr<Model> model)
   int largest_id = this->findLargestComponent(connected_components);
   if (largest_id != -1)
   {
-    seen_part->cut_faces = connected_components[largest_id];
+    //seen_part->cut_faces = connected_components[largest_id];
   }
 
   // get complement of visible faces to the full faces

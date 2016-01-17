@@ -180,6 +180,8 @@ namespace ShapeUtility
         {
           shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
 
+          if (l == 3) shadowCoeff[i][l] = fabs(shadowCoeff[i][l]);
+
           if (shadowCoeff[i][l] > max_coeff[l]) max_coeff[l] = shadowCoeff[i][l];
           if (shadowCoeff[i][l] < min_coeff[l]) min_coeff[l] = shadowCoeff[i][l];
         }
@@ -1087,13 +1089,14 @@ namespace ShapeUtility
       v_ids[0] = f_list[3 * f_id + 0];
       v_ids[1] = f_list[3 * f_id + 1];
       v_ids[2] = f_list[3 * f_id + 2];
-      return true;
+      return false;
       //}
     }
     if(meet_boundary)
     {
       return false;
     }
+    return false;
   }
 
 
@@ -1490,6 +1493,9 @@ namespace ShapeUtility
     PolygonMesh::Vertex_attribute<Vec3> v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
     PolygonMesh::Vertex_attribute<Vec3> v_tangents = tar_mesh->vertex_attribute<Vec3>("v:tangent");
 
+    std::cout << "size of src_v_ids: " << src_v_ids.size() << std::endl;
+    std::cout << "size of v_ids: " << v_ids.size() << std::endl;
+
     new_v_list.clear();
     new_v_list.resize(3 * v_ids.size(), 0);
     for (size_t i = 0; i < v_ids.size(); ++i)
@@ -1525,7 +1531,8 @@ namespace ShapeUtility
           std::cout << "nan happens in local transform transferring, src_vid: " << cur_src_v.idx() << "\ttar_vid: " << cur_v.idx() << std::endl;
         }
       }
-      n_t_v = n_t_v / n_cnt;
+      if (n_cnt != 0) n_t_v = n_t_v / n_cnt;
+      else n_t_v = t_v;
       //tar_mesh->position(cur_v) = t_v + 5 * v_normals[cur_v];continue;
       
       //Vec3 centroid(0, 0, 0);
@@ -1732,5 +1739,182 @@ namespace ShapeUtility
       }
     }
     return best_id;
+  }
+
+  void meshBoundaryFilter(STLVectori& vertices, LG::PolygonMesh* mesh)
+  {
+    STLVectori filtered_v;
+    for (auto i : vertices)
+    {
+      if (!mesh->is_boundary(PolygonMesh::Vertex(i)))
+      {
+        filtered_v.push_back(i);
+      }
+    }
+    vertices.swap(filtered_v);
+  }
+  void meshParaBoundaryFilter(STLVectori& vertices, STLVectori& v_set, LG::PolygonMesh* mesh) // mesh is the para shape mesh, v_set is the para mesh vertex mapping to its triangle mesh
+  {
+    STLVectori filtered_vertices;
+    for (auto i : vertices)
+    {
+      size_t pos = std::distance(v_set.begin(), std::find(v_set.begin(), v_set.end(), i));
+      if (pos == v_set.size())
+      {
+        std::cout << "\nWarning: sampled point " << i << " doesn't show in its para shape." << std::endl;
+      }
+      else
+      {
+        if (!mesh->is_boundary(PolygonMesh::Vertex(int(pos))))
+        {
+          filtered_vertices.push_back(i);
+        }
+      }
+    }
+    vertices.swap(filtered_vertices);
+  }
+
+  void vertexFilterFromParaMask(STLVectori& mesh_v_in, STLVectori& mesh_v_out, STLVectori& para_v_set, LG::PolygonMesh* para_mesh, cv::Mat& para_mask)
+  {
+    mesh_v_out.clear();
+    for (auto i : mesh_v_in)
+    {
+      size_t pos = std::distance(para_v_set.begin(), std::find(para_v_set.begin(), para_v_set.end(), i));
+      if (pos == para_v_set.size())
+      {
+        std::cout << "\nWarning: sampled point " << i << " doesn't show in its para shape." << std::endl;
+      }
+      else
+      {
+        Vec3 uv_coord = para_mesh->position(PolygonMesh::Vertex(int(pos)));
+        int imgx = std::max(0, std::min(para_mask.cols - 1, int(uv_coord[0] * para_mask.cols + 0.5)));
+        int imgy = std::max(0, std::min(para_mask.rows - 1, para_mask.rows - 1 - int(uv_coord[1] * para_mask.cols + 0.5)));
+        if (para_mask.at<float>(imgy, imgx) > 0.5)
+        {
+          mesh_v_out.push_back(i);
+        }
+      }
+    }
+  }
+
+  void mergeSubVector(STLVectori& parent, std::vector<STLVectori>& parent_vec, STLVectori& sub, std::vector<STLVectori>& sub_vec)
+  {
+    for (size_t i = 0; i < sub.size(); ++i)
+    {
+      size_t pos = std::distance(parent.begin(), std::find(parent.begin(), parent.end(), sub[i]));
+      if (pos == parent.size())
+      {
+        std::cout << "\nWarning: sampled point " << sub[i] << " doesn't show in its para shape." << std::endl;
+      }
+      else
+      {
+        parent_vec[pos].insert(parent_vec[pos].end(), sub_vec[i].begin(), sub_vec[i].end());
+      }
+    }
+  }
+
+  void exportVisForLocalTransform(std::shared_ptr<Model> model)
+  {
+    std::shared_ptr<ParaShape> para_shape(new ParaShape);
+    para_shape->initWithExtShape(model);
+    STLVectori v_set = para_shape->vertex_set;
+    PolygonMesh* mesh = model->getPolygonMesh();
+    PolygonMesh::Vertex_attribute<Vec3> local_transform = mesh->vertex_attribute<Vec3>("v:local_transform");
+
+    int resolution = 1024;
+    cv::Mat vis_map(1024, 1024, CV_32FC3, 0.0);
+    cv::Mat vis_mask(1024, 1024, CV_32FC1, 0.0);
+
+
+    int f_id;
+    std::vector<int> v_ids;
+    std::vector<float> bary_coord;
+    std::vector<float> pt(2, 0);
+    float min = std::numeric_limits<float>::max();
+    float max = std::numeric_limits<float>::min();
+
+    for(int x = 0; x < resolution; x ++)
+    {
+      for(int y = 0; y < resolution; y ++)
+      {
+        pt[0] = float(x) / resolution;
+        pt[1] = float(y) / resolution;
+        if (ShapeUtility::findClosestUVFace(pt, para_shape.get(), bary_coord, f_id, v_ids))
+        {
+          Vec3 lt_0 = local_transform[PolygonMesh::Vertex(v_set[v_ids[0]])];
+          Vec3 lt_1 = local_transform[PolygonMesh::Vertex(v_set[v_ids[1]])];
+          Vec3 lt_2 = local_transform[PolygonMesh::Vertex(v_set[v_ids[2]])];
+          Vec3 lt_avg = lt_0 / 3 + lt_1 / 3 + lt_2 / 3;
+          vis_map.at<cv::Vec3f>(resolution - y - 1, x) = cv::Vec3f(lt_avg[0], lt_avg[1], lt_avg[2]);
+
+          if (lt_avg.norm() > max) max = lt_avg.norm();
+          vis_mask.at<float>(resolution - y - 1, x) = 1.0;
+        }
+      }
+    }
+
+    for(int i = 0; i < resolution; i ++)
+    {
+      for(int j = 0; j < resolution; j ++)
+      {
+        if (vis_mask.at<float>(i, j) > 0.5)
+        {
+          cv::Vec3f cur = vis_map.at<cv::Vec3f>(i, j);
+          cur[0] = (cur[0] + max) / (2 * max);
+          cur[1] = (cur[1] + max) / (2 * max);
+          cur[2] = (cur[2] + max) / (2 * max);
+          vis_map.at<cv::Vec3f>(i, j) = cur;
+        }
+      }
+    }
+
+    //vis_map = (vis_map - min) / (max - min);
+
+    cv::imwrite(model->getOutputPath() + "/local_transform.png", vis_map * 255);
+  }
+
+  bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname)
+  {
+    cv::FileStorage fs(fpath + "/" + fname, cv::FileStorage::READ);
+    if (!fs.isOpened())
+    {
+      return false;
+    }
+
+    cv::Mat ext_detail_map;
+    fs[fname.substr(0, fname.find_last_of('.'))] >> ext_detail_map;
+
+    //cv::Mat src_uv_mask;
+    //computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, src_uv_mask);
+    //src_para_shape->detail_map.push_back(displacement_map);
+    para_shape->detail_map.clear();
+    para_shape->detail_map.resize(4);
+    cv::split(ext_detail_map, &para_shape->detail_map[0]);
+
+    int n_filled_pixel = 0;
+    cv::Mat& detail_chn_1 = para_shape->detail_map[0];
+    for (int i = 0; i < detail_chn_1.rows; ++i)
+    {
+      for (int j = 0; j < detail_chn_1.cols; ++j)
+      {
+        if (detail_chn_1.at<float>(i, j) > -1.0)
+        {
+          ++ n_filled_pixel;
+        }
+      }
+    }
+
+    para_shape->n_filled_detail = n_filled_pixel;
+
+    if (n_filled_pixel == (detail_chn_1.rows * detail_chn_1.cols))
+    {
+      para_shape->filled = 1;
+      para_shape->fill_ratio = 1.0;
+    }
+    else
+    {
+      para_shape->filled = 0;
+      para_shape->fill_ratio = float(n_filled_pixel) / (detail_chn_1.rows * detail_chn_1.cols);
+    }
   }
 }
