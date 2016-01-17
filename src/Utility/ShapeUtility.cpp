@@ -180,6 +180,8 @@ namespace ShapeUtility
         {
           shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
 
+          if (l == 3) shadowCoeff[i][l] = fabs(shadowCoeff[i][l]);
+
           if (shadowCoeff[i][l] > max_coeff[l]) max_coeff[l] = shadowCoeff[i][l];
           if (shadowCoeff[i][l] < min_coeff[l]) min_coeff[l] = shadowCoeff[i][l];
         }
@@ -1087,13 +1089,14 @@ namespace ShapeUtility
       v_ids[0] = f_list[3 * f_id + 0];
       v_ids[1] = f_list[3 * f_id + 1];
       v_ids[2] = f_list[3 * f_id + 2];
-      return true;
+      return false;
       //}
     }
     if(meet_boundary)
     {
       return false;
     }
+    return false;
   }
 
 
@@ -1868,5 +1871,50 @@ namespace ShapeUtility
     //vis_map = (vis_map - min) / (max - min);
 
     cv::imwrite(model->getOutputPath() + "/local_transform.png", vis_map * 255);
+  }
+
+  bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname)
+  {
+    cv::FileStorage fs(fpath + "/" + fname, cv::FileStorage::READ);
+    if (!fs.isOpened())
+    {
+      return false;
+    }
+
+    cv::Mat ext_detail_map;
+    fs[fname.substr(0, fname.find_last_of('.'))] >> ext_detail_map;
+
+    //cv::Mat src_uv_mask;
+    //computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, src_uv_mask);
+    //src_para_shape->detail_map.push_back(displacement_map);
+    para_shape->detail_map.clear();
+    para_shape->detail_map.resize(4);
+    cv::split(ext_detail_map, &para_shape->detail_map[0]);
+
+    int n_filled_pixel = 0;
+    cv::Mat& detail_chn_1 = para_shape->detail_map[0];
+    for (int i = 0; i < detail_chn_1.rows; ++i)
+    {
+      for (int j = 0; j < detail_chn_1.cols; ++j)
+      {
+        if (detail_chn_1.at<float>(i, j) > -1.0)
+        {
+          ++ n_filled_pixel;
+        }
+      }
+    }
+
+    para_shape->n_filled_detail = n_filled_pixel;
+
+    if (n_filled_pixel == (detail_chn_1.rows * detail_chn_1.cols))
+    {
+      para_shape->filled = 1;
+      para_shape->fill_ratio = 1.0;
+    }
+    else
+    {
+      para_shape->filled = 0;
+      para_shape->fill_ratio = float(n_filled_pixel) / (detail_chn_1.rows * detail_chn_1.cols);
+    }
   }
 }

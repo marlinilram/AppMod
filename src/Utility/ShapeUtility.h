@@ -102,6 +102,8 @@ namespace ShapeUtility
   void mergeSubVector(STLVectori& parent, std::vector<STLVectori>& parent_vec, STLVectori& sub, std::vector<STLVectori>& sub_vec);
 
   void exportVisForLocalTransform(std::shared_ptr<Model> model);
+
+  bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname);
 }
 
 #endif
