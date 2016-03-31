@@ -196,4 +196,17 @@ namespace ImageUtility
     cv::merge(temp_mat_vec, for_merge);
     cv::imwrite(fname, 255 * for_merge);
   }
+
+  bool meetZero(std::vector<int>& vec)
+  {
+    for (auto i : vec)
+    {
+      if (i == 0)
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

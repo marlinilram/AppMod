@@ -75,7 +75,7 @@ private slots:
   void runLFRegNonRigid();
   void testApplyDisplacement();
   void runApplyDisplacement();
-  void isGoAhead();
+  void runLoadDetailMap();
 
   void setSynGeometryTransferParaMap(int state);
 

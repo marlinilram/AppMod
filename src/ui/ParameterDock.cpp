@@ -45,7 +45,7 @@ ParameterDock::ParameterDock()
   connect(RunApplyDisplacement_pushButton, SIGNAL(clicked()), this, SLOT(runApplyDisplacement()));
   connect(Synthesis_Scale_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynthesisScale(double)));
   connect(Crsp_Type_ComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setCrspTypeMode(int)));
-  connect(GoAhead_PushButton, SIGNAL(clicked()), this, SLOT(isGoAhead()));
+  connect(RunLoadDetailMap_PushButton, SIGNAL(clicked()), this, SLOT(runLoadDetailMap()));
   connect(Show_Color_Crest_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(setShowColorCrest(int)));
   connect(N_Ring_DoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNRing(double)));
   // set feature render mode
@@ -296,7 +296,7 @@ void ParameterDock::runApplyDisplacement()
   disp_modules->runApplyDisplacement();
 }
 
-void ParameterDock::isGoAhead()
+void ParameterDock::runLoadDetailMap()
 {
   disp_modules->loadDetailMap();
 }

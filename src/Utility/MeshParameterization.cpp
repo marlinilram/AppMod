@@ -45,7 +45,7 @@ void MeshParameterization::doMeshParameterization(std::shared_ptr<Model> model)
   this->findBoundary(unseen_part->cut_shape, unseen_part->boundary_loop);
   this->computeBaryCentericPara(unseen_part->cut_shape, unseen_part->boundary_loop);
   ShapeUtility::saveParameterization(model->getOutputPath(), unseen_part->cut_shape, "unseen");
-  this->buildKDTree_UV();
+  //this->buildKDTree_UV();
   this->getNormalOfOriginalMesh(model);
   this->getVertexOfOriginalMesh(model);
 }

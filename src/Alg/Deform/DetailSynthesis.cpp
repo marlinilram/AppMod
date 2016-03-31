@@ -1976,6 +1976,7 @@ void DetailSynthesis::doTransfer(std::shared_ptr<Model> src_model, std::shared_p
   if (!ShapeUtility::loadExtDetailMap(src_para_shape.get(), src_model->getDataPath(), file_detail_map))
   {
     std::cout << "Required detail map: " << file_detail_map << " doesn't exist, please generate them first." << std::endl;
+    return;
   }
 
   cv::imshow("src detail 0", src_para_shape->detail_map[0]);
@@ -2330,20 +2331,20 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
 
   ImageUtility::exportMatVecImage(src_para_shape->detail_map, src_model->getOutputPath() + "/detail_map.png");
 
-  //cv::Mat reflectance_map;
-  //std::vector<cv::Mat> reflectance;
-  //reflectance.push_back(src_para_shape->detail_map[2]);
-  //reflectance.push_back(src_para_shape->detail_map[1]);
-  //reflectance.push_back(src_para_shape->detail_map[0]);
-  //{
-  //  // dilate the detail map in case of black
-  //  for (int i = 0; i < 3; ++i)
-  //  {
-  //    ShapeUtility::dilateImage(reflectance[i], 20);
-  //  }
-  //}
-  //cv::merge(reflectance, reflectance_map);
-  //cv::imwrite(src_model->getOutputPath() + "/src_reflectance.png", 255 * reflectance_map);
+  cv::Mat reflectance_map;
+  std::vector<cv::Mat> reflectance;
+  reflectance.push_back(src_para_shape->detail_map[2]);
+  reflectance.push_back(src_para_shape->detail_map[1]);
+  reflectance.push_back(src_para_shape->detail_map[0]);
+  {
+    // dilate the detail map in case of black
+    for (int i = 0; i < 3; ++i)
+    {
+      ShapeUtility::dilateImage(reflectance[i], 20);
+    }
+  }
+  cv::merge(reflectance, reflectance_map);
+  cv::imwrite(src_model->getOutputPath() + "/src_reflectance.png", 255 * reflectance_map);
 
   // compute height mesh
   /*cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
@@ -2432,6 +2433,7 @@ void DetailSynthesis::applyNewDisp(std::shared_ptr<Model> src_model, std::shared
   fs2["new_d2_displacement"] >> d2_displacement_mat;
   cv::Mat mask(d2_displacement_mat.rows, d2_displacement_mat.cols, CV_32FC1, 1);
   cv::imshow("before", d2_displacement_mat.clone());
+  cv::imwrite(src_model->getOutputPath() + "/displacement_map.png", d2_displacement_mat*255);
   {
     ImageUtility::generateMultiMask(d2_displacement_mat.clone(), mask);
     //return;
@@ -2468,11 +2470,11 @@ void DetailSynthesis::applyNewDisp(std::shared_ptr<Model> src_model, std::shared
 void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, STLVectori& sampled_t_v, STLVectorf& sampled_t_new_v, bool do_complete)
 {
   //std::shared_ptr<GeometryTransfer> geometry_transfer_debug(new GeometryTransfer);
-  //geometry_transfer_debug->debugDeformation(tar_model);return;
+  //geometry_transfer_debug->debugDeformation(tar_model);
   //{
   //  std::vector<int> v_ids;
   //  std::vector<float> v_list;
-  //  std::ifstream fdebug(tar_model->getDataPath() + "/move_debug.txt");
+  //  std::ifstream fdebug(tar_model->getDataPath() + "/new_v_list.txt");
   //  if (fdebug.is_open())
   //  {
   //    std::string line;
@@ -2489,7 +2491,11 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   //    }
   //    //std::cout << "Load move_debug.txt finished." << std::endl;
   //    fdebug.close();
+
+  //    geometry_transfer_debug->transferDeformation(tar_model, v_ids, v_list);
+  //    return;
   //  }
+  //
   //  actors.clear();
   //  actors.push_back(GLActor(ML_POINT, 3.0f));
   //  actors.push_back(GLActor(ML_LINE, 1.0f));
@@ -2583,13 +2589,11 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   src_mesh_center = src_mesh_center / poly_mesh->n_vertices();
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
-  std::set<int> face_in_normal;
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
   {
-    //NormalTransfer normal_transfer;
-    //normal_transfer.visibleFaceInNormalMap(src_model, "final_normal", face_in_normal);
-    ShapeUtility::visibleFacesInModel(src_model, face_in_normal);
+    this->testMeshPara(src_model);
   }
-  computeFeatureMap(src_para_shape.get(), vertex_feature_list, face_in_normal);
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
 
   //float src_mesh_scale = src_model->getBoundBox()->getRadius();
   //std::shared_ptr<KDTreeWrapper> src_feature_kd(new KDTreeWrapper);
@@ -2804,11 +2808,15 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
       fdebug.close();
     }
 
-    sampled_tar_model.clear();sampled_tar_model.push_back(0);
-    new_v_list.clear(); new_v_list.push_back(0);;new_v_list.push_back(0);;new_v_list.push_back(0);
-
+    PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
     geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
     src_model->updateShape(old_src_vertex_list);// go back to old one, so we can re-run
+
+    // save vis for local transform of target model
+    {
+      ShapeUtility::computeLocalTransform(&old_tar_mesh, tar_model->getPolygonMesh());
+      ShapeUtility::exportVisForLocalTransform(tar_model);
+    }
   }
   else
   {

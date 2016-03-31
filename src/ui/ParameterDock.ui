@@ -24,7 +24,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-268</y>
          <width>344</width>
          <height>1083</height>
         </rect>
@@ -830,7 +830,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
+              <widget class="QPushButton" name="RunLoadDetailMap_PushButton">
                <property name="text">
                 <string>Generate Detail Map</string>
                </property>
@@ -857,9 +857,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="GoAhead_PushButton">
+              <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
                <property name="text">
-                <string>Apply_New_Disp</string>
+                <string>Apply New Disp</string>
                </property>
               </widget>
              </item>
@@ -893,8 +893,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>196</width>
-         <height>302</height>
+         <width>361</width>
+         <height>812</height>
         </rect>
        </property>
        <attribute name="label">

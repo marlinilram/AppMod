@@ -39,6 +39,8 @@ namespace ImageUtility
   void mergeMatVecFromMask(std::vector<cv::Mat>& mat_vec_src, std::vector<cv::Mat>& mat_vec_tar, cv::Mat& mask);
 
   void exportMatVecImage(std::vector<cv::Mat>& mat_vec, std::string fname);
+
+  bool meetZero(std::vector<int>& vec);
 }
 
 #endif // !ImageUtility_H

@@ -3,6 +3,7 @@
 
 #include "KDTreeWrapper.h"
 #include "ShapeUtility.h"
+#include "ImageUtility.h"
 
 #include <vector>
 #include <cv.h>
@@ -107,7 +108,7 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
 
 void SynthesisTool::generatePyramid(std::vector<cv::Mat>& pyr, int level)
 {
-  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 70, 1.0 / float(level - 1)); // minimal size 35 * 35
+  py_scale = std::pow(float(std::min(pyr[0].cols, pyr[0].rows)) / 140, 1.0 / float(level - 1)); // minimal size 70 * 70
   for (int i = 1; i < level; ++i)
   {
     cv::Mat dst;
@@ -1058,6 +1059,19 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
 
   std::cout << "OK1!!!!\n";
   std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
+  //int new_levels = 0;
+  //for (size_t i = 0; i < src_patch_mask.size(); ++i)
+  //{
+  //  if (src_patch_mask[i].size() > 0)
+  //  {
+  //    ++new_levels;
+  //  }
+  //  else
+  //  {
+  //    levels = new_levels;
+  //    break;
+  //  }
+  //}
   for (int l = levels - 1; l >= 0; --l)                      
   {
     double duration;
@@ -1706,7 +1720,7 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
 
   //if (d_f < 0.001)  lambda_d_f = 1, lambda_d_d = 0;
   //else  lambda_d_f = 0, lambda_d_d = 1;
-  beta = 1.0 / (1 + exp(5 * (d_f - 0.5)));
+  beta = 1.0 / (1 + exp(beta_func_mult * (d_f - beta_func_center)));
   d =  beta * d_f + (1 - beta) * d_d + lamd_occ * d_occ;// + lambda_d_d * d_d + d_occ;
   return d;
 }
@@ -1864,6 +1878,20 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
   std::cout << "Init mask finished.\n";
   
   std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
+  //int new_levels = 0;
+  //for (size_t i = 0; i < src_patch_mask.size(); ++i)
+  //{
+  //  if (ImageUtility::meetZero(src_patch_mask[i]))
+  //  {
+  //    ++new_levels;
+  //  }
+  //  else
+  //  {
+  //    levels = new_levels;
+  //    break;
+  //  }
+  //}
+  //std::cout << "Levels now: " << levels << std::endl;
   for (int l = levels - 1; l >= 0; --l)                      
   {
     double duration;
