@@ -77,87 +77,152 @@ namespace ShapeUtility
     }
   }
 
-  void computeDirectionalOcclusion(std::shared_ptr<Model> model)
+  void computeDirectionalOcclusion(std::shared_ptr<Model> model, bool enforce_update)
   {
     // only called when the shape is changed
 
-    // 1. initialize BSPTree
-    int num_band = 2;
-    std::cout << "Initialize BSPTree.\n";
-    std::shared_ptr<Ray> ray(new Ray);
-    ray->passModel(model->getShapeVertexList(), model->getShapeFaceList());
-
-    // 2. generate direction samples
-    std::cout << "Generate samples.\n";
-    int sqrtNumSamples = 10;
-    int numSamples = sqrtNumSamples * sqrtNumSamples;
-    std::vector<SAMPLE> samples(numSamples);
-    GenerateSamples(sqrtNumSamples, num_band, &samples[0]);
-
-    // 3. compute coeffs
-    std::cout << "Compute Directional Occlusion Feature.\n";
-    int numBand = num_band;
-    int numFunctions = numBand * numBand;
-    Bound* bound = model->getBoundBox();
-    PolygonMesh* poly_mesh = model->getPolygonMesh();
-    PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeff = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
-    PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
-    STLVectorf max_coeff(numFunctions, -std::numeric_limits<float>::max());
-    STLVectorf min_coeff(numFunctions, std::numeric_limits<float>::max());
-    float perc = 0;
-    for (auto i : poly_mesh->vertices())
+    std::string file_name = model->getDataPath() + "/" + model->getFileName() + ".SH.txt";
+    if (enforce_update)
     {
-      shadowCoeff[i].clear();
-      shadowCoeff[i].resize(numFunctions, 0.0f);
-      for (int k = 0; k < numSamples; ++k)
-      {
-        double dot = (double)samples[k].direction.dot(v_normals[i]);
+      file_name = model->getDataPath() + "/" + model->getFileName() + ".normal_transferred_SH.txt";
+    }
 
-        if (dot > 0.0)
+    std::cout << "Generate or Load directional occlusion feature." << std::endl;
+    bool regenerate = true;
+    // test if the file exist
+    std::ifstream inFile(file_name);
+    if (inFile.is_open())
+    {
+      std::cout << "Load feature." << std::endl;
+      regenerate = false;
+
+      PolygonMesh* poly_mesh = model->getPolygonMesh();
+      PolygonMesh::Vertex_attribute<std::vector<float>> v_sh = poly_mesh->vertex_attribute<std::vector<float>>("v:DirectionalOcclusion");
+
+      std::string line_str;
+      int n_line = 0;
+      for (auto vit : poly_mesh->vertices())
+      {
+        getline(inFile, line_str);
+        std::stringstream line_parser(line_str);
+        //Vec3 cur_v_symmetry(0,0,0);
+        std::vector<float> cur_v_sh;
+        cur_v_sh.resize(4);
+        line_parser >> cur_v_sh[0] >> cur_v_sh[1] >> cur_v_sh[2] >> cur_v_sh[3];
+        v_sh[vit] = cur_v_sh;
+        ++n_line;
+      }
+
+      inFile.close();
+      if (n_line == poly_mesh->n_vertices()) 
+      {
+        std::cout << "Loading directional occlusion feature finished." << std::endl;
+      }
+      else 
+      {
+        std::cout << "Loading errors. Need to regenerate." << std::endl;
+        regenerate = true;
+      }
+    }
+
+
+
+    // 1. initialize BSPTree
+    if (regenerate)
+    {
+      int num_band = 2;
+      std::cout << "Initialize BSPTree.\n";
+      std::shared_ptr<Ray> ray(new Ray);
+      ray->passModel(model->getShapeVertexList(), model->getShapeFaceList());
+
+      // 2. generate direction samples
+      std::cout << "Generate samples.\n";
+      int sqrtNumSamples = 10;
+      int numSamples = sqrtNumSamples * sqrtNumSamples;
+      std::vector<SAMPLE> samples(numSamples);
+      GenerateSamples(sqrtNumSamples, num_band, &samples[0]);
+
+      // 3. compute coeffs
+      std::cout << "Compute Directional Occlusion Feature.\n";
+      int numBand = num_band;
+      int numFunctions = numBand * numBand;
+      Bound* bound = model->getBoundBox();
+      PolygonMesh* poly_mesh = model->getPolygonMesh();
+      PolygonMesh::Vertex_attribute<STLVectorf> shadowCoeff = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
+      PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+      STLVectorf max_coeff(numFunctions, -std::numeric_limits<float>::max());
+      STLVectorf min_coeff(numFunctions, std::numeric_limits<float>::max());
+      float perc = 0;
+      for (auto i : poly_mesh->vertices())
+      {
+        shadowCoeff[i].clear();
+        shadowCoeff[i].resize(numFunctions, 0.0f);
+        for (int k = 0; k < numSamples; ++k)
         {
-          Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
-          Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
-          if (ray->intersectModel(ray_start, ray_end))
+          double dot = (double)samples[k].direction.dot(v_normals[i]);
+
+          if (dot > 0.0)
           {
-            for (int l = 0; l < numFunctions; ++l)
+            Eigen::Vector3d ray_start = (poly_mesh->position(i) + 2 * 0.01 * bound->getRadius() * v_normals[i]).cast<double>();
+            Eigen::Vector3d ray_end   = ray_start + (5 * bound->getRadius() * samples[k].direction).cast<double>();
+            if (ray->intersectModel(ray_start, ray_end))
             {
-              shadowCoeff[i][l] += dot * samples[k].shValues[l];
+              for (int l = 0; l < numFunctions; ++l)
+              {
+                shadowCoeff[i][l] += dot * samples[k].shValues[l];
+              }
             }
           }
         }
+
+        // rescale
+        for (int l = 0; l < numFunctions; ++l)
+        {
+          shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
+
+          if (l == 3) shadowCoeff[i][l] = fabs(shadowCoeff[i][l]);
+
+          if (shadowCoeff[i][l] > max_coeff[l]) max_coeff[l] = shadowCoeff[i][l];
+          if (shadowCoeff[i][l] < min_coeff[l]) min_coeff[l] = shadowCoeff[i][l];
+        }
+
+        float cur_perc = (float)i.idx() / poly_mesh->n_vertices();
+        if (cur_perc - perc >= 0.05)
+        {
+          perc = cur_perc;
+          std::cout << perc << "...";
+        }
+      }
+      std::cout << std::endl;
+
+      for (auto i : poly_mesh->vertices())
+      {
+        for (int l = 0; l < numFunctions; ++l)
+        {
+          shadowCoeff[i][l] = (shadowCoeff[i][l] - min_coeff[l]) / (max_coeff[l] - min_coeff[l]);
+        }
       }
 
-      // rescale
       for (int l = 0; l < numFunctions; ++l)
       {
-        shadowCoeff[i][l] *= 4.0 * M_PI / numSamples;
-
-        if (shadowCoeff[i][l] > max_coeff[l]) max_coeff[l] = shadowCoeff[i][l];
-        if (shadowCoeff[i][l] < min_coeff[l]) min_coeff[l] = shadowCoeff[i][l];
+        std::cout<< "sh min: " << min_coeff[l] << " sh max: " << max_coeff[l] << std::endl;
       }
+      std::cout << "Compute Directional Occlusion Feature finished.\n";
 
-      float cur_perc = (float)i.idx() / poly_mesh->n_vertices();
-      if (cur_perc - perc >= 0.05)
+      std::ofstream outFile(file_name);
+      if (outFile.is_open())
       {
-        perc = cur_perc;
-        std::cout << perc << "...";
+        for (auto i : poly_mesh->vertices())
+        {
+          outFile << shadowCoeff[i][0] << "\t" << shadowCoeff[i][1] << "\t" << shadowCoeff[i][2] << "\t" << shadowCoeff[i][3] << std::endl;
+        }
+        outFile.close();
       }
-    }
-    std::cout << std::endl;
-
-    for (auto i : poly_mesh->vertices())
-    {
-      for (int l = 0; l < numFunctions; ++l)
+      else
       {
-        shadowCoeff[i][l] = (shadowCoeff[i][l] - min_coeff[l]) / (max_coeff[l] - min_coeff[l]);
+        std::cout << "failed to open output file." << std::endl;
       }
     }
-
-    for (int l = 0; l < numFunctions; ++l)
-    {
-      std::cout<< "sh min: " << min_coeff[l] << " sh max: " << max_coeff[l] << std::endl;
-    }
-    std::cout << "Compute Directional Occlusion Feature finished.\n";
   }
 
 
@@ -368,7 +433,7 @@ namespace ShapeUtility
                        (pos(2) - bounding->minZ) / (bounding->maxZ - bounding->minZ);
         Vec3 normal = v_normals[vit];
         ShapeUtility::computeVertexSymmetryProjection(pos, normal, symmetric_plane_coef);
-        normal = (normal + Vec3(1, 1, 1)) / 2 ;
+        normal = (normal + Vec3(1, 1, 1)) / 2 ; // Why? Need to check // To make it between [0,1]
 
         std::vector<float> cur_v_symmetry;
         cur_v_symmetry.push_back(pos(0));
@@ -409,7 +474,7 @@ namespace ShapeUtility
     Vector3f symmetric_plane_normal;
     symmetric_plane_normal << plane_coef[0], plane_coef[1], plane_coef[2];
     double distance = (plane_coef[0] * vertex(0) + plane_coef[1] * vertex(1) + plane_coef[2] * vertex(2) + plane_coef[3])
-      / sqrt(plane_coef[0] * plane_coef[0] + plane_coef[1] * plane_coef[1] + plane_coef[2] * plane_coef[3]);
+      / sqrt(plane_coef[0] * plane_coef[0] + plane_coef[1] * plane_coef[1] + plane_coef[2] * plane_coef[2]);
     vertex += (-distance) * symmetric_plane_normal;
     if(normal.dot(symmetric_plane_normal) < 0)
     {
@@ -443,6 +508,7 @@ namespace ShapeUtility
       {
         for (auto hecc : poly_mesh->halfedges(PolygonMesh::Face(j)))
         {
+          if (poly_mesh->is_boundary(poly_mesh->opposite_halfedge(hecc))) continue;
           int cur_f_id = poly_mesh->face(poly_mesh->opposite_halfedge(hecc)).idx();
           iter = f_id.find(cur_f_id);
           if (iter == f_id.end())
@@ -460,24 +526,21 @@ namespace ShapeUtility
   void dilateImage(cv::Mat& mat, int max_n_dilate)
   {
     // assume to be single channel float
-    float* mat_ptr = (float*)mat.data;
-    // let
     for (int n_dilate = 0; n_dilate < max_n_dilate; ++n_dilate)
     {
-      cv::Mat temp_mat = cv::Mat::zeros(mat.rows, mat.cols, CV_32FC1);
-      for (int i = 0; i < mat.rows; ++i)
+      cv::Mat this_iter_mat = mat.clone();
+      for (int i = 0; i < mat.rows; i++)
       {
-        for (int j = 0; j < mat.cols; ++j)
+        for (int j = 0; j < mat.cols; j++)
         {
-          int offset = i * mat.cols + j;
-          if (mat_ptr[offset] < 0)
+          if (mat.at<float>(i, j) < 0)
           {
-            dilateImageMeetBoundary(mat, temp_mat, i, j);
+            dilateImageMeetBoundary(mat, this_iter_mat, i, j);
           }
         }
       }
-      mat = mat + temp_mat;
-    }
+      mat = this_iter_mat;
+    };
   }
 
   void dilateImageMeetBoundary(cv::Mat& mat, cv::Mat& filled_mat, int i, int j)
@@ -1026,13 +1089,14 @@ namespace ShapeUtility
       v_ids[0] = f_list[3 * f_id + 0];
       v_ids[1] = f_list[3 * f_id + 1];
       v_ids[2] = f_list[3 * f_id + 2];
-      return true;
+      return false;
       //}
     }
     if(meet_boundary)
     {
       return false;
     }
+    return false;
   }
 
 
@@ -1429,6 +1493,9 @@ namespace ShapeUtility
     PolygonMesh::Vertex_attribute<Vec3> v_normals = tar_mesh->vertex_attribute<Vec3>("v:normal");
     PolygonMesh::Vertex_attribute<Vec3> v_tangents = tar_mesh->vertex_attribute<Vec3>("v:tangent");
 
+    std::cout << "size of src_v_ids: " << src_v_ids.size() << std::endl;
+    std::cout << "size of v_ids: " << v_ids.size() << std::endl;
+
     new_v_list.clear();
     new_v_list.resize(3 * v_ids.size(), 0);
     for (size_t i = 0; i < v_ids.size(); ++i)
@@ -1464,7 +1531,8 @@ namespace ShapeUtility
           std::cout << "nan happens in local transform transferring, src_vid: " << cur_src_v.idx() << "\ttar_vid: " << cur_v.idx() << std::endl;
         }
       }
-      n_t_v = n_t_v / n_cnt;
+      if (n_cnt != 0) n_t_v = n_t_v / n_cnt;
+      else n_t_v = t_v;
       //tar_mesh->position(cur_v) = t_v + 5 * v_normals[cur_v];continue;
       
       //Vec3 centroid(0, 0, 0);
@@ -1671,5 +1739,182 @@ namespace ShapeUtility
       }
     }
     return best_id;
+  }
+
+  void meshBoundaryFilter(STLVectori& vertices, LG::PolygonMesh* mesh)
+  {
+    STLVectori filtered_v;
+    for (auto i : vertices)
+    {
+      if (!mesh->is_boundary(PolygonMesh::Vertex(i)))
+      {
+        filtered_v.push_back(i);
+      }
+    }
+    vertices.swap(filtered_v);
+  }
+  void meshParaBoundaryFilter(STLVectori& vertices, STLVectori& v_set, LG::PolygonMesh* mesh) // mesh is the para shape mesh, v_set is the para mesh vertex mapping to its triangle mesh
+  {
+    STLVectori filtered_vertices;
+    for (auto i : vertices)
+    {
+      size_t pos = std::distance(v_set.begin(), std::find(v_set.begin(), v_set.end(), i));
+      if (pos == v_set.size())
+      {
+        std::cout << "\nWarning: sampled point " << i << " doesn't show in its para shape." << std::endl;
+      }
+      else
+      {
+        if (!mesh->is_boundary(PolygonMesh::Vertex(int(pos))))
+        {
+          filtered_vertices.push_back(i);
+        }
+      }
+    }
+    vertices.swap(filtered_vertices);
+  }
+
+  void vertexFilterFromParaMask(STLVectori& mesh_v_in, STLVectori& mesh_v_out, STLVectori& para_v_set, LG::PolygonMesh* para_mesh, cv::Mat& para_mask)
+  {
+    mesh_v_out.clear();
+    for (auto i : mesh_v_in)
+    {
+      size_t pos = std::distance(para_v_set.begin(), std::find(para_v_set.begin(), para_v_set.end(), i));
+      if (pos == para_v_set.size())
+      {
+        std::cout << "\nWarning: sampled point " << i << " doesn't show in its para shape." << std::endl;
+      }
+      else
+      {
+        Vec3 uv_coord = para_mesh->position(PolygonMesh::Vertex(int(pos)));
+        int imgx = std::max(0, std::min(para_mask.cols - 1, int(uv_coord[0] * para_mask.cols + 0.5)));
+        int imgy = std::max(0, std::min(para_mask.rows - 1, para_mask.rows - 1 - int(uv_coord[1] * para_mask.cols + 0.5)));
+        if (para_mask.at<float>(imgy, imgx) > 0.5)
+        {
+          mesh_v_out.push_back(i);
+        }
+      }
+    }
+  }
+
+  void mergeSubVector(STLVectori& parent, std::vector<STLVectori>& parent_vec, STLVectori& sub, std::vector<STLVectori>& sub_vec)
+  {
+    for (size_t i = 0; i < sub.size(); ++i)
+    {
+      size_t pos = std::distance(parent.begin(), std::find(parent.begin(), parent.end(), sub[i]));
+      if (pos == parent.size())
+      {
+        std::cout << "\nWarning: sampled point " << sub[i] << " doesn't show in its para shape." << std::endl;
+      }
+      else
+      {
+        parent_vec[pos].insert(parent_vec[pos].end(), sub_vec[i].begin(), sub_vec[i].end());
+      }
+    }
+  }
+
+  void exportVisForLocalTransform(std::shared_ptr<Model> model)
+  {
+    std::shared_ptr<ParaShape> para_shape(new ParaShape);
+    para_shape->initWithExtShape(model);
+    STLVectori v_set = para_shape->vertex_set;
+    PolygonMesh* mesh = model->getPolygonMesh();
+    PolygonMesh::Vertex_attribute<Vec3> local_transform = mesh->vertex_attribute<Vec3>("v:local_transform");
+
+    int resolution = 1024;
+    cv::Mat vis_map(1024, 1024, CV_32FC3, 0.0);
+    cv::Mat vis_mask(1024, 1024, CV_32FC1, 0.0);
+
+
+    int f_id;
+    std::vector<int> v_ids;
+    std::vector<float> bary_coord;
+    std::vector<float> pt(2, 0);
+    float min = std::numeric_limits<float>::max();
+    float max = std::numeric_limits<float>::min();
+
+    for(int x = 0; x < resolution; x ++)
+    {
+      for(int y = 0; y < resolution; y ++)
+      {
+        pt[0] = float(x) / resolution;
+        pt[1] = float(y) / resolution;
+        if (ShapeUtility::findClosestUVFace(pt, para_shape.get(), bary_coord, f_id, v_ids))
+        {
+          Vec3 lt_0 = local_transform[PolygonMesh::Vertex(v_set[v_ids[0]])];
+          Vec3 lt_1 = local_transform[PolygonMesh::Vertex(v_set[v_ids[1]])];
+          Vec3 lt_2 = local_transform[PolygonMesh::Vertex(v_set[v_ids[2]])];
+          Vec3 lt_avg = lt_0 / 3 + lt_1 / 3 + lt_2 / 3;
+          vis_map.at<cv::Vec3f>(resolution - y - 1, x) = cv::Vec3f(lt_avg[0], lt_avg[1], lt_avg[2]);
+
+          if (lt_avg.norm() > max) max = lt_avg.norm();
+          vis_mask.at<float>(resolution - y - 1, x) = 1.0;
+        }
+      }
+    }
+
+    for(int i = 0; i < resolution; i ++)
+    {
+      for(int j = 0; j < resolution; j ++)
+      {
+        if (vis_mask.at<float>(i, j) > 0.5)
+        {
+          cv::Vec3f cur = vis_map.at<cv::Vec3f>(i, j);
+          cur[0] = (cur[0] + max) / (2 * max);
+          cur[1] = (cur[1] + max) / (2 * max);
+          cur[2] = (cur[2] + max) / (2 * max);
+          vis_map.at<cv::Vec3f>(i, j) = cur;
+        }
+      }
+    }
+
+    //vis_map = (vis_map - min) / (max - min);
+
+    cv::imwrite(model->getOutputPath() + "/local_transform.png", vis_map * 255);
+  }
+
+  bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname)
+  {
+    cv::FileStorage fs(fpath + "/" + fname, cv::FileStorage::READ);
+    if (!fs.isOpened())
+    {
+      return false;
+    }
+
+    cv::Mat ext_detail_map;
+    fs[fname.substr(0, fname.find_last_of('.'))] >> ext_detail_map;
+
+    //cv::Mat src_uv_mask;
+    //computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, mesh_para->seen_part->cut_faces, src_uv_mask);
+    //src_para_shape->detail_map.push_back(displacement_map);
+    para_shape->detail_map.clear();
+    para_shape->detail_map.resize(4);
+    cv::split(ext_detail_map, &para_shape->detail_map[0]);
+
+    int n_filled_pixel = 0;
+    cv::Mat& detail_chn_1 = para_shape->detail_map[0];
+    for (int i = 0; i < detail_chn_1.rows; ++i)
+    {
+      for (int j = 0; j < detail_chn_1.cols; ++j)
+      {
+        if (detail_chn_1.at<float>(i, j) > -1.0)
+        {
+          ++ n_filled_pixel;
+        }
+      }
+    }
+
+    para_shape->n_filled_detail = n_filled_pixel;
+
+    if (n_filled_pixel == (detail_chn_1.rows * detail_chn_1.cols))
+    {
+      para_shape->filled = 1;
+      para_shape->fill_ratio = 1.0;
+    }
+    else
+    {
+      para_shape->filled = 0;
+      para_shape->fill_ratio = float(n_filled_pixel) / (detail_chn_1.rows * detail_chn_1.cols);
+    }
   }
 }

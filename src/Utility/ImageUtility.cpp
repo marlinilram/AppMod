@@ -37,8 +37,10 @@ namespace ImageUtility
     }
   }
 
-  void generateMask(cv::Mat& img_in, cv::Mat& mask_out)
+  bool generateMask(cv::Mat& img_in, cv::Mat& mask_out)
   {
+    // Attention!!! it will modify the img_in photo
+    bool is_finished = false;
     IplImage reflectance_map_iplimage = IplImage(img_in);
 
     MouseArgs* m_arg = new MouseArgs();
@@ -50,6 +52,12 @@ namespace ImageUtility
       cvShowImage("Draw ROI", m_arg->img);
       if(cvWaitKey(100) == 27)
         break;
+      
+      if(cvWaitKey(100) == 32)
+      {
+        is_finished = true;
+        break;
+      }
     }
 
     if(m_arg->points < 1)
@@ -86,8 +94,119 @@ namespace ImageUtility
     delete m_arg;
 
     cvDestroyWindow("Draw ROI");
+    return is_finished;
   }
 
+  void generateMultiMask(cv::Mat& img_in, cv::Mat& mask_out)
+  {
+    bool is_finished = false;
+    bool is_cur_finished = false;
+    std::vector<cv::Mat>  mask_group;
+    while (!is_finished)
+    {
+      cv::Mat cur_mask(img_in.rows, img_in.cols, CV_32FC1, 1);
+      if (generateMask(img_in, cur_mask))
+      {
+        is_finished = true;
+      }
+      mask_group.push_back(cur_mask);
+    }
+    
+    
+    for (int i = 0; i < mask_out.rows; i++)
+    {
+      for (int j = 0; j < mask_out.cols; j++)
+      {
+        bool in_mask = false;
+        for(size_t k = 0; k < mask_group.size(); k ++)
+        {
+          if (mask_group[k].at<float>(i, j) > 0.5)
+          {
+            in_mask = true;
+            break;
+          }
+        }
+        if (!in_mask)
+        {
+          mask_out.at<float>(i, j) = 0;
+        }
+      }
+    }
+    cv::imshow("mask_out", mask_out);
+    cvDestroyWindow("Draw ROI");
+  }
 
+  void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask)
+  {
+    mat_vec_out.clear();
+    for (size_t i = 0; i < mat_vec_in.size(); ++i)
+    {
+      mat_vec_out.push_back(mat_vec_in[i].clone());
+    }
 
+    int vec_dim = (int)mat_vec_out.size();
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        if (mask.at<float>(i, j) < 0.5)
+        {
+          for (int k = 0; k < vec_dim; ++k)
+          {
+            mat_vec_out[k].at<float>(i, j) = -1;
+          }
+        }
+      }
+    }
+  }
+
+  void mergeMatVecFromMask(std::vector<cv::Mat>& mat_vec_src, std::vector<cv::Mat>& mat_vec_tar, cv::Mat& mask)
+  {
+    if (mat_vec_src.size() != mat_vec_tar.size())
+    {
+      std::cout << "size doesn't match!!!" << std::endl;
+    }
+    std::cout << "DEBUG" << std::endl;
+    int dim_vec = int(mat_vec_src.size());
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        if (mask.at<float>(i, j) > 0.5)
+        {
+          for (int k = 0; k < dim_vec; ++k)
+          {
+            mat_vec_tar[k].at<float>(i, j) = mat_vec_src[k].at<float>(i, j);
+          }
+        }
+      }
+    }
+    std::cout << "DEBUG" << std::endl;
+  }
+
+  void exportMatVecImage(std::vector<cv::Mat>& mat_vec, std::string fname)
+  {
+    cv::Mat for_merge;
+    std::vector<cv::Mat> temp_mat_vec;
+    for (size_t i = 0; i < mat_vec.size(); ++i)
+    {
+      temp_mat_vec.push_back(mat_vec[i].clone());
+    }
+    std::swap(temp_mat_vec[0], temp_mat_vec[2]);
+    cv::merge(temp_mat_vec, for_merge);
+    cv::imwrite(fname, 255 * for_merge);
+  }
+
+  bool meetZero(std::vector<int>& vec)
+  {
+    for (auto i : vec)
+    {
+      if (i == 0)
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

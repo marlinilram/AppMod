@@ -24,7 +24,7 @@ namespace ShapeUtility
 
   void computeNormalizedHeight(std::shared_ptr<Model> model);
   void computeMultiScaleSolidAngleCurvature(std::shared_ptr<Model> model);
-  void computeDirectionalOcclusion(std::shared_ptr<Model> model);
+  void computeDirectionalOcclusion(std::shared_ptr<Model> model, bool enforce_update = false);
   void computeSymmetry(std::shared_ptr<Model> model);
   void computeRMSCurvature(std::shared_ptr<Model> model);
 
@@ -94,6 +94,16 @@ namespace ShapeUtility
   void nRingVertices(LG::PolygonMesh* poly_mesh, int v_id, std::set<int>& vertices, int n_ring = 1);
 
   int getVisiblePatchIDinPatches(std::vector<ParaShape>& patches, std::set<int>& ori_visible_faces);
+
+  void meshBoundaryFilter(STLVectori& vertices, LG::PolygonMesh* mesh);
+  void meshParaBoundaryFilter(STLVectori& vertices, STLVectori& v_set, LG::PolygonMesh* mesh);
+  void vertexFilterFromParaMask(STLVectori& mesh_v_in, STLVectori& mesh_v_out, STLVectori& para_v_set, LG::PolygonMesh* para_mesh, cv::Mat& para_mask);
+
+  void mergeSubVector(STLVectori& parent, std::vector<STLVectori>& parent_vec, STLVectori& sub, std::vector<STLVectori>& sub_vec);
+
+  void exportVisForLocalTransform(std::shared_ptr<Model> model);
+
+  bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname);
 }
 
 #endif

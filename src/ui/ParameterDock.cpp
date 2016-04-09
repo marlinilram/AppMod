@@ -45,7 +45,7 @@ ParameterDock::ParameterDock()
   connect(RunApplyDisplacement_pushButton, SIGNAL(clicked()), this, SLOT(runApplyDisplacement()));
   connect(Synthesis_Scale_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynthesisScale(double)));
   connect(Crsp_Type_ComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(setCrspTypeMode(int)));
-  connect(GoAhead_PushButton, SIGNAL(clicked()), this, SLOT(isGoAhead()));
+  connect(RunLoadDetailMap_PushButton, SIGNAL(clicked()), this, SLOT(runLoadDetailMap()));
   connect(Show_Color_Crest_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(setShowColorCrest(int)));
   connect(N_Ring_DoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNRing(double)));
   // set feature render mode
@@ -296,7 +296,7 @@ void ParameterDock::runApplyDisplacement()
   disp_modules->runApplyDisplacement();
 }
 
-void ParameterDock::isGoAhead()
+void ParameterDock::runLoadDetailMap()
 {
   disp_modules->loadDetailMap();
 }
@@ -330,6 +330,8 @@ void ParameterDock::setSlotsSynParamters()
   connect(Synthesis_biasrate_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBiasRate(double)));
   connect(Synthesis_betacenter_doubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBetaCenter(double)));
   connect(Synthesis_betamultdoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setSynBetaMult(double)));
+
+  connect(Synthesis_GeometryTransfer_ParaMap_checkBox, SIGNAL(stateChanged(int)), this, SLOT(setSynGeometryTransferParaMap(int)));
 }
 
 void ParameterDock::setSynResolution(int val)
@@ -377,4 +379,9 @@ void ParameterDock::setSynBetaCenter(double val)
 void ParameterDock::setSynBetaMult(double val)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult") = val;
+}
+
+void ParameterDock::setSynGeometryTransferParaMap(int state)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("Synthesis:geo_transfer_use_para_map") = ((state == 0) ? false : true);
 }

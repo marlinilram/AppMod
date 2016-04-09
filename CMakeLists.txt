@@ -1,7 +1,7 @@
 cmake_minimum_required( VERSION 2.8 )
 project( ImageToShape )
 
-SET( CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.2.1\\5.2.1\\msvc2012_64_opengl" 
+SET( CMAKE_PREFIX_PATH "C:\\Qt\\Qt5.5.1\\5.5\\msvc2013_64" 
 						"C:\\Program Files (x86)\\Windows Kits\\8.0\\Lib\\win8\\um\\x64" )
 
 # Find includes in corresponding build directories
@@ -25,7 +25,7 @@ find_package( OpenCV REQUIRED )
 FIND_PATH( BOOST_DIR "boost" )
 
 # LGMESH FILES
-SET( LGMESH_PATH          "C:/Users/Jared/Desktop/Image-2-Shape-folk/LgMesh/LgMeshLib" )
+SET( LGMESH_PATH          "D:/Projects/LgMesh/LgMesh/LgMeshLib" )
 FILE( GLOB LGMESH_SRCS    "${LGMESH_PATH}/core/*.*" "${LGMESH_PATH}/IO/*.*" "${LGMESH_PATH}/Utility/*.*" )
 SET( LGMESH_INCLUDE_DIR   ${LGMESH_PATH}/core/ ${LGMESH_PATH}/IO/ ${LGMESH_PATH}/Utility/ )
 #MESSAGE( STATUS "LGMESH_SRCS:         " ${LGMESH_SRCS} )
@@ -152,7 +152,7 @@ TARGET_LINK_LIBRARIES( ${PROJECT_NAME}
 					             ${Qt5OpenGL_LIBRARIES}
 					             ${OPENGL_LIBRARIES}
                        ${OpenCV_LIBS}
-                       ${GLEW_LIBRARIES}
+                       ${GLEW_LIBRARY}
                        ${VTK_LIBRARIES}
                        ${Cholmod_lib}
                        debug ${NLopt_lib_debug}

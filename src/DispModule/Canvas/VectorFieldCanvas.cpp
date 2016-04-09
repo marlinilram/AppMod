@@ -366,7 +366,7 @@ bool VectorFieldCanvas::displaySourceCurves()
   CURVES source_curves;
   this->feature_model->NormalizedSourceCurves(source_curves);
   glPointSize(2) ;
-  glLineWidth(12);
+  glLineWidth(6);
   if (render_mode == VectorField::SOURCE_MODE)      
   {
     glColor4f( 66.0 / 255.0, 152.0 / 255.0f, 23.0/255.0f, alpha ) ;

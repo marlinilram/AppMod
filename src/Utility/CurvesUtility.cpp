@@ -668,6 +668,10 @@ void CurvesAvgDir(CURVES& curves, std::vector<Vector2f>& cur_avg_dir, int sp_rat
       dir = Vector2f(curves[i][curves[i].size() - 1].x - curves[i][0].x,
         curves[i][curves[i].size() - 1].y - curves[i][0].y);
     }
+    if (fabs(dir.norm()) < 1e-9)
+    {
+      dir = Vector2f(1.0, 0.0);
+    }
     dir.normalize();
     cur_avg_dir.push_back(dir);
   }

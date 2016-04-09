@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>325</width>
+    <width>379</width>
     <height>904</height>
    </rect>
   </property>
@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-305</y>
-         <width>336</width>
-         <height>1079</height>
+         <y>-268</y>
+         <width>344</width>
+         <height>1083</height>
         </rect>
        </property>
        <attribute name="label">
@@ -749,11 +749,22 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="TestApplyDisplacement_PushButton">
-             <property name="text">
-              <string>Do_Geometry_Transfer</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_25">
+             <item>
+              <widget class="QPushButton" name="TestApplyDisplacement_PushButton">
+               <property name="text">
+                <string>Do_Geometry_Transfer</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="Synthesis_GeometryTransfer_ParaMap_checkBox">
+               <property name="text">
+                <string>Use Para Mapping</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -819,9 +830,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
+              <widget class="QPushButton" name="RunLoadDetailMap_PushButton">
                <property name="text">
-                <string>Test_Self_Apply</string>
+                <string>Generate Detail Map</string>
                </property>
               </widget>
              </item>
@@ -835,7 +846,7 @@
                 <number>0</number>
                </property>
                <property name="minimum">
-                <double>1.000000000000000</double>
+                <double>0.000000000000000</double>
                </property>
                <property name="maximum">
                 <double>100.000000000000000</double>
@@ -846,9 +857,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="GoAhead_PushButton">
+              <widget class="QPushButton" name="RunApplyDisplacement_pushButton">
                <property name="text">
-                <string>Apply_New_Disp</string>
+                <string>Apply New Disp</string>
                </property>
               </widget>
              </item>
@@ -882,8 +893,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>337</width>
-         <height>791</height>
+         <width>361</width>
+         <height>812</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1014,7 +1025,17 @@
               </widget>
              </item>
              <item>
-              <widget class="QDoubleSpinBox" name="Synthesis_occ_doubleSpinBox"/>
+              <widget class="QDoubleSpinBox" name="Synthesis_occ_doubleSpinBox">
+               <property name="decimals">
+                <number>5</number>
+               </property>
+               <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.001000000000000</double>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>
@@ -1048,7 +1069,7 @@
              <item>
               <widget class="QDoubleSpinBox" name="Synthesis_betacenter_doubleSpinBox">
                <property name="value">
-                <double>0.200000000000000</double>
+                <double>0.400000000000000</double>
                </property>
               </widget>
              </item>

@@ -32,7 +32,15 @@ namespace ImageUtility
   };
 
   void MouseDraw(int event,int x,int y,int flags,void* param);
-  void generateMask(cv::Mat& img_in, cv::Mat& mask_out);
+  bool generateMask(cv::Mat& img_in, cv::Mat& mask_out);
+  void generateMultiMask(cv::Mat& img_in, cv::Mat& mask_out);
+
+  void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask);
+  void mergeMatVecFromMask(std::vector<cv::Mat>& mat_vec_src, std::vector<cv::Mat>& mat_vec_tar, cv::Mat& mask);
+
+  void exportMatVecImage(std::vector<cv::Mat>& mat_vec, std::string fname);
+
+  bool meetZero(std::vector<int>& vec);
 }
 
 #endif // !ImageUtility_H
