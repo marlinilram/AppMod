@@ -433,7 +433,7 @@ namespace ShapeUtility
                        (pos(2) - bounding->minZ) / (bounding->maxZ - bounding->minZ);
         Vec3 normal = v_normals[vit];
         ShapeUtility::computeVertexSymmetryProjection(pos, normal, symmetric_plane_coef);
-        normal = (normal + Vec3(1, 1, 1)) / 2 ;
+        normal = (normal + Vec3(1, 1, 1)) / 2 ; // Why? Need to check // To make it between [0,1]
 
         std::vector<float> cur_v_symmetry;
         cur_v_symmetry.push_back(pos(0));
@@ -474,7 +474,7 @@ namespace ShapeUtility
     Vector3f symmetric_plane_normal;
     symmetric_plane_normal << plane_coef[0], plane_coef[1], plane_coef[2];
     double distance = (plane_coef[0] * vertex(0) + plane_coef[1] * vertex(1) + plane_coef[2] * vertex(2) + plane_coef[3])
-      / sqrt(plane_coef[0] * plane_coef[0] + plane_coef[1] * plane_coef[1] + plane_coef[2] * plane_coef[3]);
+      / sqrt(plane_coef[0] * plane_coef[0] + plane_coef[1] * plane_coef[1] + plane_coef[2] * plane_coef[2]);
     vertex += (-distance) * symmetric_plane_normal;
     if(normal.dot(symmetric_plane_normal) < 0)
     {
