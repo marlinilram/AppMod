@@ -15,7 +15,7 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:w", 0.1);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:c", 2.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:d", 5.0);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:e", 5.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:e", 2.5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("SField:crsp_type", 1);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("SField:WinWidth", 1.0);

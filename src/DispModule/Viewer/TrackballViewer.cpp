@@ -197,6 +197,7 @@ void TrackballViewer::updateColorBuffer()
 void TrackballViewer::resetCamera()
 {
   // assume only one dispObjects MainCanvas exist here
+	makeCurrent(); // in case of opengl context problem in restoreStateFromFile();
   if (dispObjects.empty())
   {
     return;
@@ -227,7 +228,7 @@ void TrackballViewer::resetCamera()
     std::cout << "Load camera info successes...\n";
   else
     std::cout << "Load camera info failed...\n";
-
+  doneCurrent();
   // set the scene in MainCanvasViewer
   syncCamera();
 }
