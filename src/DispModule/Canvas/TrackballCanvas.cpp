@@ -120,39 +120,45 @@ void TrackballCanvas::updateModelBuffer()
     use_flat = 0;
   }
 
-  LG::PolygonMesh* poly_mesh;
+  std::vector<LG::PolygonMesh*> poly_meshes;
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
   {
-    poly_mesh = model->getPolygonMesh();
+    model->getPolygonMeshVector(poly_meshes);
   }
   else
   {
-    poly_mesh = model->getLightPolygonMesh();
+    poly_meshes.push_back(model->getLightPolygonMesh());
   }
-  LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_normals = poly_mesh->vertex_attribute<LG::Vec3>("v:normal");
-  LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_mesh->vertex_attribute<LG::Vec3>("v:colors");
+
   VertexList vertex_list;
   NormalList normal_list;
   STLVectorf color_list;
   FaceList face_list;
-  for (auto vit : poly_mesh->vertices())
+  int vert_accu = 0;
+  for (size_t i = 0; i < poly_meshes.size(); i++)
   {
-    LG::Vec3 pt = poly_mesh->position(vit);
-    LG::Vec3 n = v_normals[vit];
-    LG::Vec3 c = v_colors[vit];
-    for (int i = 0; i < 3; ++i)
+    LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_normals = poly_meshes[i]->vertex_attribute<LG::Vec3>("v:normal");
+    LG::PolygonMesh::Vertex_attribute<LG::Vec3> v_colors = poly_meshes[i]->vertex_attribute<LG::Vec3>("v:colors");
+    for (auto vit : poly_meshes[i]->vertices())
     {
-      vertex_list.push_back(pt[i]);
-      normal_list.push_back(n[i]);
-      color_list.push_back(c[i]);
+      LG::Vec3 pt = poly_meshes[i]->position(vit);
+      LG::Vec3 n = v_normals[vit];
+      LG::Vec3 c = v_colors[vit];
+      for (int i = 0; i < 3; ++i)
+      {
+        vertex_list.push_back(pt[i]);
+        normal_list.push_back(n[i]);
+        color_list.push_back(c[i]);
+      }
     }
-  }
-  for (auto fit : poly_mesh->faces())
-  {
-    for (auto vfc : poly_mesh->vertices(fit))
+    for (auto fit : poly_meshes[i]->faces())
     {
-      face_list.push_back(size_t(vfc.idx()));
+      for (auto vfc : poly_meshes[i]->vertices(fit))
+      {
+        face_list.push_back(size_t(vfc.idx() + vert_accu));
+      }
     }
+    vert_accu += poly_meshes[i]->n_vertices();
   }
 
   num_vertex = GLenum(vertex_list.size() / 3);

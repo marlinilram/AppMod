@@ -23,6 +23,10 @@ Model::Model()
 
 Model::~Model()
 {
+  for (size_t i = 0; i < shapes.size(); i++)
+  {
+    delete shapes[i];
+  }
   std::cout << "Deleted a Model.\n";
 }
 
@@ -97,9 +101,9 @@ bool Model::loadOBJ(const std::string name, const std::string path)
 {
   std::cout << "Reading OBJ file " << name << " from disk.\n";
 
-  std::vector<tinyobj::shape_t> shapes;
+  std::vector<tinyobj::shape_t> t_obj;
   std::vector<tinyobj::material_t> materials;
-  std::string err = tinyobj::LoadObj(shapes, materials, (path + "/" + name).c_str(), nullptr);
+  std::string err = tinyobj::LoadObj(t_obj, materials, (path + "/" + name).c_str(), nullptr);
   if (!err.empty())
   {
     std::cerr << err << std::endl;
@@ -108,7 +112,15 @@ bool Model::loadOBJ(const std::string name, const std::string path)
 
   shape.reset(new Shape());
   
-  shape->init(shapes[0].mesh.positions, shapes[0].mesh.indices, shapes[0].mesh.uv_indices, shapes[0].mesh.texcoords);
+  shape->init(t_obj[0].mesh.positions, t_obj[0].mesh.indices, t_obj[0].mesh.uv_indices, t_obj[0].mesh.texcoords);
+
+  // 4/20/2016 loaded shapes
+  shapes.resize(t_obj.size(), nullptr);
+  for (size_t i = 0; i < t_obj.size(); i++)
+  {
+    shapes[i] = new Shape();
+    shapes[i]->init(t_obj[i].mesh.positions, t_obj[i].mesh.indices, t_obj[i].mesh.uv_indices, t_obj[i].mesh.texcoords);
+  }
 
   Vector3f shape_center;
   shape->getBoundbox()->getCenter(shape_center.data());
@@ -662,4 +674,14 @@ void Model::updateShapeCrest()
   shape_crest->buildCandidates();
   shape_crest->mergeCandidates(shape_crest->crest_edges, shape_crest->crest_lines);
   shape_crest->buildEdgeLineMapper();
+}
+
+/* 4/20/2016 get polymesh vector */
+void Model::getPolygonMeshVector(std::vector<LG::PolygonMesh*>& polymesh_vec)
+{
+  polymesh_vec.clear();
+  for (size_t i = 0; i < shapes.size(); i++)
+  {
+    polymesh_vec.push_back(shapes[i]->getPolygonMesh());
+  }
 }

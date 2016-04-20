@@ -1702,6 +1702,8 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
       // for each feature dimension
       for (int k = 0; k < fdim; ++k)
       {
+		// TODO: experiment here probably only use the center pixel for feature comparision
+		// in case of resolution mismatch
         d_f += pow(gpsrc_f[k][level].at<float>(srcPatch.second + i, srcPatch.first + j) - gptar_f[k][level].at<float>(tarPatch.second + i, tarPatch.first + j), 2);
       }
       // for each detail dimension

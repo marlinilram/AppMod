@@ -132,31 +132,6 @@ void AlgHandler::doNormalCompute()
   }
 }
 
-void AlgHandler::doDetailSynthesis()
-{
-  //if (!workable())
-  //{
-  //  return;
-  //}
-  //detail_synthesis->testShapePlane(shape_model);
-  /*shape_model->exportOBJ(0);
-  doNormalTransfer();
-  shape_model->exportOBJ(0);*/
-
-  detail_synthesis->doTransfer(shape_model, synthesis_model);
-  //detail_synthesis->startDetailSynthesis(shape_model);
-
-
-  //detail_synthesis->computeVectorField(shape_model);
-  actors.clear();
-  std::vector<GLActor> temp_actors;
-  detail_synthesis->getDrawableActors(temp_actors);
-  for (size_t i = 0; i < temp_actors.size(); ++i)
-  {
-    actors.push_back(temp_actors[i]);
-  }
-}
-
 void AlgHandler::doProjICP()
 {
   if (!workable())
@@ -184,6 +159,31 @@ void AlgHandler::doLargeFeatureReg(int reg_type)
     lf_reg->runRegNonRigid(LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:registerMethod"));
   }
   //lf_reg->testNlopt();
+}
+
+void AlgHandler::doDetailSynthesis()
+{
+	//if (!workable())
+	//{
+	//  return;
+	//}
+	//detail_synthesis->testShapePlane(shape_model);
+	/*shape_model->exportOBJ(0);
+	doNormalTransfer();
+	shape_model->exportOBJ(0);*/
+
+	detail_synthesis->doTransfer(shape_model, synthesis_model);
+	//detail_synthesis->startDetailSynthesis(shape_model);
+
+
+	//detail_synthesis->computeVectorField(shape_model);
+	actors.clear();
+	std::vector<GLActor> temp_actors;
+	detail_synthesis->getDrawableActors(temp_actors);
+	for (size_t i = 0; i < temp_actors.size(); ++i)
+	{
+		actors.push_back(temp_actors[i]);
+	}
 }
 
 void AlgHandler::testApplyDisplacement()

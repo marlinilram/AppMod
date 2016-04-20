@@ -89,6 +89,7 @@ private:
   std::shared_ptr<KDTreeWrapper> kdTree;
 
 private:
+
   Shape(const Shape&);
   void operator = (const Shape&);
 };
