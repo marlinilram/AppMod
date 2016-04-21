@@ -2,6 +2,8 @@
 #define AppearanceModel_H
 
 #include <string>
+#include <vector>
+#include <cv.h>
 
 class AppearanceModel
 {
@@ -18,6 +20,10 @@ public:
 private:
   std::string file_name;
   std::string file_path;
+
+  int resolution;
+  std::vector<cv::Mat> feature_maps;
+  std::vector<cv::Mat> detail_maps;
 
 private:
   AppearanceModel(const AppearanceModel&);
