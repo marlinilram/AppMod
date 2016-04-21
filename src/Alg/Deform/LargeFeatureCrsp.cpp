@@ -636,7 +636,7 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
           //current_point = n_tar_curves[j][k];
           //double2 diff = current_point - previous_point;
           accu_dist += (n_tar_curves[j][k] - n_tar_curves[j][k - 1]).norm();
-          if (accu_dist >= feature_model->src_sample_rate[i] / 2)
+          if (accu_dist >= (feature_model->src_sample_rate[i] / 1))
           {
             test_tar.push_back(std::pair<int, int>(j, k));
             accu_dist = 0;
@@ -885,7 +885,7 @@ void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, 
             double mag = hidden_diff.norm() * observation_diff.norm();
             if (mag < 1e-4) cos_penalty = 0;
             else cos_penalty = cos_penalty / mag ;
-            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_d, 2) + 0.5 * pow((cos_penalty - 1) / para_e, 2);
+			probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_d, 2) + 0.5 * pow((cos_penalty - 1) / para_e, 2);
           }
           else
           {
@@ -898,7 +898,7 @@ void LargeFeatureCrsp::solveHMM(std::vector<std::pair<int, int>>& observations, 
             double mag = hidden_diff.norm() * observation_diff.norm();
             if (mag < 1e-9) cos_penalty = 0;
             else cos_penalty = cos_penalty / mag ;
-            probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_d, 2) + 0.5 * pow((cos_penalty - 1) / para_e, 2);
+			probability_continuity_k2j = 0.5 * pow((probability_continuity_k2j - 1) / para_d, 2) + 0.5 * pow((cos_penalty - 1) / para_e, 2);
           }
           if((probability[k] + probability_continuity_k2j + probability_score[i][j]) < best_path_probability)
           {

@@ -37,7 +37,10 @@ public:
   std::string getOutputPath();
   inline std::string getFileName() { return file_name; };
 
-  //
+  // 4/20/2016 get vector of polymesh
+  void getPolygonMeshVector(std::vector<LG::PolygonMesh*>& polymesh_vec);
+
+  // update shape
   void updateShape(VertexList& new_vertex_list);
   void updateColor();
   void updateColorList(STLVectorf& colorList);
@@ -110,6 +113,7 @@ private:
   std::shared_ptr<Sphere> lighting_ball;
   std::shared_ptr<ShapeCrest> shape_crest;
   std::shared_ptr<ShapePlane> shape_plane;
+  std::vector<Shape*> shapes; // 4/20/2016 added shapes for part-based modelsha
 
   // file system data
   std::string data_path;

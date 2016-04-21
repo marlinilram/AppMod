@@ -24,7 +24,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-268</y>
+         <y>0</y>
          <width>344</width>
          <height>1083</height>
         </rect>
@@ -439,7 +439,7 @@
                 <double>0.100000000000000</double>
                </property>
                <property name="value">
-                <double>5.000000000000000</double>
+                <double>2.500000000000000</double>
                </property>
               </widget>
              </item>
