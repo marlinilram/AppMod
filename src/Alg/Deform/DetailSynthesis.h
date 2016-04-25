@@ -17,6 +17,7 @@ class KevinVectorField;
 namespace LG {
 class PolygonMesh;
 }
+class AppearanceModel;
 
 struct MouseArgs{
     IplImage* img;
@@ -77,7 +78,11 @@ public:
   void loadDetailMap(std::shared_ptr<Model> src_model);
 
   // generate Appearance Model
-  void generateAppearanceModel(std::shared_ptr<Model> src_model);
+  void generateAppearanceModel(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
+  void generateD0Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model);
+  void generateD0Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model);
+  void generateD1Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model);
+  void generateD1Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list, std::set<int>& visible_faces);

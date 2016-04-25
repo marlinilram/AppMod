@@ -3041,19 +3041,36 @@ void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::
   //ShapeUtility::savePolyMesh(tar_poly_mesh, tar_model->getOutputPath() + "/complete_src.obj");
 }
 
-void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model)
+void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
+  std::shared_ptr<AppearanceModel> app_mod_out(new AppearanceModel());
   // d0 feature and d0 detail
   resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
-  // 1. compute tangent vector
-  kevin_vector_field.reset(new KevinVectorField);
-  kevin_vector_field->init(src_model);
-  kevin_vector_field->compute_s_hvf(); // compute tangent vector
-
-  actors.clear();
-  kevin_vector_field->getDrawableActors(actors);
 
   // 2. compute d0 features
+  this->generateD0Feature(app_mod_out.get(), src_model);
+
+  // 3. compute d0 detail
+  this->generateD0Detail(app_mod_out.get(), src_model);
+
+  // 4. compute d1 features
+  this->generateD1Feature(app_mod_out.get(), src_model);
+
+  // 5. compute d1 detail
+  this->generateD1Detail(app_mod_out.get(), src_model, tar_model);
+
+#ifdef DEBUG_APPMod
+
+  app_mod_out->setBaseMesh(src_model->getPolygonMesh());
+  app_mod_out->exportAppMod("app_model.xml", src_model->getOutputPath());
+  system("pause");
+  std::shared_ptr<AppearanceModel> app_mod_in(new AppearanceModel());
+  app_mod_in->importAppMod("app_model.xml", src_model->getOutputPath());
+#endif // DEBUG_APPMod
+}
+
+void DetailSynthesis::generateD0Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model)
+{
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
@@ -3083,34 +3100,168 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model)
     this->testMeshPara(src_model);
   }
   computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
+  app_mod->setD0Features(src_para_shape->feature_map);
+}
 
-  // 3. compute d0 detail
+void DetailSynthesis::generateD0Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model)
+{
+  // 1. compute tangent vector
+  kevin_vector_field.reset(new KevinVectorField);
+  kevin_vector_field->init(src_model);
+  kevin_vector_field->compute_s_hvf(); // compute tangent vector
+
+  actors.clear();
+  kevin_vector_field->getDrawableActors(actors);
+
   // (1) generate displacement vector on each vertex
-  {
-    PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
-    VertexList old_src_vertex_list = src_model->getShapeVertexList();
-    NormalTransfer normal_transfer;
-    normal_transfer.prepareNewNormal(src_model, "final_normal");
-    ShapeUtility::computeLocalTransform(&old_src_mesh, src_model->getPolygonMesh());
-    ShapeUtility::exportVisForLocalTransform(src_model->getPolygonMesh(), src_model->getOutputPath());
-    src_model->updateShape(old_src_vertex_list);// go back to old one
-  }
+  PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
+  VertexList old_src_vertex_list = src_model->getShapeVertexList();
+  NormalTransfer normal_transfer;
+  normal_transfer.prepareNewNormal(src_model, "final_normal");
+  ShapeUtility::computeLocalTransform(&old_src_mesh, src_model->getPolygonMesh());
+  ShapeUtility::exportVisForLocalTransform(src_model->getPolygonMesh(), src_model->getOutputPath());
+  src_model->updateShape(old_src_vertex_list);// go back to old one
   // (2) generate displacement vector map
   // TODO: generate displacement vector map for appearance model
+}
+
+void DetailSynthesis::generateD1Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model)
+{
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  {
+    this->testMeshPara(src_model);
+  }
+
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+
+  VertexList old_src_v_list = src_model->getShapeVertexList();
+  NormalTransfer normal_transfer;
+  std::string normal_file_name = "final_normal";
+  normal_transfer.prepareNewNormal(src_model, normal_file_name);
+
+  ShapeUtility::computeNormalizedHeight(src_model);
+  ShapeUtility::computeDirectionalOcclusion(src_model, true);
+  ShapeUtility::computeSymmetry(src_model);
+  //ShapeUtility::computeSolidAngleCurvature(src_model);
+  ShapeUtility::computeCurvature(src_model);
+
+  PolygonMesh* poly_mesh = src_model->getPolygonMesh();
+  PolygonMesh::Vertex_attribute<Scalar> normalized_height = poly_mesh->vertex_attribute<Scalar>("v:NormalizedHeight");
+  PolygonMesh::Vertex_attribute<STLVectorf> directional_occlusion = poly_mesh->vertex_attribute<STLVectorf>("v:DirectionalOcclusion");
+  PolygonMesh::Vertex_attribute<Vec3> v_normals = poly_mesh->vertex_attribute<Vec3>("v:normal");
+  PolygonMesh::Vertex_attribute<std::vector<float>> v_symmetry = poly_mesh->vertex_attribute<std::vector<float>>("v:symmetry");
+  PolygonMesh::Vertex_attribute<Vector4f> solid_angles = poly_mesh->vertex_attribute<Vector4f>("v:solid_angle");
+  PolygonMesh::Vertex_attribute<Scalar> mean_curvature = poly_mesh->vertex_attribute<Scalar>("v:mean_curvature");
+  PolygonMesh::Vertex_attribute<Scalar> gaussian_curvature = poly_mesh->vertex_attribute<Scalar>("v:gaussian_curvature");
+  std::vector<std::vector<float> > vertex_feature_list(poly_mesh->n_vertices(), std::vector<float>());
+  for (auto vit : poly_mesh->vertices())
+  {
+    vertex_feature_list[vit.idx()].push_back(normalized_height[vit]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][0]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][1]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][2]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][3]);
+    vertex_feature_list[vit.idx()].push_back(v_symmetry[vit][4]);
+    vertex_feature_list[vit.idx()].push_back(mean_curvature[vit]);
+    vertex_feature_list[vit.idx()].push_back(gaussian_curvature[vit]);
+    for (size_t i = 0; i < directional_occlusion[vit].size(); ++i)
+    {
+      vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]);
+    }
+  }
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
+
+  src_model->updateShape(old_src_v_list);// go back to old one
+
+  app_mod->setD1Features(src_para_shape->feature_map);
+}
+
+void DetailSynthesis::generateD1Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
+{
+  // load user decide masked detail map
+  this->loadDetailMap(src_model);
+
+  // prepare uv mask from computeDetailMap
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(src_model);
+
+  cv::Mat mask;
+  if (masked_detail_image.empty())
+  {
+    std::cout << "please load detail image first." << std::endl;
+    return;
+  }
+
+  //ShapeUtility::visibleFacesInModel(src_model, visible_faces);
+  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  {
+    this->testMeshPara(src_model);
+  }
+  std::set<int> visible_faces = mesh_para->seen_part->cut_faces;
+  computeDetailMap(src_para_shape.get(), masked_detail_image, src_model, visible_faces, mask);
+
+  std::cout << "filled pixel: " << src_para_shape->n_filled_detail << std::endl;
+
+  ImageUtility::exportMatVecImage(src_para_shape->detail_map, src_model->getOutputPath() + "/detail_map.png");
+
+  cv::Mat reflectance_map;
+  std::vector<cv::Mat> reflectance;
+  reflectance.push_back(src_para_shape->detail_map[2]);
+  reflectance.push_back(src_para_shape->detail_map[1]);
+  reflectance.push_back(src_para_shape->detail_map[0]);
+  {
+    // dilate the detail map in case of black
+    for (int i = 0; i < 3; ++i)
+    {
+      ShapeUtility::dilateImage(reflectance[i], 20);
+    }
+  }
+  cv::merge(reflectance, reflectance_map);
+  cv::imwrite(src_model->getOutputPath() + "/src_reflectance.png", 255 * reflectance_map);
+
+  // compute height mesh
+  /*cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+  cv::Mat final_height_mat;
+  fs2["final_height"] >> final_height_mat;*/
+  //PolygonMesh height_mesh;
+  //ShapeUtility::heightToMesh(final_height_mat, height_mesh, src_model);
+  PolygonMesh height_mesh;
+  if (!read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj"))
+  {
+    cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+    cv::Mat final_height_mat;
+    fs2["final_height"] >> final_height_mat;
+    PolygonMesh new_mesh;
+    ShapeUtility::heightToMesh(final_height_mat, new_mesh, src_model);
+    ShapeUtility::savePolyMesh(&new_mesh, tar_model->getDataPath() + "/height_mesh.obj");
+    std::cout << "plese cut height mesh!!!" << std::endl;
+    system("pause");
+    if (!read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj"))
+    {
+      std::cout << "failed to load height_mesh.obj" << std::endl;
+      return;
+    }
+  }
 
 
+  // compute displacement map
+  cv::Mat displacement_map;
+  computeDisplacementMap(&height_mesh, src_model, tar_model, mask, displacement_map);
+  //computeDisplacementMap(final_height_mat, src_model, tar_model, mask, displacement_map);
+  cv::imshow("displacement map", displacement_map.clone());
+  cv::imshow("uv mask", mask);
+  ShapeUtility::fillImageWithMask(displacement_map, cv::Mat(resolution, resolution, CV_32FC1, 1.0));
+  cv::imshow("displacement map after filling", displacement_map);
+  YMLHandler::saveToFile(tar_model->getOutputPath(), "new_d2_displacement.yml", displacement_map);
+  src_para_shape->detail_map.push_back(displacement_map);
+  cv::Mat detail_rgbd;
+  cv::merge(src_para_shape->detail_map, detail_rgbd);
+  std::string file_detail_map = src_model->getFileName().substr(0, src_model->getFileName().find_last_of('.')) + "_detail_map_" + std::to_string(resolution) + ".xml";
+  YMLHandler::saveToFile(src_model->getDataPath(), file_detail_map, detail_rgbd);
 
-  // 4. compute d1 features
+  ImageUtility::exportMatVecImage(src_para_shape->detail_map, src_model->getOutputPath() + "/detail_rgbd_map.png");
+  cv::imwrite(src_model->getOutputPath() + "/displacement_map.png", displacement_map * 255);
 
-#ifdef DEBUG_APPMod
-  std::shared_ptr<AppearanceModel> app_mod_out(new AppearanceModel());
-  app_mod_out->setBaseMesh(src_model->getPolygonMesh());
-  app_mod_out->exportAppMod("app_model.xml", src_model->getOutputPath());
-  system("pause");
-  std::shared_ptr<AppearanceModel> app_mod_in(new AppearanceModel());
-  app_mod_in->importAppMod("app_model.xml", src_model->getOutputPath());
-  PolygonMesh test_mesh;
-  app_mod_in->getBaseMesh(&test_mesh);
-  ShapeUtility::exportVisForLocalTransform(&test_mesh, src_model->getOutputPath(), "local_transform_reloaded.png");
-#endif // DEBUG_APPMod
+  app_mod->setD1Details(src_para_shape->detail_map);
 }
