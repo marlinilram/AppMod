@@ -1813,12 +1813,11 @@ namespace ShapeUtility
     }
   }
 
-  void exportVisForLocalTransform(std::shared_ptr<Model> model)
+  void exportVisForLocalTransform(PolygonMesh* mesh, std::string fpath, std::string fname)
   {
     std::shared_ptr<ParaShape> para_shape(new ParaShape);
-    para_shape->initWithExtShape(model);
+    para_shape->initWithExtPolygonMesh(mesh);
     STLVectori v_set = para_shape->vertex_set;
-    PolygonMesh* mesh = model->getPolygonMesh();
     PolygonMesh::Vertex_attribute<Vec3> local_transform = mesh->vertex_attribute<Vec3>("v:local_transform");
 
     int resolution = 1024;
@@ -1870,7 +1869,7 @@ namespace ShapeUtility
 
     //vis_map = (vis_map - min) / (max - min);
 
-    cv::imwrite(model->getOutputPath() + "/local_transform.png", vis_map * 255);
+    cv::imwrite(fpath + "/" + fname, vis_map * 255);
   }
 
   bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname)

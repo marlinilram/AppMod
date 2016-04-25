@@ -76,6 +76,9 @@ public:
   void prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids);
   void loadDetailMap(std::shared_ptr<Model> src_model);
 
+  // generate Appearance Model
+  void generateAppearanceModel(std::shared_ptr<Model> src_model);
+
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list, std::set<int>& visible_faces);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces, cv::Mat& mask);
