@@ -209,6 +209,16 @@ void AlgHandler::runApplyDisplacement()
 
 void AlgHandler::loadDetailMap()
 {
-  //detail_synthesis->loadDetailMap(shape_model);
-  detail_synthesis->test(shape_model, synthesis_model);
+  // generate detail map
+  //detail_synthesis->test(shape_model, synthesis_model);
+
+  // test AppearanceModel
+  detail_synthesis->generateAppearanceModel(shape_model);
+  actors.clear();
+  std::vector<GLActor> temp_actors;
+  detail_synthesis->getDrawableActors(temp_actors);
+  for (size_t i = 0; i < temp_actors.size(); ++i)
+  {
+    actors.push_back(temp_actors[i]);
+  }
 }

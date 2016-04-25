@@ -3050,6 +3050,9 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model)
   kevin_vector_field->init(src_model);
   kevin_vector_field->compute_s_hvf(); // compute tangent vector
 
+  actors.clear();
+  kevin_vector_field->getDrawableActors(actors);
+
   // 2. compute d0 features
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);

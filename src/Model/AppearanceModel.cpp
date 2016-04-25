@@ -1,7 +1,10 @@
 #include "AppearanceModel.h"
 
+#include "Shape.h"
 #include "PolygonMesh.h"
 #include "ImageUtility.h"
+#include "ShapeUtility.h"
+#include "tiny_obj_loader.h"
 
 using namespace LG;
 
@@ -21,7 +24,7 @@ void AppearanceModel::importAppMod(std::string file_name_, std::string file_path
   // 1. mesh name
   fs["meshFileName"] >> mesh_file_name;
   base_mesh = std::make_unique<PolygonMesh>();
-  if (!read_poly(*base_mesh.get(), file_path + "/" + mesh_file_name))
+  if (!ShapeUtility::loadPolyMesh(base_mesh.get(), file_path + "/" + mesh_file_name))
   {
     std::cout << "Cannot open mesh file: " << file_path + '/' + mesh_file_name << std::endl;
   }
@@ -101,6 +104,7 @@ void AppearanceModel::exportAppMod(std::string file_name_, std::string file_path
 
   // 1. mesh name
   fs << "meshFileName" << mesh_file_name;
+  ShapeUtility::savePolyMesh(base_mesh.get(), file_path + "/" + mesh_file_name);
 
   // 2. vertex feature
   this->writeMeshFeatures(fs, base_mesh.get());
@@ -136,9 +140,9 @@ void AppearanceModel::writeMeshFeatures(cv::FileStorage& fs, LG::PolygonMesh* me
   std::vector<float> vertex_feature_list(3 * mesh->n_vertices(), 0.0);
   for (auto vit : mesh->vertices())
   {
-    vertex_feature_list[vit.idx() + 0] = local_transform[vit][0];
-    vertex_feature_list[vit.idx() + 1] = local_transform[vit][1];
-    vertex_feature_list[vit.idx() + 2] = local_transform[vit][2];
+    vertex_feature_list[3 * vit.idx() + 0] = local_transform[vit][0];
+    vertex_feature_list[3 * vit.idx() + 1] = local_transform[vit][1];
+    vertex_feature_list[3 * vit.idx() + 2] = local_transform[vit][2];
   }
   fs << "{:" << "name" << "v:local_transform" << "dim" << 3 << "data" << "[:";
   for (auto i : vertex_feature_list)
@@ -149,9 +153,9 @@ void AppearanceModel::writeMeshFeatures(cv::FileStorage& fs, LG::PolygonMesh* me
 
   for (auto vit : mesh->vertices())
   {
-    vertex_feature_list[vit.idx() + 0] = v_tangents[vit][0];
-    vertex_feature_list[vit.idx() + 1] = v_tangents[vit][1];
-    vertex_feature_list[vit.idx() + 2] = v_tangents[vit][2];
+    vertex_feature_list[3 * vit.idx() + 0] = v_tangents[vit][0];
+    vertex_feature_list[3 * vit.idx() + 1] = v_tangents[vit][1];
+    vertex_feature_list[3 * vit.idx() + 2] = v_tangents[vit][2];
   }
   fs << "{:" << "name" << "v:tangent" << "dim" << 3 << "data" << "[:";
   for (auto i : vertex_feature_list)

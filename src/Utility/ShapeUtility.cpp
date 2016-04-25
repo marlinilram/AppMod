@@ -1600,6 +1600,24 @@ namespace ShapeUtility
     WriteObj(fName, shapes, materials);
   }
 
+  bool loadPolyMesh(LG::PolygonMesh* poly_mesh, std::string fName)
+  {
+    std::vector<tinyobj::shape_t> t_obj;
+    std::vector<tinyobj::material_t> materials;
+    std::string err = tinyobj::LoadObj(t_obj, materials, fName.c_str(), nullptr);
+    if (!err.empty())
+    {
+      std::cerr << err << std::endl;
+      return false;
+    }
+
+    std::shared_ptr<Shape> shape(new Shape());
+
+    shape->init(t_obj[0].mesh.positions, t_obj[0].mesh.indices, t_obj[0].mesh.uv_indices, t_obj[0].mesh.texcoords);
+    (*poly_mesh) = (*shape->getPolygonMesh());
+    return true;
+  }
+
   int findLeftTopUVVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_ids)
   {
     float max_v = std::numeric_limits<float>::min();

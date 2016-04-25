@@ -19,7 +19,7 @@ class AppearanceModel
   ** 4. cca matrix
   */
 public:
-  AppearanceModel() {};
+  AppearanceModel() : mesh_file_name("base_mesh.obj") {};
   ~AppearanceModel() {};
 
   void importAppMod(std::string file_name_, std::string file_path_);
