@@ -41,6 +41,9 @@ namespace ImageUtility
   void exportMatVecImage(std::vector<cv::Mat>& mat_vec, std::string fname);
 
   bool meetZero(std::vector<int>& vec);
+
+  void centralizeMat(cv::Mat& mat, int dim, std::vector<float>& min_vec, std::vector<float>& max_vec, bool use_ext);
+  void normalizeMat(cv::Mat& mat, int dim, std::vector<float> min_max);
 }
 
 #endif // !ImageUtility_H

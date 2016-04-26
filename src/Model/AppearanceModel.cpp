@@ -43,6 +43,14 @@ void AppearanceModel::importAppMod(std::string file_name_, std::string file_path
   this->readMaps(fs, d1_detail_maps, "d1Detail");
   // 7.
   resolution = (int)fs["resolution"];
+  // 8. cca mat
+  fs["CCAMat"] >> cca_mat;
+
+  // 9. cca min
+  this->readVector(fs, cca_min, "cca_min");
+
+  // 10. cca max
+  this->readVector(fs, cca_max, "cca_max");
 
   fs.release();
 }
@@ -124,6 +132,15 @@ void AppearanceModel::exportAppMod(std::string file_name_, std::string file_path
 
   // 7. resolution
   fs << "resolution" << resolution;
+
+  // 8. cca mat
+  fs << "CCAMat" << cca_mat;
+
+  // 9. cca min
+  this->writeVector(fs, cca_min, "cca_min");
+
+  // 10. cca max
+  this->writeVector(fs, cca_max, "cca_max");
 
   fs.release();
 }
@@ -239,4 +256,55 @@ void AppearanceModel::setBaseMesh(LG::PolygonMesh* mesh)
 void AppearanceModel::getBaseMesh(LG::PolygonMesh* mesh)
 {
   (*mesh) = (*base_mesh.get());
+}
+
+LG::PolygonMesh* AppearanceModel::getBaseMesh()
+{
+  return base_mesh.get();
+}
+
+void AppearanceModel::setCCAMat(cv::Mat& mat)
+{
+  cca_mat = mat.clone();
+}
+
+void AppearanceModel::geteCCAMat(cv::Mat& mat)
+{
+  mat = cca_mat.clone();
+}
+
+void AppearanceModel::getCCAMin(std::vector<float>& vec)
+{
+  vec = cca_min;
+}
+
+void AppearanceModel::getCCAMax(std::vector<float>& vec)
+{
+  vec = cca_max;
+}
+
+void AppearanceModel::setCCAMin(std::vector<float>& vec)
+{
+  cca_min = vec;
+}
+
+void AppearanceModel::setCCAMax(std::vector<float>& vec)
+{
+  cca_max = vec;
+}
+
+void AppearanceModel::writeVector(cv::FileStorage& fs, std::vector<float>& vec, std::string vec_name)
+{
+  fs << vec_name << "[:";
+  for (int i = 0; i < vec.size(); ++i)
+  {
+    fs << vec[i];
+  }
+  fs << "]";
+}
+
+void AppearanceModel::readVector(cv::FileStorage& fs, std::vector<float>& vec, std::string vec_name)
+{
+  vec.clear();
+  fs[vec_name] >> vec;
 }

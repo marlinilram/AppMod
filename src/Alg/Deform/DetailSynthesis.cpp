@@ -2709,7 +2709,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
       // 3.2 find correspondences from NNF
       std::vector<STLVectori> cur_src_crsp;
-      this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, src_model, tar_model, syn_tool, cur_sampled_tar_models, cur_src_crsp);
+      this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, cur_sampled_tar_models, cur_src_crsp);
 
       // 3.3 merge the current correspondences to sampled vertex set
       ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
@@ -2845,8 +2845,8 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
 
 void DetailSynthesis::prepareLocalTransformCrsp(
+
   ParaShapePtr src_para, ParaShapePtr tar_para,
-  ModelPtr src_model, ModelPtr tar_model,
   SynToolPtr syn_tool,
   const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids)
 {
@@ -3046,18 +3046,23 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, 
   std::shared_ptr<AppearanceModel> app_mod_out(new AppearanceModel());
   // d0 feature and d0 detail
   resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
+  app_mod_out->setResolution(resolution);
 
   // 2. compute d0 features
+  std::cout << std::endl << "***** Generate D0 Features *****" << std::endl;
   this->generateD0Feature(app_mod_out.get(), src_model);
 
   // 3. compute d0 detail
+  std::cout << std::endl << "***** Generate D0 Details *****" << std::endl;
   this->generateD0Detail(app_mod_out.get(), src_model);
 
-  // 4. compute d1 features
-  this->generateD1Feature(app_mod_out.get(), src_model);
-
   // 5. compute d1 detail
+  std::cout << std::endl << "***** Generate D1 Details *****" << std::endl;
   this->generateD1Detail(app_mod_out.get(), src_model, tar_model);
+
+  // 4. compute d1 features
+  std::cout << std::endl << "***** Generate D1 Features *****" << std::endl;
+  this->generateD1Feature(app_mod_out.get(), src_model);
 
 #ifdef DEBUG_APPMod
 
@@ -3071,6 +3076,14 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, 
 
 void DetailSynthesis::generateD0Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model)
 {
+  // 1. compute tangent vector
+  kevin_vector_field.reset(new KevinVectorField);
+  kevin_vector_field->init(src_model);
+  kevin_vector_field->compute_s_hvf(); // compute tangent vector
+
+  actors.clear();
+  kevin_vector_field->getDrawableActors(actors);
+
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);
@@ -3095,24 +3108,17 @@ void DetailSynthesis::generateD0Feature(AppearanceModel* app_mod, std::shared_pt
   }
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
-  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
+  /*if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
   {
     this->testMeshPara(src_model);
   }
-  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);*/
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, src_para_shape->cut_faces); // do not use mesh_para so this section can be used for target model
   app_mod->setD0Features(src_para_shape->feature_map);
 }
 
 void DetailSynthesis::generateD0Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model)
 {
-  // 1. compute tangent vector
-  kevin_vector_field.reset(new KevinVectorField);
-  kevin_vector_field->init(src_model);
-  kevin_vector_field->compute_s_hvf(); // compute tangent vector
-
-  actors.clear();
-  kevin_vector_field->getDrawableActors(actors);
-
   // (1) generate displacement vector on each vertex
   PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
   VertexList old_src_vertex_list = src_model->getShapeVertexList();
@@ -3125,23 +3131,21 @@ void DetailSynthesis::generateD0Detail(AppearanceModel* app_mod, std::shared_ptr
   // TODO: generate displacement vector map for appearance model
 }
 
-void DetailSynthesis::generateD1Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model)
+void DetailSynthesis::generateD1Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, bool is_target)
 {
-  if (mesh_para == nullptr || mesh_para->seen_part == nullptr || mesh_para->unseen_part == nullptr)
-  {
-    this->testMeshPara(src_model);
-  }
-
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
   src_para_shape->initWithExtShape(src_model);
 
   VertexList old_src_v_list = src_model->getShapeVertexList();
-  NormalTransfer normal_transfer;
-  std::string normal_file_name = "final_normal";
-  normal_transfer.prepareNewNormal(src_model, normal_file_name);
+  if (!is_target)
+  {
+    NormalTransfer normal_transfer;
+    std::string normal_file_name = "final_normal";
+    normal_transfer.prepareNewNormal(src_model, normal_file_name);
+  }
 
   ShapeUtility::computeNormalizedHeight(src_model);
-  ShapeUtility::computeDirectionalOcclusion(src_model, true);
+  ShapeUtility::computeDirectionalOcclusion(src_model, !is_target);
   ShapeUtility::computeSymmetry(src_model);
   //ShapeUtility::computeSolidAngleCurvature(src_model);
   ShapeUtility::computeCurvature(src_model);
@@ -3170,11 +3174,94 @@ void DetailSynthesis::generateD1Feature(AppearanceModel* app_mod, std::shared_pt
       vertex_feature_list[vit.idx()].push_back(directional_occlusion[vit][i]);
     }
   }
-  computeFeatureMap(src_para_shape.get(), vertex_feature_list, mesh_para->seen_part->cut_faces);
-
-  src_model->updateShape(old_src_v_list);// go back to old one
+  computeFeatureMap(src_para_shape.get(), vertex_feature_list, src_para_shape->cut_faces);
 
   app_mod->setD1Features(src_para_shape->feature_map);
+
+  if (is_target)
+  {
+    return;
+  }
+
+  // CCA 
+  // D1 detail should be generated first
+  std::vector<cv::Mat> feature_map;
+  std::vector<cv::Mat> detail_map;
+  app_mod->getD1Features(feature_map);
+  app_mod->getD1Details(detail_map);
+
+  int count = 0; 
+  for (int i = 0; i < resolution; i++)
+  {
+    for (int j = 0; j < resolution; j++)
+    {
+      if (detail_map[0].at<float>(i, j) > -1 && detail_map[3].at<float>(i, j) > -1)
+      {
+        ++count;
+      }
+    }
+  }
+
+  cv::Mat cca_X_mat(count, feature_map.size(), CV_32FC1);
+  cv::Mat cca_Y_mat(count, detail_map.size(), CV_32FC1);
+
+  std::cout << "n_filled = " << count << std::endl;
+
+  count = 0;
+  std::vector<std::pair<int, int> > src_pos;
+  for (int i = 0; i < resolution; i++)
+  {
+    for (int j = 0; j < resolution; j++)
+    {
+      if (detail_map[0].at<float>(i, j) > -1 && detail_map[3].at<float>(i, j) > -1)
+      {
+        for (int k = 0; k < feature_map.size(); k++)
+        {
+          cca_X_mat.at<float>(count, k) = feature_map[k].at<float>(i, j);
+        }
+        for (int k = 0; k < detail_map.size(); k++)
+        {
+          cca_Y_mat.at<float>(count, k) = detail_map[k].at<float>(i, j);
+        }
+        ++count;
+        src_pos.push_back(std::pair<int, int>(i, j));
+      }
+    }
+  }
+
+  YMLHandler::saveToMat(src_model->getOutputPath(), "cca_X_mat.mat", cca_X_mat);
+  YMLHandler::saveToMat(src_model->getOutputPath(), "cca_Y_mat.mat", cca_Y_mat);
+
+  system("pause");
+
+  cv::FileStorage fs3(src_model->getOutputPath() + "/cca_mat.xml", cv::FileStorage::READ);
+  cv::Mat cca_mat;
+  fs3["cca_mat"] >> cca_mat;
+
+  cv::Mat new_X = cca_X_mat * cca_mat;
+  std::vector<float> cca_min;
+  std::vector<float> cca_max;
+  ImageUtility::centralizeMat(new_X, 0, cca_min, cca_max, false);
+  YMLHandler::saveToMat(src_model->getOutputPath(), "test.mat", new_X);
+  feature_map.clear();
+  feature_map.resize(new_X.cols);
+  for (int i = 0; i < feature_map.size(); i++)
+  {
+    feature_map[i] = cv::Mat(resolution, resolution, CV_32FC1, -1);
+  }
+  for (int i = 0; i < feature_map.size(); i++)
+  {
+    for (int j = 0; j < src_pos.size(); j++)
+    {
+      feature_map[i].at<float>(src_pos[j].first, src_pos[j].second) = new_X.at<float>(j, i);
+    }
+  }
+
+  app_mod->setD1Features(feature_map);
+  app_mod->setCCAMat(cca_mat);
+  app_mod->setCCAMax(cca_max);
+  app_mod->setCCAMin(cca_min);
+  src_model->updateShape(old_src_v_list);// go back to old one
 }
 
 void DetailSynthesis::generateD1Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)

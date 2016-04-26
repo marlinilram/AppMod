@@ -209,4 +209,79 @@ namespace ImageUtility
 
     return false;
   }
+
+  void centralizeMat(cv::Mat& mat, int dim, std::vector<float>& min_vec, std::vector<float>& max_vec, bool use_ext)
+  {
+    // 0 == col, 1 == row
+    if (mat.dims > 2)
+    {
+      std::cout << "Dimension of matrix should be less than 2." << std::endl;
+      return;
+    }
+
+    std::vector<float> mean_vec;
+    //std::vector<float> min_vec;
+    //std::vector<float> max_vec;
+    if (dim == 0)
+    {
+      if (!use_ext)
+      {
+        min_vec.clear();
+        max_vec.clear();
+        min_vec.resize(mat.cols, std::numeric_limits<float>::max());
+        max_vec.resize(mat.cols, -std::numeric_limits<float>::max());
+
+        for (int i = 0; i < mat.rows; ++i)
+        {
+          for (int j = 0; j < mat.cols; ++j)
+          {
+            float cur_val = mat.at<float>(i, j);
+            if (cur_val > max_vec[j]) max_vec[j] = cur_val;
+            if (cur_val < min_vec[j]) min_vec[j] = cur_val;
+            //mean_vec[j] += mat.at<float>(i, j);
+          }
+        }
+      }
+
+      //for (size_t i = 0; i < mean_vec.size(); ++i)
+      //{
+      //  mean_vec[i] = mean_vec[i] / (float)(mat.rows);
+      //}
+      for (int i = 0; i < mat.rows; ++i)
+      {
+        for (int j = 0; j < mat.cols; ++j)
+        {
+          // mat.at<float>(i, j) -= mean_vec[j];
+          mat.at<float>(i, j) = (mat.at<float>(i, j) - min_vec[j]) / (max_vec[j] - min_vec[j]);
+        }
+      }
+    }
+    else
+    {
+      mean_vec.resize(mat.rows, 0);
+      for (int i = 0; i < mat.cols; ++i)
+      {
+        for (int j = 0; j < mat.rows; ++j)
+        {
+          mean_vec[j] += mat.at<float>(j, i);
+        }
+      }
+      for (size_t i = 0; i < mean_vec.size(); ++i)
+      {
+        mean_vec[i] = mean_vec[i] / (float)(mat.cols);
+      }
+      for (int i = 0; i < mat.cols; ++i)
+      {
+        for (int j = 0; j < mat.rows; ++j)
+        {
+          mat.at<float>(j, i) -= mean_vec[j];
+        }
+      }
+    }
+  }
+
+  void normalizeMat(cv::Mat& mat, int dim, std::vector<float> min_max)
+  {
+
+  }
 }

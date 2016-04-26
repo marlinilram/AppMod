@@ -172,8 +172,9 @@ void AlgHandler::doDetailSynthesis()
 	doNormalTransfer();
 	shape_model->exportOBJ(0);*/
 
-	detail_synthesis->doTransfer(shape_model, synthesis_model);
+	//detail_synthesis->doTransfer(shape_model, synthesis_model);
 	//detail_synthesis->startDetailSynthesis(shape_model);
+  detail_synthesis->debugSynthesisD1(shape_model->getDataPath() + "/appearance_model", synthesis_model);
 
 
 	//detail_synthesis->computeVectorField(shape_model);
@@ -190,7 +191,8 @@ void AlgHandler::testApplyDisplacement()
 {
   //detail_synthesis->prepareParaPatches(shape_model, synthesis_model);return;
 
-  detail_synthesis->doGeometryTransfer(shape_model, synthesis_model);
+  //detail_synthesis->doGeometryTransfer(shape_model, synthesis_model);
+  detail_synthesis->debugSynthesisD0(shape_model->getDataPath() + "/appearance_model", synthesis_model);
   actors.clear();
   std::vector<GLActor> temp_actors;
   detail_synthesis->getDrawableActors(temp_actors);
@@ -213,7 +215,7 @@ void AlgHandler::loadDetailMap()
   //detail_synthesis->test(shape_model, synthesis_model);
 
   // test AppearanceModel
-  detail_synthesis->generateAppearanceModel(shape_model);
+  detail_synthesis->generateAppearanceModel(shape_model, synthesis_model);
   actors.clear();
   std::vector<GLActor> temp_actors;
   detail_synthesis->getDrawableActors(temp_actors);
