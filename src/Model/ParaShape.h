@@ -11,6 +11,9 @@
 class Shape;
 class Model;
 class KDTreeWrapper;
+namespace LG {
+  class PolygonMesh;
+}
 
 class ParaShape
 {
@@ -20,6 +23,7 @@ public:
 
   void initUVKDTree();
   void initWithExtShape(std::shared_ptr<Model> model);
+  void initWithExtPolygonMesh(LG::PolygonMesh* poly_mesh);
 
 public:
   FaceList cut_face_list; // triplets which store the old vertex id of the faces

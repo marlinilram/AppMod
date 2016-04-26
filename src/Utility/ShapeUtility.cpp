@@ -1600,6 +1600,24 @@ namespace ShapeUtility
     WriteObj(fName, shapes, materials);
   }
 
+  bool loadPolyMesh(LG::PolygonMesh* poly_mesh, std::string fName)
+  {
+    std::vector<tinyobj::shape_t> t_obj;
+    std::vector<tinyobj::material_t> materials;
+    std::string err = tinyobj::LoadObj(t_obj, materials, fName.c_str(), nullptr);
+    if (!err.empty())
+    {
+      std::cerr << err << std::endl;
+      return false;
+    }
+
+    std::shared_ptr<Shape> shape(new Shape());
+
+    shape->init(t_obj[0].mesh.positions, t_obj[0].mesh.indices, t_obj[0].mesh.uv_indices, t_obj[0].mesh.texcoords);
+    (*poly_mesh) = (*shape->getPolygonMesh());
+    return true;
+  }
+
   int findLeftTopUVVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_ids)
   {
     float max_v = std::numeric_limits<float>::min();
@@ -1813,12 +1831,11 @@ namespace ShapeUtility
     }
   }
 
-  void exportVisForLocalTransform(std::shared_ptr<Model> model)
+  void exportVisForLocalTransform(PolygonMesh* mesh, std::string fpath, std::string fname)
   {
     std::shared_ptr<ParaShape> para_shape(new ParaShape);
-    para_shape->initWithExtShape(model);
+    para_shape->initWithExtPolygonMesh(mesh);
     STLVectori v_set = para_shape->vertex_set;
-    PolygonMesh* mesh = model->getPolygonMesh();
     PolygonMesh::Vertex_attribute<Vec3> local_transform = mesh->vertex_attribute<Vec3>("v:local_transform");
 
     int resolution = 1024;
@@ -1870,7 +1887,7 @@ namespace ShapeUtility
 
     //vis_map = (vis_map - min) / (max - min);
 
-    cv::imwrite(model->getOutputPath() + "/local_transform.png", vis_map * 255);
+    cv::imwrite(fpath + "/" + fname, vis_map * 255);
   }
 
   bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname)

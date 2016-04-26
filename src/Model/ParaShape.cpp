@@ -47,13 +47,19 @@ void ParaShape::initUVKDTree()
 
 void ParaShape::initWithExtShape(std::shared_ptr<Model> model)
 {
+  this->initWithExtPolygonMesh(model->getPolygonMesh());
+
+  ShapeUtility::saveParameterization(model->getOutputPath(), cut_shape, "ext_target");
+}
+
+void ParaShape::initWithExtPolygonMesh(PolygonMesh* poly_mesh)
+{
   // we regenerate a shape
   // probably we need to regenerate it by uv?
   // let the v list is same to uv list and face list is same to uvid list
   cut_shape.reset(new Shape);
 
   // we need to duplicate the vertices for each triangle...
-  PolygonMesh* poly_mesh = model->getPolygonMesh();
   PolygonMesh::Halfedge_attribute<int> f_uv_id = poly_mesh->halfedge_attribute<int>("he:uv_id");
   std::vector<Vec2>& f_uv_coord = poly_mesh->get_attribute<std::vector<Vec2> >("he:texcoord");
   int n_faces = poly_mesh->n_faces();
@@ -110,8 +116,6 @@ void ParaShape::initWithExtShape(std::shared_ptr<Model> model)
   //  cut_faces.insert(i);
   //  face_set.push_back(i);
   //}
-  ShapeUtility::saveParameterization(model->getOutputPath(), cut_shape, "ext_target");
 
   initUVKDTree();
-
 }

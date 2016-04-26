@@ -17,6 +17,7 @@ class KevinVectorField;
 namespace LG {
 class PolygonMesh;
 }
+class AppearanceModel;
 
 struct MouseArgs{
     IplImage* img;
@@ -76,6 +77,20 @@ public:
   void prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids);
   void loadDetailMap(std::shared_ptr<Model> src_model);
 
+  // generate Appearance Model
+  void generateAppearanceModel(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
+  void generateD0Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model);
+  void generateD0Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model);
+  void generateD1Feature(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, bool is_target = false);
+  void generateD1Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
+  
+  // Appearance Model based synthesis
+  void debugSynthesisD0(std::string app_mod_path, std::shared_ptr<Model> tar_model);
+  void debugSynthesisD1(std::string app_mod_path, std::shared_ptr<Model> tar_model);
+  void synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
+  void synthesisD1(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
+
+
 private:
   void computeFeatureMap(ParaShape* para_shape, std::vector<std::vector<float> >& feature_list, std::set<int>& visible_faces);
   void computeDetailMap(ParaShape* para_shape, std::vector<cv::Mat>& detail_image, std::shared_ptr<Model> model, std::set<int>& visible_faces, cv::Mat& mask);
@@ -83,7 +98,7 @@ private:
   void computeDisplacementMap(LG::PolygonMesh* height_mesh, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map);
   void computeDisplacementMap(cv::Mat& final_height, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map);
 
-  void prepareLocalTransformCrsp(ParaShapePtr src_para, ParaShapePtr tar_para, ModelPtr src_model, ModelPtr tar_model, SynToolPtr syn_tool, const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids);
+  void prepareLocalTransformCrsp(ParaShapePtr src_para, ParaShapePtr tar_para, SynToolPtr syn_tool, const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;

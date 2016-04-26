@@ -445,6 +445,7 @@ void DispModuleHandler::runApplyDisplacement()
 void DispModuleHandler::loadDetailMap()
 {
   alg_handler->loadDetailMap();
+  trackball_viewer->setGLActors(alg_handler->getGLActors());
 }
 
 void DispModuleHandler::updateSField(int type)

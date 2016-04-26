@@ -129,7 +129,7 @@ void SynthesisTool::buildMask(cv::Mat& tar_feature, std::vector<int>& pixel_mask
     {
       for (int j = 0; j < img_width; ++j)
       {
-        if (tar_feature.at<float>(i, j) >= 0)
+        if (tar_feature.at<float>(i, j) > -1)
         {
           pixel_mask[i * img_width + j] = 0;
 
