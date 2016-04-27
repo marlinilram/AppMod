@@ -9,11 +9,13 @@
 
 #include "BasicHeader.h"
 
+
 class Shape;
 class Sphere;
 class ShapeCrest;
 class ShapePlane;
 class Bound;
+class DispObject;
 namespace LG {
 class PolygonMesh;
 }
@@ -28,6 +30,9 @@ public:
   bool loadOBJ(const std::string name, const std::string path);
   void exportOBJ(int cur_iter);
 
+  DispObject* get_dis_obj();
+  void set_dis_obj(DispObject* d);
+
   Bound* getBoundBox();
   inline std::shared_ptr<Shape> getShape() { return shape; };
   //std::shared_ptr<ShapeCrest> getShapeCrest();
@@ -39,7 +44,7 @@ public:
 
   // 4/20/2016 get vector of polymesh
   void getPolygonMeshVector(std::vector<LG::PolygonMesh*>& polymesh_vec);
-
+  void getShapeVector(std::vector<Shape*>& Shape_vec);
   // update shape
   void updateShape(VertexList& new_vertex_list);
   void updateColor();
@@ -113,7 +118,7 @@ private:
   std::shared_ptr<Sphere> lighting_ball;
   std::shared_ptr<ShapeCrest> shape_crest;
   std::shared_ptr<ShapePlane> shape_plane;
-  std::vector<Shape*> shapes; // 4/20/2016 added shapes for part-based modelsha
+  std::vector<Shape*> shapes; // 4/20/2016 added shapes for part-based model sha
 
   // file system data
   std::string data_path;
@@ -142,6 +147,7 @@ private:
 private:
   Model(const Model&);
   void operator = (const Model&);
+  DispObject* m_dis_obj_;
 };
 
 #endif

@@ -1,4 +1,4 @@
-#include "TrackballCanvas.h"
+#include "Texture_Canvas.h"
 #include "Model.h"
 
 #include "PolygonMesh.h"
@@ -8,31 +8,36 @@
 #include <QGLBuffer>
 
 
-TrackballCanvas::TrackballCanvas()
+Texture_Canvas::Texture_Canvas()
 {
   render_mode = 3;
   use_flat = 1;
+  has_data_ = false;
 }
 
-TrackballCanvas::~TrackballCanvas()
+Texture_Canvas::~Texture_Canvas()
 {
 
 }
 
-bool TrackballCanvas::display()
+bool Texture_Canvas::display()
 {
   drawModel();
   return true;
 }
-QGLViewer* TrackballCanvas::viewer()
+QGLViewer* Texture_Canvas::viewer()
 {
 	return DispObject::viewer();
 };
-void TrackballCanvas::set_viewer(QGLViewer* gl)
+void Texture_Canvas::set_viewer(QGLViewer* gl)
 {
 	DispObject::set_viewer(gl);
 
 	std::shared_ptr<Model> mm = this->getModel();
+	if (mm == NULL)
+	{
+		return;
+	}
 
 	std::vector<Shape*> shapes;
 	mm->getShapeVector(shapes);
@@ -43,24 +48,28 @@ void TrackballCanvas::set_viewer(QGLViewer* gl)
 		shapes[i]->draw_manipulator();
 	}
 };
-void TrackballCanvas::setGLProperty()
+void Texture_Canvas::setGLProperty()
 {
   updateModelBuffer();
   setShaderProgram();
 }
 
-Bound* TrackballCanvas::getBoundBox()
+Bound* Texture_Canvas::getBoundBox()
 {
   return this->getModel()->getBoundBox();
 }
 
-void TrackballCanvas::setModel(std::shared_ptr<Model> shared_model)
+void Texture_Canvas::setModel(std::shared_ptr<Model> shared_model)
 {
+	if (shared_model == NULL)
+	{
+		return;
+	}
 	DispObject::setModel(shared_model);
 	shared_model->set_dis_obj(this);
 }
 
-void TrackballCanvas::setShaderProgram()
+void Texture_Canvas::setShaderProgram()
 {
   basic_shader.reset(new QGLShaderProgram);
   basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/edge.frag");
@@ -68,8 +77,12 @@ void TrackballCanvas::setShaderProgram()
   basic_shader->link();
 }
 
-void TrackballCanvas::drawModel()
+void Texture_Canvas::drawModel()
 {
+if (this->getModel() == NULL)
+{
+	return;
+}
   basic_shader->bind();
 
   basic_shader->setUniformValue("fMeshSize", GLfloat(num_face));
@@ -124,21 +137,25 @@ void TrackballCanvas::drawModel()
   basic_shader->release();
 }
 
-void TrackballCanvas::updateModelBuffer()
+void Texture_Canvas::updateModelBuffer()
 {
   //const VertexList& vertex_list = model->getShapeVertexList();
   //const FaceList&   face_list   = model->getShapeFaceList();
   //const NormalList& normal_list = model->getShapeNormalList();
   //const STLVectorf& color_list  = model->getShapeColorList();
-  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
+//   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("View:ShowLightball") == 0)
+//   {
+//     use_flat = 1;
+//   }
+//   else 
+//   {
+//     use_flat = 0;
+//   }
+  if (this->getModel() == NULL)
   {
-    use_flat = 1;
+	  return;
   }
-  else 
-  {
-    use_flat = 0;
-  }
-
+  use_flat = 1;
   std::vector<LG::PolygonMesh*> poly_meshes;
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
   {
@@ -217,7 +234,7 @@ void TrackballCanvas::updateModelBuffer()
   }
 }
 
-void TrackballCanvas::updateModelColorBuffer()
+void Texture_Canvas::updateModelColorBuffer()
 {
   LG::PolygonMesh* poly_mesh;
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
@@ -252,7 +269,7 @@ void TrackballCanvas::updateModelColorBuffer()
 }
 
 
-std::string TrackballCanvas::getFilePath()
+std::string Texture_Canvas::getFilePath()
 {
 	return this->getModel()->getDataPath();
 }

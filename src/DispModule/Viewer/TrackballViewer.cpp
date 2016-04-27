@@ -6,6 +6,7 @@
 #include <QKeyEvent>
 #include "Model.h"
 #include "ShapeCrest.h"
+#include "Shape.h"
 #include "ParameterMgr.h"
 #include <QGLViewer/manipulatedFrame.h>
 
@@ -51,6 +52,10 @@ void TrackballViewer::draw()
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
     }
+	else
+	{
+		dispObjects[i]->set_viewer(this);
+	}
   }
 
 
@@ -330,28 +335,131 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
   //}
   //else
   //if (!lightball_mode)
-  {
-    QGLViewer::mousePressEvent(e);
-    sync_camera = true;
-  }
-  //else if (lightball_mode)
-  {
 
-  }
+
+	bool is_seleted = false;
+	for (size_t i = 0; i < dispObjects.size(); ++i)
+	{
+		TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+		std::vector<Shape*> shapes;
+		trackball_canvas->getModel()->getShapeVector(shapes);
+
+		for (size_t j = 0; j < shapes.size(); ++j)
+		{
+			shapes[j]->set_glviewer(this);
+			bool s = shapes[j]->mouse_press(e);
+			if (s)
+			{
+				is_seleted = true;
+			}
+		}
+	}
+	if (!is_seleted)
+	{
+		QGLViewer::mousePressEvent(e);
+		sync_camera = true;
+	}
+	else
+	{
+		this->updateGL();
+	}
 }
+void TrackballViewer::mouseDoubleClickEvent(QMouseEvent * event)
+{
+	bool is_seleted = false;
+	for (size_t i = 0; i < dispObjects.size(); ++i)
+	{
+		TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+		std::vector<Shape*> shapes;
+		trackball_canvas->getModel()->getShapeVector(shapes);
+
+
+		for (size_t j = 0; j < shapes.size(); ++j)
+		{
+			shapes[j]->set_glviewer(this);
+			int activated;
+			bool s = shapes[j]->double_click(event, activated);
+			if (s)
+			{
+				is_seleted = true;
+				break;
+			}
+			if (activated == 0)
+			{
+				is_seleted = true;
+			}
+		}
+
+	}
+	if (!is_seleted)
+	{
+		QGLViewer::mouseDoubleClickEvent(event);
+	}
+	else
+	{
+		this->updateGL();
+	}
+};
 
 void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 {
-  QGLViewer::mouseMoveEvent(e);
+	bool is_seleted = false;
+	for (size_t i = 0; i < dispObjects.size(); ++i)
+	{
+		TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+		std::vector<Shape*> shapes;
+		trackball_canvas->getModel()->getShapeVector(shapes);
+
+		for (size_t j = 0; j < shapes.size(); ++j)
+		{
+			shapes[j]->set_glviewer(this);
+			Vector3_f vts;
+			int s = shapes[j]->mouse_move(e, vts);
+			if (s >= 0)
+			{
+				is_seleted = true;
+			}
+		}
+	}
+
+	if (!is_seleted)
+	{
+		QGLViewer::mouseMoveEvent(e);
+	}
+	else
+	{
+		this->updateGL();
+	}
   if(sync_camera)
   {
-    syncCamera(0); // mouse move event don't sync the vector field viewer to decrease lagecy
+    //syncCamera(0); // mouse move event don't sync the vector field viewer to decrease lagecy
   }
 }
 
 void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
 {
-  QGLViewer::mouseReleaseEvent(e);
+	bool is_seleted = false;
+	for (size_t i = 0; i < dispObjects.size(); ++i)
+	{
+		TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+		std::vector<Shape*> shapes;
+		trackball_canvas->getModel()->getShapeVector(shapes);
+
+		for (size_t j = 0; j < shapes.size(); ++j)
+		{
+			shapes[j]->set_glviewer(this);
+			Vector3_f vts;
+			bool s = shapes[j]->release(e);
+			if (s)
+			{
+				is_seleted = true;
+			}
+		}
+	}
+	if (!is_seleted)
+	{
+		QGLViewer::mouseReleaseEvent(e);
+	}
   if(sync_camera)
   {
     syncCamera();
@@ -361,6 +469,7 @@ void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
 
 void TrackballViewer::wheelEvent(QWheelEvent* e)
 {
+	bool is_seleted = false;
   if (e->modifiers() ==  Qt::ShiftModifier)
   {
     qreal cur_fov = camera()->fieldOfView();
@@ -385,7 +494,28 @@ void TrackballViewer::wheelEvent(QWheelEvent* e)
     Eigen::Map<Eigen::Matrix4d>proj(m, 4, 4);
     std::cout<< proj << std::endl;
   }
-  else
+  else 
+  {
+	  for (size_t i = 0; i < dispObjects.size(); ++i)
+	  {
+		  TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[i]);
+		  std::vector<Shape*> shapes;
+		  trackball_canvas->getModel()->getShapeVector(shapes);
+
+		  for (size_t j = 0; j < shapes.size(); ++j)
+		  {
+			  shapes[j]->set_glviewer(this);
+			  Vector3_f vts;
+			  bool s = shapes[j]->wheel(e);
+			  if (s)
+			  {
+				  this->updateGL();
+				  is_seleted = true;
+			  }
+		  }
+	  }
+  }
+  if (!is_seleted)
   {
     QGLViewer::wheelEvent(e);
     syncCamera();

@@ -1,6 +1,6 @@
 #include "BasicViewer.h"
 #include "DispObject.h"
-
+#include "GL/glew.h"
 BasicViewer::BasicViewer()
 {
   QGLViewer::QGLViewer();
@@ -66,9 +66,9 @@ void BasicViewer::init()
 
   GLint major = 0;
   GLint minor = 0;
-  glGetIntegerv(GL_MAJOR_VERSION, &major);
-  glGetIntegerv(GL_MINOR_VERSION, &minor);
-  std::cout << major << "." << minor << std::endl;
+//   glGetIntegerv(GL_MAJOR_VERSION, &major);
+//   glGetIntegerv(GL_MINOR_VERSION, &minor);
+//   std::cout << major << "." << minor << std::endl;
 }
 
 void BasicViewer::updateGLOutside()

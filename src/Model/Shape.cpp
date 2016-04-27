@@ -2,24 +2,43 @@
 #include "Bound.h"
 #include "KDTreeWrapper.h"
 #include "PolygonMesh.h"
-
+#include <gl/GLUT.H>
+#include <gl/gl.h>
+#include "color.h"
 #include "Ray.h"
 #include "SAMPLE.h"
 #include "GenerateSamples.h"
-
+#include "geometry_types.h"
 #include <set>
 #include <fstream>
-
+#include <QGLViewer/qglviewer.h>
+#include <QtCore/QPoint>
+#include "shape_manipulator.h"
+#include "PolygonMesh_Manipulator.h"
+#include "Model.h"
+#include "../Viewer/DispObject.h"
 using namespace LG;
 
+
+
 Shape::Shape()
-  : bound(new Bound())
+	: bound(new Bound()),
+	m_is_selected_(false),
+	m_show_manipulator_(false),
+	m_sm_(NULL),
+	m_model_(NULL)
 {
+
+	m_viewer_ = NULL;
 }
 
 Shape::~Shape()
 {
-  std::cout << "Deleted a Shape.\n";
+	if (this->m_sm_)
+	{
+		delete (this->m_sm_);
+	}
+	std::cout << "Deleted a Shape.\n";
 }
 
 void Shape::init(VertexList& vertexList, FaceList& faceList, FaceList& UVIdList, STLVectorf& UVList)
@@ -66,6 +85,128 @@ void Shape::init(VertexList& vertexList, FaceList& faceList, FaceList& UVIdList,
   buildKDTree();
 }
 
+const void Shape::draw_manipulator()
+{
+	if ( !(this->m_show_manipulator_ ) )
+	{
+		return;
+	}
+	if (!(this->m_is_selected_))
+	{
+		return;
+	}
+	if (this->m_viewer_ == NULL)
+	{
+		return;
+	}
+
+	this->m_sm_->draw();
+};
+
+bool Shape::show_mani()
+{
+	return this->m_show_manipulator_;
+};
+void Shape::set_show_mani(bool b)
+{
+	this->m_show_manipulator_ = b;
+};
+
+QGLViewer* Shape::glviewer()
+{
+	return this->m_viewer_;
+};
+void Shape::set_glviewer(QGLViewer* g)
+{
+	this->m_viewer_ = g;
+};
+bool Shape::double_click(QMouseEvent* e, int& activated)
+{
+	if (this->m_show_manipulator_ == false)
+	{
+		this->m_is_selected_ = false;
+		activated = -1;
+		return false;
+	}
+	else
+	{
+		this->m_is_selected_ = true;
+		this->compute_mainipulator();
+		return m_sm_->double_click(e, activated);
+	}
+};
+int Shape::mouse_press(QMouseEvent* e)
+{
+	if (this->m_show_manipulator_ == false)
+	{
+		this->m_is_selected_ = false;
+		return false;
+	}
+	else if (this->m_is_selected_ == true)
+	{
+		this->compute_mainipulator();
+		
+		return m_sm_->mouse_press(e);
+	}
+	return false;
+};
+int Shape::mouse_move(QMouseEvent* e, Vector3_f& vt)
+{
+	if (this->m_show_manipulator_ == false)
+	{
+		this->m_is_selected_ = false;
+		return false;
+	}
+	else if (this->m_is_selected_ == true)
+	{
+		this->compute_mainipulator();
+		Vector3_f v_t;
+		int m = this->get_manipulator()->mouse_move(e, v_t);
+		if (m >= 0)
+		{
+			this->translate(v_t);
+			this->get_model()->get_dis_obj()->updateModelBuffer();
+		}
+		
+		return m;
+	}
+	return false;
+};
+int	Shape::release(QMouseEvent *e)
+{
+	if (this->m_show_manipulator_ == false)
+	{
+		this->m_is_selected_ = false;
+		return false;
+	}
+	else if(this->m_is_selected_ == true)
+	{
+		this->compute_mainipulator();
+
+		return m_sm_->release(e);
+	}
+	return false;
+};
+Shape_Manipulator* Shape::get_manipulator()
+{
+	return this->m_sm_;
+};
+void Shape::compute_mainipulator()
+{
+	if (this->m_sm_ == NULL)
+	{
+		this->m_sm_ = new Shape_Manipulator();
+		this->m_sm_->set_shape(this);
+	}
+};
+bool Shape::is_selected()
+{
+	return this->m_is_selected_;
+};
+void Shape::set_selected(bool b)
+{
+	this->m_is_selected_ = b;
+};
 void Shape::setVertexList(VertexList& vertexList)
 {
   //vertex_list = vertexList;
@@ -562,20 +703,22 @@ void Shape::computeBounds()
   bound->minZ = std::numeric_limits<float>::max();
   bound->maxZ = std::numeric_limits<float>::min();
   float sum_x = 0,sum_y = 0,sum_z = 0;
-  for (decltype(vertex_list.size()) i = 0; i < vertex_list.size() / 3; ++i)
+
+  for (auto vit : this->poly_mesh->vertices())
   {
-    float x = vertex_list[3 * i + 0];
-    float y = vertex_list[3 * i + 1];
-    float z = vertex_list[3 * i + 2];
-    sum_x += x;
-		sum_y += y;
-		sum_z += z;
-    if (x < bound->minX) bound->minX = x;
-    if (x > bound->maxX) bound->maxX = x;
-    if (y < bound->minY) bound->minY = y;
-    if (y > bound->maxY) bound->maxY = y;
-    if (z < bound->minZ) bound->minZ = z;
-    if (z > bound->maxZ) bound->maxZ = z;
+	  LG::Vec3& pt = this->poly_mesh->position(vit);
+	  float x = pt[0];
+	  float y = pt[1];
+	  float z = pt[2];
+	  sum_x += x;
+	  sum_y += y;
+	  sum_z += z;
+	  if (x < bound->minX) bound->minX = x;
+	  if (x > bound->maxX) bound->maxX = x;
+	  if (y < bound->minY) bound->minY = y;
+	  if (y > bound->maxY) bound->maxY = y;
+	  if (z < bound->minZ) bound->minZ = z;
+	  if (z > bound->maxZ) bound->maxZ = z;
   }
   bound->centroid.x = sum_x / (vertex_list.size() / 3);
 	bound->centroid.y = sum_y / (vertex_list.size() / 3);
@@ -852,3 +995,100 @@ void Shape::computeShadowSHCoeffs(int num_band)
   }
   std::cout << "Compute SH coefficients finished.\n";
 }
+bool Shape::wheel(QWheelEvent *e)
+{
+	if (this->m_show_manipulator_ == false)
+	{
+		return false;
+	}
+	else if (this->get_manipulator() == NULL)
+	{
+		return false;
+	}
+
+	float angle;
+	Vector3_f v_line;
+	Point3f center;
+	float scale;
+	int	rotate_scale;
+	bool edited = this->get_manipulator()->wheel(e, v_line, angle, center, scale, rotate_scale);
+
+	if (edited)
+	{
+		if ((e->modifiers() == Qt::ControlModifier) && rotate_scale  == 1)
+		{
+			CvPoint3D32f c = this->getBoundbox()->centroid;
+			Point3f center_scale = Point3f(c.x, c.y, c.z);
+			this->scale(center_scale, scale);
+			this->computeBounds();
+			this->get_model()->get_dis_obj()->updateModelBuffer();
+			return true;
+		}
+		else if (e->modifiers() == Qt::AltModifier && rotate_scale == 2)
+		{
+			CvPoint3D32f c = this->getBoundbox()->centroid;
+			Point3f center_scale = Point3f(c.x, c.y, c.z);
+			this->scale_along_line(center_scale, v_line, scale);
+			this->computeBounds();
+			this->get_model()->get_dis_obj()->updateModelBuffer();
+
+			return true;
+		}
+		else if (rotate_scale == 0)
+		{
+			CvPoint3D32f c = this->getBoundbox()->centroid;
+			Point3f center_scale = Point3f(c.x, c.y, c.z);
+			this->rotate(center_scale, v_line, angle);
+			this->computeBounds();
+			this->get_model()->get_dis_obj()->updateModelBuffer();
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool Shape::translate(Vector3_f v_t)
+{
+	LG::Vec3 vv_t(v_t.x(), v_t.y(), v_t.z());
+	PolygonMesh_Manipulator::translate(this->getPolygonMesh(), vv_t);
+	this->computeBounds();
+	return true;
+};
+bool Shape::rotate(const Point3f& p_on_line, const Vector3_f& vline, const float& angle)
+{
+	LG::Vec3 p_t(p_on_line.x(), p_on_line.y(), p_on_line.z());
+	LG::Vec3 v_t(vline.x(), vline.y(), vline.z());
+	PolygonMesh_Manipulator::rotate(this->getPolygonMesh(), p_t, v_t, angle);
+	this->computeBounds();
+	return true;
+};
+bool Shape::scale(const Point3f& standard, const float& scale)
+{
+	CvPoint3D32f c = this->getBoundbox()->centroid;
+	LG::Vec3 center(c.x, c.y, c.z);
+	PolygonMesh_Manipulator::scale(this->getPolygonMesh(), center, scale);
+	return true;
+};
+bool Shape::scale_along_line(const Point3f& standard, Vector3_f v_line, const float& scale)
+{
+	CvPoint3D32f c = this->getBoundbox()->centroid;
+	LG::Vec3 center(c.x, c.y, c.z);
+	LG::Vec3 axis(v_line.x(), v_line.y(), v_line.z());
+	PolygonMesh_Manipulator::scale_along_axis(this->getPolygonMesh(), center, scale, axis);
+	return true;
+};
+Model* Shape::get_model()
+{
+	return this->m_model_;
+};
+void Shape::set_model(Model* m)
+{
+	this->m_model_ = m;
+};

@@ -60,7 +60,7 @@ public:
   std::shared_ptr<FeatureLine> getFeatureLine(); 
   void setConstrainedPair(double start[2], double end[2]);
   void getTargetCurves(CURVES& target_curves);
-
+  void updateModelBuffer(){};
 protected:
   std::shared_ptr<FeatureGuided> feature_model;
   GLubyte bgmap[800][800][3];

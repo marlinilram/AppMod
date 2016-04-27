@@ -1,5 +1,5 @@
-#ifndef TrackballCanvas_H
-#define TrackballCanvas_H
+#ifndef Texture_Canvas_H
+#define Texture_Canvas_H
 
 #include <glew-1.11.0/include/GL/glew.h>
 #include "DispObject.h"
@@ -11,11 +11,11 @@ class Model;
 class QGLShaderProgram;
 class QGLBuffer;
 
-class TrackballCanvas : public DispObject
+class Texture_Canvas : public DispObject
 {
 public:
-  TrackballCanvas();
-  ~TrackballCanvas();
+	Texture_Canvas();
+	~Texture_Canvas();
 
   void setModel(std::shared_ptr<Model> shared_model);
 
@@ -46,10 +46,11 @@ private:
 
   int render_mode;
   int use_flat;
-
+  bool has_data_;
 private:
-  TrackballCanvas(const TrackballCanvas&);
-  void operator = (const TrackballCanvas&);
+	Texture_Canvas(const Texture_Canvas&);
+	void operator = (const Texture_Canvas&);
+	
 };
 
 #endif

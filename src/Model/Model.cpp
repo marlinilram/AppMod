@@ -10,7 +10,7 @@
 #include "obj_writer.h"
 #include <time.h>
 #include <QDir>
-
+#include "../Viewer/DispObject.h"
 #include "SH.h"
 
 #include "ParameterMgr.h"
@@ -18,7 +18,7 @@
 
 Model::Model()
 {
-
+	this->m_dis_obj_ = NULL;
 }
 
 Model::~Model()
@@ -96,7 +96,14 @@ Model::Model(const std::string path, const std::string name)
   QDir dir;
   dir.mkpath(QString(output_path.c_str()));
 }
-
+DispObject* Model::get_dis_obj()
+{
+	return this->m_dis_obj_;
+};
+void Model::set_dis_obj(DispObject* d)
+{
+	this->m_dis_obj_ = d;
+};
 bool Model::loadOBJ(const std::string name, const std::string path)
 {
   std::cout << "Reading OBJ file " << name << " from disk.\n";
@@ -120,6 +127,7 @@ bool Model::loadOBJ(const std::string name, const std::string path)
   {
     shapes[i] = new Shape();
     shapes[i]->init(t_obj[i].mesh.positions, t_obj[i].mesh.indices, t_obj[i].mesh.uv_indices, t_obj[i].mesh.texcoords);
+	shapes[i]->set_model(this);
   }
 
   Vector3f shape_center;
@@ -386,6 +394,8 @@ bool Model::getProjectPt(float object_coord[3], float &winx, float &winy)
   //Vector4f test = proj_mat * in;
   //float test_winx = test(0) / test(3);
   //float test_winy = test(1) / test(3);
+
+  return true;
 }
 
 bool Model::getProjectPt(const int vid, float& winx, float& winy)
@@ -685,3 +695,13 @@ void Model::getPolygonMeshVector(std::vector<LG::PolygonMesh*>& polymesh_vec)
     polymesh_vec.push_back(shapes[i]->getPolygonMesh());
   }
 }
+
+void Model::getShapeVector(std::vector<Shape*>& Shape_vec)
+{
+	Shape_vec.clear();
+
+	for (size_t i = 0; i < shapes.size(); i++)
+	{
+		Shape_vec.push_back(shapes[i]);
+	}
+};

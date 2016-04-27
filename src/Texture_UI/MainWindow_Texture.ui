@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow_Texture</class>
+ <widget class="QMainWindow" name="MainWindow_Texture">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1109</width>
+    <height>859</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow_Texture</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1109</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>file</string>
+    </property>
+    <addaction name="actionSet_Texture_Dir"/>
+    <addaction name="actionLoad_Obj"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>view</string>
+    </property>
+    <addaction name="actionShow_data_base"/>
+    <addaction name="actionData_dock"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QDockWidget" name="dockWidget_Texture_Brow">
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <widget class="QWidget" name="verticalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>0</y>
+       <width>521</width>
+       <height>791</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_Texture_Brow"/>
+    </widget>
+    <widget class="QScrollBar" name="verticalScrollBar_Texture">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>16</width>
+       <height>791</height>
+      </rect>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_Shape_Texture">
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2"/>
+  </widget>
+  <action name="actionSet_Texture_Dir">
+   <property name="text">
+    <string>set_texture_dir</string>
+   </property>
+  </action>
+  <action name="actionShow_data_base">
+   <property name="text">
+    <string>show_data_base</string>
+   </property>
+  </action>
+  <action name="actionData_dock">
+   <property name="text">
+    <string>data_dock</string>
+   </property>
+  </action>
+  <action name="actionLoad_Obj">
+   <property name="text">
+    <string>load_obj</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

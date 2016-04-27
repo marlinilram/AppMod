@@ -37,6 +37,7 @@ FILE( GLOB Project_SRCS "src/*.*"
 						"src/*/*/*.*")
 						
 SET( Project_INCLUDE_DIR src/
+			 src/Texture_UI
                          src/ui 
                          src/Model
                          src/Utility/OBJ
@@ -62,11 +63,25 @@ SET( MainWin_UIS      src/ui/MainWindow.ui )
 SET( MainWin_MOC_HDRS src/ui/MainWindow.h )
 SET( MainWin_RCC      src/ui/UI.qrc )
 
+SET( MainWindow_Texture_UIS      src/Texture_UI/MainWindow_Texture.ui )
+SET( MainWindow_Texture_MOC_HDRS src/Texture_UI/MainWindow_Texture.h )
+SET( MainWindow_Texture_RCC      src/Texture_UI/UI.qrc )
+
+SET( Dialog_Database_UIS      src/Texture_UI/Dialog_Database.ui )
+SET( Dialog_Database_MOC_HDRS src/Texture_UI/Dialog_Database.h )
+SET( Dialog_Database_RCC      src/ui/UI.qrc )
+
 SET( ParaDock_UIS       src/ui/ParameterDock.ui )
 SET( ParaDock_MOC_HDRS  src/ui/ParameterDock.h )
 
 SET( DispModuleHandler_MOC_HDRS src/ui/DispModuleHandler.h
-                                src/DispModule/Viewer/VectorFieldViewer.h )
+				src/Texture_UI/texture_label.h
+				src/Texture_UI/mini_texture.h
+				src/Texture_UI/shape_item.h
+				src/Texture_UI/shape_list.h
+                                src/Texture_UI/Texture_Canvas.h
+				src/Texture_UI/Texture_Viewer.h
+				src/DispModule/Viewer/VectorFieldViewer.h )
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)
@@ -75,6 +90,14 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 QT5_WRAP_UI( MainWin_UIS_H          ${MainWin_UIS} )
 QT5_WRAP_CPP( MainWin_MOC_SRCS      ${MainWin_MOC_HDRS} )
 QT5_ADD_RESOURCES( MainWin_RCC_SRCS ${MainWin_RCC} )
+
+QT5_WRAP_UI( MainWindow_Texture_UIS_H          ${MainWindow_Texture_UIS} )
+QT5_WRAP_CPP( MainWindow_Texture_MOC_SRCS      ${MainWindow_Texture_MOC_HDRS} )
+QT5_ADD_RESOURCES( MainWindow_Texture_RCC_SRCS ${MainWindow_Texture_RCC} )
+
+QT5_WRAP_UI( Dialog_Database_UIS_H          ${Dialog_Database_UIS} )
+QT5_WRAP_CPP( Dialog_Database_MOC_SRCS      ${Dialog_Database_MOC_HDRS} )
+QT5_ADD_RESOURCES( Dialog_Database_RCC_SRCS ${Dialog_Database_RCC} )
 
 QT5_WRAP_UI( ParaDock_UIS_H     ${ParaDock_UIS} )
 QT5_WRAP_CPP( ParaDock_MOC_SRCS ${ParaDock_MOC_HDRS} )
@@ -104,12 +127,19 @@ ADD_EXECUTABLE( ${PROJECT_NAME}
                 ${MainWin_UIS_H} 
                 ${MainWin_RCC_SRCS}
                 ${MainWin_MOC_SRCS} 
+        	${MainWindow_Texture_UIS_H} 
+                ${MainWindow_Texture_RCC_SRCS}
+                ${MainWindow_Texture_MOC_SRCS} 
+        	${Dialog_Database_UIS_H} 
+                ${Dialog_Database_RCC_SRCS}
+                ${Dialog_Database_MOC_SRCS}
                 ${ParaDock_UIS_H}
                 ${ParaDock_MOC_SRCS}
                 ${DispModuleHandler_MOC_SRCS} )
 				
 				
 FILE( GLOB UI 			  "src/ui/*.*" ) 
+FILE( GLOB Texture_UI 			  "src/Texture_UI/*.*" ) 
 FILE( GLOB Model 		  "src/Model/*.*" )
 FILE( GLOB TinyOBJ 		"src/Utility/OBJ/*.*" )
 FILE( GLOB Voxeler 		"src/Utility/Voxeler/*.*" )
@@ -131,6 +161,7 @@ FILE( GLOB Resource   "src/ui/icons/*.*" )
 FILE( GLOB LgMesh     ${LGMESH_SRCS} )
 					 
 source_group("UI" 					        FILES ${UI} )
+source_group("Texture_UI" 					        FILES ${Texture_UI} )
 source_group("Resources"		        FILES ${Resource} )
 source_group("Model" 				        FILES ${Model} )
 source_group("Lgmesh" 				      FILES ${LgMesh} )
