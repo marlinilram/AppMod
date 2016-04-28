@@ -163,6 +163,24 @@ bool Model::loadOBJ(const std::string name, const std::string path)
 
   return true;
 }
+void Model::merge_shapes_to_show()
+{
+	VertexList vertex_list;
+	std::vector<Shape*> shapes_all;
+	this->getShapeVector(shapes_all);
+	for (size_t i = 0; i < shapes_all.size(); ++i)
+	{
+		for (auto j : shapes_all[i]->getPolygonMesh()->vertices())
+		{
+			LG::Vec3 v = shapes_all[i]->getPolygonMesh()->position(j);
+			vertex_list.push_back(v.x());
+			vertex_list.push_back(v.y());
+			vertex_list.push_back(v.z());
+		}
+	}
+	this->updateShape(vertex_list);
+}
+
 
 std::string Model::exportOBJ(int cur_iter)
 {

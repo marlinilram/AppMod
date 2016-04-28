@@ -420,8 +420,12 @@ void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 				is_seleted = true;
 			}
 		}
+		if (is_seleted)
+		{
+			trackball_canvas->getModel()->merge_shapes_to_show();
+		}
 	}
-
+	
 	if (!is_seleted)
 	{
 		QGLViewer::mouseMoveEvent(e);
@@ -512,6 +516,10 @@ void TrackballViewer::wheelEvent(QWheelEvent* e)
 				  this->updateGL();
 				  is_seleted = true;
 			  }
+		  }
+		  if (is_seleted)
+		  {
+			  trackball_canvas->getModel()->merge_shapes_to_show();
 		  }
 	  }
   }
