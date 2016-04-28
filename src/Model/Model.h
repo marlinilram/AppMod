@@ -28,7 +28,7 @@ public:
   ~Model();
 
   bool loadOBJ(const std::string name, const std::string path);
-  void exportOBJ(int cur_iter);
+  std::string exportOBJ(int cur_iter);
 
   DispObject* get_dis_obj();
   void set_dis_obj(DispObject* d);

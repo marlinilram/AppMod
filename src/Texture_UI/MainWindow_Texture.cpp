@@ -39,7 +39,33 @@ MainWindow_Texture::~MainWindow_Texture()
 	{
 		delete this->m_mini_selected_;
 	}
+
+	for (unsigned int i = 0; i < m_viewer_for_result_.size(); i++)
+	{
+		delete m_viewer_for_result_[i];
+	}
 }
+
+Texture_Viewer* MainWindow_Texture::new_viewer_for_result_model(std::string file_path)
+{
+	std::string model_file_path = file_path;
+	std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
+	model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
+	std::shared_ptr<Model> m(new Model(model_file_path, model_file_name));
+
+
+	Texture_Viewer* viewer = new Texture_Viewer(this);
+
+	viewer->resize(this->width(), this->height());
+	viewer->setAttribute(Qt::WA_MouseTracking);
+	viewer->show();
+
+	Texture_Canvas* tc = new Texture_Canvas();
+	tc->setModel(m);
+	viewer->addDispObj(tc);
+	tc->updateModelBuffer();
+	return viewer;
+};
 void MainWindow_Texture::item_double_clicked(QListWidgetItem* it)
 {
 	if (this->m_mini_selected_ == NULL)
@@ -87,8 +113,8 @@ void MainWindow_Texture::connect_singal()
 	connect(actionLoad_Obj, SIGNAL(triggered()), this, SLOT(load_obj()));
 
 	connect(this->verticalScrollBar_Texture, SIGNAL(valueChanged(int)), this, SLOT(images_update(int)));
-  connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
-  connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
+    connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
+	connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
 };
 
 void MainWindow_Texture::load_obj()
@@ -109,8 +135,7 @@ void MainWindow_Texture::load_obj()
 	//this->m_viewer_->get_dispObjects()[0]->
 	this->m_viewer_->get_dispObjects()[0]->updateModelBuffer();
 
-  this->tex_syn_handler->setSynthesisModel(m);
-
+	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
 };
 void MainWindow_Texture::shape_list_prepare()
@@ -277,9 +302,18 @@ void MainWindow_Texture::images_update(int from)
 void MainWindow_Texture::run_d1_synthesis()
 {
   this->tex_syn_handler->runD1Synthesis(this->m_shape_list_->getTexturePath(0));
+
+
 };
 
 void MainWindow_Texture::run_d0_synthesis()
 {
-  this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+  std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+
+//   this->m_viewer_for_result_.push_back(this->new_viewer_for_result_model(s));
+// 
+//   this->m_viewer_for_result_.back()->setWindowTitle("after d0...");
+
+  //this->m_viewer_for_result_.back()->show();
+
 }

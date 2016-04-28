@@ -16,7 +16,7 @@
 #include "YMLHandler.h"
 #include <fstream>
 
-void DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
+std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
 {
   // 0. prepare the sample vertices on the target mesh
   std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
@@ -74,10 +74,12 @@ void DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, AppearanceModel*
   ShapeUtility::prepareLocalTransform(app_mod_src->getBaseMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, transform_scale);
 
   LG::PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
-  geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+  std::string obj_path = geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
 
   ShapeUtility::computeLocalTransform(&old_tar_mesh, tar_model->getPolygonMesh());
   ShapeUtility::exportVisForLocalTransform(tar_model->getPolygonMesh(), tar_model->getOutputPath());
+
+  return obj_path;
 }
 
 void DetailSynthesis::debugSynthesisD0(std::string app_mod_path, std::shared_ptr<Model> tar_model)
@@ -267,14 +269,13 @@ void DetailSynthesis::debugSynthesisD1(std::string app_mod_path, std::shared_ptr
   this->synthesisD1(src_app_mod.get(), tar_app_mod.get(), tar_model);
 }
 
-void DetailSynthesis::runSynthesisD0(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
+std::string DetailSynthesis::runSynthesisD0(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
 {
   // load source appearance model
   std::shared_ptr<AppearanceModel> src_app_mod(new AppearanceModel());
   src_app_mod->importAppMod("app_model.xml", app_mod_path);
 
-  // run synthesis
-  this->synthesisD0(src_app_mod.get(), app_mod_tar, tar_model);
+  return this->synthesisD0(src_app_mod.get(), app_mod_tar, tar_model);
 }
 
 void DetailSynthesis::runSynthesisD1(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)

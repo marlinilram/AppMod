@@ -38,12 +38,12 @@ void TexSynHandler::runD1Synthesis(std::string app_mod_file)
   this->detail_synthesis->runSynthesisD1(app_mod_file, syn_app_mod.get(), synthesis_model);
 }
 
-void TexSynHandler::runD0Synthesis(std::string app_mod_file)
+std::string TexSynHandler::runD0Synthesis(std::string app_mod_file)
 {
   if (!synthesis_model || !syn_app_mod)
   {
     std::cout << "target data has not been initialized yet." << std::endl;
   }
 
-  this->detail_synthesis->runSynthesisD0(app_mod_file, syn_app_mod.get(), synthesis_model);
+ return this->detail_synthesis->runSynthesisD0(app_mod_file, syn_app_mod.get(), synthesis_model);
 }

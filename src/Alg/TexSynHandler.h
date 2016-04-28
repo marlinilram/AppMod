@@ -15,7 +15,7 @@ public:
 
   void setSynthesisModel(std::shared_ptr<Model> model);
   void runD1Synthesis(std::string app_mod_file);
-  void runD0Synthesis(std::string app_mod_file);
+  std::string runD0Synthesis(std::string app_mod_file);
 
 private:
   std::shared_ptr<Model>           synthesis_model;

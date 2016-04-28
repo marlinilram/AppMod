@@ -88,9 +88,9 @@ public:
   void setCurResolution(int res) { resolution = res; };
   void debugSynthesisD0(std::string app_mod_path, std::shared_ptr<Model> tar_model);
   void debugSynthesisD1(std::string app_mod_path, std::shared_ptr<Model> tar_model);
-  void runSynthesisD0(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
+  std::string runSynthesisD0(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
   void runSynthesisD1(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
-  void synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
+  std::string synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
   void synthesisD1(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
 
 

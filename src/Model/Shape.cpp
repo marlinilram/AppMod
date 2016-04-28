@@ -166,10 +166,9 @@ int Shape::mouse_move(QMouseEvent* e, Vector3_f& vt)
 			this->translate(v_t);
 			this->get_model()->get_dis_obj()->updateModelBuffer();
 		}
-		
 		return m;
 	}
-	return false;
+	return -1;
 };
 int	Shape::release(QMouseEvent *e)
 {

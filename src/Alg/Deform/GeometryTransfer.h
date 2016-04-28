@@ -13,7 +13,7 @@ public:
   ~GeometryTransfer();
 
   void prepareSampleVertex(std::shared_ptr<Model> tar_model, std::vector<int>& v_ids);
-  void transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move = 5.0, bool use_arap = true);
+  std::string transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move = 5.0, bool use_arap = true);
 
   void debugDeformation(std::shared_ptr<Model> tar_model);
 

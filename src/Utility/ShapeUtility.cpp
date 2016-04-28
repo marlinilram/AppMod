@@ -1886,7 +1886,6 @@ namespace ShapeUtility
     }
 
     //vis_map = (vis_map - min) / (max - min);
-
     cv::imwrite(fpath + "/" + fname, vis_map * 255);
   }
 

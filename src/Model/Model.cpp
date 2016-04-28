@@ -164,7 +164,7 @@ bool Model::loadOBJ(const std::string name, const std::string path)
   return true;
 }
 
-void Model::exportOBJ(int cur_iter)
+std::string Model::exportOBJ(int cur_iter)
 {
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
@@ -204,6 +204,8 @@ void Model::exportOBJ(int cur_iter)
 
   std::string output_name = output_path + "/coarse_output" + file_time_postfix + ".obj";
   WriteObj(output_name, shapes, materials);
+
+  return output_name;
 }
 
 Bound* Model::getBoundBox()

@@ -230,7 +230,7 @@ void Texture_Canvas::updateModelBuffer()
 
   if (glGetError() != 0)
   {
-    std::cout<<"TrackballCanvas: GL Error in getting model\n";
+    std::cout<<"Texture_Canvas: GL Error in getting model\n";
   }
 }
 

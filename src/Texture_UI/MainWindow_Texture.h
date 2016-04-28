@@ -6,6 +6,8 @@
 #include "ui_MainWindow_Texture.h"
 #include "Dialog_Database.h"
 #include <memory>
+#include <vector>
+#include <string>
 class QListWidgetItem;
 class Texture_Label;
 class QHBoxLayout;
@@ -34,8 +36,11 @@ private slots:
 	void load_obj();
 	void texture_select(MiniTexture*);
 	void item_double_clicked(QListWidgetItem *);
-  void run_d1_synthesis();
-  void run_d0_synthesis();
+   
+	void run_d1_synthesis();
+	void run_d0_synthesis();
+
+	Texture_Viewer* new_viewer_for_result_model(std::string file_path);
 private:
 	void set_up_ui_texture();
 	int m_num_layer_;
@@ -51,7 +56,8 @@ private:
 
 	MiniTexture* m_mini_selected_;
 
-  std::shared_ptr<TexSynHandler> tex_syn_handler;
+   std::shared_ptr<TexSynHandler> tex_syn_handler;
+   std::vector<Texture_Viewer*> m_viewer_for_result_;
 };
 
 #endif

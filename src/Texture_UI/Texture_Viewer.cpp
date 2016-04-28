@@ -19,7 +19,10 @@ Texture_Viewer::Texture_Viewer(QWidget *widget)
 
 Texture_Viewer::~Texture_Viewer()
 {
-
+	for (unsigned int i = 0; i < this->get_dispObjects().size();i++)
+	{
+		delete this->get_dispObjects()[i];
+	}
 }
 
 

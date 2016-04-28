@@ -60,7 +60,7 @@ void GeometryTransfer::prepareSampleVertex(std::shared_ptr<Model> tar_model, std
   v_ids.erase(std::unique(v_ids.begin(), v_ids.end()), v_ids.end());
 }
 
-void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move, bool use_arap)
+std::string GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move, bool use_arap)
 {
   FaceList face_list = tar_model->getShapeFaceList();
   VertexList vertex_list = tar_model->getShapeVertexList();
@@ -134,9 +134,10 @@ void GeometryTransfer::transferDeformation(std::shared_ptr<Model> tar_model, con
   //model->updateColor(); // this is for build uv coordinates
   //model->updateSHColor();
 
-  tar_model->exportOBJ(0);
+  std::string s = tar_model->exportOBJ(0);
 
   std::cout << "Update geometry finished...\n";
+  return s;
 }
 
 void GeometryTransfer::debugDeformation(std::shared_ptr<Model> tar_model)
