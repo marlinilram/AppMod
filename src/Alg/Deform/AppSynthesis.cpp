@@ -166,9 +166,14 @@ void DetailSynthesis::synthesisD1(AppearanceModel* app_mod_src, AppearanceModel*
   }
 
   std::vector<cv::Mat> target_detail_map;
-  for (size_t i = 0; i < src_detail_map.size(); ++i)
+  app_mod_tar->getD1Details(target_detail_map); // use the existed target detail map
+  if (target_detail_map.size() != src_detail_map.size())
   {
-    target_detail_map.push_back(cv::Mat::zeros(src_detail_map[0].rows, src_detail_map[0].cols, CV_32FC1));
+    target_detail_map.clear();
+    for (size_t i = 0; i < src_detail_map.size(); ++i)
+    {
+      target_detail_map.push_back(cv::Mat::zeros(src_detail_map[0].rows, src_detail_map[0].cols, CV_32FC1));
+    }
   }
 
   // 1. build the mask for source and target
@@ -240,6 +245,8 @@ void DetailSynthesis::synthesisD1(AppearanceModel* app_mod_src, AppearanceModel*
   cv::imwrite(tar_model->getOutputPath() + "/reflectance.png", result_reflectance * 255);
   cv::imwrite(tar_model->getOutputPath() + "/tar_displacement.png", result_displacement * 255);
   YMLHandler::saveToFile(tar_model->getOutputPath(), "new_d2_displacement.yml", result_displacement);
+
+  app_mod_tar->setD1Details(target_detail_map);
 }
 
 void DetailSynthesis::debugSynthesisD1(std::string app_mod_path, std::shared_ptr<Model> tar_model)
@@ -258,4 +265,25 @@ void DetailSynthesis::debugSynthesisD1(std::string app_mod_path, std::shared_ptr
 
   // run synthesis
   this->synthesisD1(src_app_mod.get(), tar_app_mod.get(), tar_model);
+}
+
+void DetailSynthesis::runSynthesisD0(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
+{
+  // load source appearance model
+  std::shared_ptr<AppearanceModel> src_app_mod(new AppearanceModel());
+  src_app_mod->importAppMod("app_model.xml", app_mod_path);
+
+  // run synthesis
+  this->synthesisD0(src_app_mod.get(), app_mod_tar, tar_model);
+}
+
+void DetailSynthesis::runSynthesisD1(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
+{
+  // load source appearance model
+  std::cout << std::endl << "Load Appearance Model" << std::endl;
+  std::shared_ptr<AppearanceModel> src_app_mod(new AppearanceModel());
+  src_app_mod->importAppMod("app_model.xml", app_mod_path);
+
+  // run synthesis
+  this->synthesisD1(src_app_mod.get(), app_mod_tar, tar_model);
 }
