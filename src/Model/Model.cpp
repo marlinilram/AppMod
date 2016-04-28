@@ -117,18 +117,44 @@ bool Model::loadOBJ(const std::string name, const std::string path)
     return false;
   }
 
-  shape.reset(new Shape());
-  
-  shape->init(t_obj[0].mesh.positions, t_obj[0].mesh.indices, t_obj[0].mesh.uv_indices, t_obj[0].mesh.texcoords);
-
   // 4/20/2016 loaded shapes
   shapes.resize(t_obj.size(), nullptr);
   for (size_t i = 0; i < t_obj.size(); i++)
   {
     shapes[i] = new Shape();
     shapes[i]->init(t_obj[i].mesh.positions, t_obj[i].mesh.indices, t_obj[i].mesh.uv_indices, t_obj[i].mesh.texcoords);
-	shapes[i]->set_model(this);
+    shapes[i]->set_model(this);
   }
+
+  // merge shapes
+  VertexList vertex_list, t_list;
+  FaceList face_list, t_ind_list;
+  int vert_accu = 0, t_accu = 0;
+  for (size_t i = 0; i < t_obj.size(); ++i)
+  {
+    for (auto j : t_obj[i].mesh.positions)
+    {
+      vertex_list.push_back(j);
+    }
+    for (auto j : t_obj[i].mesh.indices)
+    {
+      face_list.push_back(j + vert_accu);
+    }
+    vert_accu += int(vertex_list.size() / 3);
+
+    for (auto j : t_obj[i].mesh.texcoords)
+    {
+      t_list.push_back(j);
+    }
+    for (auto j : t_obj[i].mesh.uv_indices)
+    {
+      t_ind_list.push_back(j + t_accu);
+    }
+    t_accu += int(t_list.size() / 2);
+  }
+
+  shape.reset(new Shape());
+  shape->init(vertex_list, face_list, t_ind_list, t_list);
 
   Vector3f shape_center;
   shape->getBoundbox()->getCenter(shape_center.data());
