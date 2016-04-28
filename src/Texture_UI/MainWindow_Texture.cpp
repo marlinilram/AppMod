@@ -9,6 +9,7 @@
 #include "shape_item.h"
 #include "shape_list.h"
 #include "DispModuleHandler.h"
+#include "TexSynHandler.h"
 
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
@@ -26,6 +27,7 @@ MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	this->set_up_viewer();
 	this->m_mini_selected_ = NULL;
 
+  this->tex_syn_handler.reset(new TexSynHandler);
 }
 MainWindow_Texture::~MainWindow_Texture()
 {
@@ -85,6 +87,8 @@ void MainWindow_Texture::connect_singal()
 	connect(actionLoad_Obj, SIGNAL(triggered()), this, SLOT(load_obj()));
 
 	connect(this->verticalScrollBar_Texture, SIGNAL(valueChanged(int)), this, SLOT(images_update(int)));
+  connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
+  connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
 };
 
 void MainWindow_Texture::load_obj()
@@ -104,6 +108,8 @@ void MainWindow_Texture::load_obj()
 	this->m_viewer_->get_dispObjects()[0]->setModel(m);
 	//this->m_viewer_->get_dispObjects()[0]->
 	this->m_viewer_->get_dispObjects()[0]->updateModelBuffer();
+
+  this->tex_syn_handler->setSynthesisModel(m);
 
 	this->shape_list_prepare();
 };
@@ -268,7 +274,12 @@ void MainWindow_Texture::images_update(int from)
 
 };
 
-void MainWindow_Texture::setDispModules(std::shared_ptr<DispModuleHandler> modules)
+void MainWindow_Texture::run_d1_synthesis()
 {
-  disp_modules = modules;
+  this->tex_syn_handler->runD1Synthesis(this->m_shape_list_->getTexturePath(0));
+};
+
+void MainWindow_Texture::run_d0_synthesis()
+{
+  this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 }

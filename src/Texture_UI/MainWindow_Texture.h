@@ -34,6 +34,8 @@ private slots:
 	void load_obj();
 	void texture_select(MiniTexture*);
 	void item_double_clicked(QListWidgetItem *);
+  void run_d1_synthesis();
+  void run_d0_synthesis();
 private:
 	void set_up_ui_texture();
 	int m_num_layer_;

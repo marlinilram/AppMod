@@ -96,6 +96,25 @@ void ShapeList::set_texture(ShapeItem * item, MiniTexture* texture)
 	}
 };
 
+std::string ShapeList::getTexturePath(int item_id)
+{
+  if (this->size().height() < 1 || item_id > (this->size().height() - 1))
+  {
+    return std::string("");
+  }
+
+  ShapeItem* spi = dynamic_cast<ShapeItem*>(this->item(item_id));
+
+  MiniTexture* mini = spi->get_texture();
+  if (mini == NULL)
+  {
+    return std::string("");
+  }
+  QString file_path = mini->get_file_name();
+  std::string std_file_path = file_path.toStdString().substr(0, file_path.toStdString().find_last_of('/'));
+  return std_file_path;
+}
+
 void ShapeList::clear()
 {
 // 	this->m_items_.clear();
