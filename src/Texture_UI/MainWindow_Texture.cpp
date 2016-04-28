@@ -8,6 +8,8 @@
 #include "mini_texture.h"
 #include "shape_item.h"
 #include "shape_list.h"
+#include "DispModuleHandler.h"
+
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
@@ -224,7 +226,7 @@ void MainWindow_Texture::set_dir()
 		QDir  dir_sub(dir_sub_s);
 		
 		QStringList filter;
-		filter.push_back("*.jpg");
+		filter.push_back("*.png");
 		QStringList files = dir_sub.entryList(filter, QDir::Files, QDir::Name);
 		if (files.size() > 0)
 		{
@@ -265,3 +267,8 @@ void MainWindow_Texture::images_update(int from)
 	}
 
 };
+
+void MainWindow_Texture::setDispModules(std::shared_ptr<DispModuleHandler> modules)
+{
+  disp_modules = modules;
+}

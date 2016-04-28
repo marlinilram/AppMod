@@ -2,7 +2,6 @@
 #include "Bound.h"
 #include "KDTreeWrapper.h"
 #include "PolygonMesh.h"
-#include <gl/GLUT.H>
 #include <gl/gl.h>
 #include "color.h"
 #include "Ray.h"

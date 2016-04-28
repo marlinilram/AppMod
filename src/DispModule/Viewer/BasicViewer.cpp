@@ -1,6 +1,6 @@
 #include "BasicViewer.h"
 #include "DispObject.h"
-#include "GL/glew.h"
+#include "glew-1.11.0/include/GL/glew.h"
 BasicViewer::BasicViewer()
 {
   QGLViewer::QGLViewer();
