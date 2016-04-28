@@ -78,6 +78,19 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2"/>
   </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionRun_d0_synthesis"/>
+   <addaction name="actionRun_d1_synthesis"/>
+  </widget>
   <action name="actionSet_Texture_Dir">
    <property name="text">
     <string>set_texture_dir</string>
@@ -96,6 +109,16 @@
   <action name="actionLoad_Obj">
    <property name="text">
     <string>load_obj</string>
+   </property>
+  </action>
+  <action name="actionRun_d1_synthesis">
+   <property name="text">
+    <string>run_d1_synthesis</string>
+   </property>
+  </action>
+  <action name="actionRun_d0_synthesis">
+   <property name="text">
+    <string>run_d0_synthesis</string>
    </property>
   </action>
  </widget>

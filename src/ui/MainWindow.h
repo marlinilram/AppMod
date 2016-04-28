@@ -1,7 +1,7 @@
 #ifndef MainWindow_H
 #define MainWindow_H
 
-#include <GL/glew.h>
+#include <glew-1.11.0/include/GL/glew.h>
 #include <QMainWindow>
 #include <QGridLayout>
 #include <QFileDialog>

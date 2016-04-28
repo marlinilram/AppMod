@@ -1,6 +1,7 @@
 #ifndef ShapeList_H
 #define ShapeList_H
 #include <QListWidget>
+#include <string>
 class ShapeItem;
 class MiniTexture;
 class ShapeList : public QListWidget
@@ -19,6 +20,7 @@ public:
 	QListWidget* texture_list();
 	void show();
 	void set_texture(ShapeItem * item, MiniTexture* texture);
+  std::string getTexturePath(int item_id);
 private slots:
 	void item_changed(QListWidgetItem * current);
 	void texture_item_clicked(QListWidgetItem *);

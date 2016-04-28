@@ -1,7 +1,7 @@
 #ifndef GLActor_H
 #define GLActor_H
 
-#include <GL/glew.h>
+#include <glew-1.11.0/include/GL/glew.h>
 #include <vector>
 #include <string>
 #include "Eigen\Eigen"

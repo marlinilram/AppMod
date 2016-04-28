@@ -1,7 +1,7 @@
 #ifndef Dialog_Database_H
 #define Dialog_Database_H
 
-#include <GL/glew.h>
+#include <glew-1.11.0/include/GL/glew.h>
 #include <QDialog>
 #include "ui_Dialog_Database.h"
 

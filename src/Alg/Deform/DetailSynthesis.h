@@ -85,8 +85,11 @@ public:
   void generateD1Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
   
   // Appearance Model based synthesis
+  void setCurResolution(int res) { resolution = res; };
   void debugSynthesisD0(std::string app_mod_path, std::shared_ptr<Model> tar_model);
   void debugSynthesisD1(std::string app_mod_path, std::shared_ptr<Model> tar_model);
+  void runSynthesisD0(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
+  void runSynthesisD1(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
   void synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
   void synthesisD1(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
 

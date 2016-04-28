@@ -12,7 +12,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
 
-#include <gl/glew.h>
+#include <glew-1.11.0/include/gl/glew.h>
 #include "color.h"
 typedef float                FT;
 typedef CGAL::Cartesian<FT>  KK;

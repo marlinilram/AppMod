@@ -1,7 +1,7 @@
 #ifndef BasicViewer_H
 #define BasicViewer_H
 
-#include <GL/glew.h>
+#include <glew-1.11.0/include/GL/glew.h>
 #include <QGLViewer/qglviewer.h>
 
 class DispObject;
