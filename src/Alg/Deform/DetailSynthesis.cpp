@@ -2391,7 +2391,7 @@ void DetailSynthesis::test(std::shared_ptr<Model> src_model, std::shared_ptr<Mod
   ImageUtility::exportMatVecImage(src_para_shape->detail_map, src_model->getOutputPath() + "/detail_rgbd_map.png");
   cv::imwrite(src_model->getOutputPath() + "/displacement_map.png", displacement_map*255);
 
-#define DEBUG_APPMod
+
 #ifdef DEBUG_APPMod
   std::shared_ptr<AppearanceModel> app_mod_out(new AppearanceModel());
   app_mod_out->setD1Details(src_para_shape->detail_map);
@@ -3064,10 +3064,13 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, 
   std::cout << std::endl << "***** Generate D1 Features *****" << std::endl;
   this->generateD1Feature(app_mod_out.get(), src_model);
 
-#ifdef DEBUG_APPMod
 
   app_mod_out->setBaseMesh(src_model->getPolygonMesh());
   app_mod_out->exportAppMod("app_model.xml", src_model->getOutputPath());
+
+  std::cout << std::endl << "***** Generate Appearance Model Finished *****" << std::endl;
+
+#ifdef DEBUG_APPMod
   system("pause");
   std::shared_ptr<AppearanceModel> app_mod_in(new AppearanceModel());
   app_mod_in->importAppMod("app_model.xml", src_model->getOutputPath());
@@ -3232,6 +3235,7 @@ void DetailSynthesis::generateD1Feature(AppearanceModel* app_mod, std::shared_pt
   YMLHandler::saveToMat(src_model->getOutputPath(), "cca_X_mat.mat", cca_X_mat);
   YMLHandler::saveToMat(src_model->getOutputPath(), "cca_Y_mat.mat", cca_Y_mat);
 
+  std::cout << std::endl << "Compute CCA from matlab" << std::endl;
   system("pause");
 
   cv::FileStorage fs3(src_model->getOutputPath() + "/cca_mat.xml", cv::FileStorage::READ);
