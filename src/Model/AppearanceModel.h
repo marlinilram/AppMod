@@ -51,8 +51,8 @@ public:
   void getCCAMax(std::vector<float>& vec);
 
   void setCameraInfo(Matrix4f& modelview, Matrix4f& projection, Vector4i& viewport);
-
   void setZImg(cv::Mat& z_img_);
+  void setPrimitiveID(cv::Mat& primitive_ID_);
 
 private:
   void writeMaps(cv::FileStorage& fs, std::vector<cv::Mat>& maps, std::string map_name);

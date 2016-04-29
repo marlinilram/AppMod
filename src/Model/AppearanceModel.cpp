@@ -331,9 +331,15 @@ void AppearanceModel::setZImg(cv::Mat& z_img_)
   z_img = z_img_.clone();
 }
 
+void AppearanceModel::setPrimitiveID(cv::Mat& primitive_ID_)
+{
+  primitive_ID = primitive_ID_.clone();
+}
+
 void AppearanceModel::writeCameraInfo(cv::FileStorage& fs)
 {
   fs << "z_img" << z_img;
+  fs << "primitive_ID" << primitive_ID;
   std::vector<float> modelview_vec(m_modelview.data(), m_modelview.data() + m_modelview.size());
   std::vector<float> projection_vec(m_projection.data(), m_projection.data() + m_projection.size());
   std::vector<int> viewport_vec(m_viewport.data(), m_viewport.data() + m_viewport.size());
@@ -346,6 +352,7 @@ void AppearanceModel::writeCameraInfo(cv::FileStorage& fs)
 void AppearanceModel::readCameraInfo(cv::FileStorage& fs)
 {
   fs["z_img"] >> z_img;
+  fs["primitve_ID"] >> primitive_ID;
 
   std::vector<float> modelview_vec, projection_vec;
   this->readVector(fs, modelview_vec, "m_modelview");
