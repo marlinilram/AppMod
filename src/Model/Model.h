@@ -114,6 +114,7 @@ public:
   void findCrspPatch(int input_id, int& output_id, std::vector<int>& candidate);
 
   void merge_shapes_to_show();
+  void divide_shape_to_list();
 private:
   std::shared_ptr<Shape> shape; // Model is the owner of Shape
   std::shared_ptr<Sphere> lighting_ball;

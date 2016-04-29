@@ -390,6 +390,11 @@ void TrackballViewer::mouseDoubleClickEvent(QMouseEvent * event)
 			}
 		}
 
+		if (is_seleted)
+		{
+			trackball_canvas->getModel()->divide_shape_to_list();
+		}
+
 	}
 	if (!is_seleted)
 	{
