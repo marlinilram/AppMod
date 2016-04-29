@@ -136,6 +136,47 @@ namespace ImageUtility
     cvDestroyWindow("Draw ROI");
   }
 
+  bool generateMaskStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke)
+  {
+    // Attention!!! it will modify the img_in photo
+    bool is_finished = false;
+    IplImage reflectance_map_iplimage = IplImage(img_in);
+
+    MouseArgs* m_arg = new MouseArgs();
+    m_arg->img = &reflectance_map_iplimage;
+    cvNamedWindow("Draw ROI", CV_WINDOW_AUTOSIZE);
+    cvSetMouseCallback("Draw ROI", MouseDraw, (void*)m_arg);
+    while (1)
+    {
+      cvShowImage("Draw ROI", m_arg->img);
+      if (cvWaitKey(100) == 27)
+        break;
+
+      if (cvWaitKey(100) == 32)
+      {
+        is_finished = true;
+        break;
+      }
+    }
+
+    if (m_arg->points < 1)
+    {
+      std::cout << "Get no points!!!\n";
+    }
+    else
+    {
+      std::cout << m_arg->points << std::endl;
+      stroke.clear();
+      stroke.resize(m_arg->points);
+      cvCvtSeqToArray(m_arg->seq, &stroke[0]);
+    }
+
+    m_arg->Destroy();
+    delete m_arg;
+
+    return is_finished;
+  }
+
   void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask)
   {
     mat_vec_out.clear();

@@ -25,8 +25,10 @@ public:
   virtual void setGLProperty();
   virtual Bound* getBoundBox();
 
+  void setFBO();
   void setShaderProgram();
   void drawModel();
+  void drawPrimitiveID();
   void updateModelBuffer();
   void updateModelColorBuffer();
   std::string getFilePath();
@@ -50,6 +52,11 @@ private:
   GLenum num_face;
 
   int render_mode;
+
+  GLuint offscr_color;
+  GLuint offscr_depth;
+  GLuint offscr_fbo;
+  int width, height;
 
 private:
   SynthesisCanvas(const SynthesisCanvas&);

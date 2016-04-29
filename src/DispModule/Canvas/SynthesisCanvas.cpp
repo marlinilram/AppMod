@@ -10,6 +10,8 @@
 SynthesisCanvas::SynthesisCanvas()
 {
   render_mode = 5;
+  width = 800;
+  height = 600;
 }
 
 SynthesisCanvas::~SynthesisCanvas()
@@ -19,12 +21,14 @@ SynthesisCanvas::~SynthesisCanvas()
 
 bool SynthesisCanvas::display()
 {
+  drawPrimitiveID();
   drawModel();
   return true;
 }
 
 void SynthesisCanvas::setGLProperty()
 {
+  setFBO();
   updateModelBuffer();
   setShaderProgram();
 }
@@ -45,6 +49,34 @@ void SynthesisCanvas::setShaderProgram()
   basic_shader->addShaderFromSourceFile(QGLShader::Fragment, "shader/edge.frag");
   basic_shader->addShaderFromSourceFile(QGLShader::Vertex,   "shader/edge.vert");
   basic_shader->link();
+}
+
+void SynthesisCanvas::setFBO()
+{
+  glGenFramebuffers(1, &offscr_fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+  glGenRenderbuffers(1, &offscr_color);
+  glBindRenderbuffer(GL_RENDERBUFFER, offscr_color);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA32F, width, height);
+
+  glGenRenderbuffers(1, &offscr_depth);
+  glBindRenderbuffer(GL_RENDERBUFFER, offscr_depth);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, width, height);
+
+  // attach color and depth textures to fbo
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, offscr_color);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, offscr_depth);
+
+  static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+  glDrawBuffers(1, draw_buffers);
+
+  GLenum framebuffer_status;
+  framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE)
+    std::cout << "set offscreen frame buffer object failed\n";
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void SynthesisCanvas::drawModel()
@@ -101,6 +133,56 @@ void SynthesisCanvas::drawModel()
   basic_shader->disableAttributeArray("vertex");
   basic_shader->disableAttributeArray("color");
   basic_shader->release();
+}
+
+void SynthesisCanvas::drawPrimitiveID()
+{
+  int render_mode_cache = render_mode;
+  render_mode = 1;
+
+  float *primitive_buffer = new float[height*width];
+  cv::Mat &z_img = model->getZImg();
+  z_img.create(height, width, CV_32FC1);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  drawModel();
+  glReadBuffer(GL_COLOR_ATTACHMENT0);
+  glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
+  glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  render_mode = render_mode_cache;
+
+  cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
+  cv::flip(primitive_ID_img, primitive_ID_img, 0);
+  cv::flip(z_img, z_img, 0);
+
+  cv::Mat &primitive_ID = model->getPrimitiveIDImg();
+  primitive_ID.create(height, width, CV_32S);
+  primitive_ID.setTo(cv::Scalar(-1));
+  std::set<int> vis_faces;
+
+  for (int j = 0; j < width; ++j)
+  {
+    for (int i = 0; i < height; ++i)
+    {
+      float fPrimitive = primitive_ID_img.at<float>(i, j);
+
+      fPrimitive = fPrimitive*num_face;
+      int iPrimitive = (int)(fPrimitive < 0 ? (fPrimitive - 0.5) : (fPrimitive + 0.5));
+
+      if (iPrimitive < (int)num_face)
+      {
+        primitive_ID.at<int>(i, j) = iPrimitive;
+        if (vis_faces.find(iPrimitive) == vis_faces.end())
+        {
+          vis_faces.insert(iPrimitive);
+        }
+      }
+    }
+  }
+  delete primitive_buffer;
 }
 
 void SynthesisCanvas::updateModelBuffer()

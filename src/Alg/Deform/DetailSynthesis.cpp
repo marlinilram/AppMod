@@ -546,7 +546,7 @@ void DetailSynthesis::computeDetailMap(ParaShape* para_shape, std::vector<cv::Ma
   std::shared_ptr<Shape> shape = para_shape->cut_shape;
   std::shared_ptr<KDTreeWrapper> kdTree = para_shape->kdTree_UV;
   STLVectori v_set = para_shape->vertex_set;
-  
+
   AdjList adjFaces_list = shape->getVertexShareFaces();
   std::vector<float> pt(2, 0);
 
@@ -3066,6 +3066,7 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, 
 
   app_mod_out->setBaseMesh(src_model->getPolygonMesh());
   app_mod_out->setZImg(src_model->getZImg());
+  app_mod_out->setPrimitiveID(src_model->getPrimitiveIDImg());
   app_mod_out->setCameraInfo(src_model->getCameraModelView(),
     src_model->getCameraProjection(),
     src_model->getCameraViewPort());
