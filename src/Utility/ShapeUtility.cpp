@@ -1933,4 +1933,23 @@ namespace ShapeUtility
       para_shape->fill_ratio = float(n_filled_pixel) / (detail_chn_1.rows * detail_chn_1.cols);
     }
   }
+
+  void getFaceUVCenter(LG::PolygonMesh* mesh, int f_id, Vector2f& uv_coord)
+  {
+    std::vector<Vec2> uv;
+
+    PolygonMesh::Halfedge_attribute<Vec2> f_uv_coord = mesh->halfedge_attribute<Vec2>("he:face_uv");
+    for (auto hefc : mesh->halfedges(PolygonMesh::Face(int(f_id))))
+    {
+      uv.push_back(f_uv_coord[hefc]);
+    }
+    uv_coord[0] = 0.0;
+    uv_coord[1] = 0.0;
+    for (auto i : uv)
+    {
+      uv_coord[0] += i[0];
+      uv_coord[1] += i[1];
+    }
+    uv_coord = uv_coord / (float)uv.size();
+  }
 }

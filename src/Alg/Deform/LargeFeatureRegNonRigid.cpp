@@ -473,7 +473,7 @@ void LargeFeatureReg::updateDataCrsp(const std::vector<double>& X)
   
   // 2. find correspondence
   data_crsp.clear();
-  feature_model->BuildClosestPtPair(src_new_curves, data_crsp, true);
+  feature_model->BuildClosestPtPair(src_new_curves, data_crsp);
 }
 
 double LargeFeatureReg::energyDataTerm(const std::vector<double>& X)

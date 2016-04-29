@@ -101,6 +101,9 @@ public:
   bool getProjectPt(const int vid, float& winx, float& winy);
   void getUnprojectVec(Vector3f& vec);
   void getProjectionMatrix(Matrix4f& proj_mat_out);
+  inline Matrix4f getCameraModelView() { return m_modelview; };
+  inline Matrix4f getCameraProjection() { return m_projection; };
+  inline Vector4i getCameraViewPort() { return m_viewport; };
 
   // get info from ShapePlane
   void addTaggedPlane(int x, int y);

@@ -3064,12 +3064,16 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, 
   std::cout << std::endl << "***** Generate D1 Features *****" << std::endl;
   this->generateD1Feature(app_mod_out.get(), src_model);
 
-
   app_mod_out->setBaseMesh(src_model->getPolygonMesh());
+  app_mod_out->setZImg(src_model->getZImg());
+  app_mod_out->setCameraInfo(src_model->getCameraModelView(),
+    src_model->getCameraProjection(),
+    src_model->getCameraViewPort());
   app_mod_out->exportAppMod("app_model.xml", src_model->getOutputPath());
 
   std::cout << std::endl << "***** Generate Appearance Model Finished *****" << std::endl;
 
+#define DEBUG_APPMod
 #ifdef DEBUG_APPMod
   system("pause");
   std::shared_ptr<AppearanceModel> app_mod_in(new AppearanceModel());

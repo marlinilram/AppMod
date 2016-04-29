@@ -105,6 +105,8 @@ namespace ShapeUtility
   void exportVisForLocalTransform(LG::PolygonMesh* mesh, std::string fpath, std::string fname = "local_transform.png");
 
   bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname);
+
+  void getFaceUVCenter(LG::PolygonMesh* mesh, int f_id, Vector2f& uv_coord);
 }
 
 #endif
