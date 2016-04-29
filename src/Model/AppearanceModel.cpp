@@ -52,6 +52,9 @@ void AppearanceModel::importAppMod(std::string file_name_, std::string file_path
   // 10. cca max
   this->readVector(fs, cca_max, "cca_max");
 
+  // camera info
+  this->readCameraInfo(fs);
+
   fs.release();
 }
 
@@ -141,6 +144,9 @@ void AppearanceModel::exportAppMod(std::string file_name_, std::string file_path
 
   // 10. cca max
   this->writeVector(fs, cca_max, "cca_max");
+
+  // camera info
+  this->writeCameraInfo(fs);
 
   fs.release();
 }
@@ -293,7 +299,8 @@ void AppearanceModel::setCCAMax(std::vector<float>& vec)
   cca_max = vec;
 }
 
-void AppearanceModel::writeVector(cv::FileStorage& fs, std::vector<float>& vec, std::string vec_name)
+template<typename T>
+void AppearanceModel::writeVector(cv::FileStorage& fs, std::vector<T>& vec, std::string vec_name)
 {
   fs << vec_name << "[:";
   for (int i = 0; i < vec.size(); ++i)
@@ -303,8 +310,51 @@ void AppearanceModel::writeVector(cv::FileStorage& fs, std::vector<float>& vec, 
   fs << "]";
 }
 
-void AppearanceModel::readVector(cv::FileStorage& fs, std::vector<float>& vec, std::string vec_name)
+template<typename T>
+void AppearanceModel::readVector(cv::FileStorage& fs, std::vector<T>& vec, std::string vec_name)
 {
   vec.clear();
   fs[vec_name] >> vec;
+}
+
+void AppearanceModel::setCameraInfo(Matrix4f& modelview, Matrix4f& projection, Vector4i& viewport)
+{
+  m_modelview = modelview;
+  m_projection = projection;
+  m_viewport = viewport;
+
+  m_inv_modelview_projection = (m_projection*m_modelview).inverse();
+}
+
+void AppearanceModel::setZImg(cv::Mat& z_img_)
+{
+  z_img = z_img_.clone();
+}
+
+void AppearanceModel::writeCameraInfo(cv::FileStorage& fs)
+{
+  fs << "z_img" << z_img;
+  std::vector<float> modelview_vec(m_modelview.data(), m_modelview.data() + m_modelview.size());
+  std::vector<float> projection_vec(m_projection.data(), m_projection.data() + m_projection.size());
+  std::vector<int> viewport_vec(m_viewport.data(), m_viewport.data() + m_viewport.size());
+
+  this->writeVector(fs, modelview_vec, "m_modelview");
+  this->writeVector(fs, projection_vec, "m_projection");
+  this->writeVector(fs, viewport_vec, "m_viewport");
+}
+
+void AppearanceModel::readCameraInfo(cv::FileStorage& fs)
+{
+  fs["z_img"] >> z_img;
+
+  std::vector<float> modelview_vec, projection_vec;
+  this->readVector(fs, modelview_vec, "m_modelview");
+  this->readVector(fs, projection_vec, "m_projection");
+  m_modelview = Eigen::Map<Matrix4f>(&modelview_vec[0]);
+  m_projection = Eigen::Map<Matrix4f>(&projection_vec[0]);
+
+  std::vector<int> viewport_vec;
+  this->readVector(fs, viewport_vec, "m_viewport");
+  m_viewport = Eigen::Map<Vector4i>(&viewport_vec[0]); 
+  m_inv_modelview_projection = (m_projection*m_modelview).inverse();
 }

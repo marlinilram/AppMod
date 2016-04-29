@@ -5,6 +5,7 @@
 #include <vector>
 #include <cv.h>
 #include <memory>
+#include "BasicHeader.h"
 
 namespace LG {
   class PolygonMesh;
@@ -49,6 +50,10 @@ public:
   void getCCAMin(std::vector<float>& vec);
   void getCCAMax(std::vector<float>& vec);
 
+  void setCameraInfo(Matrix4f& modelview, Matrix4f& projection, Vector4i& viewport);
+
+  void setZImg(cv::Mat& z_img_);
+
 private:
   void writeMaps(cv::FileStorage& fs, std::vector<cv::Mat>& maps, std::string map_name);
   void readMaps(cv::FileStorage& fs, std::vector<cv::Mat>& maps, std::string map_name);
@@ -58,8 +63,13 @@ private:
 
   void deepCopyCvMatVector(std::vector<cv::Mat>& vector_in, std::vector<cv::Mat>& vector_out);
 
-  void writeVector(cv::FileStorage& fs, std::vector<float>& vec, std::string vec_name);
-  void readVector(cv::FileStorage& fs, std::vector<float>& vec, std::string vec_name);
+  template<typename T> 
+  void writeVector(cv::FileStorage& fs, std::vector<T>& vec, std::string vec_name);
+  template<typename T>
+  void readVector(cv::FileStorage& fs, std::vector<T>& vec, std::string vec_name);
+
+  void writeCameraInfo(cv::FileStorage& fs);
+  void readCameraInfo(cv::FileStorage& fs);
 
 private:
   std::string file_name;
@@ -77,6 +87,14 @@ private:
 
   // base mesh
   std::unique_ptr<LG::PolygonMesh> base_mesh;
+  
+  // camera info
+  cv::Mat z_img;
+  cv::Mat primitive_ID;
+  Matrix4f m_modelview;
+  Matrix4f m_projection;
+  Matrix4f m_inv_modelview_projection;
+  Vector4i m_viewport;
 
 private:
   AppearanceModel(const AppearanceModel&);

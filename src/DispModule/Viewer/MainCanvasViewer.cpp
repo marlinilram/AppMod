@@ -65,7 +65,7 @@ void MainCanvasViewer::init()
   setSceneCenter(qglviewer::Vec(0, 0, 0));
   setSceneRadius(50);
   camera()->fitSphere(qglviewer::Vec(0, 0, 0), 5);
-  camera()->setType(qglviewer::Camera::Type::PERSPECTIVE);
+  camera()->setType(qglviewer::Camera::Type::ORTHOGRAPHIC);
   camera()->setFlySpeed(0.5);
   // forbid interaction in this viewer
   clearMouseBindings();

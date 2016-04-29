@@ -142,7 +142,8 @@ void TrackballCanvas::updateModelBuffer()
   std::vector<LG::PolygonMesh*> poly_meshes;
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
   {
-    this->getModel()->getPolygonMeshVector(poly_meshes);
+    //this->getModel()->getPolygonMeshVector(poly_meshes);
+    poly_meshes.push_back(this->getModel()->getPolygonMesh());
   }
   else
   {
