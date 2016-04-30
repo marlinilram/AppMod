@@ -97,45 +97,6 @@ namespace ImageUtility
     return is_finished;
   }
 
-  void generateMultiMask(cv::Mat& img_in, cv::Mat& mask_out)
-  {
-    bool is_finished = false;
-    bool is_cur_finished = false;
-    std::vector<cv::Mat>  mask_group;
-    while (!is_finished)
-    {
-      cv::Mat cur_mask(img_in.rows, img_in.cols, CV_32FC1, 1);
-      if (generateMask(img_in, cur_mask))
-      {
-        is_finished = true;
-      }
-      mask_group.push_back(cur_mask);
-    }
-    
-    
-    for (int i = 0; i < mask_out.rows; i++)
-    {
-      for (int j = 0; j < mask_out.cols; j++)
-      {
-        bool in_mask = false;
-        for(size_t k = 0; k < mask_group.size(); k ++)
-        {
-          if (mask_group[k].at<float>(i, j) > 0.5)
-          {
-            in_mask = true;
-            break;
-          }
-        }
-        if (!in_mask)
-        {
-          mask_out.at<float>(i, j) = 0;
-        }
-      }
-    }
-    cv::imshow("mask_out", mask_out);
-    cvDestroyWindow("Draw ROI");
-  }
-
   bool generateMaskStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke)
   {
     // Attention!!! it will modify the img_in photo
@@ -176,6 +137,78 @@ namespace ImageUtility
 
     return is_finished;
   }
+
+  bool debugGenerateMask(cv::Mat& img_in, cv::Mat& mask_out)
+  {
+    std::vector<CvPoint> strokes;
+    if (generateMaskStroke(img_in, strokes))
+    {
+      IplImage* mask = cvCreateImage(cvGetSize(&IplImage(img_in)), 8, 1);
+      cvZero(mask);
+      cvFillConvexPoly(mask, &strokes[0], strokes.size(), cvScalarAll(255), CV_AA, 0);
+      cvNamedWindow("Mask", CV_WINDOW_AUTOSIZE);
+      cvShowImage("Mask", mask);
+
+      cv::Mat mask_mat(mask, 0);
+
+      for (int i = 0; i < mask_out.rows; i++)
+      {
+        for (int j = 0; j < mask_out.cols; j++)
+        {
+          if (mask_mat.at<uchar>(i, j) == 0)
+          {
+            mask_out.at<float>(i, j) = 0;
+          }
+        }
+      }
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+
+  void generateMultiMask(cv::Mat& img_in, cv::Mat& mask_out)
+  {
+    bool is_finished = false;
+    bool is_cur_finished = false;
+    std::vector<cv::Mat>  mask_group;
+    while (!is_finished)
+    {
+      cv::Mat cur_mask(img_in.rows, img_in.cols, CV_32FC1, 1);
+      if (debugGenerateMask(img_in, cur_mask))
+      {
+        is_finished = true;
+      }
+      mask_group.push_back(cur_mask);
+    }
+    
+    
+    for (int i = 0; i < mask_out.rows; i++)
+    {
+      for (int j = 0; j < mask_out.cols; j++)
+      {
+        bool in_mask = false;
+        for(size_t k = 0; k < mask_group.size(); k ++)
+        {
+          if (mask_group[k].at<float>(i, j) > 0.5)
+          {
+            in_mask = true;
+            break;
+          }
+        }
+        if (!in_mask)
+        {
+          mask_out.at<float>(i, j) = 0;
+        }
+      }
+    }
+    cv::imshow("mask_out", mask_out);
+    cvDestroyWindow("Draw ROI");
+  }
+
 
   void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask)
   {
