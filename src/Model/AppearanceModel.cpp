@@ -22,6 +22,7 @@ void AppearanceModel::importAppMod(std::string file_name_, std::string file_path
   // load the appearance model
 
   // 1. mesh name
+  std::cout << std::endl << "*** Reading Mesh File: " << mesh_file_name << " ***" << std::endl;
   fs["meshFileName"] >> mesh_file_name;
   base_mesh = std::make_unique<PolygonMesh>();
   if (!ShapeUtility::loadPolyMesh(base_mesh.get(), file_path + "/" + mesh_file_name))
@@ -30,20 +31,26 @@ void AppearanceModel::importAppMod(std::string file_name_, std::string file_path
   }
 
   // 2. vertex feature
+  std::cout << std::endl << "*** Reading Mesh Features ***" << std::endl;
   this->readMeshFeatures(fs, base_mesh.get());
 
   // 3. load d0 feature maps
+  std::cout << std::endl << "*** Reading D0 Features ***" << std::endl;
   this->readMaps(fs, d0_feature_maps, "d0Feature");
   // 4. d0 detail maps (displacement vector, 3 channels)
   // notice: if save the displacement vector in parametric mesh, voting is different
+  std::cout << std::endl << "*** Reading D0 Details ***" << std::endl;
   this->readMaps(fs, d0_detail_maps, "d0Detail");
   // 5. d1 feature maps
+  std::cout << std::endl << "*** Reading D1 Features ***" << std::endl;
   this->readMaps(fs, d1_feature_maps, "d1Feature");
   // 6. d1 detail maps (displacement and rgb, 4 channels)
+  std::cout << std::endl << "*** Reading D1 Details ***" << std::endl;
   this->readMaps(fs, d1_detail_maps, "d1Detail");
   // 7.
   resolution = (int)fs["resolution"];
   // 8. cca mat
+  std::cout << std::endl << "*** Reading CCA Matrices ***" << std::endl;
   fs["CCAMat"] >> cca_mat;
 
   // 9. cca min
@@ -53,9 +60,12 @@ void AppearanceModel::importAppMod(std::string file_name_, std::string file_path
   this->readVector(fs, cca_max, "cca_max");
 
   // camera info
+  std::cout << std::endl << "*** Reading Camera Information ***" << std::endl;
   this->readCameraInfo(fs);
 
   fs.release();
+
+  std::cout << std::endl << "*** Import Appearance Model Finished ***" << std::endl;
 }
 
 void AppearanceModel::readMeshFeatures(cv::FileStorage& fs, LG::PolygonMesh* mesh)

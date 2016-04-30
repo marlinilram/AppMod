@@ -88,7 +88,7 @@ void TrackballViewer::init()
   setSceneCenter(qglviewer::Vec(0, 0, 0));
   setSceneRadius(50);
   camera()->fitSphere(qglviewer::Vec(0, 0, 0), 5);
-  camera()->setType(qglviewer::Camera::Type::ORTHOGRAPHIC);
+  camera()->setType(qglviewer::Camera::Type::PERSPECTIVE);
   camera()->setFlySpeed(0.5);
   setWheelandMouse();
 }
