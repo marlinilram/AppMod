@@ -59,9 +59,17 @@
     <addaction name="action_Delete_Last_Line_Of_Source"/>
     <addaction name="action_Delete_Last_Line_Of_Target"/>
    </widget>
+   <widget class="QMenu" name="menuFeature">
+    <property name="title">
+     <string>feature</string>
+    </property>
+    <addaction name="actionDraw_feature"/>
+    <addaction name="actionClear_feature"/>
+   </widget>
    <addaction name="menuOpen"/>
    <addaction name="menuCompute_Pose"/>
    <addaction name="menuCorrespondence"/>
+   <addaction name="menuFeature"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -203,6 +211,19 @@
    </property>
    <property name="text">
     <string>Load Synthesis Target</string>
+   </property>
+  </action>
+  <action name="actionDraw_feature">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>draw_feature</string>
+   </property>
+  </action>
+  <action name="actionClear_feature">
+   <property name="text">
+    <string>clear_feature</string>
    </property>
   </action>
  </widget>

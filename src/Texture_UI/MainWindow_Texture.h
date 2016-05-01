@@ -39,8 +39,9 @@ private slots:
    
 	void run_d1_synthesis();
 	void run_d0_synthesis();
+	void selec_area(bool);
 
-	Texture_Viewer* new_viewer_for_result_model(std::string file_path);
+//	QMainWindow* new_viewer_for_result_model(std::string file_path);
 private:
 	void set_up_ui_texture();
 	int m_num_layer_;
@@ -57,7 +58,8 @@ private:
 	MiniTexture* m_mini_selected_;
 
    std::shared_ptr<TexSynHandler> tex_syn_handler;
-   std::vector<Texture_Viewer*> m_viewer_for_result_;
+   std::vector<QMainWindow*> m_viewer_for_result_;
+
 };
 
 #endif

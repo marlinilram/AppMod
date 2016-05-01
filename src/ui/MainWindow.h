@@ -42,7 +42,8 @@ private slots:
     void deleteLastLine_Target();
     void showToolBox();
     void loadSynthesisTarget();
-
+	void draw_feature(bool);
+	void clear_drawn_feature();
 private:
     //Viewer *viewer;
     //Viewer *viewer_img;

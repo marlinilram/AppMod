@@ -3,7 +3,7 @@
 #include "DispModuleHandler.h"
 #include "Model.h"
 #include "ParaInit.h"
-
+#include "TrackballViewer.h"
 //#include "camera_pose.h"
 
 MainWindow::MainWindow()
@@ -25,6 +25,10 @@ MainWindow::MainWindow()
   connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
   connect(action_Load_Synthesis_Target, SIGNAL(triggered()), this, SLOT(loadSynthesisTarget()));
 
+  connect(actionDraw_feature, SIGNAL(toggled(bool)), this, SLOT(draw_feature(bool)));
+  connect(actionClear_feature, SIGNAL(triggered()), this, SLOT(clear_drawn_feature()));
+
+
   disp_modules.reset(new DispModuleHandler(this));
   //this->setCentralWidget(centralwidget);
 
@@ -43,7 +47,19 @@ MainWindow::MainWindow()
 MainWindow::~MainWindow()
 {
 }
-
+void MainWindow::draw_feature(bool b)
+{
+	int mode = -1;
+	if (b )
+	{
+		mode = 0;
+	}
+	this->disp_modules->trackball_viewer->set_mode(mode);
+};
+void MainWindow::clear_drawn_feature()
+{
+	this->disp_modules->trackball_viewer->clear_drawn_feature();
+};
 void MainWindow::loadModel()
 {
     QString filter;
