@@ -55,7 +55,6 @@ void Texture_Canvas::set_viewer(QGLViewer* gl)
 };
 void Texture_Canvas::setGLProperty()
 {
-  setFBO();
   updateModelBuffer();
   setShaderProgram();
 }
@@ -104,12 +103,16 @@ void Texture_Canvas::setsize(int w, int h)
 {
 	this->width = w;
 	this->height = h;
+  std::cout << "reset frame buffer" << std::endl;
 	this->setFBO();
 };
 void Texture_Canvas::drawPrimitiveID()
 {
 	int render_mode_cache = render_mode;
-	render_mode = 1;
+	render_mode = 3;
+
+  int use_flat_cache = use_flat;
+  use_flat = 0;
 
 	float *primitive_buffer = new float[height*width];
 	cv::Mat &z_img = this->getModel()->getZImg();
@@ -124,6 +127,7 @@ void Texture_Canvas::drawPrimitiveID()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	render_mode = render_mode_cache;
+  use_flat = use_flat_cache;
 
 	cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
 	cv::flip(primitive_ID_img, primitive_ID_img, 0);

@@ -35,6 +35,7 @@ namespace ImageUtility
   bool generateMask(cv::Mat& img_in, cv::Mat& mask_out);
   void generateMultiMask(cv::Mat& img_in, cv::Mat& mask_out);
   // TODO: use stroke to generate mask instead of generateMask
+  void generateMaskFromStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke, cv::Mat& mask_out);
   bool debugGenerateMask(cv::Mat& img_in, cv::Mat& mask_out);
   bool generateMaskStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke);
 
