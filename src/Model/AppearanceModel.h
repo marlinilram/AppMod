@@ -28,6 +28,9 @@ public:
 
   void setResolution(int resolution_) { resolution = resolution_; };
 
+  void setPhoto(cv::Mat& photo_);
+  void getPhoto(cv::Mat& photo_);
+
   void setD0Features(std::vector<cv::Mat>& feature_maps);
   void setD0Details(std::vector<cv::Mat>& detail_maps);
   void setD1Features(std::vector<cv::Mat>& feature_maps);
@@ -37,6 +40,7 @@ public:
   void getD0Details(std::vector<cv::Mat>& detail_maps);
   void getD1Features(std::vector<cv::Mat>& feature_maps);
   void getD1Details(std::vector<cv::Mat>& detail_maps);
+  void getD1Reflectance(cv::Mat& reflectance);
 
   void setBaseMesh(LG::PolygonMesh* mesh);
   void getBaseMesh(LG::PolygonMesh* mesh);
@@ -53,6 +57,8 @@ public:
   void setCameraInfo(Matrix4f& modelview, Matrix4f& projection, Vector4i& viewport);
   void setZImg(cv::Mat& z_img_);
   void setPrimitiveID(cv::Mat& primitive_ID_);
+  
+  void coordImgToUV(std::vector<CvPoint>& coords);
 
 private:
   void writeMaps(cv::FileStorage& fs, std::vector<cv::Mat>& maps, std::string map_name);
@@ -81,6 +87,7 @@ private:
   std::vector<cv::Mat> d0_detail_maps;
   std::vector<cv::Mat> d1_feature_maps;
   std::vector<cv::Mat> d1_detail_maps;
+  cv::Mat photo;
   cv::Mat cca_mat;
   std::vector<float> cca_min;
   std::vector<float> cca_max;

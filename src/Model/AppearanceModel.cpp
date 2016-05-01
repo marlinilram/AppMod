@@ -63,6 +63,11 @@ void AppearanceModel::importAppMod(std::string file_name_, std::string file_path
   std::cout << std::endl << "*** Reading Camera Information ***" << std::endl;
   this->readCameraInfo(fs);
 
+  // photo
+  std::cout << std::endl << "*** Reading Photo ***" << std::endl;
+  fs["photo"] >> photo;
+  fs["primitive_ID"] >> primitive_ID;
+
   fs.release();
 
   std::cout << std::endl << "*** Import Appearance Model Finished ***" << std::endl;
@@ -157,6 +162,9 @@ void AppearanceModel::exportAppMod(std::string file_name_, std::string file_path
 
   // camera info
   this->writeCameraInfo(fs);
+
+  // photo
+  fs << "photo" << photo;
 
   fs.release();
 }
@@ -374,4 +382,59 @@ void AppearanceModel::readCameraInfo(cv::FileStorage& fs)
   this->readVector(fs, viewport_vec, "m_viewport");
   m_viewport = Eigen::Map<Vector4i>(&viewport_vec[0]); 
   m_inv_modelview_projection = (m_projection*m_modelview).inverse();
+}
+
+void AppearanceModel::getD1Reflectance(cv::Mat& reflectance)
+{
+  std::vector<cv::Mat> temp_reflectance;
+  temp_reflectance.push_back(d1_detail_maps[2].clone());
+  temp_reflectance.push_back(d1_detail_maps[1].clone());
+  temp_reflectance.push_back(d1_detail_maps[0].clone());
+  cv::merge(temp_reflectance, reflectance);
+}
+
+void AppearanceModel::setPhoto(cv::Mat& photo_)
+{
+  photo = photo_.clone();
+}
+
+void AppearanceModel::getPhoto(cv::Mat& photo_)
+{
+  photo_ = photo.clone();
+}
+
+void AppearanceModel::coordImgToUV(std::vector<CvPoint>& coords)
+{
+  if (coords.empty()) return;
+  std::vector<int> records;
+  for (auto i : coords)
+  {
+    int f_id = primitive_ID.at<int>(i.y, i.x);
+    if (f_id >= 0) records.push_back(f_id);
+  }
+
+  // delete duplicated record
+  size_t k = 1;
+  for (size_t i = 1; i < records.size(); ++i)
+  {
+    if (records[k-1] != records[i])
+    {
+      records[k] = records[i];
+      ++k;
+    }
+  }
+
+  // convert to UV
+  coords.clear();
+  coords.resize(k);
+  for (size_t i = 0; i < k; ++i)
+  {
+    Vector2f uv;
+    ShapeUtility::getFaceUVCenter(base_mesh.get(), records[i], uv);
+    coords[i].x = int(uv[0] * resolution + 0.5);
+    coords[i].y = resolution - (uv[1] * resolution + 0.5);
+    if (coords[i].x >= resolution) coords[i].x = resolution - 1;
+    if (coords[i].y >= resolution) coords[i].y = resolution - 1;
+    if (coords[i].y < 0) coords[i].y = 0;
+  }
 }

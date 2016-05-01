@@ -99,6 +99,7 @@ void Texture_Canvas::setModel(std::shared_ptr<Model> shared_model)
 	DispObject::setModel(shared_model);
 	shared_model->set_dis_obj(this);
 }
+
 void Texture_Canvas::setsize(int w, int h)
 {
 	this->width = w;
@@ -106,6 +107,7 @@ void Texture_Canvas::setsize(int w, int h)
   std::cout << "reset frame buffer" << std::endl;
 	this->setFBO();
 };
+
 void Texture_Canvas::drawPrimitiveID()
 {
 	int render_mode_cache = render_mode;
@@ -158,6 +160,7 @@ void Texture_Canvas::drawPrimitiveID()
 	}
 	delete primitive_buffer;
 }
+
 void Texture_Canvas::setShaderProgram()
 {
   basic_shader.reset(new QGLShaderProgram);

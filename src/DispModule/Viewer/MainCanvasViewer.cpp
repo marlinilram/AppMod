@@ -247,7 +247,7 @@ void MainCanvasViewer::mouseReleaseEvent(QMouseEvent *e)
         MainCanvas* canvas = dynamic_cast<MainCanvas*>(dispObjects[i]);
         if (canvas)
         {
-          canvas->passTagPlanePos(e->x(), e->y());
+          canvas->passTagPlanePos(e->x(), e->y());// I think it need to be flipped here?
         }
       }
 

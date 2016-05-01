@@ -3048,6 +3048,10 @@ void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, 
   resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
   app_mod_out->setResolution(resolution);
 
+  // set original photo
+  app_mod_out->setPhoto(src_model->getPhoto());
+  app_mod_out->setPrimitiveID(src_model->getPrimitiveIDImg());
+
   // 2. compute d0 features
   std::cout << std::endl << "***** Generate D0 Features *****" << std::endl;
   this->generateD0Feature(app_mod_out.get(), src_model);

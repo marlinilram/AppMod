@@ -38,6 +38,8 @@ namespace ImageUtility
   void generateMaskFromStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke, cv::Mat& mask_out);
   bool debugGenerateMask(cv::Mat& img_in, cv::Mat& mask_out);
   bool generateMaskStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke);
+  void generateMultiStrokes(cv::Mat& img_in, std::vector<std::vector<CvPoint> >& strokes);
+  void generateMaskFromStrokes(cv::Mat& img_in, std::vector<std::vector<CvPoint> >& strokes, cv::Mat& mask_out);
 
   void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask);
   void mergeMatVecFromMask(std::vector<cv::Mat>& mat_vec_src, std::vector<cv::Mat>& mat_vec_tar, cv::Mat& mask);

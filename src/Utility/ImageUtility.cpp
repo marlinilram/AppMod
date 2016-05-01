@@ -141,6 +141,7 @@ namespace ImageUtility
 
   void generateMaskFromStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke, cv::Mat& mask_out)
   {
+    if (stroke.empty()) return;
     IplImage* mask = cvCreateImage(cvGetSize(&IplImage(img_in)), 8, 1);
     cvZero(mask);
     cvFillConvexPoly(mask, &stroke[0], stroke.size(), cvScalarAll(255), CV_AA, 0);
@@ -183,7 +184,7 @@ namespace ImageUtility
     while (!is_finished)
     {
       cv::Mat cur_mask(img_in.rows, img_in.cols, CV_32FC1, 1);
-      if (debugGenerateMask(img_in, cur_mask))
+      if (generateMask(img_in, cur_mask))
       {
         is_finished = true;
       }
@@ -212,6 +213,53 @@ namespace ImageUtility
     }
     cv::imshow("mask_out", mask_out);
     cvDestroyWindow("Draw ROI");
+  }
+
+  void generateMultiStrokes(cv::Mat& img_in, std::vector<std::vector<CvPoint> >& strokes)
+  {
+    bool is_finished = false;
+    strokes.clear();
+    while (!is_finished)
+    {
+      std::vector<CvPoint> cur_stroke;
+      if (generateMaskStroke(img_in, cur_stroke))
+      {
+        is_finished = true;
+      }
+      strokes.push_back(cur_stroke);
+    }
+  }
+
+  void generateMaskFromStrokes(cv::Mat& img_in, std::vector<std::vector<CvPoint> >& strokes, cv::Mat& mask_out)
+  {
+    std::vector<cv::Mat>  mask_group;
+    for (size_t i = 0; i < strokes.size(); ++i)
+    {
+      cv::Mat cur_mask(img_in.rows, img_in.cols, CV_32FC1, 1);
+      generateMaskFromStroke(img_in, strokes[i], cur_mask);
+      mask_group.push_back(cur_mask);
+    }
+
+    for (int i = 0; i < mask_out.rows; i++)
+    {
+      for (int j = 0; j < mask_out.cols; j++)
+      {
+        bool in_mask = false;
+        for (size_t k = 0; k < mask_group.size(); k++)
+        {
+          if (mask_group[k].at<float>(i, j) > 0.5)
+          {
+            in_mask = true;
+            break;
+          }
+        }
+        if (!in_mask)
+        {
+          mask_out.at<float>(i, j) = 0;
+        }
+      }
+    }
+    cv::imshow("mask_out", mask_out);
   }
 
   void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask)
