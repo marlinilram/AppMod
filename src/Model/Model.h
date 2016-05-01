@@ -53,6 +53,7 @@ public:
   void updateUVCoord(STLVectorf& new_uv_list);
 
   // get information from renderer
+  inline cv::Mat &getPhoto(){ return photo; };
   inline cv::Mat &getRImg(){ return r_img; };
   inline cv::Mat &getRBGRAImg() { return rBGRA_img; };
   inline cv::Mat &getPrimitiveIDImg(){ return primitive_ID; };

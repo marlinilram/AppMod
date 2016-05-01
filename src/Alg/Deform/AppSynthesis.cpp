@@ -33,7 +33,16 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
   std::vector<cv::Mat> src_feature_map;
   app_mod_src->getD0Features(src_feature_map);
   cv::Mat src_mask(src_feature_map[0].rows, src_feature_map[0].cols, CV_32FC1, 1);
-  ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);
+  /*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
+
+  // 1.1 generate mask from source image
+  std::vector<std::vector<CvPoint> > mask_strokes;
+  cv::Mat src_photo;
+  app_mod_src->getPhoto(src_photo);
+  ImageUtility::generateMultiStrokes(src_photo, mask_strokes);
+  // convert image stroke to para shape stroke
+  for (size_t i = 0; i < mask_strokes.size(); ++i) app_mod_src->coordImgToUV(mask_strokes[i]);
+  ImageUtility::generateMaskFromStrokes(src_feature_map[0].clone(), mask_strokes, src_mask);
 
   std::vector<cv::Mat> tar_feature_map;
   app_mod_tar->getD0Features(tar_feature_map);
