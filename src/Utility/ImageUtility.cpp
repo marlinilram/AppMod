@@ -11,6 +11,7 @@ namespace ImageUtility
     if( !m_arg->img )
       return;
 
+
     if( event == CV_EVENT_LBUTTONUP || !(flags & CV_EVENT_FLAG_LBUTTON) )
     {
       m_arg->p_start = cvPoint(x,y);

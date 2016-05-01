@@ -113,7 +113,6 @@ void Texture_Canvas::drawPrimitiveID()
 
   int use_flat_cache = use_flat;
   use_flat = 0;
-
 	float *primitive_buffer = new float[height*width];
 	cv::Mat &z_img = this->getModel()->getZImg();
 	z_img.create(height, width, CV_32FC1);

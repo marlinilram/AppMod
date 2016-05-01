@@ -117,12 +117,14 @@ void MainWindow_Texture::set_up_viewer()
 	//this->m_viewer_->setBackgroundColor(QColor(0,0,0));
 	this->setCentralWidget(this->m_viewer_);
 	this->m_viewer_->setAttribute(Qt::WA_MouseTracking);
-	this->m_viewer_->show();
 
 	Texture_Canvas* tc = new Texture_Canvas();
 	tc->setModel(NULL);
-	this->m_viewer_->addDispObj(tc);
 
+	
+
+	this->m_viewer_->addDispObj(tc);
+	this->m_viewer_->show();
 
 
 

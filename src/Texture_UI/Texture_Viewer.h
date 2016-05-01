@@ -60,6 +60,7 @@ private:
 
 
   std::vector<qglviewer::Vec>	m_points_ubder_mouse_;
+  std::vector<int>	m_face_ids_;
 private:
 
 };

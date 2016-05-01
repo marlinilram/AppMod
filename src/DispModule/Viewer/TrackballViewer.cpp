@@ -43,7 +43,6 @@ void TrackballViewer::setTargetVectorViewer(std::shared_ptr<VectorFieldViewer> v
 }
 void TrackballViewer::set_mode(int e)
 {
-
 	m_edit_mode_ = e;
 };
 void TrackballViewer::clear_drawn_feature()

@@ -340,12 +340,13 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 // 			this->updateGL();
 // 		}
 		int x = p.x();
-		int y = this->height() - p.y();
+		int y = /*this->height() - */p.y();
 		if (x < 0 || x >= this->width() || y < 0 || y >=this->height())
 		{
 			return;
 		}
 		std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
+		//cv::imwrite("D:/test.jpg", m->getPrimitiveIDImg());
 		int f_id = m->getPrimitiveIDImg().at<int>(y, x);
 		std::cout << f_id << "\t";
 		if (f_id  >= 0)
@@ -360,7 +361,7 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 				num++;
 			}
 			v_total = v_total / num;
-
+			this->m_face_ids_.push_back(f_id);
 			this->m_points_ubder_mouse_.push_back(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
 					this->updateGL();
 		}
@@ -370,6 +371,7 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 void Texture_Viewer::clear_selection()
 {
 	this->m_points_ubder_mouse_.clear();
+	this->m_face_ids_.clear();
 };
 
 void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
