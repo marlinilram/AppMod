@@ -138,29 +138,34 @@ namespace ImageUtility
     return is_finished;
   }
 
+  void generateMaskFromStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke, cv::Mat& mask_out)
+  {
+    IplImage* mask = cvCreateImage(cvGetSize(&IplImage(img_in)), 8, 1);
+    cvZero(mask);
+    cvFillConvexPoly(mask, &stroke[0], stroke.size(), cvScalarAll(255), CV_AA, 0);
+    cvNamedWindow("Mask", CV_WINDOW_AUTOSIZE);
+    cvShowImage("Mask", mask);
+
+    cv::Mat mask_mat(mask, 0);
+
+    for (int i = 0; i < mask_out.rows; i++)
+    {
+      for (int j = 0; j < mask_out.cols; j++)
+      {
+        if (mask_mat.at<uchar>(i, j) == 0)
+        {
+          mask_out.at<float>(i, j) = 0;
+        }
+      }
+    }
+  }
+
   bool debugGenerateMask(cv::Mat& img_in, cv::Mat& mask_out)
   {
     std::vector<CvPoint> strokes;
     if (generateMaskStroke(img_in, strokes))
     {
-      IplImage* mask = cvCreateImage(cvGetSize(&IplImage(img_in)), 8, 1);
-      cvZero(mask);
-      cvFillConvexPoly(mask, &strokes[0], strokes.size(), cvScalarAll(255), CV_AA, 0);
-      cvNamedWindow("Mask", CV_WINDOW_AUTOSIZE);
-      cvShowImage("Mask", mask);
-
-      cv::Mat mask_mat(mask, 0);
-
-      for (int i = 0; i < mask_out.rows; i++)
-      {
-        for (int j = 0; j < mask_out.cols; j++)
-        {
-          if (mask_mat.at<uchar>(i, j) == 0)
-          {
-            mask_out.at<float>(i, j) = 0;
-          }
-        }
-      }
+      generateMaskFromStroke(img_in, strokes, mask_out);
       return true;
     }
     else
@@ -168,7 +173,6 @@ namespace ImageUtility
       return false;
     }
   }
-
 
   void generateMultiMask(cv::Mat& img_in, cv::Mat& mask_out)
   {
@@ -208,7 +212,6 @@ namespace ImageUtility
     cv::imshow("mask_out", mask_out);
     cvDestroyWindow("Draw ROI");
   }
-
 
   void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask)
   {
