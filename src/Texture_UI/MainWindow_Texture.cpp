@@ -21,13 +21,15 @@ MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	this->m_shape_list_ = NULL;
 	this->setupUi(this);
 	this->set_up_ui_texture();
-	this->connect_singal();
+	
 	this->dockWidget_Texture_Brow->setGeometry(100, 100, 500, 500);
 	this->m_viewer_ = NULL;
 	this->set_up_viewer();
 	this->m_mini_selected_ = NULL;
+	this->tex_syn_handler.reset(new TexSynHandler);
 
-  this->tex_syn_handler.reset(new TexSynHandler);
+
+	this->connect_singal();
 }
 MainWindow_Texture::~MainWindow_Texture()
 {
@@ -46,26 +48,42 @@ MainWindow_Texture::~MainWindow_Texture()
 	}
 }
 
-Texture_Viewer* MainWindow_Texture::new_viewer_for_result_model(std::string file_path)
+// QMainWindow* MainWindow_Texture::new_viewer_for_result_model(std::string file_path)
+// {
+// 	std::string model_file_path = file_path;
+// 	std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
+// 	model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
+// 	std::shared_ptr<Model> m(new Model(model_file_path, model_file_name));
+// 
+// 
+// 	QMainWindow* qmw = new QMainWindow();
+// 	Texture_Viewer* viewer = new Texture_Viewer(qmw);
+// 	qmw->setCentralWidget(viewer);
+// 	viewer->resize(this->width(), this->height());
+// 	viewer->setAttribute(Qt::WA_MouseTracking);
+// 	viewer->show();
+// 
+// 	Texture_Canvas* tc = new Texture_Canvas();
+// 	tc->setModel(m);
+// 	viewer->addDispObj(tc);
+// 	tc->updateModelBuffer();
+// 	return qmw;
+// };
+
+void MainWindow_Texture::selec_area( bool b)
 {
-	std::string model_file_path = file_path;
-	std::string model_file_name = model_file_path.substr(model_file_path.find_last_of('/') + 1);
-	model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
-	std::shared_ptr<Model> m(new Model(model_file_path, model_file_name));
-
-
-	Texture_Viewer* viewer = new Texture_Viewer(this);
-
-	viewer->resize(this->width(), this->height());
-	viewer->setAttribute(Qt::WA_MouseTracking);
-	viewer->show();
-
-	Texture_Canvas* tc = new Texture_Canvas();
-	tc->setModel(m);
-	viewer->addDispObj(tc);
-	tc->updateModelBuffer();
-	return viewer;
+	if (b)
+	{
+		this->m_viewer_->set_edit_mode(0);
+		this->m_viewer_->clear_selection();
+	}
+	else
+	{
+		this->m_viewer_->set_edit_mode(-1);
+	}
+	
 };
+
 void MainWindow_Texture::item_double_clicked(QListWidgetItem* it)
 {
 	if (this->m_mini_selected_ == NULL)
@@ -104,6 +122,27 @@ void MainWindow_Texture::set_up_viewer()
 	Texture_Canvas* tc = new Texture_Canvas();
 	tc->setModel(NULL);
 	this->m_viewer_->addDispObj(tc);
+
+
+
+
+// 	{
+// 		QMainWindow* qmw = new QMainWindow();
+// 		Texture_Viewer* viewer = new Texture_Viewer(qmw);
+// 		viewer->resize(qmw->width(), qmw->height());
+// 		qmw->setCentralWidget(viewer);
+// 		viewer->resize(this->width(), this->height());
+// 		viewer->setAttribute(Qt::WA_MouseTracking);
+// 		viewer->show();
+// 
+// 		Texture_Canvas* tc = new Texture_Canvas();
+// 		viewer->addDispObj(tc);
+// 		tc->updateModelBuffer();
+// 		this->m_viewer_for_result_.push_back(qmw);
+// 		qmw->show();
+// 	}
+
+
 };
 void MainWindow_Texture::connect_singal()
 {
@@ -115,6 +154,9 @@ void MainWindow_Texture::connect_singal()
 	connect(this->verticalScrollBar_Texture, SIGNAL(valueChanged(int)), this, SLOT(images_update(int)));
     connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
 	connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
+
+	connect(actionArea_Select, SIGNAL(toggled(bool)), this, SLOT(selec_area(bool)));
+	
 };
 
 void MainWindow_Texture::load_obj()
@@ -311,9 +353,7 @@ void MainWindow_Texture::run_d0_synthesis()
   std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
 //   this->m_viewer_for_result_.push_back(this->new_viewer_for_result_model(s));
-// 
 //   this->m_viewer_for_result_.back()->setWindowTitle("after d0...");
-
-  //this->m_viewer_for_result_.back()->show();
+//   this->m_viewer_for_result_.back()->show();
 
 }

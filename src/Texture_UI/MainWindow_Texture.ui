@@ -37,8 +37,15 @@
     <addaction name="actionShow_data_base"/>
     <addaction name="actionData_dock"/>
    </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>edit</string>
+    </property>
+    <addaction name="actionArea_Select"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
+   <addaction name="menuEdit"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="dockWidget_Texture_Brow">
@@ -119,6 +126,14 @@
   <action name="actionRun_d0_synthesis">
    <property name="text">
     <string>run_d0_synthesis</string>
+   </property>
+  </action>
+  <action name="actionArea_Select">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>area_select</string>
    </property>
   </action>
  </widget>

@@ -9,7 +9,7 @@ class MainCanvasViewer;
 class VectorFieldViewer;
 class QMouseEvent;
 class QKeyEvent;
-
+class GLActor;
 class TrackballViewer : public BasicViewer
 {
 public:
@@ -30,7 +30,9 @@ public:
   void updateShapeCrest();
 
   void updateCamera();
-  
+  void set_mode(int);
+  void clear_drawn_feature();
+  void get_drawn_feature_ids(std::vector<int>& ids);
 protected:
   virtual void draw();
   virtual void init();
@@ -48,7 +50,7 @@ private:
   void mouseDoubleClickEvent(QMouseEvent * event);
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
-
+  void draw_drawn_deatures();
 private:
   bool sync_camera;
   bool wireframe_;
@@ -57,12 +59,14 @@ private:
 
   std::vector<GLActor> actors;
   bool is_draw_actors;
-
-
+  int m_edit_mode_;
+  bool m_left_button_down_;
 private:
   std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
   std::shared_ptr<VectorFieldViewer> source_vector_viewer;
   std::shared_ptr<VectorFieldViewer> target_vector_viewer;
+
+  std::vector<qglviewer::Vec>	m_drawn_deatures_;
 };
 
 #endif

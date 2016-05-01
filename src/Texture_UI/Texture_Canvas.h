@@ -32,7 +32,9 @@ public:
 
   virtual QGLViewer* viewer();
   virtual void set_viewer(QGLViewer*);
-
+  void setFBO();
+  void drawPrimitiveID();
+  void setsize(int, int);
 private:
 
   std::unique_ptr<QGLShaderProgram> basic_shader;
@@ -47,6 +49,11 @@ private:
   int render_mode;
   int use_flat;
   bool has_data_;
+
+  GLuint offscr_color;
+  GLuint offscr_depth;
+  GLuint offscr_fbo;
+  int width, height;
 private:
 	Texture_Canvas(const Texture_Canvas&);
 	void operator = (const Texture_Canvas&);
