@@ -361,9 +361,13 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 				num++;
 			}
 			v_total = v_total / num;
-			this->m_face_ids_.push_back(f_id);
-			this->m_points_ubder_mouse_.push_back(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
-					this->updateGL();
+			if (this->m_face_ids_.size() < 1 || this->m_face_ids_.back() != f_id)
+			{
+				this->m_face_ids_.push_back(f_id);
+				this->m_points_ubder_mouse_.push_back(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
+				this->updateGL();
+			}
+
 		}
 		
 	}
