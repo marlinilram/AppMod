@@ -452,3 +452,8 @@ void DispModuleHandler::updateSField(int type)
   source_vector_viewer->updateSourceField(type);
   source_vector_viewer->updateGLOutside();
 }
+
+void DispModuleHandler::useExtFeatureLine()
+{
+  // TODO: update the source model crest line
+}

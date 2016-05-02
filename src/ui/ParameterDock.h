@@ -80,7 +80,10 @@ private slots:
   void setSynGeometryTransferParaMap(int state);
 
   void setCrspTypeMode(int type_mode);
-  
+
+  // 5/1/2016
+  void useExtFeatureLine(int state);
+
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;
 };

@@ -62,6 +62,7 @@ public:
   void runApplyDisplacement();
   void loadDetailMap();
   void updateSField(int type);
+  void useExtFeatureLine();
 
 public slots:
   void updateGeometryInteractive();
