@@ -68,7 +68,7 @@ Model::Model(const std::string path, const std::string name)
 
   // keep this for vector field computation
   shape_crest.reset(new ShapeCrest());
-  shape_crest->setShape(shape);
+  shape_crest->setShape(shape, data_path);
 
   // read photo
   cv::Mat load_img = cv::imread(path + "/photo.png");

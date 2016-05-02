@@ -14,7 +14,7 @@ public:
   ShapeCrest();
   ~ShapeCrest();
 
-  void setShape(std::shared_ptr<Shape> in_shape);
+  void setShape(std::shared_ptr<Shape> in_shape, std::string fpath);
   const std::vector<Edge>& getCrestEdge();
   const std::vector<STLVectori>& getCrestLine();
   const std::vector<STLVectori>& getVisbleCrestLine();
@@ -33,6 +33,15 @@ public:
   void computeCrestLinesPoints();*/
   void generateEdgesFromCrestCode();
 
+  // 5/1/2016
+  void buildCandidatesFromExt();
+
+private:
+  void loadFeatureLine(VertexList& pts);
+  void computeCandidatesFromFeatureLines();
+  void computeVisibleFromExtFeatureLines(std::set<int>& vis_faces);
+  void mergeEdgesForFeatureLine(std::vector<Edge>& vis_edges, std::vector<STLVectori>& vis_lines);
+
 public:
   std::vector<Edge> crest_edges;
   std::vector<STLVectori> crest_lines;
@@ -48,6 +57,8 @@ public:
 
   STLVectorf edge_dihedral; // store dihedral angle for all edges
   std::set<int> candidates; // store edge id of crest_edges
+
+  std::string ext_file_path;
 
 private:
   std::shared_ptr<Shape> shape;
