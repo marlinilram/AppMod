@@ -2,7 +2,7 @@
 #define TrackballViewer_H
 
 #include "BasicViewer.h"
-
+#include <QPoint>
 #include <memory>
 
 class MainCanvasViewer;
@@ -61,12 +61,15 @@ private:
   bool is_draw_actors;
   int m_edit_mode_;
   bool m_left_button_down_;
+  bool m_right_button_down_;
 private:
   std::shared_ptr<MainCanvasViewer> main_canvas_viewer;
   std::shared_ptr<VectorFieldViewer> source_vector_viewer;
   std::shared_ptr<VectorFieldViewer> target_vector_viewer;
 
-  std::vector<qglviewer::Vec>	m_drawn_deatures_;
+  std::vector<qglviewer::Vec>	m_drawn_features_;
+  std::vector<int>	m_feature_points_ids_;
+  std::vector<QPoint> m_points_for_delete_;
 };
 
 #endif

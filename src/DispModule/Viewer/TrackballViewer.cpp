@@ -10,7 +10,7 @@
 #include "KDTreeWrapper.h"
 #include "ParameterMgr.h"
 #include <QGLViewer/manipulatedFrame.h>
-
+#include "viewer_selector.h"
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {
@@ -19,6 +19,8 @@ TrackballViewer::TrackballViewer(QWidget *widget)
   show_trackball = false;
   play_lightball = false;
   is_draw_actors = false;
+  m_right_button_down_ = false;
+  m_left_button_down_ = false;
   m_edit_mode_ = -1;
 }
 
@@ -47,7 +49,8 @@ void TrackballViewer::set_mode(int e)
 };
 void TrackballViewer::clear_drawn_feature()
 {
-	m_drawn_deatures_.clear();
+	m_feature_points_ids_.clear();
+	m_drawn_features_.clear();
 	this->updateGL();
 };
 void TrackballViewer::draw()
@@ -352,7 +355,11 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
 		{
 			m_left_button_down_ = true;
 		}
-
+		else if (e->button() == Qt::RightButton)
+		{
+			m_right_button_down_ = true;
+			m_points_for_delete_.clear();
+		}
 		return;
 	}
 
@@ -386,27 +393,27 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
 }
 void TrackballViewer::get_drawn_feature_ids(std::vector<int>& ids)
 { 
-	std::shared_ptr<Model> m = dynamic_cast<TrackballCanvas*>(this->get_dispObjects()[0])->getModel();
-	if (m == NULL)
-	{
-		return;
-	}
-
-	std::shared_ptr<Shape> shape = m->getShape();
-	ids.clear();
-	for (unsigned int i = 0; i < this->m_drawn_deatures_.size(); i++)
-	{
-		const qglviewer::Vec& v = this->m_drawn_deatures_[i];
-		std::vector<float> query(3, 0.0);
-		int v_id;
-		query[0] = v[0];
-		query[1] = v[1];
-		query[2] = v[2];
-		shape->getKDTree()->nearestPt(query, v_id);
-		ids.push_back(v_id);
-	}
+// 	std::shared_ptr<Model> m = dynamic_cast<TrackballCanvas*>(this->get_dispObjects()[0])->getModel();
+// 	if (m == NULL)
+// 	{
+// 		return;
+// 	}
+// 
+// 	std::shared_ptr<Shape> shape = m->getShape();
+// 	ids.clear();
+// 	for (unsigned int i = 0; i < this->m_drawn_features_.size(); i++)
+// 	{
+// 		const qglviewer::Vec& v = this->m_drawn_features_[i];
+// 		std::vector<float> query(3, 0.0);
+// 		int v_id;
+// 		query[0] = v[0];
+// 		query[1] = v[1];
+// 		query[2] = v[2];
+// 		shape->getKDTree()->nearestPt(query, v_id);
+// 		ids.push_back(v_id);
+// 	}
 	
-	
+	ids = this->m_feature_points_ids_;
 };
 
 void TrackballViewer::mouseDoubleClickEvent(QMouseEvent * event)
@@ -454,27 +461,68 @@ void TrackballViewer::draw_drawn_deatures()
 {
 	glPointSize(3);
 	glBegin(GL_POINTS);
-	for (int i = 0; i < this->m_drawn_deatures_.size(); ++i)
+	for (int i = 0; i < this->m_drawn_features_.size(); ++i)
 	{
-		const qglviewer::Vec&  p = this->m_drawn_deatures_[i];
+		const qglviewer::Vec&  p = this->m_drawn_features_[i];
 		glColor3f(1.0, 0, 0);
 		glVertex3f(p.x, p.y, p.z);
 	}
 	glEnd();
+
+
+	this->startScreenCoordinatesSystem();
+	glColor3f(1.0, 1.0, 0);
+	glLineWidth(3);
+	glBegin(GL_LINE_LOOP);
+	for (unsigned int i =0; i < this->m_points_for_delete_.size(); i++)
+	{
+		glVertex2i(m_points_for_delete_[i].x(), m_points_for_delete_[i].y());
+	};
+	glEnd();
+	this->stopScreenCoordinatesSystem();
 };
 void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 {
-	if (this->m_edit_mode_ >= 0 && this->m_left_button_down_)
+	if (this->m_edit_mode_ >= 0)
 	{
-		QPoint p = e->pos();
-		bool succ = false;
-		qglviewer::Vec v = this->camera()->pointUnderPixel(p, succ);
-		//std::cout << succ << "\t";
-		if (succ)
+		if (this->m_left_button_down_)
 		{
-			this->m_drawn_deatures_.push_back(v);
+			QPoint p = e->pos();
+			bool succ = false;
+			qglviewer::Vec v = this->camera()->pointUnderPixel(p, succ);
+			//std::cout << succ << "\t";
+
+
+			if (succ)
+			{
+				std::vector<float> query(3, 0.0);
+				int v_id;
+				query[0] = v[0];
+				query[1] = v[1];
+				query[2] = v[2];
+
+				std::shared_ptr<Model> m = dynamic_cast<TrackballCanvas*>(this->get_dispObjects()[0])->getModel();
+				std::shared_ptr<Shape> shape = m->getShape();
+
+				shape->getKDTree()->nearestPt(query, v_id);
+
+				if (this->m_feature_points_ids_.size() < 1 || this->m_feature_points_ids_.back() != v_id)
+				{
+					this->m_feature_points_ids_.push_back(v_id);
+					this->m_drawn_features_.push_back(v);
+					this->updateGL();
+				}
+
+			}
+		}
+		else if (this->m_right_button_down_)
+		{
+			QPoint p = e->pos();
+			this->m_points_for_delete_.push_back(p);
 			this->updateGL();
 		}
+
+		
 		return;
 	}
 
@@ -522,9 +570,19 @@ void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
 
 	if (this->m_edit_mode_ >= 0)
 	{
-	//	if (e->button() == Qt::LeftButton)
+		if (e->button() == Qt::LeftButton)
 		{
 			m_left_button_down_ = false;
+			
+			
+		}
+		if (e->button() == Qt::RightButton)
+		{
+			m_right_button_down_ = false;
+
+			Viewer_Selector::delete_points_in_polygon(this->m_drawn_features_, this->m_feature_points_ids_, this->m_points_for_delete_, this);
+			m_points_for_delete_.clear();
+			this->updateGL();
 		}
 
 		return;

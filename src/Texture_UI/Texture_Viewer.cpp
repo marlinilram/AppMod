@@ -9,6 +9,7 @@
 #include <QGLViewer/manipulatedFrame.h>
 #include "PolygonMesh.h"
 #include <QResizeEvent>
+#include "viewer_selector.h"
 Texture_Viewer::Texture_Viewer(QWidget *widget)
   : BasicViewer(widget)
 {
@@ -17,7 +18,7 @@ Texture_Viewer::Texture_Viewer(QWidget *widget)
   play_lightball = false;
   this->init();
   this->m_left_button_down_ = false;
-  this->m_right_buttonm_down_ = false;
+  this->m_right_button_down_ = false;
   m_edit_mode_ = -1;
 
  /* connect(this, SIGNAL(resizeEvent(QResizeEvent*)), this, SLOT(resize_happen(QResizeEvent*)));*/
@@ -77,6 +78,17 @@ void Texture_Viewer::draw_points_under_mouse()
 			glVertex3f(p.x, p.y, p.z);
 	}
 	glEnd();
+
+	this->startScreenCoordinatesSystem();
+	glColor3f(1.0, 1.0, 0);
+	glLineWidth(3);
+	glBegin(GL_LINE_LOOP);
+	for (unsigned int i = 0; i < this->m_points_for_delete_.size(); i++)
+	{
+		glVertex2i(m_points_for_delete_[i].x(), m_points_for_delete_[i].y());
+	};
+	glEnd();
+	this->stopScreenCoordinatesSystem();
 };
 
 void Texture_Viewer::init()
@@ -306,10 +318,17 @@ void Texture_Viewer::mousePressEvent(QMouseEvent* e)
 		QGLViewer::mousePressEvent(e);
 		return;
 	}
-	if (e->button()== Qt::LeftButton)
+	else if (e->button()== Qt::LeftButton)
 	{
 		this->m_left_button_down_ = true;
 	}
+	else if (e->button() == Qt::RightButton)
+	{
+		m_right_button_down_ = true;
+		m_points_for_delete_.clear();
+	}
+
+	QGLViewer::mousePressEvent(e);
 }
 void Texture_Viewer::mouseDoubleClickEvent(QMouseEvent * event)
 {
@@ -371,6 +390,12 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 		}
 		
 	}
+	else if (this->m_right_button_down_)
+	{
+		QPoint p = e->pos();
+		this->m_points_for_delete_.push_back(p);
+		this->updateGL();
+	}
 }
 void Texture_Viewer::clear_selection()
 {
@@ -391,7 +416,16 @@ void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
 // 
 // 	}
 	this->m_left_button_down_ = false;
-	this->m_right_buttonm_down_ = false; 
+	this->m_right_button_down_ = false;
+
+	if (e->button() == Qt::RightButton)
+	{
+		this->m_right_button_down_ = false;
+		Viewer_Selector::delete_points_in_polygon(this->m_points_ubder_mouse_, this->m_face_ids_, this->m_points_for_delete_, this);
+		m_points_for_delete_.clear();
+		this->updateGL();
+	}
+
 }
 
 void Texture_Viewer::wheelEvent(QWheelEvent* e)

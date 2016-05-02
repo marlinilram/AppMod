@@ -98,12 +98,15 @@ void MainWindow_Texture::item_double_clicked(QListWidgetItem* it)
 	{
 		delete m;
 	}
-
 	this->m_mini_selected_->hide();
 	this->m_mini_selected_ = NULL;
 };
 void MainWindow_Texture::texture_select(MiniTexture* minit)
 {
+	if (this->m_mini_selected_ != NULL && minit != this->m_mini_selected_)
+	{
+		delete this->m_mini_selected_;
+	}
 	this->m_mini_selected_ = minit;
 };
 
@@ -353,6 +356,12 @@ void MainWindow_Texture::run_d1_synthesis()
 void MainWindow_Texture::run_d0_synthesis()
 {
   std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+
+//   QString meshlab = "\"C:\\Program Files (x86)\\VCG\\MeshLab\\meshlab.exe\" " ;
+//   meshlab = meshlab + "\"" + QString::fromStdString(s) + "\"";
+//   system(meshlab.toLatin1().data());
+
+
 
 //   this->m_viewer_for_result_.push_back(this->new_viewer_for_result_model(s));
 //   this->m_viewer_for_result_.back()->setWindowTitle("after d0...");

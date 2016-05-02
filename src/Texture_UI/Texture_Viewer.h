@@ -55,12 +55,13 @@ private:
   bool play_lightball;
 
   bool m_left_button_down_;
-  bool m_right_buttonm_down_;
+  bool m_right_button_down_;
   int  m_edit_mode_;
 
 
   std::vector<qglviewer::Vec>	m_points_ubder_mouse_;
   std::vector<int>	m_face_ids_;
+  std::vector<QPoint> m_points_for_delete_;
 private:
 
 };
