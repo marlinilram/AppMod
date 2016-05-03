@@ -31,6 +31,7 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("LFeature:lamd_SField", 0.5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("LFeature:delete_interactive_reverse", false);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("LFeature:Use_Ext_Feature_Line", 1);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("LFeature:Vis_Ext_Feature_Line_N_Ring", 1);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("SnapShot:SaveToFile", 1);
 

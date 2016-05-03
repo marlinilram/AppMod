@@ -26,10 +26,11 @@ ShapeCrest::~ShapeCrest()
   std::cout << "Deleted a ShapeCrest.\n";
 }
 
-void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape, std::string fpath)
+void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape, std::string fpath, std::string mesh_name_)
 {
   shape = in_shape;
   ext_file_path = fpath;
+  mesh_name = mesh_name_;
   buildCandidates();
   mergeCandidates(crest_edges, crest_lines);
   if(crest_lines.empty())
@@ -591,6 +592,7 @@ void ShapeCrest::computeCandidatesFromFeatureLines()
 void ShapeCrest::computeVisibleFromExtFeatureLines(std::set<int>& vis_faces)
 {
   PolygonMesh* poly_mesh = shape->getPolygonMesh();
+  int n_ring = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:Vis_Ext_Feature_Line_N_Ring");
 
   std::map<int, std::vector<Edge> >::iterator visible_edges_it;
   visible_edges.clear();
@@ -601,7 +603,7 @@ void ShapeCrest::computeVisibleFromExtFeatureLines(std::set<int>& vis_faces)
     // test faces around start vertex
     bool start_vis = false;
     std::set<int> start_f;
-    ShapeUtility::getNRingFacesAroundVertex(poly_mesh, start_f, it.first, 1);
+    ShapeUtility::getNRingFacesAroundVertex(poly_mesh, start_f, it.first, n_ring);
     for (auto f : start_f)
     {
       if (vis_faces.find(f) != vis_faces.end())
