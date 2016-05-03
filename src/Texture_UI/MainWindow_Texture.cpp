@@ -75,13 +75,18 @@ void MainWindow_Texture::selec_area( bool b)
 	if (b)
 	{
 		this->m_viewer_->set_edit_mode(0);
-		this->m_viewer_->clear_selection();
+		
 	}
 	else
 	{
 		this->m_viewer_->set_edit_mode(-1);
 	}
 	
+};
+
+void MainWindow_Texture::clear_select()
+{
+	this->m_viewer_->clear_selection();
 };
 
 void MainWindow_Texture::item_double_clicked(QListWidgetItem* it)
@@ -160,8 +165,9 @@ void MainWindow_Texture::connect_singal()
     connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
 	connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
 
-	connect(actionArea_Select, SIGNAL(toggled(bool)), this, SLOT(selec_area(bool)));
 	
+	connect(actionArea_Select, SIGNAL(toggled(bool)), this, SLOT(selec_area(bool)));
+	connect(actionClear_Select, SIGNAL(triggered()), this, SLOT(clear_select()));
 };
 
 void MainWindow_Texture::load_obj()

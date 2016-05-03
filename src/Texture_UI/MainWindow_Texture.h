@@ -40,7 +40,7 @@ private slots:
 	void run_d1_synthesis();
 	void run_d0_synthesis();
 	void selec_area(bool);
-
+	void clear_select();
 //	QMainWindow* new_viewer_for_result_model(std::string file_path);
 private:
 	void set_up_ui_texture();
