@@ -95,8 +95,10 @@ void Texture_Label::mouseDoubleClickEvent(QMouseEvent * event)
 		MiniTexture* mini = new MiniTexture(NULL);
 
 		mini->setPixmap(QPixmap::fromImage(this->m_image_));
-		int wid = this->m_image_.width();
-		int hei = this->m_image_.height();
+// 		int wid = this->m_image_.width();
+// 		int hei = this->m_image_.height();
+		int wid = 512;
+		int hei = 512;
 
 		QRect clientRect = QApplication::desktop()->availableGeometry();
 		QPoint center = clientRect.center();

@@ -6,7 +6,7 @@
 #include <cv.h>
 #include <memory>
 #include "BasicHeader.h"
-
+#include "PolygonMesh.h"
 namespace LG {
   class PolygonMesh;
 }

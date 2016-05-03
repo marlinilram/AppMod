@@ -235,7 +235,7 @@
   </action>
   <action name="actionShow_texture_window">
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>show_texture_window</string>

@@ -10,7 +10,6 @@
 #include "shape_list.h"
 #include "DispModuleHandler.h"
 #include "TexSynHandler.h"
-
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
