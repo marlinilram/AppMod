@@ -24,7 +24,7 @@ bool Texture_Canvas::display()
 {
 	if (this->getModel() == NULL)
 	{
-		return false;
+		return true;
 	}
   drawPrimitiveID();
   drawModel();

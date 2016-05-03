@@ -4,6 +4,7 @@
 #include "Model.h"
 #include "ParaInit.h"
 #include "TrackballViewer.h"
+#include "MainWindow_Texture.h"
 //#include "camera_pose.h"
 
 MainWindow::MainWindow()
@@ -28,7 +29,8 @@ MainWindow::MainWindow()
   connect(actionDraw_feature, SIGNAL(toggled(bool)), this, SLOT(draw_feature(bool)));
   connect(actionClear_feature, SIGNAL(triggered()), this, SLOT(clear_drawn_feature()));
 
-
+  connect(actionShow_texture_window, SIGNAL(toggled(bool)), this, SLOT(show_texture_window(bool)));
+  
   disp_modules.reset(new DispModuleHandler(this));
   //this->setCentralWidget(centralwidget);
 
@@ -40,6 +42,8 @@ MainWindow::MainWindow()
 
   this->show();
 
+
+  m_mainwindow_texture_ = NULL;
 	//pointsSelect = false;
 	//isCompute = false;
 }
@@ -47,6 +51,27 @@ MainWindow::MainWindow()
 MainWindow::~MainWindow()
 {
 }
+
+void MainWindow::show_texture_window(bool b)
+{
+	if (b)
+	{
+		if (this->m_mainwindow_texture_ == NULL)
+		{
+			this->m_mainwindow_texture_ = new MainWindow_Texture();
+		}
+		this->m_mainwindow_texture_->hide();
+		this->m_mainwindow_texture_->show();
+	}
+	else
+	{
+		if (this->m_mainwindow_texture_ != NULL)
+		{
+			this->m_mainwindow_texture_->hide();
+		}
+	}
+	
+};
 void MainWindow::draw_feature(bool b)
 {
 	int mode = -1;
