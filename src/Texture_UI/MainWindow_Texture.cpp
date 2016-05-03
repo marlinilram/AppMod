@@ -363,11 +363,10 @@ void MainWindow_Texture::run_d0_synthesis()
 {
   std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
-//   QString meshlab = "\"C:\\Program Files (x86)\\VCG\\MeshLab\\meshlab.exe\" " ;
+//   QString meshlab = "\"C:/Program Files (x86)/VCG/MeshLab/meshlab.exe\" " ;
 //   meshlab = meshlab + "\"" + QString::fromStdString(s) + "\"";
+//   std::cout << meshlab.toStdString() << "\n";
 //   system(meshlab.toLatin1().data());
-
-
 
 //   this->m_viewer_for_result_.push_back(this->new_viewer_for_result_model(s));
 //   this->m_viewer_for_result_.back()->setWindowTitle("after d0...");

@@ -66,10 +66,17 @@
     <addaction name="actionDraw_feature"/>
     <addaction name="actionClear_feature"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>view</string>
+    </property>
+    <addaction name="actionShow_texture_window"/>
+   </widget>
    <addaction name="menuOpen"/>
    <addaction name="menuCompute_Pose"/>
    <addaction name="menuCorrespondence"/>
    <addaction name="menuFeature"/>
+   <addaction name="menuView"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -224,6 +231,14 @@
   <action name="actionClear_feature">
    <property name="text">
     <string>clear_feature</string>
+   </property>
+  </action>
+  <action name="actionShow_texture_window">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>show_texture_window</string>
    </property>
   </action>
  </widget>

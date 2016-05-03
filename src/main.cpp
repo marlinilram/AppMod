@@ -9,7 +9,5 @@ int main(int argc, char **argv)
   MainWindow *window = new MainWindow();
   window->show();
   //window->hide();
-  MainWindow_Texture *w = new MainWindow_Texture();
-  w->show();
   return a.exec();
 }

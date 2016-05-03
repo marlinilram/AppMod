@@ -14,7 +14,7 @@
 
 class ParameterDock;
 class DispModuleHandler;
-
+class MainWindow_Texture;
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
     Q_OBJECT
@@ -44,7 +44,9 @@ private slots:
     void loadSynthesisTarget();
 	void draw_feature(bool);
 	void clear_drawn_feature();
+	void show_texture_window(bool);
 private:
+	MainWindow_Texture *m_mainwindow_texture_;
     //Viewer *viewer;
     //Viewer *viewer_img;
     std::shared_ptr<ParameterDock> parameter_dock;
