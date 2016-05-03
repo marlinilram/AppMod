@@ -48,6 +48,7 @@ ParameterDock::ParameterDock()
   connect(RunLoadDetailMap_PushButton, SIGNAL(clicked()), this, SLOT(runLoadDetailMap()));
   connect(Show_Color_Crest_CheckBox, SIGNAL(stateChanged(int)), this, SLOT(setShowColorCrest(int)));
   connect(N_Ring_DoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNRing(double)));
+  connect(checkBox_Use_Ext_Feature_line, SIGNAL(stateChanged(int)), this, SLOT(useExtFeatureLine(int)));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -384,4 +385,10 @@ void ParameterDock::setSynBetaMult(double val)
 void ParameterDock::setSynGeometryTransferParaMap(int state)
 {
   LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("Synthesis:geo_transfer_use_para_map") = ((state == 0) ? false : true);
+}
+
+void ParameterDock::useExtFeatureLine(int state)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:Use_Ext_Feature_Line") = state;
+  disp_modules->useExtFeatureLine();
 }
