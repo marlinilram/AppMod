@@ -120,3 +120,8 @@ void ShapeSymmetry::getSymmetryPairs(std::set<STLPairii>& pairs)
 {
   pairs = sym_pairs;
 }
+
+void ShapeSymmetry::getSymmetryPlane(std::vector<float>& plane)
+{
+  plane = plane_coef;
+}

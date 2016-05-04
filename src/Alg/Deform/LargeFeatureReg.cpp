@@ -186,6 +186,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
   lamd_SField = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_SField");
   // init symmetry term
   feature_model->source_model->getSymPairs(sym_pairs);
+  feature_model->source_model->getSymPlane(plane_coef);
   lamd_symm = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_symm");
   use_symm = LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("LFeature:use_symm");
 

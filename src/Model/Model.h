@@ -120,6 +120,7 @@ public:
 
   // get info from ShapeSymmetry
   void getSymPairs(std::set<STLPairii>& pairs);
+  void getSymPlane(std::vector<float>& plane);
 
   void merge_shapes_to_show();
   void divide_shape_to_list();

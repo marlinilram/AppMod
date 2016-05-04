@@ -16,6 +16,7 @@ public:
 
   void computeSymmetryPair();
   void getSymmetryPairs(std::set<STLPairii>& pairs);
+  void getSymmetryPlane(std::vector<float>& plane);
 
 private:
   std::shared_ptr<Shape> shape;

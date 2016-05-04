@@ -780,3 +780,9 @@ void Model::getSymPairs(std::set<STLPairii>& pairs)
 {
   shape_symmetry->getSymmetryPairs(pairs);
 }
+
+void Model::getSymPlane(std::vector<float>& plane)
+{
+
+  shape_symmetry->getSymmetryPlane(plane);
+}
