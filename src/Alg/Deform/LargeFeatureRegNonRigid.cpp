@@ -542,8 +542,8 @@ double LargeFeatureReg::energySymmetry(const std::vector<double>& X)
   for (auto i : sym_pairs)
   {
     // transform the first vertex to its symmetric place
-    Vec3 pt_0 = mesh->position(PolygonMesh::Vertex(i.first));
-    Vec3 pt_1 = mesh->position(PolygonMesh::Vertex(i.second));
+    Vec3 pt_0(X[3 * i.first + 0], X[3 * i.first + 1], X[3 * i.first + 2]);
+    Vec3 pt_1(X[3 * i.second + 0], X[3 * i.second + 1], X[3 * i.second + 2]);
 
     Vec3 sym_pt_0 = pt_0 - 2 * (pt_0.dot(plane) + plane_coef[3]) / plane.norm() * plane_normal;
 
@@ -561,8 +561,8 @@ void LargeFeatureReg::updateSymmetryGrad(const std::vector<double>& X, std::vect
   Vec3 plane_normal = plane.normalized();
   for (auto i : sym_pairs)
   {
-    Vec3 pt_0 = mesh->position(PolygonMesh::Vertex(i.first));
-    Vec3 pt_1 = mesh->position(PolygonMesh::Vertex(i.second));
+    Vec3 pt_0(X[3 * i.first + 0], X[3 * i.first + 1], X[3 * i.first + 2]);
+    Vec3 pt_1(X[3 * i.second + 0], X[3 * i.second + 1], X[3 * i.second + 2]);
 
     Vec3 sym_pt_diff = pt_0 - 2 * (pt_0.dot(plane) + plane_coef[3]) / plane.norm() * plane_normal - pt_1;
 
