@@ -42,6 +42,8 @@ public:
   void runApplyDisplacement();
   void loadDetailMap();
 
+  void debugSymmetry();
+
 private:
   std::shared_ptr<ProjOptimize> proj_optimize;
   std::shared_ptr<NormalTransfer> normal_transfer;

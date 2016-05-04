@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabWidgetPage1">
        <attribute name="title">
@@ -330,6 +330,13 @@
             <widget class="QCheckBox" name="Show_ProjCrsp_CheckBox">
              <property name="text">
               <string>Show Projection Crsp</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_Run_Debug_Alg">
+             <property name="text">
+              <string>Run Debug Alg</string>
              </property>
             </widget>
            </item>

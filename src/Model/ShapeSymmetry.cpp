@@ -1,6 +1,11 @@
 #include "ShapeSymmetry.h"
 
+#include "PolygonMesh.h"
+#include "KDTreeWrapper.h"
+
 #include <fstream>
+
+using namespace LG;
 
 void ShapeSymmetry::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_path)
 {
@@ -66,4 +71,50 @@ void ShapeSymmetry::writeSymmetryPlane()
   outFile << plane_coef[0] << " " << plane_coef[1] << " " << plane_coef[2] << " " << plane_coef[3] << std::endl;
   outFile.close();
   std::cout << "Writing symmetry_info.txt finished." << std::endl;
+}
+
+void ShapeSymmetry::computeSymmetryPair()
+{
+  PolygonMesh* mesh = shape->getPolygonMesh();
+  std::vector<int> mapper(mesh->n_vertices(), -1);
+
+  std::vector<float> pt(3, 0);
+  int v_id = 0;
+  float normalizer = std::sqrt(std::pow(plane_coef[0], 2) + std::pow(plane_coef[1], 2) + std::pow(plane_coef[2], 2));
+  Vector3f plane_normal(plane_coef[0], plane_coef[1], plane_coef[2]);
+  plane_normal.normalize();
+  for (auto i : mesh->vertices())
+  {
+    Vec3 pos = mesh->position(i);
+    float dist = (pos[0] * plane_coef[0]
+      + pos[1] * plane_coef[1]
+      + pos[2] * plane_coef[2]
+      + plane_coef[3]) / normalizer;
+    pos = pos - 2 * dist * plane_normal;
+    pt[0] = pos[0];
+    pt[1] = pos[1];
+    pt[2] = pos[2];
+    shape->getKDTree()->nearestPt(pt, v_id);
+    mapper[i.idx()] = v_id;
+  }
+
+  sym_pairs.clear();
+  std::vector<int> visited(mapper.size(), 0);
+  for (size_t i = 0; i < mapper.size(); ++i)
+  {
+    if (visited[i] == 0 && mapper[i] != -1)
+    {
+      if (mapper[mapper[i]] == int(i))
+      {
+        sym_pairs.insert(STLPairii(int(i), mapper[i]));
+        visited[mapper[i]] = 1;
+      }
+      visited[i] = 1;
+    }
+  }
+}
+
+void ShapeSymmetry::getSymmetryPairs(std::set<STLPairii>& paris)
+{
+  pairs = sym_pairs;
 }

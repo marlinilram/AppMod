@@ -63,6 +63,7 @@ public:
   void loadDetailMap();
   void updateSField(int type);
   void useExtFeatureLine();
+  void runDebugAlg();
 
 public slots:
   void updateGeometryInteractive();

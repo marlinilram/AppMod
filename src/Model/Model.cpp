@@ -775,3 +775,8 @@ void Model::getShapeVector(std::vector<Shape*>& Shape_vec)
 		Shape_vec.push_back(shapes[i]);
 	}
 };
+
+void Model::getSymPairs(std::set<STLPairii>& pairs)
+{
+  shape_symmetry->getSymmetryPairs(pairs);
+}

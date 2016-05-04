@@ -50,6 +50,7 @@ ParameterDock::ParameterDock()
   connect(N_Ring_DoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNRing(double)));
   connect(checkBox_Use_Ext_Feature_line, SIGNAL(stateChanged(int)), this, SLOT(useExtFeatureLine(int)));
   connect(spinBox_Ext_N_Ring, SIGNAL(valueChanged(int)), this, SLOT(setExtNRing(int)));
+  connect(pushButton_Run_Debug_Alg, SIGNAL(clicked()), this, SLOT(runDebugAlg()));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -398,4 +399,9 @@ void ParameterDock::setExtNRing(int val)
 {
   // set the n ring region for visible feature line discrimination
   LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:Vis_Ext_Feature_Line_N_Ring") = val;
+}
+
+void ParameterDock::runDebugAlg()
+{
+  disp_modules->runDebugAlg();
 }

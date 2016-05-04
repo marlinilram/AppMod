@@ -118,6 +118,9 @@ public:
   std::vector<std::set<int>>& getFlatSurfaces();
   void findCrspPatch(int input_id, int& output_id, std::vector<int>& candidate);
 
+  // get info from ShapeSymmetry
+  void getSymPairs(std::set<STLPairii>& pairs);
+
   void merge_shapes_to_show();
   void divide_shape_to_list();
 private:

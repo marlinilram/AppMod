@@ -14,9 +14,13 @@ public:
   void setSymmetryPlane(float a, float b, float c, float d);
   void writeSymmetryPlane();
 
+  void computeSymmetryPair();
+  void getSymmetryPairs(std::set<STLPairii>& paris);
+
 private:
   std::shared_ptr<Shape> shape;
   std::vector<float> plane_coef;
+  std::set<STLPairii> sym_pairs;
 
   std::string file_path;
 

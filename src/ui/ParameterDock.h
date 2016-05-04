@@ -84,6 +84,7 @@ private slots:
   // 5/1/2016
   void useExtFeatureLine(int state);
   void setExtNRing(int val);
+  void runDebugAlg();
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;
