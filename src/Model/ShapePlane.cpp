@@ -18,7 +18,7 @@ void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_pa
 
   if (!this->loadExtSymmetryInfo(ext_info_path))
   {
-    this->setSymmetricPlane(0, 1, 0, 0);
+    this->setSymmetricPlane(1, 0, 0, 0);
     this->computePlaneCenter();
     this->writeExtSymmetryInfo(ext_info_path);
   }
