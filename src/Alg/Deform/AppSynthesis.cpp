@@ -33,7 +33,7 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 	// 1. build the mask for source and target
 	std::vector<cv::Mat> src_feature_map;
 	app_mod_src->getD0Features(src_feature_map);
-	cv::Mat src_mask = GLOBAL::m_mat_mask_;
+	cv::Mat src_mask = GLOBAL::m_mat_source_mask0_;
 	/*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
 
 	// 1.1 generate mask from source image

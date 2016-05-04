@@ -2,7 +2,7 @@
 #define Texture_Viewer_H
 
 #include "BasicViewer.h"
-
+#include <opencv2/core/core.hpp>
 #include <memory>
 
 class MainCanvasViewer;
@@ -28,6 +28,8 @@ public:
   void set_edit_mode(int);
   bool get_edit_mode();
   bool draw_mesh_points();
+  bool get_target_mask(cv::Mat&);
+
 protected:
   virtual void draw();
   virtual void init();
@@ -59,8 +61,7 @@ private:
   int  m_edit_mode_;
 
 
-  std::vector<qglviewer::Vec>	m_points_ubder_mouse_;
-  std::vector<int>	m_face_ids_;
+  std::vector<bool>   m_faces_selected_;
   std::vector<QPoint> m_points_for_delete_;
 private:
 
