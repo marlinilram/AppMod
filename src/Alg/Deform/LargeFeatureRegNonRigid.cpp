@@ -20,8 +20,13 @@ namespace LFReg {
     double fx0_ARAP = lf_reg->lamd_ARAP * lf_reg->energyARAP(x);
     double fx0_flat = lf_reg->lamd_flat * lf_reg->energyFlatNew(x);
     double fx0_data = lf_reg->lamd_data * lf_reg->energyDataTerm(x);
-    double fx0 = fx0_SField + fx0_ARAP + fx0_flat + fx0_data;
-    std::cout << "SField: " << fx0_SField << "\tARAP: " << fx0_ARAP << "\tflat: " << fx0_flat << "\tdata: " << fx0_data << std::endl;
+    double fx0_symm = lf_reg->lamd_symm * lf_reg->energyDataTerm(x);
+    double fx0 = fx0_SField + fx0_ARAP + fx0_flat + fx0_data + fx0_symm;
+    std::cout << "SField: " << fx0_SField
+      << "\tARAP: " << fx0_ARAP
+      << "\tflat: " << fx0_flat
+      << "\tdata: " << fx0_data
+      << "\tsymm: " << fx0_symm << std::endl;
 
 
     grad.resize(x.size());
@@ -29,10 +34,12 @@ namespace LFReg {
     std::vector<double> ARAP_grad;
     std::vector<double> flat_grad;
     std::vector<double> data_grad;
+    std::vector<double> symm_grad;
     lf_reg->updateScalarFieldGrad(x, SField_grad);
     lf_reg->updateARAPGrad(x, ARAP_grad);
     lf_reg->updateFlatGradNew(x, flat_grad);
     lf_reg->updateDataTermGrad(x, data_grad);
+    lf_reg->updateSymmetryGrad(x, symm_grad);
 
     for (size_t i = 0; i < x.size(); ++i)
     {
@@ -43,7 +50,11 @@ namespace LFReg {
       //cppx[i] += step;
       //((lf_reg->lamd_SField * lf_reg->energyScalarField(cppx) - fx0_SField) / step)
       //lf_reg->lamd_SField * SField_grad[i]
-      grad[i] = lf_reg->lamd_SField * SField_grad[i] + lf_reg->lamd_ARAP * ARAP_grad[i] + lf_reg->lamd_flat * flat_grad[i] + lf_reg->lamd_data * data_grad[i];
+      grad[i] = lf_reg->lamd_SField * SField_grad[i]
+        + lf_reg->lamd_ARAP * ARAP_grad[i]
+        + lf_reg->lamd_flat * flat_grad[i]
+        + lf_reg->lamd_data * data_grad[i]
+        + lf_reg->lamd_symm * symm_grad[i];
     }
 
     //std::cout << "f(X) = " << fx0 << std::endl;
@@ -513,5 +524,50 @@ void LargeFeatureReg::updateDataTermGrad(const std::vector<double>& X, std::vect
     grad[3 * vid + 0] = 2 * diff.dot(dpdx) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdx));
     grad[3 * vid + 1] = 2 * diff.dot(dpdy) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdy));
     grad[3 * vid + 2] = 2 * diff.dot(dpdz) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdz)); 
+  }
+}
+
+double LargeFeatureReg::energySymmetry(const std::vector<double>& X)
+{
+  // (A(Pix + Pix_prime)/2 + B(Piy + Piy_prime)/2 + C(Piz + Piz_prime)/2 + D)^2 / (A^2 + B^2 + C^2)
+  // minimize the distance from the middle position of a symmetry pair to symmetry plane
+  if (!use_symm) return 0.0;
+
+
+  PolygonMesh* mesh = feature_model->source_model->getPolygonMesh();
+  float normalizer = std::pow(plane_coef[0], 2) + std::pow(plane_coef[1], 2) + std::pow(plane_coef[2], 2);
+  Vec3 plane_normal(plane_coef[0], plane_coef[1], plane_coef[2]);
+
+  double sum = 0.0;
+  for (auto i : sym_pairs)
+  {
+    Vec3 pt_0 = mesh->position(PolygonMesh::Vertex(i.first));
+    Vec3 pt_1 = mesh->position(PolygonMesh::Vertex(i.second));
+
+    Vec3 pos = (pt_0 + pt_1) / 2;
+    sum += std::pow(pos.dot(plane_normal), 2) / normalizer;
+  }
+  return sum;
+}
+
+void LargeFeatureReg::updateSymmetryGrad(const std::vector<double>& X, std::vector<double>& grad)
+{
+  grad.resize(X.size(), 0.0);
+  if (!use_symm) return;
+  PolygonMesh* mesh = feature_model->source_model->getPolygonMesh();
+  float normalizer = std::pow(plane_coef[0], 2) + std::pow(plane_coef[1], 2) + std::pow(plane_coef[2], 2);
+  Vec3 plane_normal(plane_coef[0], plane_coef[1], plane_coef[2]);
+  for (auto i : sym_pairs)
+  {
+    Vec3 pt_0 = mesh->position(PolygonMesh::Vertex(i.first));
+    Vec3 pt_1 = mesh->position(PolygonMesh::Vertex(i.second));
+
+    Vec3 pos = (pt_0 + pt_1) / 2;
+    grad[3 * i.first + 0] = plane_coef[0] * pos.dot(plane_normal) / normalizer;
+    grad[3 * i.first + 1] = plane_coef[1] * pos.dot(plane_normal) / normalizer;
+    grad[3 * i.first + 2] = plane_coef[2] * pos.dot(plane_normal) / normalizer;
+    grad[3 * i.second + 0] = grad[3 * i.first + 0];
+    grad[3 * i.second + 1] = grad[3 * i.first + 1];
+    grad[3 * i.second + 2] = grad[3 * i.first + 2];
   }
 }

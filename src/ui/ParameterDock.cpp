@@ -51,6 +51,8 @@ ParameterDock::ParameterDock()
   connect(checkBox_Use_Ext_Feature_line, SIGNAL(stateChanged(int)), this, SLOT(useExtFeatureLine(int)));
   connect(spinBox_Ext_N_Ring, SIGNAL(valueChanged(int)), this, SLOT(setExtNRing(int)));
   connect(pushButton_Run_Debug_Alg, SIGNAL(clicked()), this, SLOT(runDebugAlg()));
+  connect(doubleSpinBox_Lamd_Symm, SIGNAL(valueChanged(double)), this, SLOT(setLamdSymmetry(double)));
+  connect(checkBox_Use_Symm, SIGNAL(stateChanged(int)), this, SLOT(setUseSymmetry(int)));
   // set feature render mode
   QList<QCheckBox*> checkBox_FeatureRenderMode = FeatureViewGroupBox->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBox_FeatureRenderMode.size(); ++i)
@@ -404,4 +406,14 @@ void ParameterDock::setExtNRing(int val)
 void ParameterDock::runDebugAlg()
 {
   disp_modules->runDebugAlg();
+}
+
+void ParameterDock::setLamdSymmetry(double val)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_symm") = val;
+}
+
+void ParameterDock::setUseSymmetry(int state)
+{
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("LFeature:use_symm") = ((state == 0) ? false : true);
 }

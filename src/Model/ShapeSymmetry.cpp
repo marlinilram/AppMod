@@ -17,6 +17,8 @@ void ShapeSymmetry::setShape(std::shared_ptr<Shape> _shape, std::string ext_info
     this->setSymmetryPlane(0, 1, 0, 0);
     this->writeSymmetryPlane();
   }
+
+  this->computeSymmetryPair();
 }
 
 bool ShapeSymmetry::loadSymmetryInfo(std::string fname)
@@ -114,7 +116,7 @@ void ShapeSymmetry::computeSymmetryPair()
   }
 }
 
-void ShapeSymmetry::getSymmetryPairs(std::set<STLPairii>& paris)
+void ShapeSymmetry::getSymmetryPairs(std::set<STLPairii>& pairs)
 {
   pairs = sym_pairs;
 }
