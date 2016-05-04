@@ -14,6 +14,7 @@ class Shape;
 class Sphere;
 class ShapeCrest;
 class ShapePlane;
+class ShapeSymmetry;
 class Bound;
 class DispObject;
 namespace LG {
@@ -124,6 +125,7 @@ private:
   std::shared_ptr<Sphere> lighting_ball;
   std::shared_ptr<ShapeCrest> shape_crest;
   std::shared_ptr<ShapePlane> shape_plane;
+  std::shared_ptr<ShapeSymmetry> shape_symmetry;
   std::vector<Shape*> shapes; // 4/20/2016 added shapes for part-based model sha
 
   // file system data

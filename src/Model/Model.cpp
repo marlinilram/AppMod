@@ -4,6 +4,7 @@
 #include "PolygonMesh.h"
 #include "ShapeCrest.h"
 #include "ShapePlane.h"
+#include "ShapeSymmetry.h"
 #include "KDTreeWrapper.h"
 #include "Bound.h"
 #include "tiny_obj_loader.h"
@@ -79,6 +80,10 @@ Model::Model(const std::string path, const std::string name)
 
     shape_plane.reset(new ShapePlane());
     shape_plane->setShape(shape, data_path);
+    //shape_plane->exportPlane(output_path + "/planes");
+
+    shape_symmetry.reset(new ShapeSymmetry());
+    shape_symmetry->setShape(shape, data_path);
   }
   else
   {
