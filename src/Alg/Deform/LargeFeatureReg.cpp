@@ -184,6 +184,11 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
   feature_model->source_model->getProjectionMatrix(vpPMV_mat);
   lamd_data = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_data") * feature_model->curve_scale;
   lamd_SField = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_SField");
+  // init symmetry term
+  feature_model->source_model->getSymPairs(sym_pairs);
+  feature_model->source_model->getSymPlane(plane_coef);
+  lamd_symm = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("LFeature:lamd_symm");
+  use_symm = LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("LFeature:use_symm");
 
   int x_dim = 3 * mesh->n_vertices();
   std::vector<double> x0;

@@ -333,6 +333,13 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_Run_Debug_Alg">
+             <property name="text">
+              <string>Run Debug Alg</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -679,6 +686,30 @@
             </layout>
            </item>
            <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <widget class="QCheckBox" name="checkBox_Use_Symm">
+               <property name="text">
+                <string>Use Symmetry</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_Lamd_Symm">
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>5.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_41">
              <item>
               <widget class="QLabel" name="label_56">
@@ -750,6 +781,20 @@
                </property>
                <property name="value">
                 <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>Ext N Ring</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinBox_Ext_N_Ring">
+               <property name="value">
+                <number>1</number>
                </property>
               </widget>
              </item>

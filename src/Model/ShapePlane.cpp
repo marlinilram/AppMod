@@ -4,6 +4,8 @@
 #include "Colormap.h"
 #include <fstream>
 
+#include "obj_writer.h"
+
 void ShapePlane::setShape(std::shared_ptr<Shape> _shape, std::string ext_info_path)
 {
   shape = _shape;
@@ -445,4 +447,26 @@ void ShapePlane::writeExtSymmetryInfo(std::string fname)
   }
   outFile.close();
   std::cout << "Writing symmetry_patch_info.txt finished." << std::endl;
+}
+
+void ShapePlane::exportPlane(std::string fname)
+{
+  for (size_t i = 0; i < flat_surfaces.size(); ++i)
+  {
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+
+    tinyobj::shape_t obj_shape;
+
+    obj_shape.mesh.positions = shape->getVertexList();
+    for (auto j : flat_surfaces[i])
+    {
+      obj_shape.mesh.indices.push_back(shape->getFaceList()[3 * j + 0]);
+      obj_shape.mesh.indices.push_back(shape->getFaceList()[3 * j + 1]);
+      obj_shape.mesh.indices.push_back(shape->getFaceList()[3 * j + 2]);
+    }
+
+    shapes.push_back(obj_shape);
+    WriteObj(fname + "/plane_" + std::to_string(i) + ".obj", shapes, materials);
+  }
 }
