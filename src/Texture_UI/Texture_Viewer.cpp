@@ -438,7 +438,34 @@ void Texture_Viewer::wheelEvent(QWheelEvent* e)
 
 void Texture_Viewer::keyPressEvent(QKeyEvent *e)
 {
-	QGLViewer::keyPressEvent(e); return;
+		// Get event modifiers key
+		const Qt::KeyboardModifiers modifiers = e->modifiers();
+
+		// A simple switch on e->key() is not sufficient if we want to take state key into account.
+		// With a switch, it would have been impossible to separate 'F' from 'CTRL+F'.
+		// That's why we use imbricated if...else and a "handled" boolean.
+		bool handled = false;
+		if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton))
+		{
+			wireframe_ = !wireframe_;
+			if (wireframe_)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			handled = true;
+			updateGL();
+		}
+		else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton))
+		{
+			resetCamera();
+			handled = true;
+			updateGL();
+		}
+
+		if (!handled)
+		{
+			QGLViewer::keyPressEvent(e);
+		}
 	
 }
 
@@ -472,3 +499,6 @@ bool Texture_Viewer::draw_mesh_points()
 	glEnd();
 	return true;
 };
+
+
+

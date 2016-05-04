@@ -6,13 +6,12 @@ MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	:QLabel(parent, f)
 {
 
-	m_with_image_ = false;
-	m_new_image_ = false;
 	this->m_image_file_.clear();
 	this->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	this->setStyleSheet("border: 1px groove gray;");
 	this->m_texture_ = NULL;
 	this->m_appearance_model_ = NULL;
+	m_shown_mode_ = 0;// 0->origin. 1->mesh;
 };
 MiniTexture::~MiniTexture()
 {
@@ -26,23 +25,19 @@ QString MiniTexture::get_file_name()
 void MiniTexture::set_file(QString s)
 {
 	this->m_image_file_ = s;
+	this->m_origin_image_ = QImage(s);
 	this->load_texture();
 };
 void MiniTexture::clear()
 {
 	QLabel::clear();
-	this->m_image_ = QImage();
-	
+	this->m_mesh_image_ = QImage();
+	this->m_origin_image_ = QImage();
 	this->m_image_file_ = "";
-
-	m_with_image_ = false;
-	m_new_image_ = true;
 };
 void MiniTexture::set_image(const QImage& img)
 {
-	this->m_image_ = img;
 	this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
-	m_new_image_ = true;
 };
 void MiniTexture::load_texture()
 {
@@ -52,39 +47,30 @@ void MiniTexture::load_texture()
 	}
 	else
 	{
-		if (this->m_appearance_model_ == NULL)
+		if (true)
 		{
 			QString file_path = this->m_image_file_;
 			std::string std_file_path = file_path.toStdString().substr(0, file_path.toStdString().find_last_of('/'));
-			this->m_appearance_model_ = new AppearanceModel();
-			this->m_appearance_model_->importAppMod("app_model.xml", std_file_path);
+
 			std::vector<cv::Mat> detail_maps;
-			this->m_appearance_model_->getD1Details(detail_maps);
+			MiniTexture::readMaps(std_file_path + "/" + "app_model.xml", detail_maps, "d1Detail");
 
-			cv::merge(detail_maps, m_show_images_);
-			cv::imwrite("D:/test.jpg", m_show_images_);
-
-			QImage im(m_show_images_.cols, m_show_images_.rows, QImage::Format_RGB32);
+			QImage im(detail_maps[0].rows, detail_maps[0].cols, QImage::Format_RGB32);
 			for (int i = 0; i < im.width(); i++)
 			{
 				for (int j = 0; j < im.height(); j++)
 				{
-					im.setPixel(i, j, qRgb(detail_maps[0].at<float>(i, j) * 255, detail_maps[1].at<float>(i, j) * 255, detail_maps[2].at<float>(i, j) * 255));
-					if (detail_maps[0].at<float>(i, j) < 0)
+					im.setPixel(i, j, qRgb(detail_maps[0].at<float>(j, i) * 255, detail_maps[1].at<float>(j, i) * 255, detail_maps[2].at<float>(j, i) * 255));
+					if (detail_maps[0].at<float>(j, i) < 0)
 					{
 						im.setPixel(i, j, qRgb(0, 0, 0));
 					}
 				}
 			}
 
-			/*QImage im(m_show_images_.data, m_show_images_.cols, m_show_images_.rows, QImage::Format_RGB32);*/
-			//this->setPixmap(QPixmap::fromImage(im).scaled(im.width(), im.height(), Qt::KeepAspectRatio));
 			this->setFixedSize(im.width(), im.height());
-
-			MiniTexture::generate_mask(im, m_image_mask_);
-			/*m_image_mask_.save("d:/mask.jpg");*/
-			this->set_image(im);
-
+			m_mesh_image_ = im;
+			MiniTexture::generate_mask(m_mesh_image_, m_mask_image_);
 		}
 	}
 };
@@ -202,28 +188,86 @@ void MiniTexture::generate_mask(const QImage& im, QImage& mask)
 
 };
 
+void MiniTexture::show_origin_image()
+{
+	this->set_image(this->m_origin_image_);
+	m_shown_mode_ = 0;// 0->origin. 1->mesh;
+};
+void MiniTexture::show_mesh_image()
+{
+	this->set_image(this->m_mesh_image_);
+	m_shown_mode_ = 1;// 0->origin. 1->mesh;
+};
+
+void MiniTexture::set_center_pos(int x, int y)
+{
+	this->setGeometry(x - this->width() / 2, y- this->height()/2, this->width(), this->height());
+};
+
 void MiniTexture::mouseDoubleClickEvent(QMouseEvent * event)
 {
-	QPoint p = event->pos();
-	QRgb rgb = this->m_image_mask_.pixel(p);
-	std::cout << qRed(rgb) << " " << qGreen(rgb) << " " << qBlue(rgb) << "\n";
-	QImage im(this->m_image_mask_.width(), this->m_image_mask_.height(), QImage::Format_RGB32);
-
-	for (int i = 0; i < im.width(); i++)
+	if (this->m_shown_mode_ != 1)
 	{
-		for (int j = 0; j < im.height(); j++)
-		{
-			im.setPixel(i, j, qRgb(0, 0, 0));
+		return;
+	}
 
-			if (rgb == this->m_image_mask_.pixel(i, j))
+	if (event ->button() == Qt::LeftButton)
+	{
+		QPoint p = event->pos();
+		QRgb rgb = this->m_mask_image_.pixel(p);
+		std::cout << qRed(rgb) << " " << qGreen(rgb) << " " << qBlue(rgb) << "\n";
+		QImage im(this->m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
+		m_mask_ = cv::Mat(im.width(), im.height(), CV_32FC1, 1);
+		for (int i = 0; i < im.width(); i++)
+		{
+			for (int j = 0; j < im.height(); j++)
 			{
-				im.setPixel(i, j, qRgb(255, 0, 0));
+				im.setPixel(i, j, qRgb(0, 0, 0));
+				m_mask_.at<float>(i, j) = 0;
+				if (rgb == this->m_mask_image_.pixel(i, j))
+				{
+					im.setPixel(i, j, qRgb(255, 0, 0));
+					m_mask_.at<float>(i, j) = 1;
+				}
 			}
 		}
+		emit mask_selected();
+
 	}
-	im.save("mask.jpg");
+	else if (event->button() == Qt::RightButton)
+	{
+		this->hide();
+	}
+
 	
-	IplImage* iplImg = cvLoadImage("mask.jpg", 1);
-	cv::Mat mtx(iplImg);
-	cvShowImage("mask",iplImg);
+};
+
+
+void MiniTexture::readMaps(std::string xml_file, std::vector<cv::Mat>& maps, std::string map_name)
+{
+	cv::FileStorage fs(xml_file, cv::FileStorage::READ);
+	if (!fs.isOpened())
+	{
+		std::cout << "Cannot open file: " << xml_file << std::endl;
+	}
+
+	cv::FileNode fnode = fs[map_name];
+	maps.clear();
+
+	cv::FileNode maps_node = fnode["maps"];
+	cv::FileNodeIterator it = maps_node.begin(), it_end = maps_node.end();
+	int dim = (int)fnode["Dimension"];
+	maps.resize(dim);
+	for (int i = 0; it != it_end; ++it, ++i)
+	{
+		(*it)["map"] >> maps[i];
+	}
+}
+void MiniTexture::set_mask(cv::Mat& m)
+{
+	this->m_mask_ = m;
+};
+const cv::Mat& MiniTexture::get_mask()
+{
+	return this->m_mask_;
 };

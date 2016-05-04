@@ -106,6 +106,7 @@ void Texture_Label::mouseDoubleClickEvent(QMouseEvent * event)
 		mini->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 		mini->setParent(NULL);
 		mini->set_file(m_image_file_);
+		mini->show_origin_image();
 		mini->show();
 		emit cut_selected(mini);
 	}

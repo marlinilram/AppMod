@@ -39,6 +39,8 @@ private slots:
    
 	void run_d1_synthesis();
 	void run_d0_synthesis();
+	void mask_d0_select();
+
 	void selec_area(bool);
 	void clear_select();
 //	QMainWindow* new_viewer_for_result_model(std::string file_path);

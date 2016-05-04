@@ -96,13 +96,13 @@ void MainWindow_Texture::item_double_clicked(QListWidgetItem* it)
 	}
 	ShapeItem* item = dynamic_cast<ShapeItem*>(it);
 	MiniTexture* m = item->get_texture();
-
 	this->m_shape_list_->set_texture(item, this->m_mini_selected_);
 	if (m != NULL)
 	{
 		delete m;
 	}
 	this->m_mini_selected_->hide();
+	connect(this->m_mini_selected_, SIGNAL(mask_selected()), this, SLOT(mask_d0_select()));
 	this->m_mini_selected_ = NULL;
 };
 void MainWindow_Texture::texture_select(MiniTexture* minit)
@@ -357,10 +357,46 @@ void MainWindow_Texture::run_d1_synthesis()
 
 
 };
+void MainWindow_Texture::mask_d0_select()
+{
+	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+	if (mini == NULL)
+	{
+		return;
+	}
 
+	cv::Mat mask = mini->get_mask();
+	if (mask.cols < 100)
+	{
+		return;
+	}
+	IplImage iplImg = IplImage(mask);
+	cvShowImage("mask", &iplImg);
+
+};
 void MainWindow_Texture::run_d0_synthesis()
 {
-  std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+	if (mini == NULL)
+	{
+		return;
+	}
+
+/*	MiniTextureThread* minit = new MiniTextureThread(NULL, mini);*/
+	//minit->setParent(this);
+	mini->set_mask(cv::Mat(0, 0, CV_32FC1, 1));
+	mini->show_mesh_image();
+	mini->hide();
+	mini->show();
+// 	GLOBAL::wait = true;
+// 	minit->start();
+
+// 	while (GLOBAL::wait)
+// 	{
+// 
+// 	}
+
+// std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
 //   QString meshlab = "\"C:/Program Files (x86)/VCG/MeshLab/meshlab.exe\" " ;
 //   meshlab = meshlab + "\"" + QString::fromStdString(s) + "\"";
