@@ -10,13 +10,17 @@ MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	this->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	this->setStyleSheet("border: 1px groove gray;");
 	this->m_texture_ = NULL;
-	this->m_appearance_model_ = NULL;
+	this->m_selection_label_ = new QLabel(this);
 	m_shown_mode_ = 0;// 0->origin. 1->mesh;
 };
 MiniTexture::~MiniTexture()
 {
 	
 };
+
+
+
+
 QString MiniTexture::get_file_name()
 {
 	return this->m_image_file_;
@@ -215,6 +219,12 @@ void MiniTexture::mouseDoubleClickEvent(QMouseEvent * event)
 	{
 		QPoint p = event->pos();
 		QRgb rgb = this->m_mask_image_.pixel(p);
+
+		if (rgb == qRgb(0, 0, 0))
+		{
+			return;
+		}
+
 		std::cout << qRed(rgb) << " " << qGreen(rgb) << " " << qBlue(rgb) << "\n";
 		QImage im(this->m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
 		m_mask_ = cv::Mat(im.width(), im.height(), CV_32FC1, 1);
@@ -236,12 +246,57 @@ void MiniTexture::mouseDoubleClickEvent(QMouseEvent * event)
 	}
 	else if (event->button() == Qt::RightButton)
 	{
-		this->hide();
+		//this->hide();
 	}
 
 	
 };
 
+
+
+void MiniTexture::mousePressEvent(QMouseEvent * event)
+{
+	if (this->m_shown_mode_ != 1)
+	{
+		return;
+	}
+	if (event->button() == Qt::RightButton)
+	{
+
+		QPoint p = event->pos();
+		QRgb rgb = this->m_mask_image_.pixel(p);
+
+		if (rgb == qRgb(0, 0, 0))
+		{
+			return;
+		}
+
+		QImage img(m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
+		for (int i = 0; i < img.width(); i++)
+		{
+			for (int j = 0; j < img.height(); j++)
+			{
+				img.setPixel(i, j, qRgb(0, 0, 0));
+				if (rgb == this->m_mask_image_.pixel(i, j))
+				{
+					img.setPixel(i, j, this->m_mesh_image_.pixel(i, j));
+				}
+			}
+		}
+
+		//this->m_selection_label_->setGeometry(this->geometry());
+		this->m_selection_label_->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+		this->m_selection_label_->hide();
+		this->m_selection_label_->show();
+	}
+};
+void MiniTexture::mouseReleaseEvent(QMouseEvent *event)
+{
+	if (event->button() == Qt::RightButton)
+	{
+		this->m_selection_label_->hide();
+	}
+};
 
 void MiniTexture::readMaps(std::string xml_file, std::vector<cv::Mat>& maps, std::string map_name)
 {

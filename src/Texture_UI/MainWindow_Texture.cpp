@@ -10,6 +10,7 @@
 #include "shape_list.h"
 #include "DispModuleHandler.h"
 #include "TexSynHandler.h"
+#include "global.h"
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
@@ -373,6 +374,8 @@ void MainWindow_Texture::mask_d0_select()
 	IplImage iplImg = IplImage(mask);
 	cvShowImage("mask", &iplImg);
 
+	GLOBAL::m_mat_mask_ = mask;
+	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 };
 void MainWindow_Texture::run_d0_synthesis()
 {
@@ -396,7 +399,7 @@ void MainWindow_Texture::run_d0_synthesis()
 // 
 // 	}
 
-// std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+ //std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
 //   QString meshlab = "\"C:/Program Files (x86)/VCG/MeshLab/meshlab.exe\" " ;
 //   meshlab = meshlab + "\"" + QString::fromStdString(s) + "\"";

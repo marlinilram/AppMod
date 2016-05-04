@@ -34,6 +34,9 @@ private:
 
 public:
 	void mouseDoubleClickEvent(QMouseEvent * event);
+	void mousePressEvent(QMouseEvent *);
+	void mouseReleaseEvent(QMouseEvent *);
+
 	void set_mask(cv::Mat&);
 	const cv::Mat& get_mask();
 public slots:
@@ -47,11 +50,11 @@ private:
 	QImage  m_mesh_image_;
 	QImage  m_mask_image_;
 
-
 	void* m_texture_;
-	AppearanceModel* m_appearance_model_;
 	cv::Mat m_mask_;
 	int m_shown_mode_;// 0->origin. 1->mesh;
+
+	QLabel* m_selection_label_;
 
 signals:
 	void mask_selected();

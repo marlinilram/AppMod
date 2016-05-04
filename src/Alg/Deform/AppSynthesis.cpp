@@ -15,81 +15,155 @@
 #include "ParameterMgr.h"
 #include "YMLHandler.h"
 #include <fstream>
+#include "global.h"
 
 std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
 {
-  // 0. prepare the sample vertices on the target mesh
-  std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
-  std::vector<int> sampled_tar_model;
-  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
-  src_para_shape->initWithExtPolygonMesh(app_mod_src->getBaseMesh());
-  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
-  tar_para_shape->initWithExtShape(tar_model);
-  geometry_transfer->prepareSampleVertex(tar_model, sampled_tar_model);
-  ShapeUtility::meshParaBoundaryFilter(sampled_tar_model, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh());
-  std::vector<STLVectori> src_v_ids(sampled_tar_model.size(), STLVectori());
+	// 0. prepare the sample vertices on the target mesh
+	std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+	std::vector<int> sampled_tar_model;
+	std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+	src_para_shape->initWithExtPolygonMesh(app_mod_src->getBaseMesh());
+	std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+	tar_para_shape->initWithExtShape(tar_model);
+	geometry_transfer->prepareSampleVertex(tar_model, sampled_tar_model);
+	ShapeUtility::meshParaBoundaryFilter(sampled_tar_model, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh());
+	std::vector<STLVectori> src_v_ids(sampled_tar_model.size(), STLVectori());
 
-  // 1. build the mask for source and target
-  std::vector<cv::Mat> src_feature_map;
-  app_mod_src->getD0Features(src_feature_map);
-  cv::Mat src_mask(src_feature_map[0].rows, src_feature_map[0].cols, CV_32FC1, 1);
-  /*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
+	// 1. build the mask for source and target
+	std::vector<cv::Mat> src_feature_map;
+	app_mod_src->getD0Features(src_feature_map);
+	cv::Mat src_mask = GLOBAL::m_mat_mask_;
+	/*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
 
-  // 1.1 generate mask from source image
-  std::vector<std::vector<CvPoint> > mask_strokes;
-  cv::Mat src_photo;
-  app_mod_src->getPhoto(src_photo);
-  ImageUtility::generateMultiStrokes(src_photo, mask_strokes);
-  // convert image stroke to para shape stroke
-  for (size_t i = 0; i < mask_strokes.size(); ++i) app_mod_src->coordImgToUV(mask_strokes[i]);
-  ImageUtility::generateMaskFromStrokes(src_feature_map[0].clone(), mask_strokes, src_mask);
+	// 1.1 generate mask from source image
+	cv::Mat src_photo;
+	app_mod_src->getPhoto(src_photo);
+	// convert image stroke to para shape stroke
 
-  std::vector<cv::Mat> tar_feature_map;
-  app_mod_tar->getD0Features(tar_feature_map);
-  cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
-  ImageUtility::generateMultiMask(tar_feature_map[0].clone(), tar_mask);
-  std::vector<int> cur_sampled_tar_models;
-  ShapeUtility::vertexFilterFromParaMask(sampled_tar_model, cur_sampled_tar_models, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh(), tar_mask);
+	std::vector<cv::Mat> tar_feature_map;
+	app_mod_tar->getD0Features(tar_feature_map);
+	cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
+	ImageUtility::generateMultiMask(tar_feature_map[0].clone(), tar_mask);
+	std::vector<int> cur_sampled_tar_models;
+	ShapeUtility::vertexFilterFromParaMask(sampled_tar_model, cur_sampled_tar_models, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh(), tar_mask);
 
-  // 2. make the masked source and target feature map
-  // 2.1 masked source
-  std::vector<cv::Mat> masked_src_feature_map;
-  ImageUtility::generateMaskedMatVec(src_feature_map, masked_src_feature_map, src_mask);
-  // 2.2 masked target
-  std::vector<cv::Mat> masked_tar_feature_map;
-  ImageUtility::generateMaskedMatVec(tar_feature_map, masked_tar_feature_map, tar_mask);
+	// 2. make the masked source and target feature map
+	// 2.1 masked source
+	std::vector<cv::Mat> masked_src_feature_map;
+	ImageUtility::generateMaskedMatVec(src_feature_map, masked_src_feature_map, src_mask);
+	// 2.2 masked target
+	std::vector<cv::Mat> masked_tar_feature_map;
+	ImageUtility::generateMaskedMatVec(tar_feature_map, masked_tar_feature_map, tar_mask);
 
-  // 3. correspondences from NNF
-  // 3.1 run patch match
-  syn_tool.reset(new SynthesisTool);
-  syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
-  syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
-  syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
-  syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
-  syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
-  syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
-  syn_tool->setExportPath(tar_model->getOutputPath());
-  syn_tool->doNNFOptimization(masked_src_feature_map, masked_tar_feature_map);
+	// 3. correspondences from NNF
+	// 3.1 run patch match
+	syn_tool.reset(new SynthesisTool);
+	syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+	syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+	syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+	syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+	syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+	syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+	syn_tool->setExportPath(tar_model->getOutputPath());
+	syn_tool->doNNFOptimization(masked_src_feature_map, masked_tar_feature_map);
 
-  // 3.2 find correspondences from NNF
-  std::vector<STLVectori> cur_src_crsp;
-  this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, cur_sampled_tar_models, cur_src_crsp);
+	// 3.2 find correspondences from NNF
+	std::vector<STLVectori> cur_src_crsp;
+	this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, cur_sampled_tar_models, cur_src_crsp);
 
-  // 3.3 merge the current correspondences to sampled vertex set
-  ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
+	// 3.3 merge the current correspondences to sampled vertex set
+	ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
 
-  STLVectorf new_v_list;
-  double transform_scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
-  ShapeUtility::prepareLocalTransform(app_mod_src->getBaseMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, transform_scale);
+	STLVectorf new_v_list;
+	double transform_scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
+	ShapeUtility::prepareLocalTransform(app_mod_src->getBaseMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, transform_scale);
 
-  LG::PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
-  std::string obj_path = geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+	LG::PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
+	std::string obj_path = geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
 
-  ShapeUtility::computeLocalTransform(&old_tar_mesh, tar_model->getPolygonMesh());
-  ShapeUtility::exportVisForLocalTransform(tar_model->getPolygonMesh(), tar_model->getOutputPath());
+	ShapeUtility::computeLocalTransform(&old_tar_mesh, tar_model->getPolygonMesh());
+	ShapeUtility::exportVisForLocalTransform(tar_model->getPolygonMesh(), tar_model->getOutputPath());
 
-  return obj_path;
+	return obj_path;
 }
+
+
+
+// std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
+// {
+//   // 0. prepare the sample vertices on the target mesh
+//   std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+//   std::vector<int> sampled_tar_model;
+//   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+//   src_para_shape->initWithExtPolygonMesh(app_mod_src->getBaseMesh());
+//   std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+//   tar_para_shape->initWithExtShape(tar_model);
+//   geometry_transfer->prepareSampleVertex(tar_model, sampled_tar_model);
+//   ShapeUtility::meshParaBoundaryFilter(sampled_tar_model, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh());
+//   std::vector<STLVectori> src_v_ids(sampled_tar_model.size(), STLVectori());
+// 
+//   // 1. build the mask for source and target
+//   std::vector<cv::Mat> src_feature_map;
+//   app_mod_src->getD0Features(src_feature_map);
+//   cv::Mat src_mask(src_feature_map[0].rows, src_feature_map[0].cols, CV_32FC1, 1);
+//   /*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
+// 
+//   // 1.1 generate mask from source image
+//   std::vector<std::vector<CvPoint> > mask_strokes;
+//   cv::Mat src_photo;
+//   app_mod_src->getPhoto(src_photo);
+//   ImageUtility::generateMultiStrokes(src_photo, mask_strokes);
+//   // convert image stroke to para shape stroke
+//   for (size_t i = 0; i < mask_strokes.size(); ++i) app_mod_src->coordImgToUV(mask_strokes[i]);
+//   ImageUtility::generateMaskFromStrokes(src_feature_map[0].clone(), mask_strokes, src_mask);
+// 
+//   std::vector<cv::Mat> tar_feature_map;
+//   app_mod_tar->getD0Features(tar_feature_map);
+//   cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
+//   ImageUtility::generateMultiMask(tar_feature_map[0].clone(), tar_mask);
+//   std::vector<int> cur_sampled_tar_models;
+//   ShapeUtility::vertexFilterFromParaMask(sampled_tar_model, cur_sampled_tar_models, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh(), tar_mask);
+// 
+//   // 2. make the masked source and target feature map
+//   // 2.1 masked source
+//   std::vector<cv::Mat> masked_src_feature_map;
+//   ImageUtility::generateMaskedMatVec(src_feature_map, masked_src_feature_map, src_mask);
+//   // 2.2 masked target
+//   std::vector<cv::Mat> masked_tar_feature_map;
+//   ImageUtility::generateMaskedMatVec(tar_feature_map, masked_tar_feature_map, tar_mask);
+// 
+//   // 3. correspondences from NNF
+//   // 3.1 run patch match
+//   syn_tool.reset(new SynthesisTool);
+//   syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+//   syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+//   syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+//   syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+//   syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+//   syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+//   syn_tool->setExportPath(tar_model->getOutputPath());
+//   syn_tool->doNNFOptimization(masked_src_feature_map, masked_tar_feature_map);
+// 
+//   // 3.2 find correspondences from NNF
+//   std::vector<STLVectori> cur_src_crsp;
+//   this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, cur_sampled_tar_models, cur_src_crsp);
+// 
+//   // 3.3 merge the current correspondences to sampled vertex set
+//   ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
+// 
+//   STLVectorf new_v_list;
+//   double transform_scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
+//   ShapeUtility::prepareLocalTransform(app_mod_src->getBaseMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, transform_scale);
+// 
+//   LG::PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
+//   std::string obj_path = geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
+// 
+//   ShapeUtility::computeLocalTransform(&old_tar_mesh, tar_model->getPolygonMesh());
+//   ShapeUtility::exportVisForLocalTransform(tar_model->getPolygonMesh(), tar_model->getOutputPath());
+// 
+//   return obj_path;
+// }
 
 void DetailSynthesis::debugSynthesisD0(std::string app_mod_path, std::shared_ptr<Model> tar_model)
 {

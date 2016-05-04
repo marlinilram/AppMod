@@ -4,7 +4,7 @@
 #include <cv.h>
 #include "BasicHeader.h"
 #include "LgMeshTypes.h"
-
+class MiniTexture;
 namespace ImageUtility
 {
   struct MouseArgs{
@@ -40,6 +40,8 @@ namespace ImageUtility
   bool generateMaskStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke);
   void generateMultiStrokes(cv::Mat& img_in, std::vector<std::vector<CvPoint> >& strokes);
   void generateMaskFromStrokes(cv::Mat& img_in, std::vector<std::vector<CvPoint> >& strokes, cv::Mat& mask_out);
+
+  void generateMaskFromPartsSelect(MiniTexture*, cv::Mat& mask_out);
 
   void generateMaskedMatVec(std::vector<cv::Mat>& mat_vec_in, std::vector<cv::Mat>& mat_vec_out, cv::Mat& mask);
   void mergeMatVecFromMask(std::vector<cv::Mat>& mat_vec_src, std::vector<cv::Mat>& mat_vec_tar, cv::Mat& mask);
