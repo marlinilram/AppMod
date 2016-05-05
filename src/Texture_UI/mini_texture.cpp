@@ -30,7 +30,7 @@ void MiniTexture::set_file(QString s)
 {
 	this->m_image_file_ = s;
 	this->m_origin_image_ = QImage(s);
-	this->load_texture();
+	
 };
 void MiniTexture::clear()
 {

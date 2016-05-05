@@ -35,8 +35,6 @@ public:
   std::vector<std::set<int>>& getFlatSurfaces();
   void findSymmetricPlane(int input_face_id, int& output_face_id, std::vector<int>& candidate);
 
-  void exportPlane(std::string fname);
-
 private:
   void flatSurface(std::set<int>& surface, int f_id, float ref_normal[3]);
 

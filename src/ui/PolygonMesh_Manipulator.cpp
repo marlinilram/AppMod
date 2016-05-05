@@ -1,5 +1,5 @@
 #include "PolygonMesh_Manipulator.h"
-
+#include <set>
 PolygonMesh_Manipulator::PolygonMesh_Manipulator()
 {
 }
@@ -26,6 +26,153 @@ void PolygonMesh_Manipulator::translate(LG::PolygonMesh* poly, const LG::Vec3& t
 		pt = pt + translation;
 	}
 };
+void PolygonMesh_Manipulator::boundary_find(LG::PolygonMesh* poly_mesh, const std::vector<bool>& selected_faces, std::vector<std::vector<int>>& ordered_boundaries)
+{
+	std::vector<bool> boundary_faces_tmp(selected_faces.size(), false);
+
+	
+
+	for (unsigned int i = 0; i < selected_faces.size(); i++)
+	{
+		if (!selected_faces[i])
+		{
+			continue;;
+		}
+		std::vector<int> faces_around;
+
+		PolygonMesh_Manipulator::faces_has_common_edge(poly_mesh, i, faces_around);
+		for (unsigned int j = 0; j < faces_around.size(); j++)
+		{
+			if (!selected_faces[faces_around[j]])
+			{
+				boundary_faces_tmp[i] = true;
+				break;;
+			}
+		}
+	}
+
+	
+	//std::vector<std::vector<int>> ordered_boundaries_tmp;
+	std::vector<bool> checked(boundary_faces_tmp.size(), false);
+	ordered_boundaries.clear();
+	for (unsigned int i = 0; i < boundary_faces_tmp.size(); i++)
+	{
+		if (!boundary_faces_tmp[i])
+		{
+			continue;
+		}
+		if (checked[i])
+		{
+			continue;
+		}
+		std::vector<int> boudary;
+		boudary.push_back(i);
+		checked[i] = true;
+
+
+		for (unsigned int k = 0; k < boudary.size(); k++)
+		{
+			std::vector<int> faces_around;
+			PolygonMesh_Manipulator::faces_has_common_vertex(poly_mesh, boudary[k], faces_around);
+
+			for (unsigned int j = 0; j < faces_around.size(); j++)
+			{
+				if (!boundary_faces_tmp[faces_around[j]])
+				{
+					continue;
+				}
+				if (checked[faces_around[j]])
+				{
+					continue;
+				}
+				boudary.push_back(faces_around[j]);
+				checked[faces_around[j]] = true;
+				break;;
+			}
+		
+		}
+		if (boudary.size() > 20)
+		{
+			ordered_boundaries.push_back(boudary);
+		}
+	}
+
+	for (unsigned int k = 0; k < ordered_boundaries.size(); k++)
+	{
+		for (unsigned int j = k + 1; j < ordered_boundaries.size(); j++)
+		{
+			if (ordered_boundaries[k].size() < ordered_boundaries[j].size())
+			{
+				std::vector<int> tmp = ordered_boundaries[k];
+				ordered_boundaries[k] = ordered_boundaries[j];
+				ordered_boundaries[j] = tmp;
+			}
+		}
+	}
+
+};
+void PolygonMesh_Manipulator::faces_has_common_edge(LG::PolygonMesh* poly_mesh, int f_id, std::vector<int>& faces_around)
+{
+	std::vector<int> face_has_common_vertex;
+	PolygonMesh_Manipulator::faces_has_common_vertex(poly_mesh, f_id, face_has_common_vertex);
+
+
+	std::set<int> ids_around;
+	faces_around.clear();
+	for (auto efc : poly_mesh->halfedges(LG::PolygonMesh::Face(f_id)))
+	{
+		for (unsigned int i = 0; i < face_has_common_vertex.size(); i++)
+		{
+			for (auto efc1 : poly_mesh->halfedges(LG::PolygonMesh::Face(face_has_common_vertex[i])))
+			{
+				if (poly_mesh->opposite_halfedge(efc).idx() == efc1.idx())
+				{
+					faces_around.push_back(face_has_common_vertex[i]);
+					break;
+				}
+				
+			}
+		}
+	}
+
+};
+void PolygonMesh_Manipulator::faces_has_common_vertex(LG::PolygonMesh* poly_mesh, int f_id, std::vector<int>& faces_around)
+{
+	if (poly_mesh == NULL)
+	{
+		return;
+	}
+	int f_num = poly_mesh->n_faces();
+
+	if (f_id <0 || f_id >= f_num)
+	{
+		return;
+	}
+	
+	std::set<int> ids_around;
+	for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
+	{
+		LG::PolygonMesh::Face_around_vertex_circulator faces = poly_mesh->faces(vfc);
+		for (auto fc : faces)
+		{
+			int id = fc.idx();
+			ids_around.insert(id);
+		}
+	}
+
+	faces_around.clear();
+	std::set<int>::iterator itr = ids_around.begin();
+	for (int i = 0; itr != ids_around.end(); ++itr) {
+		int id = *itr;
+		if (id != f_id)
+		{
+			faces_around.push_back(id);
+		}
+	}
+
+};
+
+
 
 void PolygonMesh_Manipulator::scale(LG::PolygonMesh* poly, LG::Vec3 center, float s)
 {

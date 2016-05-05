@@ -14,7 +14,7 @@ public:
   ShapeCrest();
   ~ShapeCrest();
 
-  void setShape(std::shared_ptr<Shape> in_shape, std::string fpath, std::string mesh_name_);
+  void setShape(std::shared_ptr<Shape> in_shape, std::string fpath);
   const std::vector<Edge>& getCrestEdge();
   const std::vector<STLVectori>& getCrestLine();
   const std::vector<STLVectori>& getVisbleCrestLine();
@@ -59,7 +59,6 @@ public:
   std::set<int> candidates; // store edge id of crest_edges
 
   std::string ext_file_path;
-  std::string mesh_name;
 
 private:
   std::shared_ptr<Shape> shape;

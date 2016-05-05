@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <map>
-#include <set>
 #include "BasicHeader.h"
 
 class MainCanvasViewer;
@@ -52,9 +51,6 @@ private:
   void updateDataCrsp(const std::vector<double>& X);
   void updateDataTermGrad(const std::vector<double>& X, std::vector<double>& grad);
 
-  double energySymmetry(const std::vector<double>& X);
-  void updateSymmetryGrad(const std::vector<double>& X, std::vector<double>& grad);
-
   friend double LFReg::efunc(const std::vector<double>&x, std::vector<double>& grad, void *func_data);
   friend double LFReg::efuncNonRigid(const std::vector<double>&x, std::vector<double>& grad, void *func_data);
 
@@ -83,12 +79,6 @@ private:
   std::map<int, std::pair<Vector2f, Vector2f> > data_crsp; // the first Vector2f is point pos the second is direction
   Matrix4f vpPMV_mat; // matrix project model coordinate to real screen coordinate
   double lamd_data;
-
-  // internal variables for symmetry
-  std::set<STLPairii> sym_pairs;
-  std::vector<float> plane_coef;
-  double lamd_symm;
-  bool use_symm;
 
 private:
   LargeFeatureReg(const LargeFeatureReg&);

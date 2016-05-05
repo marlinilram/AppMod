@@ -20,13 +20,8 @@ namespace LFReg {
     double fx0_ARAP = lf_reg->lamd_ARAP * lf_reg->energyARAP(x);
     double fx0_flat = lf_reg->lamd_flat * lf_reg->energyFlatNew(x);
     double fx0_data = lf_reg->lamd_data * lf_reg->energyDataTerm(x);
-    double fx0_symm = lf_reg->lamd_symm * lf_reg->energySymmetry(x);
-    double fx0 = fx0_SField + fx0_ARAP + fx0_flat + fx0_data + fx0_symm;
-    std::cout << "SField: " << fx0_SField
-      << "\tARAP: " << fx0_ARAP
-      << "\tflat: " << fx0_flat
-      << "\tdata: " << fx0_data
-      << "\tsymm: " << fx0_symm << std::endl;
+    double fx0 = fx0_SField + fx0_ARAP + fx0_flat + fx0_data;
+    std::cout << "SField: " << fx0_SField << "\tARAP: " << fx0_ARAP << "\tflat: " << fx0_flat << "\tdata: " << fx0_data << std::endl;
 
 
     grad.resize(x.size());
@@ -34,12 +29,10 @@ namespace LFReg {
     std::vector<double> ARAP_grad;
     std::vector<double> flat_grad;
     std::vector<double> data_grad;
-    std::vector<double> symm_grad;
     lf_reg->updateScalarFieldGrad(x, SField_grad);
     lf_reg->updateARAPGrad(x, ARAP_grad);
     lf_reg->updateFlatGradNew(x, flat_grad);
     lf_reg->updateDataTermGrad(x, data_grad);
-    lf_reg->updateSymmetryGrad(x, symm_grad);
 
     for (size_t i = 0; i < x.size(); ++i)
     {
@@ -50,11 +43,7 @@ namespace LFReg {
       //cppx[i] += step;
       //((lf_reg->lamd_SField * lf_reg->energyScalarField(cppx) - fx0_SField) / step)
       //lf_reg->lamd_SField * SField_grad[i]
-      grad[i] = lf_reg->lamd_SField * SField_grad[i]
-        + lf_reg->lamd_ARAP * ARAP_grad[i]
-        + lf_reg->lamd_flat * flat_grad[i]
-        + lf_reg->lamd_data * data_grad[i]
-        + lf_reg->lamd_symm * symm_grad[i];
+      grad[i] = lf_reg->lamd_SField * SField_grad[i] + lf_reg->lamd_ARAP * ARAP_grad[i] + lf_reg->lamd_flat * flat_grad[i] + lf_reg->lamd_data * data_grad[i];
     }
 
     //std::cout << "f(X) = " << fx0 << std::endl;
@@ -117,11 +106,11 @@ void LargeFeatureReg::updateScalarFieldGrad(const std::vector<double>& X, std::v
       double2 n_curve_pt = (double2(v_proj[0] / v_proj[3], v_proj[1] / v_proj[3]) + feature_model->curve_translate - double2(0.5, 0.5)) * feature_model->curve_scale + double2(0.5, 0.5);
       double field_grad_x, field_grad_y, field_value;
       feature_model->target_scalar_field->getDistanceMapGrad(n_curve_pt, field_grad_x, field_grad_y, field_value);
-      grad[3 * vid + 0] += (field_grad_x * (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])
+      grad[3 * vid + 0] = (field_grad_x * (v_proj[3] * vpPMV_mat(0, 0) - v_proj[0] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])
                         + field_grad_y * (v_proj[3] * vpPMV_mat(1, 0) - v_proj[1] * vpPMV_mat(3, 0)) / (v_proj[3] * v_proj[3])) * 2 * field_value;
-      grad[3 * vid + 1] += (field_grad_x * (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])
+      grad[3 * vid + 1] = (field_grad_x * (v_proj[3] * vpPMV_mat(0, 1) - v_proj[0] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])
                         + field_grad_y * (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3])) * 2 * field_value;
-      grad[3 * vid + 2] += (field_grad_x * (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])
+      grad[3 * vid + 2] = (field_grad_x * (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])
                         + field_grad_y * (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3])) * 2 * field_value;
     }
   }
@@ -386,9 +375,9 @@ void LargeFeatureReg::updateFlatGrad(const std::vector<double>& X, std::vector<d
   grad.resize(X.size());
   for (size_t i = 0; i < P_plane_proj.cols(); ++i)
   {
-    grad[3 * i + 0] += 2 * flat_coefs[i] * (X[3 * i + 0] - P_plane_proj(0, i));
-    grad[3 * i + 1] += 2 * flat_coefs[i] * (X[3 * i + 1] - P_plane_proj(1, i));
-    grad[3 * i + 2] += 2 * flat_coefs[i] * (X[3 * i + 2] - P_plane_proj(2, i));
+    grad[3 * i + 0] = 2 * flat_coefs[i] * (X[3 * i + 0] - P_plane_proj(0, i));
+    grad[3 * i + 1] = 2 * flat_coefs[i] * (X[3 * i + 1] - P_plane_proj(1, i));
+    grad[3 * i + 2] = 2 * flat_coefs[i] * (X[3 * i + 2] - P_plane_proj(2, i));
   }
 }
 
@@ -521,60 +510,8 @@ void LargeFeatureReg::updateDataTermGrad(const std::vector<double>& X, std::vect
     dpdy[1] = (v_proj[3] * vpPMV_mat(1, 1) - v_proj[1] * vpPMV_mat(3, 1)) / (v_proj[3] * v_proj[3]);
     dpdz[0] = (v_proj[3] * vpPMV_mat(0, 2) - v_proj[0] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
     dpdz[1] = (v_proj[3] * vpPMV_mat(1, 2) - v_proj[1] * vpPMV_mat(3, 2)) / (v_proj[3] * v_proj[3]);
-    grad[3 * vid + 0] += 2 * diff.dot(dpdx) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdx));
-    grad[3 * vid + 1] += 2 * diff.dot(dpdy) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdy));
-    grad[3 * vid + 2] += 2 * diff.dot(dpdz) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdz)); 
-  }
-}
-
-double LargeFeatureReg::energySymmetry(const std::vector<double>& X)
-{
-  // (A(Pix + Pix_prime)/2 + B(Piy + Piy_prime)/2 + C(Piz + Piz_prime)/2 + D)^2 / (A^2 + B^2 + C^2)
-  // minimize the distance from the middle position of a symmetry pair to symmetry plane
-  if (!use_symm) return 0.0;
-
-
-  PolygonMesh* mesh = feature_model->source_model->getPolygonMesh();
-  Vec3 plane(plane_coef[0], plane_coef[1], plane_coef[2]);
-  Vec3 plane_normal = plane.normalized();
-
-  double sum = 0.0;
-  for (auto i : sym_pairs)
-  {
-    // transform the first vertex to its symmetric place
-    Vec3 pt_0(X[3 * i.first + 0], X[3 * i.first + 1], X[3 * i.first + 2]);
-    Vec3 pt_1(X[3 * i.second + 0], X[3 * i.second + 1], X[3 * i.second + 2]);
-
-    Vec3 sym_pt_0 = pt_0 - 2 * (pt_0.dot(plane) + plane_coef[3]) / plane.norm() * plane_normal;
-
-    sum += (sym_pt_0 - pt_1).squaredNorm();
-  }
-  return sum;
-}
-
-void LargeFeatureReg::updateSymmetryGrad(const std::vector<double>& X, std::vector<double>& grad)
-{
-  grad.resize(X.size(), 0.0);
-  if (!use_symm) return;
-  PolygonMesh* mesh = feature_model->source_model->getPolygonMesh();
-  Vec3 plane(plane_coef[0], plane_coef[1], plane_coef[2]);
-  Vec3 plane_normal = plane.normalized();
-  for (auto i : sym_pairs)
-  {
-    Vec3 pt_0(X[3 * i.first + 0], X[3 * i.first + 1], X[3 * i.first + 2]);
-    Vec3 pt_1(X[3 * i.second + 0], X[3 * i.second + 1], X[3 * i.second + 2]);
-
-    Vec3 sym_pt_diff = pt_0 - 2 * (pt_0.dot(plane) + plane_coef[3]) / plane.norm() * plane_normal - pt_1;
-
-    // eye(3,3) - 2 / plane.norm() * plane * plane_normal^T
-    Matrix3f temp = Matrix3f::Identity() - 2 / plane.norm() * (plane * plane_normal.transpose());
-    Vec3 first_grad = 2 * temp * sym_pt_diff;
-
-    grad[3 * i.first + 0] += first_grad[0];
-    grad[3 * i.first + 1] += first_grad[1];
-    grad[3 * i.first + 2] += first_grad[2];
-    grad[3 * i.second + 0] += -2 * sym_pt_diff[0];
-    grad[3 * i.second + 1] += -2 * sym_pt_diff[1];
-    grad[3 * i.second + 2] += -2 * sym_pt_diff[2];
+    grad[3 * vid + 0] = 2 * diff.dot(dpdx) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdx));
+    grad[3 * vid + 1] = 2 * diff.dot(dpdy) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdy));
+    grad[3 * vid + 2] = 2 * diff.dot(dpdz) - 2 * (diff.dot(i.second.second)) * (i.second.second.dot(dpdz)); 
   }
 }
