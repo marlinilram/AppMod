@@ -26,10 +26,10 @@ public:
 	void show_mesh_image();
 	static void generate_mask(const QImage& im, QImage& mask);
 	static void readMaps(std::string xml_file, std::vector<cv::Mat>& maps, std::string map_name);
-
+	void load_texture();
 private:
 	void set_image(const QImage&);
-	void load_texture();
+	
 
 
 public:

@@ -28,7 +28,7 @@ public:
   void set_edit_mode(int);
   bool get_edit_mode();
   bool draw_mesh_points();
-  bool get_target_mask(cv::Mat&);
+  const std::vector<std::vector<int>>& get_boundaries();
 
 protected:
   virtual void draw();
@@ -62,7 +62,10 @@ private:
 
 
   std::vector<bool>   m_faces_selected_;
+  std::vector<std::vector<int>>   m_boundaries_;;
   std::vector<QPoint> m_points_for_delete_;
+  int k_start_;
+  bool m_show_mesh_;
 private:
 
 };

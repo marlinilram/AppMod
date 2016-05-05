@@ -192,6 +192,7 @@ void MainWindow_Texture::load_obj()
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
 	this->m_viewer_->clear_selection();
+	this->m_viewer_->resetCamera();
 };
 void MainWindow_Texture::shape_list_prepare()
 {
@@ -373,10 +374,10 @@ void MainWindow_Texture::mask_d0_select()
 	{
 		return;
 	}
-// 	IplImage iplImg = IplImage(mask);
-// 	cvShowImage("mask", &iplImg);
+ 	IplImage iplImg = IplImage(mask);
+ 	cvShowImage("mask", &iplImg);
 
-	GLOBAL::m_mat_source_mask0_ = mask;
+	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
 	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
 
@@ -388,8 +389,8 @@ void MainWindow_Texture::run_d0_synthesis()
 	{
 		return;
 	}
-	bool su = this->m_viewer_->get_target_mask(GLOBAL::m_mat_target_mask0_);
-	if (!su)
+	
+	if (this->m_viewer_->get_boundaries().size() < 1)
 	{
 		QMessageBox::warning(this, "No target mask", "Please draw target mask first!");
 		return;
@@ -397,6 +398,7 @@ void MainWindow_Texture::run_d0_synthesis()
    /* MiniTextureThread* minit = new MiniTextureThread(NULL, mini);*/
    //minit->setParent(this);
 	
+	mini->load_texture();
 	mini->set_mask(cv::Mat(0, 0, CV_32FC1, 1));
 	mini->show_mesh_image();
 	mini->hide();
