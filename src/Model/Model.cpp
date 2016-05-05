@@ -4,7 +4,6 @@
 #include "PolygonMesh.h"
 #include "ShapeCrest.h"
 #include "ShapePlane.h"
-#include "ShapeSymmetry.h"
 #include "KDTreeWrapper.h"
 #include "Bound.h"
 #include "tiny_obj_loader.h"
@@ -69,7 +68,7 @@ Model::Model(const std::string path, const std::string name)
 
   // keep this for vector field computation
   shape_crest.reset(new ShapeCrest());
-  shape_crest->setShape(shape, data_path, file_name);
+  shape_crest->setShape(shape, data_path);
 
   // read photo
   cv::Mat load_img = cv::imread(path + "/photo.png");
@@ -80,10 +79,6 @@ Model::Model(const std::string path, const std::string name)
 
     shape_plane.reset(new ShapePlane());
     shape_plane->setShape(shape, data_path);
-    //shape_plane->exportPlane(output_path + "/planes");
-
-    shape_symmetry.reset(new ShapeSymmetry());
-    shape_symmetry->setShape(shape, data_path);
   }
   else
   {
@@ -775,14 +770,3 @@ void Model::getShapeVector(std::vector<Shape*>& Shape_vec)
 		Shape_vec.push_back(shapes[i]);
 	}
 };
-
-void Model::getSymPairs(std::set<STLPairii>& pairs)
-{
-  shape_symmetry->getSymmetryPairs(pairs);
-}
-
-void Model::getSymPlane(std::vector<float>& plane)
-{
-
-  shape_symmetry->getSymmetryPlane(plane);
-}

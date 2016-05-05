@@ -14,7 +14,6 @@ class Shape;
 class Sphere;
 class ShapeCrest;
 class ShapePlane;
-class ShapeSymmetry;
 class Bound;
 class DispObject;
 namespace LG {
@@ -118,10 +117,6 @@ public:
   std::vector<std::set<int>>& getFlatSurfaces();
   void findCrspPatch(int input_id, int& output_id, std::vector<int>& candidate);
 
-  // get info from ShapeSymmetry
-  void getSymPairs(std::set<STLPairii>& pairs);
-  void getSymPlane(std::vector<float>& plane);
-
   void merge_shapes_to_show();
   void divide_shape_to_list();
 private:
@@ -129,7 +124,6 @@ private:
   std::shared_ptr<Sphere> lighting_ball;
   std::shared_ptr<ShapeCrest> shape_crest;
   std::shared_ptr<ShapePlane> shape_plane;
-  std::shared_ptr<ShapeSymmetry> shape_symmetry;
   std::vector<Shape*> shapes; // 4/20/2016 added shapes for part-based model sha
 
   // file system data

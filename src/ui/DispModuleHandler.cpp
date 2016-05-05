@@ -457,9 +457,3 @@ void DispModuleHandler::useExtFeatureLine()
 {
   // TODO: update the source model crest line
 }
-
-void DispModuleHandler::runDebugAlg()
-{
-  alg_handler->debugSymmetry();
-  trackball_viewer->setGLActors(alg_handler->getGLActors());
-}

@@ -107,8 +107,6 @@ namespace ShapeUtility
   bool loadExtDetailMap(ParaShape* para_shape, std::string fpath, std::string fname);
 
   void getFaceUVCenter(LG::PolygonMesh* mesh, int f_id, Vector2f& uv_coord);
-
-  void sampleLine(std::vector<Vector3f>& line, float rate);
 }
 
 #endif

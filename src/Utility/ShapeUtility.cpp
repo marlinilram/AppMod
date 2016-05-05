@@ -1952,26 +1952,4 @@ namespace ShapeUtility
     }
     uv_coord = uv_coord / (float)uv.size();
   }
-
-  void sampleLine(std::vector<Vector3f>& line, float rate)
-  {
-    // rate is the distance between two points
-    // rule: don't touch existed points in the input line or not?
-    std::vector<Vector3f> sampled;
-    for (size_t i = 0; i < line.size() - 1; ++i)
-    {
-      int n = int((line[i + 1] - line[i]).norm() / rate);
-      Vector3f dir = (line[i + 1] - line[i]).normalized();
-      if (sampled.empty() || ((line[i] - sampled.back()).norm() > (rate / 2)))
-      {
-        sampled.push_back(line[i]);
-      }
-      for (int j = 1; j <= n; ++j)
-      {
-        sampled.push_back(line[i] + j * rate * dir);
-      }
-    }
-    sampled.push_back(line.back()); // the last one
-    line.swap(sampled);
-  }
 }
