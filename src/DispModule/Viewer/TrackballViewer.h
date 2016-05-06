@@ -51,6 +51,8 @@ private:
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
   void draw_drawn_deatures();
+private slots:
+  void resizeEvent(QResizeEvent*);
 private:
   bool sync_camera;
   bool wireframe_;

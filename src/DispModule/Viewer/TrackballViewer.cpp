@@ -53,6 +53,18 @@ void TrackballViewer::clear_drawn_feature()
 	m_drawn_features_.clear();
 	this->updateGL();
 };
+
+void TrackballViewer::resizeEvent(QResizeEvent* r)
+{
+	QGLViewer::resizeEvent(r);
+	int w = r->size().width();
+	int h = r->size().height();
+	for (unsigned int i = 0; i < this->get_dispObjects().size(); i++)
+	{
+		dynamic_cast<TrackballCanvas*>(this->get_dispObjects()[i])->setsize(w, h);
+	}
+
+};
 void TrackballViewer::draw()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -548,6 +560,7 @@ void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 		if (is_seleted)
 		{
 			trackball_canvas->getModel()->merge_shapes_to_show();
+			trackball_canvas->updateModelBuffer();
 		}
 	}
 	
@@ -667,6 +680,7 @@ void TrackballViewer::wheelEvent(QWheelEvent* e)
 		  if (is_seleted)
 		  {
 			  trackball_canvas->getModel()->merge_shapes_to_show();
+			  trackball_canvas->updateModelBuffer();
 		  }
 	  }
   }
@@ -749,6 +763,21 @@ void TrackballViewer::keyPressEvent(QKeyEvent *e)
     resetCamera();
     handled = true;
     updateGL();
+  }
+
+  else if ((e->key() == Qt::Key_S) && (modifiers == Qt::NoButton))
+  {
+	  setStateFileName(QString("camera_info.xml"));
+	  saveStateToFile();
+
+	  handled = true;
+	  updateGL();
+  }
+  else if ((e->key() == Qt::Key_L) && (modifiers == Qt::NoButton))
+  {
+	  restoreStateFromFile();
+	  handled = true;
+	  updateGL();
   }
 
   if (!handled)
