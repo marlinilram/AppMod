@@ -10,7 +10,8 @@
 #include "shape_list.h"
 #include "DispModuleHandler.h"
 #include "TexSynHandler.h"
-
+#include "global.h"
+#include <QMessageBox>
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
@@ -97,13 +98,13 @@ void MainWindow_Texture::item_double_clicked(QListWidgetItem* it)
 	}
 	ShapeItem* item = dynamic_cast<ShapeItem*>(it);
 	MiniTexture* m = item->get_texture();
-
 	this->m_shape_list_->set_texture(item, this->m_mini_selected_);
 	if (m != NULL)
 	{
 		delete m;
 	}
 	this->m_mini_selected_->hide();
+	connect(this->m_mini_selected_, SIGNAL(mask_selected()), this, SLOT(mask_d0_select()));
 	this->m_mini_selected_ = NULL;
 };
 void MainWindow_Texture::texture_select(MiniTexture* minit)
@@ -185,11 +186,14 @@ void MainWindow_Texture::load_obj()
 	std::shared_ptr<Model> m ( new Model(model_file_path, model_file_name) );
 
 	this->m_viewer_->get_dispObjects()[0]->setModel(m);
+	this->m_viewer_->clear_selection();
 	//this->m_viewer_->get_dispObjects()[0]->
 	this->m_viewer_->get_dispObjects()[0]->updateModelBuffer();
 
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
+	
+	this->m_viewer_->resetCamera();
 };
 void MainWindow_Texture::shape_list_prepare()
 {
@@ -358,10 +362,58 @@ void MainWindow_Texture::run_d1_synthesis()
 
 
 };
+void MainWindow_Texture::mask_d0_select()
+{
+	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+	if (mini == NULL)
+	{
+		return;
+	}
 
+	cv::Mat mask = mini->get_mask();
+	if (mask.cols < 100)
+	{
+		return;
+	}
+ 	IplImage iplImg = IplImage(mask);
+ 	cvShowImage("mask", &iplImg);
+
+	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
+	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+
+
+};
 void MainWindow_Texture::run_d0_synthesis()
 {
-  std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+	if (mini == NULL)
+	{
+		return;
+	}
+	
+	if (this->m_viewer_->get_boundaries().size() < 1)
+	{
+		QMessageBox::warning(this, "No target mask", "Please draw target mask first!");
+		return;
+	}
+   /* MiniTextureThread* minit = new MiniTextureThread(NULL, mini);*/
+   //minit->setParent(this);
+	
+	mini->load_texture();
+	mini->set_mask(cv::Mat(0, 0, CV_32FC1, 1));
+	mini->show_mesh_image();
+	mini->hide();
+	mini->show();
+
+// 	GLOBAL::wait = true;
+// 	minit->start();
+
+// 	while (GLOBAL::wait)
+// 	{
+// 
+// 	}
+
+ //std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
 //   QString meshlab = "\"C:/Program Files (x86)/VCG/MeshLab/meshlab.exe\" " ;
 //   meshlab = meshlab + "\"" + QString::fromStdString(s) + "\"";

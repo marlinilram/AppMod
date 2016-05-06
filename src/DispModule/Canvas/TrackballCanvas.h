@@ -25,14 +25,16 @@ public:
 
   void setShaderProgram();
   void drawModel();
+  void drawPrimitiveID();
   void updateModelBuffer();
   void updateModelColorBuffer();
 
   std::string getFilePath();
-
+  void setsize(int w, int h);
+  cv::Mat& get_primitive(){ return this->primitive_ID; };
   virtual QGLViewer* viewer();
   virtual void set_viewer(QGLViewer*);
-
+  void setFBO();
 private:
 
   std::unique_ptr<QGLShaderProgram> basic_shader;
@@ -47,7 +49,12 @@ private:
   int render_mode;
   int use_flat;
 
+  GLuint offscr_color;
+  GLuint offscr_depth;
+  GLuint offscr_fbo;
+  int width, height;
 private:
+  cv::Mat primitive_ID;
   TrackballCanvas(const TrackballCanvas&);
   void operator = (const TrackballCanvas&);
 };

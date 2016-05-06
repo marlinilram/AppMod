@@ -12,6 +12,8 @@ TrackballCanvas::TrackballCanvas()
 {
   render_mode = 3;
   use_flat = 1;
+  width = 800;
+  height = 600;
 }
 
 TrackballCanvas::~TrackballCanvas()
@@ -19,11 +21,106 @@ TrackballCanvas::~TrackballCanvas()
 
 }
 
+
+
 bool TrackballCanvas::display()
 {
+  drawPrimitiveID();
   drawModel();
+
   return true;
 }
+void TrackballCanvas::setsize(int w, int h)
+{
+	this->width = w;
+	this->height = h;
+	std::cout << "reset frame buffer" << w <<" "<< h<< std::endl;
+
+	this->setFBO();
+};
+
+void TrackballCanvas::setFBO()
+{
+	glGenFramebuffers(1, &offscr_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+
+	glGenRenderbuffers(1, &offscr_color);
+	glBindRenderbuffer(GL_RENDERBUFFER, offscr_color);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA32F, width, height);
+
+	glGenRenderbuffers(1, &offscr_depth);
+	glBindRenderbuffer(GL_RENDERBUFFER, offscr_depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, width, height);
+
+	// attach color and depth textures to fbo
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, offscr_color);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, offscr_depth);
+
+	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, draw_buffers);
+
+	GLenum framebuffer_status;
+	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "set offscreen frame buffer object failed\n";
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void TrackballCanvas::drawPrimitiveID()
+{
+	int render_mode_cache = render_mode;
+	render_mode = 3;
+
+	int use_flat_cache = use_flat;
+	use_flat = 0;
+	float *primitive_buffer = new float[height*width];
+	cv::Mat &z_img = this->getModel()->getZImg();
+	z_img.create(height, width, CV_32FC1);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	drawModel();
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
+	glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	render_mode = render_mode_cache;
+	use_flat = use_flat_cache;
+
+	cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
+	cv::flip(primitive_ID_img, primitive_ID_img, 0);
+	cv::flip(z_img, z_img, 0);
+
+	cv::Mat &primitive_ID = this->primitive_ID;
+	primitive_ID.create(height, width, CV_32S);
+	primitive_ID.setTo(cv::Scalar(-1));
+	std::set<int> vis_faces;
+
+	for (int j = 0; j < width; ++j)
+	{
+		for (int i = 0; i < height; ++i)
+		{
+			float fPrimitive = primitive_ID_img.at<float>(i, j);
+
+			fPrimitive = fPrimitive*num_face;
+			int iPrimitive = (int)(fPrimitive < 0 ? (fPrimitive - 0.5) : (fPrimitive + 0.5));
+
+			if (iPrimitive < (int)num_face)
+			{
+				primitive_ID.at<int>(i, j) = iPrimitive;
+				if (vis_faces.find(iPrimitive) == vis_faces.end())
+				{
+					vis_faces.insert(iPrimitive);
+				}
+			}
+		}
+	}
+	delete primitive_buffer;
+}
+
+
 QGLViewer* TrackballCanvas::viewer()
 {
 	return DispObject::viewer();
@@ -142,7 +239,13 @@ void TrackballCanvas::updateModelBuffer()
   std::vector<LG::PolygonMesh*> poly_meshes;
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("TrackballView:ShowLightball") == 0)
   {
-    //this->getModel()->getPolygonMeshVector(poly_meshes);
+//     //this->getModel()->getPolygonMeshVector(poly_meshes);
+// 	  std::vector<Shape*> shpes_tmp;
+// 	   this->getModel()->getShapeVector(shpes_tmp);
+// 	   for (unsigned int i = 0; i < shpes_tmp.size(); i++)
+// 	  {
+// 		  poly_meshes.push_back(shpes_tmp[i]->getPolygonMesh());
+// 	  }
     poly_meshes.push_back(this->getModel()->getPolygonMesh());
   }
   else

@@ -1,6 +1,10 @@
 #include "shape_manipulator.h"
 #include <QGLViewer/qglviewer.h>
 #include <Bound.h>
+#include "../Model/Model.h"
+#include "PolygonMesh.h"
+#include "TrackballViewer.h"
+#include "TrackballCanvas.h"
 #include "geometry_types.h"
 Shape_Manipulator::Shape_Manipulator()
 {
@@ -63,6 +67,7 @@ void Shape_Manipulator::draw()
 		this->get_shape()->glviewer()->drawArrow(from, to);
 	}
 }
+
 bool Shape_Manipulator::double_click(QMouseEvent* e, int& activated)
 {
 	if ( ! (e->button() == Qt::LeftButton)  )
@@ -80,45 +85,97 @@ bool Shape_Manipulator::double_click(QMouseEvent* e, int& activated)
 	QPoint pos = e->pos();
 	QPoint position_click = pos;
 
-	QGLViewer* gl = this->m_shape_->glviewer();
-	if (gl == NULL)
+	const cv::Mat & pr = static_cast<TrackballCanvas*>(static_cast<TrackballViewer*>(this->get_shape()->glviewer())->get_dispObjects()[0])->get_primitive();
+	
+	/*int face_id = pr.at<int>(pos.y(), pos.x());*/
+	int face_id = pr.at<int>(pos.y(), pos.x());
+	if (face_id < 0)
 	{
-		this->get_shape()->set_selected(false);
 		activated = -1;
 		return false;
 	}
-	Bound* bbb = this->get_shape()->getBoundbox();
-	qglviewer::Vec up_vec = gl->camera()->upVector();
-	const qglviewer::Vec from(bbb->centroid.x, bbb->centroid.y, bbb->centroid.z);
-	const qglviewer::Vec to(bbb->centroid.x + up_vec.x * bbb->radius, bbb->centroid.y + up_vec.y * bbb->radius, bbb->centroid.z + up_vec.z * bbb->radius);
-
-	qglviewer::Vec v_to = gl->camera()->projectedCoordinatesOf(to);
-	qglviewer::Vec v = gl->camera()->projectedCoordinatesOf(from);
-
-	float distance_threshold = std::pow((v.x - v_to.x), 2.0) + std::pow((v.y - v_to.y), 2.0);
-	float distance_ = std::pow((position_click.x() - v.x), 2.0) + std::pow((position_click.y() - v.y), 2.0);
-
-
-	if (distance_ < distance_threshold)
+	std::vector<Shape*> shpes_tmp;
+	this->get_shape()->get_model()->getShapeVector(shpes_tmp);
+	int num_face = 0;
+	for (unsigned int i = 0; i < shpes_tmp.size(); i++)
 	{
-		this->get_shape()->set_selected(true);
-		activated = 0;
-		return true;
+		num_face += shpes_tmp[i]->getPolygonMesh()->n_faces();
+		if (shpes_tmp[i] == this->get_shape())
+		{
+			if (num_face > face_id)
+			{
+				activated = 0;
+				return true;
+			}
+		}
+		if (num_face > face_id)
+		{
+			activated = -1;
+			return false;
+		}
 	}
-	else if (this->get_shape()->is_selected())
-	{
-		this->get_shape()->set_selected(false);
-		activated = 0;
-		return false;
-	}
-	else
-	{
-		this->get_shape()->set_selected(false);
-		activated = -1;
-		return false;
-	}
-
+	activated = -1;
+	return false;
 };
+
+
+
+// bool Shape_Manipulator::double_click(QMouseEvent* e, int& activated)
+// {
+// 	if ( ! (e->button() == Qt::LeftButton)  )
+// 	{
+// 		this->get_shape()->set_selected(false);
+// 		activated = -1;
+// 		return false;
+// 	}
+// 	if (this->m_shape_ == NULL)
+// 	{
+// 		this->get_shape()->set_selected(false);
+// 		activated = -1;
+// 		return false;
+// 	}
+// 	QPoint pos = e->pos();
+// 	QPoint position_click = pos;
+// 
+// 	QGLViewer* gl = this->m_shape_->glviewer();
+// 	if (gl == NULL)
+// 	{
+// 		this->get_shape()->set_selected(false);
+// 		activated = -1;
+// 		return false;
+// 	}
+// 	Bound* bbb = this->get_shape()->getBoundbox();
+// 	qglviewer::Vec up_vec = gl->camera()->upVector();
+// 	const qglviewer::Vec from(bbb->centroid.x, bbb->centroid.y, bbb->centroid.z);
+// 	const qglviewer::Vec to(bbb->centroid.x + up_vec.x * bbb->radius, bbb->centroid.y + up_vec.y * bbb->radius, bbb->centroid.z + up_vec.z * bbb->radius);
+// 
+// 	qglviewer::Vec v_to = gl->camera()->projectedCoordinatesOf(to);
+// 	qglviewer::Vec v = gl->camera()->projectedCoordinatesOf(from);
+// 
+// 	float distance_threshold = std::pow((v.x - v_to.x), 2.0) + std::pow((v.y - v_to.y), 2.0);
+// 	float distance_ = std::pow((position_click.x() - v.x), 2.0) + std::pow((position_click.y() - v.y), 2.0);
+// 
+// 
+// 	if (distance_ < distance_threshold)
+// 	{
+// 		this->get_shape()->set_selected(true);
+// 		activated = 0;
+// 		return true;
+// 	}
+// 	else if (this->get_shape()->is_selected())
+// 	{
+// 		this->get_shape()->set_selected(false);
+// 		activated = 0;
+// 		return false;
+// 	}
+// 	else
+// 	{
+// 		this->get_shape()->set_selected(false);
+// 		activated = -1;
+// 		return false;
+// 	}
+// 
+// };
 
 int Shape_Manipulator::mouse_press(QMouseEvent* e)
 {

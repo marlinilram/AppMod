@@ -2,7 +2,7 @@
 #define Texture_Viewer_H
 
 #include "BasicViewer.h"
-
+#include <opencv2/core/core.hpp>
 #include <memory>
 
 class MainCanvasViewer;
@@ -28,6 +28,8 @@ public:
   void set_edit_mode(int);
   bool get_edit_mode();
   bool draw_mesh_points();
+  const std::vector<std::vector<int>>& get_boundaries();
+
 protected:
   virtual void draw();
   virtual void init();
@@ -45,9 +47,7 @@ private:
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
   void draw_points_under_mouse();
-
-private slots:
-void resizeEvent(QResizeEvent*);
+  void resizeEvent(QResizeEvent*);
 private:
 
   bool wireframe_;
@@ -59,9 +59,11 @@ private:
   int  m_edit_mode_;
 
 
-  std::vector<qglviewer::Vec>	m_points_ubder_mouse_;
-  std::vector<int>	m_face_ids_;
+  std::vector<bool>   m_faces_selected_;
+  std::vector<std::vector<int>>   m_boundaries_;;
   std::vector<QPoint> m_points_for_delete_;
+  int k_start_;
+  bool m_show_mesh_;
 private:
 
 };

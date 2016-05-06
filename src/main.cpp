@@ -4,10 +4,12 @@
 #include "MainWindow_Texture.h"
 int main(int argc, char **argv)
 {
+	srand(NULL);
   QApplication a(argc, argv);
 
   MainWindow *window = new MainWindow();
   window->show();
+
   //window->hide();
   return a.exec();
 }

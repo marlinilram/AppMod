@@ -2,7 +2,7 @@
 
 #include "highgui.h"
 #include "cxcore.h"
-
+#include "mini_texture.h"
 namespace ImageUtility
 {
   void MouseDraw(int event,int x,int y,int flags,void* param)
@@ -97,6 +97,13 @@ namespace ImageUtility
     cvDestroyWindow("Draw ROI");
     return is_finished;
   }
+
+  void generateMaskFromPartsSelect(MiniTexture* mini, cv::Mat& mask_out)
+  {
+	  mini->show_mesh_image();
+	  mini->hide();
+	  mini->show();
+  };
 
   bool generateMaskStroke(cv::Mat& img_in, std::vector<CvPoint>& stroke)
   {

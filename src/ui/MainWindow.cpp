@@ -29,8 +29,8 @@ MainWindow::MainWindow()
   connect(actionDraw_feature, SIGNAL(toggled(bool)), this, SLOT(draw_feature(bool)));
   connect(actionClear_feature, SIGNAL(triggered()), this, SLOT(clear_drawn_feature()));
 
-  connect(actionShow_texture_window, SIGNAL(toggled(bool)), this, SLOT(show_texture_window(bool)));
-  
+ // connect(actionShow_texture_window, SIGNAL(toggled(bool)), this, SLOT(show_texture_window(bool)));
+  connect(actionShow_texture_window, SIGNAL(triggered()), this, SLOT(show_texture_window()));
   disp_modules.reset(new DispModuleHandler(this));
   //this->setCentralWidget(centralwidget);
 
@@ -52,32 +52,35 @@ MainWindow::~MainWindow()
 {
 }
 
-void MainWindow::show_texture_window(bool b)
+void MainWindow::show_texture_window()
 {
-	if (b)
-	{
+	
 		if (this->m_mainwindow_texture_ == NULL)
 		{
 			this->m_mainwindow_texture_ = new MainWindow_Texture();
+			this->m_mainwindow_texture_->setVisible(false);
 		}
-		this->m_mainwindow_texture_->hide();
-		this->m_mainwindow_texture_->show();
-	}
-	else
-	{
-		if (this->m_mainwindow_texture_ != NULL)
+		
+		if (!this->m_mainwindow_texture_->isVisible())
 		{
+			this->m_mainwindow_texture_->setVisible(true);
 			this->m_mainwindow_texture_->hide();
+			this->m_mainwindow_texture_->show();
 		}
-	}
-	
+		else
+		{
+			this->m_mainwindow_texture_->setVisible(false);
+			this->m_mainwindow_texture_->hide();
+
+		}
+		
 };
 void MainWindow::draw_feature(bool b)
 {
 	int mode = -1;
 	if (b )
 	{
-		mode = 0;
+		mode = 1;
 	}
 	this->disp_modules->trackball_viewer->set_mode(mode);
 };

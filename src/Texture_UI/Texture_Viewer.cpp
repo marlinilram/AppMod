@@ -9,6 +9,7 @@
 #include <QGLViewer/manipulatedFrame.h>
 #include "PolygonMesh.h"
 #include <QResizeEvent>
+#include "PolygonMesh_Manipulator.h"
 #include "viewer_selector.h"
 Texture_Viewer::Texture_Viewer(QWidget *widget)
   : BasicViewer(widget)
@@ -20,7 +21,7 @@ Texture_Viewer::Texture_Viewer(QWidget *widget)
   this->m_left_button_down_ = false;
   this->m_right_button_down_ = false;
   m_edit_mode_ = -1;
-
+  m_show_mesh_ = true;
  /* connect(this, SIGNAL(resizeEvent(QResizeEvent*)), this, SLOT(resize_happen(QResizeEvent*)));*/
 }
 
@@ -48,6 +49,7 @@ void Texture_Viewer::draw()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   drawCornerAxis();
 
+  if (m_show_mesh_)
   for (int i = 0; i < dispObjects.size(); ++i)
   {
     glDisable(GL_LIGHTING);
@@ -62,25 +64,78 @@ void Texture_Viewer::draw()
 	}
   }
 
- 
   this->draw_points_under_mouse();
- // this->draw_mesh_points();
 }
 
+#include "color_table.h"
 void Texture_Viewer::draw_points_under_mouse()
 {
-	glPointSize(3);
-	glBegin(GL_POINTS);
-	for (int i = 0; i < this->m_points_ubder_mouse_.size(); ++i) 
+	std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
+	if (m == NULL)
 	{
-			const qglviewer::Vec&  p = this->m_points_ubder_mouse_[i];
-			glColor3f(1.0, 0, 0);
-			glVertex3f(p.x, p.y, p.z);
+		return;
+	}
+	LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
+	int num_f = poly_mesh->n_faces();
+
+	glColor3f(1.0, 0.0, 0.0);
+	glPointSize(4);
+	glBegin(GL_POINTS);
+	for (int f_id = 0; f_id < num_f; f_id++)
+	{
+		if (! (this->m_faces_selected_[f_id]))
+		{
+			continue;
+		}
+		int num = 0;
+		LG::Vec3 v_total(0, 0, 0);
+		
+		for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
+		{
+			LG::Vec3 p = poly_mesh->position(vfc);
+			v_total = v_total + p;
+			num++;
+		}
+		v_total = v_total / num;
+		glVertex3f(v_total.x(), v_total.y(), v_total.z());
 	}
 	glEnd();
 
+	
+	for (int i = 0; i < m_boundaries_.size(); i++)
+	{
+		Colorf c = GLOBAL::color_from_table(255* i / m_boundaries_.size());
+		glColor3fv(c.data());
+		glBegin(GL_LINE_LOOP);
+		for (int j = 0; j < m_boundaries_[i].size(); j++)
+		{
+			
+			int num = 0;
+			LG::Vec3 v_total(0, 0, 0);
+			int f_id = m_boundaries_[i][j];
+			for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
+			{
+				LG::Vec3 p = poly_mesh->position(vfc);
+				v_total = v_total + p;
+				num++;
+			}
+			v_total = v_total / num;
+			glVertex3f(v_total.x(), v_total.y(), v_total.z());
+		}
+		glEnd();
+	}
+	
+
+
+
+	
+
 	this->startScreenCoordinatesSystem();
 	glColor3f(1.0, 1.0, 0);
+	if (this->m_left_button_down_)
+	{
+		glColor3f(0.0, 1.0, 1.);
+	}
 	glLineWidth(3);
 	glBegin(GL_LINE_LOOP);
 	for (unsigned int i = 0; i < this->m_points_for_delete_.size(); i++)
@@ -328,7 +383,6 @@ void Texture_Viewer::mousePressEvent(QMouseEvent* e)
 		m_points_for_delete_.clear();
 	}
 
-	QGLViewer::mousePressEvent(e);
 }
 void Texture_Viewer::mouseDoubleClickEvent(QMouseEvent * event)
 {
@@ -351,6 +405,8 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 	{
 		bool b = false;
 		QPoint p = e->pos();
+		this->m_points_for_delete_.push_back(p);
+		this->updateGL();
 // 		qglviewer::Vec v = this->camera()->pointUnderPixel(p, b);
 // 		std::cout << b << " ";
 // 		if (b )
@@ -358,51 +414,59 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 // 			this->m_points_ubder_mouse_.push_back(v);
 // 			this->updateGL();
 // 		}
-		int x = p.x();
-		int y = /*this->height() - */p.y();
-		if (x < 0 || x >= this->width() || y < 0 || y >=this->height())
-		{
-			return;
-		}
-		std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
-		//cv::imwrite("D:/test.jpg", m->getPrimitiveIDImg());
-		int f_id = m->getPrimitiveIDImg().at<int>(y, x);
-		std::cout << f_id << "\t";
-		if (f_id  >= 0)
-		{
-			LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
-			LG::Vec3 v_total(0, 0, 0);
-			int num = 0;
-			for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
-			{
-				LG::Vec3 v = poly_mesh->position(vfc);
-				v_total = v_total + v;
-				num++;
-			}
-			v_total = v_total / num;
-			if (this->m_face_ids_.size() < 1 || this->m_face_ids_.back() != f_id)
-			{
-				this->m_face_ids_.push_back(f_id);
-				this->m_points_ubder_mouse_.push_back(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
-				this->updateGL();
-			}
-
-		}
-		
+// 		int x = p.x();
+// 		int y = /*this->height() - */p.y();
+// 		if (x < 0 || x >= this->width() || y < 0 || y >=this->height())
+// 		{
+// 			return;
+// 		}
+// 		std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
+// 		//cv::imwrite("D:/test.jpg", m->getPrimitiveIDImg());
+// 		int f_id = m->getPrimitiveIDImg().at<int>(y, x);
+// 		std::cout << f_id << "\t";
+// 		if (f_id  >= 0)
+// 		{
+// 			LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
+// 			LG::Vec3 v_total(0, 0, 0);
+// 			int num = 0;
+// 			for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
+// 			{
+// 				LG::Vec3 v = poly_mesh->position(vfc);
+// 				v_total = v_total + v;
+// 				num++;
+// 			}
+// 			v_total = v_total / num;
+// 			if (this->m_face_ids_.size() < 1 || this->m_face_ids_.back() != f_id)
+// 			{
+// 				this->m_face_ids_.push_back(f_id);
+// 				this->m_points_ubder_mouse_.push_back(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
+// 				this->updateGL();
+// 			}
+// 
+// 		}
 	}
 	else if (this->m_right_button_down_)
 	{
 		QPoint p = e->pos();
 		this->m_points_for_delete_.push_back(p);
+		this->m_boundaries_.clear();
 		this->updateGL();
 	}
 }
 void Texture_Viewer::clear_selection()
 {
-	this->m_points_ubder_mouse_.clear();
-	this->m_face_ids_.clear();
+	std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
+	LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
+	int num_f = poly_mesh->n_faces();
+	this->m_faces_selected_.clear();
+	this->m_faces_selected_.resize(num_f, false);
+	this->m_boundaries_.clear();
 };
 
+const std::vector<std::vector<int>>& Texture_Viewer::get_boundaries()
+{
+	return this->m_boundaries_;
+};
 void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
 {
 	
@@ -421,7 +485,97 @@ void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
 	if (e->button() == Qt::RightButton)
 	{
 		this->m_right_button_down_ = false;
-		Viewer_Selector::delete_points_in_polygon(this->m_points_ubder_mouse_, this->m_face_ids_, this->m_points_for_delete_, this);
+		
+		std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
+		LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
+		int num_f = poly_mesh->n_faces();
+
+		for (int f_id = 0; f_id < num_f; f_id++)
+		{
+			if ( !(this->m_faces_selected_[f_id]) )
+			{
+				continue;
+			}
+			int num = 0;
+			LG::Vec3 v_total(0, 0, 0);
+			for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
+			{
+				LG::Vec3 v = poly_mesh->position(vfc);
+				v_total = v_total + v;
+				num++;
+			}
+			v_total = v_total / num;
+			qglviewer::Vec proc = this->camera()->projectedCoordinatesOf(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
+			QPoint p_proc(proc.x, proc.y);
+
+			if (p_proc.x() < 0 || p_proc.x() >= this->width() || p_proc.y() < 0 || p_proc.y() >= this->height())
+			{
+				continue;
+			}
+
+			
+			if (Viewer_Selector::is_point_in_polygon(p_proc, m_points_for_delete_))
+			{
+				this->m_faces_selected_[f_id] = false;
+			}
+
+		}
+
+		std::vector<std::vector<int>> bbb;
+		PolygonMesh_Manipulator::boundary_find(poly_mesh, this->m_faces_selected_, bbb);
+		this->m_boundaries_ = bbb;
+		m_points_for_delete_.clear();
+		this->updateGL();
+	}
+	else if (e->button() == Qt::LeftButton)
+	{
+		this->m_left_button_down_ = false;
+
+
+
+
+		std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
+		LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
+		int num_f = poly_mesh->n_faces();
+
+		for (int f_id = 0; f_id < num_f; f_id++)
+		{
+			if (this->m_faces_selected_[f_id])
+			{
+				continue;
+			}
+			int num = 0;
+			LG::Vec3 v_total(0, 0, 0);
+			for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
+			{
+				LG::Vec3 v = poly_mesh->position(vfc);
+				v_total = v_total + v;
+				num++;
+			}
+			v_total = v_total / num;
+			qglviewer::Vec proc = this->camera()->projectedCoordinatesOf(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
+			QPoint p_proc(proc.x, proc.y);
+
+			if (p_proc.x() < 0 || p_proc.x() >= this->width() || p_proc.y() < 0 || p_proc.y() >= this->height())
+			{
+				continue;
+			}
+
+			int f_i = m->getPrimitiveIDImg().at<int>(p_proc.y(), p_proc.x());
+
+			if (f_id == f_i)
+			{
+				if (Viewer_Selector::is_point_in_polygon(p_proc, m_points_for_delete_))
+				{
+					this->m_faces_selected_[f_id] = true;
+				}
+
+			}
+		}
+		std::vector<std::vector<int>> bbb;
+		PolygonMesh_Manipulator::boundary_find(poly_mesh, this->m_faces_selected_, bbb);
+		this->m_boundaries_ = bbb;
+		std::cout << bbb.size() << " bbb.size()";
 		m_points_for_delete_.clear();
 		this->updateGL();
 	}
@@ -438,7 +592,42 @@ void Texture_Viewer::wheelEvent(QWheelEvent* e)
 
 void Texture_Viewer::keyPressEvent(QKeyEvent *e)
 {
-	QGLViewer::keyPressEvent(e); return;
+		// Get event modifiers key
+		const Qt::KeyboardModifiers modifiers = e->modifiers();
+
+		// A simple switch on e->key() is not sufficient if we want to take state key into account.
+		// With a switch, it would have been impossible to separate 'F' from 'CTRL+F'.
+		// That's why we use imbricated if...else and a "handled" boolean.
+		bool handled = false;
+		if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton))
+		{
+			wireframe_ = !wireframe_;
+			if (wireframe_)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			handled = true;
+			updateGL();
+		}
+		else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton))
+		{
+			resetCamera();
+			handled = true;
+			updateGL();
+		}
+
+
+		else if ((e->key() == Qt::Key_Space))
+		{
+			m_show_mesh_ = !m_show_mesh_;
+			handled = true;
+			updateGL();
+		}
+
+		if (!handled)
+		{
+			QGLViewer::keyPressEvent(e);
+		}
 	
 }
 
@@ -472,3 +661,6 @@ bool Texture_Viewer::draw_mesh_points()
 	glEnd();
 	return true;
 };
+
+
+

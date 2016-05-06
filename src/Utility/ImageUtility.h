@@ -4,7 +4,6 @@
 #include <cv.h>
 #include "BasicHeader.h"
 #include "LgMeshTypes.h"
-
 namespace ImageUtility
 {
   struct MouseArgs{

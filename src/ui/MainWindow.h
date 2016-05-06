@@ -44,7 +44,7 @@ private slots:
     void loadSynthesisTarget();
 	void draw_feature(bool);
 	void clear_drawn_feature();
-	void show_texture_window(bool);
+	void show_texture_window();
 private:
 	MainWindow_Texture *m_mainwindow_texture_;
     //Viewer *viewer;

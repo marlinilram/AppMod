@@ -11,6 +11,7 @@
 #include "ParameterMgr.h"
 #include <QGLViewer/manipulatedFrame.h>
 #include "viewer_selector.h"
+#include "global.h"
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {
@@ -22,6 +23,8 @@ TrackballViewer::TrackballViewer(QWidget *widget)
   m_right_button_down_ = false;
   m_left_button_down_ = false;
   m_edit_mode_ = -1;
+  m_camera_info_file_ = QString("track_camera_for_maincanvas_info.xml");
+
 }
 
 TrackballViewer::~TrackballViewer()
@@ -52,6 +55,18 @@ void TrackballViewer::clear_drawn_feature()
 	m_feature_points_ids_.clear();
 	m_drawn_features_.clear();
 	this->updateGL();
+};
+
+void TrackballViewer::resizeEvent(QResizeEvent* r)
+{
+	QGLViewer::resizeEvent(r);
+	int w = r->size().width();
+	int h = r->size().height();
+	for (unsigned int i = 0; i < this->get_dispObjects().size(); i++)
+	{
+		dynamic_cast<TrackballCanvas*>(this->get_dispObjects()[i])->setsize(w, h);
+	}
+
 };
 void TrackballViewer::draw()
 {
@@ -349,7 +364,7 @@ void TrackballViewer::mousePressEvent(QMouseEvent* e)
   //else
   //if (!lightball_mode)
 
-	if (this->m_edit_mode_ >=0)
+	if (this->m_edit_mode_ ==0)
 	{
 		if (e->button()== Qt::LeftButton)
 		{
@@ -469,7 +484,6 @@ void TrackballViewer::draw_drawn_deatures()
 	}
 	glEnd();
 
-
 	this->startScreenCoordinatesSystem();
 	glColor3f(1.0, 1.0, 0);
 	glLineWidth(3);
@@ -483,7 +497,7 @@ void TrackballViewer::draw_drawn_deatures()
 };
 void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 {
-	if (this->m_edit_mode_ >= 0)
+	if (this->m_edit_mode_ == 0)
 	{
 		if (this->m_left_button_down_)
 		{
@@ -548,6 +562,7 @@ void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 		if (is_seleted)
 		{
 			trackball_canvas->getModel()->merge_shapes_to_show();
+			trackball_canvas->updateModelBuffer();
 		}
 	}
 	
@@ -568,23 +583,20 @@ void TrackballViewer::mouseMoveEvent(QMouseEvent *e)
 void TrackballViewer::mouseReleaseEvent(QMouseEvent* e)
 {
 
-	if (this->m_edit_mode_ >= 0)
+	if (this->m_edit_mode_ == 0)
 	{
 		if (e->button() == Qt::LeftButton)
 		{
 			m_left_button_down_ = false;
-			
-			
+
 		}
 		if (e->button() == Qt::RightButton)
 		{
 			m_right_button_down_ = false;
-
 			Viewer_Selector::delete_points_in_polygon(this->m_drawn_features_, this->m_feature_points_ids_, this->m_points_for_delete_, this);
 			m_points_for_delete_.clear();
 			this->updateGL();
 		}
-
 		return;
 	}
 
@@ -667,6 +679,7 @@ void TrackballViewer::wheelEvent(QWheelEvent* e)
 		  if (is_seleted)
 		  {
 			  trackball_canvas->getModel()->merge_shapes_to_show();
+			  trackball_canvas->updateModelBuffer();
 		  }
 	  }
   }
@@ -682,16 +695,33 @@ void TrackballViewer::syncCamera(int sync_type)
   if(main_canvas_viewer)
   {
     if (!play_lightball)
-    {
-      GLdouble m[16];
-      camera()->getModelViewMatrix(m);
-      main_canvas_viewer->camera()->setFromModelViewMatrix(m);
-      main_canvas_viewer->setSceneCenter(sceneCenter());
-      main_canvas_viewer->setSceneRadius(sceneRadius());
-      main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
-      main_canvas_viewer->camera()->setFieldOfView(camera()->fieldOfView());
-      main_canvas_viewer->updateGLOutside();
-      main_canvas_viewer->syncCameraToModel();
+	{
+		GLdouble m[16];
+		{
+		camera()->getModelViewMatrix(m);
+		main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+		main_canvas_viewer->setSceneCenter(sceneCenter());
+		main_canvas_viewer->setSceneRadius(sceneRadius());
+		main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
+		main_canvas_viewer->camera()->setFieldOfView(camera()->fieldOfView());
+		main_canvas_viewer->updateGLOutside();
+		main_canvas_viewer->syncCameraToModel(); 
+		}
+
+
+// 		  {
+// 		  QGLViewer gl;
+// 		  gl.setStateFileName(m_camera_info_file_);
+// 		  gl.camera()->getModelViewMatrix(m);
+// 		  main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+// 		  main_canvas_viewer->setSceneCenter(GLOBAL::m_scence_center_);//
+// 		  main_canvas_viewer->setSceneRadius(GLOBAL::m_scene_radius_);//
+// 		  main_canvas_viewer->camera()->setZClippingCoefficient(gl.camera()->zClippingCoefficient());//
+// 		  main_canvas_viewer->camera()->setFieldOfView(gl.camera()->fieldOfView());//
+// 		  }
+	
+	 
+	  
     }
     else
     {
@@ -749,6 +779,22 @@ void TrackballViewer::keyPressEvent(QKeyEvent *e)
     resetCamera();
     handled = true;
     updateGL();
+  }
+
+  else if ((e->key() == Qt::Key_S) && (modifiers == Qt::NoButton))
+  {
+	  setStateFileName(this->m_camera_info_file_);
+	  saveStateToFile();
+	  GLOBAL::m_scence_center_ = this->sceneCenter();
+	  GLOBAL::m_scene_radius_ = this->sceneRadius();
+	  handled = true;
+	  updateGL();
+  }
+  else if ((e->key() == Qt::Key_L) && (modifiers == Qt::NoButton))
+  {
+	  restoreStateFromFile();
+	  handled = true;
+	  updateGL();
   }
 
   if (!handled)

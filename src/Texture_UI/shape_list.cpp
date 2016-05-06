@@ -62,6 +62,7 @@ void ShapeList::texture_item_clicked(QListWidgetItem* item)
 		return;
 	}
 	mini->hide();
+	mini->show_origin_image();
 	mini->show();
 };
 void ShapeList::set_texture(ShapeItem * item, MiniTexture* texture)
@@ -94,6 +95,19 @@ void ShapeList::set_texture(ShapeItem * item, MiniTexture* texture)
 		item->setIcon(QIcon());
 		it->setIcon(QIcon());
 	}
+};
+
+MiniTexture* ShapeList::get_mini_texture(int item_id)
+{
+	if (this->size().height() < 1 || item_id > (this->size().height() - 1))
+	{
+		return NULL;
+	}
+
+	ShapeItem* spi = dynamic_cast<ShapeItem*>(this->item(item_id));
+
+	MiniTexture* mini = spi->get_texture();
+	return mini;
 };
 
 std::string ShapeList::getTexturePath(int item_id)

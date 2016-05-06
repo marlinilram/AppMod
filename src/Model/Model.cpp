@@ -170,22 +170,25 @@ bool Model::loadOBJ(const std::string name, const std::string path)
 }
 void Model::divide_shape_to_list()
 {
-	const VertexList& vertex_list = this->shape->getVertexList();
 	int num_start = 0;
-
 	std::vector<Shape*> shapes_tmp;
 	this->getShapeVector(shapes_tmp);
-	for (unsigned int i = 0; i < shapes_tmp.size(); i++)
-	{
-		PolygonMesh* pl = shapes_tmp[i]->getPolygonMesh();
 
-		for (auto j : pl->vertices())
+	LG::PolygonMesh::Vertex_container vc = this->shape->getPolygonMesh()->vertices();
+	LG::PolygonMesh::Vertex_iterator vci = vc.begin();
+
+		for (unsigned int i = 0; i < shapes_tmp.size(); i++)
 		{
-			LG::Vec3& v = pl->position(j);
-			
-			v = LG::Vec3(vertex_list[num_start++], vertex_list[num_start++], vertex_list[num_start++]);
+			PolygonMesh* pl = shapes_tmp[i]->getPolygonMesh();
+
+			for (auto j : pl->vertices())
+			{
+				LG::Vec3& v = pl->position(j);
+				const LG::Vec3& vv = this->shape->getPolygonMesh()->position(*vci);
+				v = LG::Vec3(vv.x(), vv.y(), vv.z());
+				vci++;
+			}
 		}
-	}
 };
 void Model::merge_shapes_to_show()
 {
