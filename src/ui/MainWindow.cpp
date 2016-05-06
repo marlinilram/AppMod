@@ -26,8 +26,8 @@ MainWindow::MainWindow()
   connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
   connect(action_Load_Synthesis_Target, SIGNAL(triggered()), this, SLOT(loadSynthesisTarget()));
 
-  connect(actionDraw_feature, SIGNAL(toggled(bool)), this, SLOT(draw_feature(bool)));
-  connect(actionClear_feature, SIGNAL(triggered()), this, SLOT(clear_drawn_feature()));
+
+
 
  // connect(actionShow_texture_window, SIGNAL(toggled(bool)), this, SLOT(show_texture_window(bool)));
   connect(actionShow_texture_window, SIGNAL(triggered()), this, SLOT(show_texture_window()));
@@ -44,13 +44,50 @@ MainWindow::MainWindow()
 
 
   m_mainwindow_texture_ = NULL;
-	//pointsSelect = false;
-	//isCompute = false;
+  this->creat_action_and_connect();
 }
 
 MainWindow::~MainWindow()
 {
+
 }
+
+
+
+
+void MainWindow::creat_action_and_connect()
+{
+	QActionGroup* toolActionGroup = new QActionGroup(this);
+
+	toolActionGroup->addAction(actionSceneManipulation);
+	actionSceneManipulation->setIcon(QIcon("resource/scene_manipulation.png"));
+
+	toolActionGroup->addAction(actionDraw_feature);
+	actionDraw_feature->setIcon(QIcon("resource/draw_points.png"));
+
+	toolActionGroup->addAction(actionCamer_fix);
+	actionCamer_fix->setIcon(QIcon("resource/camera_fix.png"));
+	connect(toolActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(operationModeChanged(QAction*)));
+
+
+	connect(actionClear_feature, SIGNAL(triggered()), this, SLOT(clear_drawn_feature()));
+};
+void MainWindow::operationModeChanged(QAction* act)
+{
+	if (act == actionSceneManipulation)
+	{
+		this->disp_modules->trackball_viewer->set_mode(-1);
+	}
+	else if (act == actionDraw_feature)
+	{
+		this->disp_modules->trackball_viewer->set_mode(0);
+	}
+	else if (act == actionCamer_fix)
+	{
+		this->disp_modules->trackball_viewer->set_mode(1);
+	}
+};
+
 
 void MainWindow::show_texture_window()
 {
@@ -80,7 +117,7 @@ void MainWindow::draw_feature(bool b)
 	int mode = -1;
 	if (b )
 	{
-		mode = 1;
+		mode = 0;
 	}
 	this->disp_modules->trackball_viewer->set_mode(mode);
 };

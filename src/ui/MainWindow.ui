@@ -63,7 +63,6 @@
     <property name="title">
      <string>feature</string>
     </property>
-    <addaction name="actionDraw_feature"/>
     <addaction name="actionClear_feature"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -97,6 +96,18 @@
    <addaction name="action_Update_Geometry"/>
    <addaction name="action_Vector_Field"/>
    <addaction name="action_Tool_Box"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="actionSceneManipulation"/>
+   <addaction name="separator"/>
+   <addaction name="actionDraw_feature"/>
+   <addaction name="separator"/>
+   <addaction name="actionCamer_fix"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
   </widget>
   <action name="action_Load_Model">
    <property name="icon">
@@ -239,6 +250,25 @@
    </property>
    <property name="text">
     <string>show_texture_window</string>
+   </property>
+  </action>
+  <action name="actionSceneManipulation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>scene_mani</string>
+   </property>
+  </action>
+  <action name="actionCamer_fix">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>camer_fix</string>
    </property>
   </action>
  </widget>
