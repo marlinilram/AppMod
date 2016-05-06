@@ -49,17 +49,17 @@ void TrackballViewer::setTargetVectorViewer(std::shared_ptr<VectorFieldViewer> v
 void TrackballViewer::set_mode(int e)
 {
 	m_edit_mode_ = e;
-	if (e == 2)
+	if (e == 1)
 	{
-		QString file = this->stateFileName();
-		this->setStateFileName(this->m_camera_info_file_);
-		this->saveStateToFile();
-		this->setStateFileName(file);
+// 		QString file = this->stateFileName();
+// 		this->setStateFileName(this->m_camera_info_file_);
+// 		this->saveStateToFile();
+// 		this->setStateFileName(file);
 
-		GLOBAL::m_scence_center_ = this->sceneCenter();
-		GLOBAL::m_scene_radius_ = this->sceneRadius();
-		GLOBAL::m_zClippingCoefficient_ = camera()->zClippingCoefficient();
-		GLOBAL::m_FieldOfView_ = camera()->fieldOfView();
+// 		GLOBAL::m_scence_center_ = this->sceneCenter();
+// 		GLOBAL::m_scene_radius_ = this->sceneRadius();
+// 		GLOBAL::m_zClippingCoefficient_ = camera()->zClippingCoefficient();
+// 		GLOBAL::m_FieldOfView_ = camera()->fieldOfView();
 	}
 
 
@@ -712,40 +712,11 @@ void TrackballViewer::syncCamera(int sync_type)
 	{
 		if (this->m_edit_mode_ == 1)
 		{
-// 			QGLViewer gl; gl.setStateFileName(m_camera_info_file_);
-// 			gl.restoreStateFromFile();
-// 			GLdouble mm[16];
-// 			gl.camera()->getModelViewMatrix(mm);
-// 			main_canvas_viewer->camera()->setFromModelViewMatrix(mm);
-// 
-// 			qglviewer::Vec cc = GLOBAL::m_scence_center_;
-// 			main_canvas_viewer->setSceneCenter(cc);
-// 
-// 			double rr = GLOBAL::m_scene_radius_;
-// 			main_canvas_viewer->setSceneRadius(rr);
-// 
-// 			qreal qq = GLOBAL::m_zClippingCoefficient_;
-// 			main_canvas_viewer->camera()->setZClippingCoefficient(qq);
-// 
-// 			qreal qfqf = GLOBAL::m_FieldOfView_;
-// 			main_canvas_viewer->camera()->setFieldOfView(qfqf);
-// 
-// 			GLdouble modelview[16];
-// 			GLdouble projection[16];
-// 			GLint viewport[4];
-// 
-// 			gl.camera()->getModelViewMatrix(modelview);
-// 			gl.camera()->getProjectionMatrix(projection);
-// 
-// 			main_canvas_viewer->camera()->setFromModelViewMatrix(modelview);
-// 			main_canvas_viewer->camera()->setFromProjectionMatrix(projection);
-// 			gl.camera()->getViewport(viewport);
-// 			main_canvas_viewer->camera()->setViewport();
 
-			QString file = main_canvas_viewer->stateFileName();
-			main_canvas_viewer->setStateFileName(m_camera_info_file_);
-			main_canvas_viewer->restoreStateFromFile();
-			main_canvas_viewer->setStateFileName(file);
+// 			QString file = main_canvas_viewer->stateFileName();
+// 			main_canvas_viewer->setStateFileName(m_camera_info_file_);
+// 			main_canvas_viewer->restoreStateFromFile();
+// 			main_canvas_viewer->setStateFileName(file);
 			main_canvas_viewer->updateGLOutside();
 			main_canvas_viewer->syncCameraToModel();
 
