@@ -26,10 +26,11 @@ ShapeCrest::~ShapeCrest()
   std::cout << "Deleted a ShapeCrest.\n";
 }
 
-void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape, std::string fpath)
+void ShapeCrest::setShape(std::shared_ptr<Shape> in_shape, std::string fpath, std::string mesh_name_)
 {
   shape = in_shape;
   ext_file_path = fpath;
+  mesh_name = mesh_name_;
   buildCandidates();
   mergeCandidates(crest_edges, crest_lines);
   if(crest_lines.empty())
@@ -552,17 +553,26 @@ void ShapeCrest::buildCandidatesFromExt()
 
 void ShapeCrest::loadFeatureLine(VertexList& pts)
 {
-  STLVectori crest_line;
+  // sample pts first
+  float sample_rate = shape->avgEdgeLength();
   int n_pt = int(pts.size() / 3);
-  std::vector<float> pt(3, 0);
-  int v_id = 0;
+  std::vector<Vector3f> sampled_pts;
   for (int i = 0; i < n_pt; ++i)
   {
-    pt[0] = pts[3 * i + 0];
-    pt[1] = pts[3 * i + 1];
-    pt[2] = pts[3 * i + 2];
+    sampled_pts.push_back(Vector3f(pts[3 * i + 0], pts[3 * i + 1], pts[3 * i + 2]));
+  }
+  ShapeUtility::sampleLine(sampled_pts, sample_rate);
+
+  STLVectori crest_line;
+  std::vector<float> pt(3, 0);
+  int v_id = 0;
+  for (size_t i = 0; i < sampled_pts.size(); ++i)
+  {
+    pt[0] = sampled_pts[i][0];
+    pt[1] = sampled_pts[i][1];
+    pt[2] = sampled_pts[i][2];
     shape->getKDTree()->nearestPt(pt, v_id);
-    crest_line.push_back(v_id);
+    if (crest_line.empty() || v_id != crest_line.back()) crest_line.push_back(v_id);
   }
 
   if (crest_line.size() < 2)
@@ -591,6 +601,7 @@ void ShapeCrest::computeCandidatesFromFeatureLines()
 void ShapeCrest::computeVisibleFromExtFeatureLines(std::set<int>& vis_faces)
 {
   PolygonMesh* poly_mesh = shape->getPolygonMesh();
+  int n_ring = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("LFeature:Vis_Ext_Feature_Line_N_Ring");
 
   std::map<int, std::vector<Edge> >::iterator visible_edges_it;
   visible_edges.clear();
@@ -601,7 +612,7 @@ void ShapeCrest::computeVisibleFromExtFeatureLines(std::set<int>& vis_faces)
     // test faces around start vertex
     bool start_vis = false;
     std::set<int> start_f;
-    ShapeUtility::getNRingFacesAroundVertex(poly_mesh, start_f, it.first, 1);
+    ShapeUtility::getNRingFacesAroundVertex(poly_mesh, start_f, it.first, n_ring);
     for (auto f : start_f)
     {
       if (vis_faces.find(f) != vis_faces.end())

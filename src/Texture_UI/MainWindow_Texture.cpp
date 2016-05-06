@@ -186,12 +186,13 @@ void MainWindow_Texture::load_obj()
 	std::shared_ptr<Model> m ( new Model(model_file_path, model_file_name) );
 
 	this->m_viewer_->get_dispObjects()[0]->setModel(m);
+	this->m_viewer_->clear_selection();
 	//this->m_viewer_->get_dispObjects()[0]->
 	this->m_viewer_->get_dispObjects()[0]->updateModelBuffer();
 
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
-	this->m_viewer_->clear_selection();
+	
 	this->m_viewer_->resetCamera();
 };
 void MainWindow_Texture::shape_list_prepare()

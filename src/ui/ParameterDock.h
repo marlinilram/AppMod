@@ -52,6 +52,8 @@ private slots:
   void setLamdFlat(double val);
   void setLamdData(double val);
   void setLamdSField(double val);
+  void setLamdSymmetry(double val);
+  void setUseSymmetry(int state);
   void setSourceCurvesThreshold(double val);
   void setSourceCurvesConnectThreshold(double val);
   void setShowColorCrest(int state);
@@ -83,6 +85,8 @@ private slots:
 
   // 5/1/2016
   void useExtFeatureLine(int state);
+  void setExtNRing(int val);
+  void runDebugAlg();
 
 private:
   std::shared_ptr<DispModuleHandler> disp_modules;

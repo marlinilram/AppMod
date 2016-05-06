@@ -12,6 +12,8 @@ TrackballCanvas::TrackballCanvas()
 {
   render_mode = 3;
   use_flat = 1;
+  width = 800;
+  height = 600;
 }
 
 TrackballCanvas::~TrackballCanvas()
@@ -25,13 +27,15 @@ bool TrackballCanvas::display()
 {
   drawPrimitiveID();
   drawModel();
+
   return true;
 }
 void TrackballCanvas::setsize(int w, int h)
 {
 	this->width = w;
 	this->height = h;
-	std::cout << "reset frame buffer" << std::endl;
+	std::cout << "reset frame buffer" << w <<" "<< h<< std::endl;
+
 	this->setFBO();
 };
 
@@ -66,8 +70,10 @@ void TrackballCanvas::setFBO()
 void TrackballCanvas::drawPrimitiveID()
 {
 	int render_mode_cache = render_mode;
-	render_mode = 1;
+	render_mode = 3;
 
+	int use_flat_cache = use_flat;
+	use_flat = 0;
 	float *primitive_buffer = new float[height*width];
 	cv::Mat &z_img = this->getModel()->getZImg();
 	z_img.create(height, width, CV_32FC1);
@@ -81,12 +87,13 @@ void TrackballCanvas::drawPrimitiveID()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	render_mode = render_mode_cache;
+	use_flat = use_flat_cache;
 
 	cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
 	cv::flip(primitive_ID_img, primitive_ID_img, 0);
 	cv::flip(z_img, z_img, 0);
 
-	cv::Mat &primitive_ID = this->getModel()->getPrimitiveIDImg();
+	cv::Mat &primitive_ID = this->primitive_ID;
 	primitive_ID.create(height, width, CV_32S);
 	primitive_ID.setTo(cv::Scalar(-1));
 	std::set<int> vis_faces;

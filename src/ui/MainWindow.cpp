@@ -80,7 +80,7 @@ void MainWindow::draw_feature(bool b)
 	int mode = -1;
 	if (b )
 	{
-		mode = 0;
+		mode = 1;
 	}
 	this->disp_modules->trackball_viewer->set_mode(mode);
 };

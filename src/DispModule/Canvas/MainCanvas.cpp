@@ -18,6 +18,8 @@ MainCanvas::MainCanvas()
   use_flat = 1;
 
   render_with_model_transform = 0;
+  width = 800;
+  height = 600;
 }
 
 MainCanvas::~MainCanvas()

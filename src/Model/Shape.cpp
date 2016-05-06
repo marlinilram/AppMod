@@ -129,9 +129,10 @@ bool Shape::double_click(QMouseEvent* e, int& activated)
 	}
 	else
 	{
-		this->m_is_selected_ = true;
 		this->compute_mainipulator();
-		return m_sm_->double_click(e, activated);
+		bool b =m_sm_->double_click(e, activated);
+		this->m_is_selected_ = b;
+		return b;
 	}
 };
 int Shape::mouse_press(QMouseEvent* e)

@@ -51,7 +51,6 @@ private:
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
   void draw_drawn_deatures();
-private slots:
   void resizeEvent(QResizeEvent*);
 private:
   bool sync_camera;
@@ -61,7 +60,7 @@ private:
 
   std::vector<GLActor> actors;
   bool is_draw_actors;
-  int m_edit_mode_;
+  int m_edit_mode_;//-1<->nomode, 0<->drawn_points, 1<->编辑shape，但是maincanvas渲染边界的时候视角不变
   bool m_left_button_down_;
   bool m_right_button_down_;
 private:
@@ -72,6 +71,7 @@ private:
   std::vector<qglviewer::Vec>	m_drawn_features_;
   std::vector<int>	m_feature_points_ids_;
   std::vector<QPoint> m_points_for_delete_;
+  QString m_camera_info_file_;
 };
 
 #endif

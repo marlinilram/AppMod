@@ -224,3 +224,34 @@ void AlgHandler::loadDetailMap()
     actors.push_back(temp_actors[i]);
   }
 }
+
+void AlgHandler::debugSymmetry()
+{
+  if (!shape_model)
+  {
+    return;
+  }
+
+  VertexList v_list = shape_model->getShapeVertexList();
+  std::set<STLPairii> sym_pairs;
+  shape_model->getSymPairs(sym_pairs);
+
+  actors.clear();
+  actors.push_back(GLActor(ML_POINT, 3.0f));
+  actors.push_back(GLActor(ML_LINE, 1.0f));
+
+  for (auto i : sym_pairs)
+  {
+    Vector3f start, end;
+    start[0] = v_list[3 * i.first + 0];
+    start[1] = v_list[3 * i.first + 1];
+    start[2] = v_list[3 * i.first + 2];
+    end[0] = v_list[3 * i.second + 0];
+    end[1] = v_list[3 * i.second + 1];
+    end[2] = v_list[3 * i.second + 2];
+    actors[0].addElement(start[0], start[1], start[2], 1, 0, 0);
+    actors[0].addElement(end[0], end[1], end[2], 1, 0, 0);
+    actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
+    actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
+  }
+}

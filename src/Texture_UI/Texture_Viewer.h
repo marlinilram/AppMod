@@ -47,9 +47,7 @@ private:
   void wheelEvent(QWheelEvent* e);
   void keyPressEvent(QKeyEvent *e);
   void draw_points_under_mouse();
-
-private slots:
-void resizeEvent(QResizeEvent*);
+  void resizeEvent(QResizeEvent*);
 private:
 
   bool wireframe_;

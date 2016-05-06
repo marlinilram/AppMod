@@ -3,6 +3,8 @@
 #include <Bound.h>
 #include "../Model/Model.h"
 #include "PolygonMesh.h"
+#include "TrackballViewer.h"
+#include "TrackballCanvas.h"
 #include "geometry_types.h"
 Shape_Manipulator::Shape_Manipulator()
 {
@@ -82,9 +84,14 @@ bool Shape_Manipulator::double_click(QMouseEvent* e, int& activated)
 	}
 	QPoint pos = e->pos();
 	QPoint position_click = pos;
-	int face_id = this->get_shape()->get_model()->getPrimitiveIDImg().at<int>(pos.y(), pos.x());
+
+	const cv::Mat & pr = static_cast<TrackballCanvas*>(static_cast<TrackballViewer*>(this->get_shape()->glviewer())->get_dispObjects()[0])->get_primitive();
+	
+	/*int face_id = pr.at<int>(pos.y(), pos.x());*/
+	int face_id = pr.at<int>(pos.y(), pos.x());
 	if (face_id < 0)
 	{
+		activated = -1;
 		return false;
 	}
 	std::vector<Shape*> shpes_tmp;
@@ -96,9 +103,18 @@ bool Shape_Manipulator::double_click(QMouseEvent* e, int& activated)
 		if (shpes_tmp[i] == this->get_shape())
 		{
 			if (num_face > face_id)
-			return true;
+			{
+				activated = 0;
+				return true;
+			}
+		}
+		if (num_face > face_id)
+		{
+			activated = -1;
+			return false;
 		}
 	}
+	activated = -1;
 	return false;
 };
 
