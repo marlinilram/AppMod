@@ -10,8 +10,11 @@ MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	this->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	this->setStyleSheet("border: 1px groove gray;");
 	this->m_texture_ = NULL;
-	this->m_selection_label_ = new QLabel(this);
 	m_shown_mode_ = 0;// 0->origin. 1->mesh;
+
+	m_r_previous_ = -1;
+	m_g_previous_ = -1;
+	m_b_previous_ = -1;
 };
 MiniTexture::~MiniTexture()
 {
@@ -75,6 +78,9 @@ void MiniTexture::load_texture()
 			this->setFixedSize(im.width(), im.height());
 			m_mesh_image_ = im;
 			MiniTexture::generate_mask(m_mesh_image_, m_mask_image_);
+			m_r_previous_ = -1;
+			m_g_previous_ = -1;
+			m_b_previous_ = -1;
 		}
 	}
 };
@@ -252,7 +258,61 @@ void MiniTexture::mouseDoubleClickEvent(QMouseEvent * event)
 	
 };
 
+void MiniTexture::mouseMoveEvent(QMouseEvent * event)
+{
 
+	QLabel::mouseMoveEvent(event);
+	if (this->m_shown_mode_ != 1)
+	{
+		return;
+	}
+
+	QPoint p = event->pos();
+	QRgb rgb = this->m_mask_image_.pixel(p);
+
+	if (rgb == qRgb(m_r_previous_, m_g_previous_, m_b_previous_))
+	{
+		return;
+	}
+
+
+
+
+	if (rgb == qRgb(0, 0, 0))
+	{
+		this->set_image(this->m_mesh_image_);
+		return;
+	}
+
+	float origin_weight = 0.9;
+	float mask_weight = 1.0 - origin_weight;
+	QImage img(m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
+	for (int i = 0; i < img.width(); i++)
+	{
+		for (int j = 0; j < img.height(); j++)
+		{
+			img.setPixel(i, j, qRgb(0, 0, 0));
+			if (rgb == this->m_mask_image_.pixel(i, j))
+			{
+				QRgb rgb_tmp = this->m_mesh_image_.pixel(i, j);
+				int r = qRed(rgb_tmp)* origin_weight + 0 * mask_weight;
+				int g = qGreen(rgb_tmp)* origin_weight + 255 * mask_weight;
+				int b = qBlue(rgb_tmp)* origin_weight + 255 * mask_weight;
+				img.setPixel(i, j, qRgb(r, g, b));
+			}
+		}
+	}
+
+	this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+
+	m_r_previous_ = qRed(rgb);
+	m_g_previous_ = qGreen(rgb);
+	m_b_previous_ = qBlue(rgb);
+
+
+	
+
+};
 
 void MiniTexture::mousePressEvent(QMouseEvent * event)
 {
@@ -260,42 +320,49 @@ void MiniTexture::mousePressEvent(QMouseEvent * event)
 	{
 		return;
 	}
-	if (event->button() == Qt::RightButton)
-	{
-
-		QPoint p = event->pos();
-		QRgb rgb = this->m_mask_image_.pixel(p);
-
-		if (rgb == qRgb(0, 0, 0))
-		{
-			return;
-		}
-
-		QImage img(m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
-		for (int i = 0; i < img.width(); i++)
-		{
-			for (int j = 0; j < img.height(); j++)
-			{
-				img.setPixel(i, j, qRgb(0, 0, 0));
-				if (rgb == this->m_mask_image_.pixel(i, j))
-				{
-					img.setPixel(i, j, this->m_mesh_image_.pixel(i, j));
-				}
-			}
-		}
-
-		//this->m_selection_label_->setGeometry(this->geometry());
-		this->m_selection_label_->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
-		this->m_selection_label_->hide();
-		this->m_selection_label_->show();
-	}
+	QLabel::mousePressEvent(event);
+// 	if (event->button() == Qt::RightButton)
+// 	{
+// 
+// 		QPoint p = event->pos();
+// 		QRgb rgb = this->m_mask_image_.pixel(p);
+// 
+// 		if (rgb == qRgb(0, 0, 0))
+// 		{
+// 			return;
+// 		}
+// 
+// 		QImage img(m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
+// 		for (int i = 0; i < img.width(); i++)
+// 		{
+// 			for (int j = 0; j < img.height(); j++)
+// 			{
+// 				img.setPixel(i, j, qRgb(0, 0, 0));
+// 				if (rgb == this->m_mask_image_.pixel(i, j))
+// 				{
+// 					QRgb rgb = this->m_mesh_image_.pixel(i, j);
+// 					int r = qRed(rgb)* 0.8 + 255 * 0.2;
+// 					int g = qGreen(rgb)* 0.8 + 0 * 0.2;
+// 					int b = qBlue(rgb)* 0.8 + 0 * 0.2;
+// 					img.setPixel(i, j, qRgb(r, g, b));
+// 				}
+// 			}
+// 		}
+// 
+// 	}
 };
 void MiniTexture::mouseReleaseEvent(QMouseEvent *event)
 {
-	if (event->button() == Qt::RightButton)
+	QLabel::mouseReleaseEvent(event);
+
+	if (this->m_shown_mode_ == 1)
 	{
-		this->m_selection_label_->hide();
+		m_r_previous_ = -1;
+		m_g_previous_ = -1;
+		m_b_previous_ = -1;
+		this->show_mesh_image();
 	}
+	
 };
 
 void MiniTexture::readMaps(std::string xml_file, std::vector<cv::Mat>& maps, std::string map_name)
