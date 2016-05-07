@@ -3041,9 +3041,6 @@ void DetailSynthesis::doGeometryComplete(std::shared_ptr<Model> src_model, std::
 
 void DetailSynthesis::generateAppearanceModel(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
-  // src_model is aligned model
-  // tar_model is d0 model
-
   std::shared_ptr<AppearanceModel> app_mod_out(new AppearanceModel());
   // d0 feature and d0 detail
   resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");

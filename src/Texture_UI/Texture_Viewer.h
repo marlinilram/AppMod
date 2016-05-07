@@ -48,6 +48,8 @@ private:
   void keyPressEvent(QKeyEvent *e);
   void draw_points_under_mouse();
   void resizeEvent(QResizeEvent*);
+
+
 private:
 
   bool wireframe_;

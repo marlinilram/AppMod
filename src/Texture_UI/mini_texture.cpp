@@ -2,6 +2,9 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <highgui.h>
+#include <QPainter>
+#include <QMessageBox>
+#include "viewer_selector.h"
 MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	:QLabel(parent, f)
 {
@@ -15,6 +18,11 @@ MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	m_r_previous_ = -1;
 	m_g_previous_ = -1;
 	m_b_previous_ = -1;
+
+	this->m_left_button_down_ = false;
+	this->m_right_button_down_ = false;
+
+	reset_window_for_stroke();
 };
 MiniTexture::~MiniTexture()
 {
@@ -81,6 +89,9 @@ void MiniTexture::load_texture()
 			m_r_previous_ = -1;
 			m_g_previous_ = -1;
 			m_b_previous_ = -1;
+
+			m_mask_.setTo(cv::Scalar(0));
+			m_mask_tmp_.setTo(cv::Scalar(0));
 		}
 	}
 };
@@ -201,12 +212,13 @@ void MiniTexture::generate_mask(const QImage& im, QImage& mask)
 void MiniTexture::show_origin_image()
 {
 	this->set_image(this->m_origin_image_);
-	m_shown_mode_ = 0;// 0->origin. 1->mesh;
+	m_shown_mode_ = 0;// 0->origin. 1->mesh; 2-> mask stroke;
 };
 void MiniTexture::show_mesh_image()
 {
+	//std::cout << this->m_mesh_image_.width() << " " << this->m_mesh_image_.height() << "\n";
 	this->set_image(this->m_mesh_image_);
-	m_shown_mode_ = 1;// 0->origin. 1->mesh;
+	m_shown_mode_ = 1;// 0->origin. 1->mesh; 2-> mask stroke;
 };
 
 void MiniTexture::set_center_pos(int x, int y)
@@ -214,113 +226,181 @@ void MiniTexture::set_center_pos(int x, int y)
 	this->setGeometry(x - this->width() / 2, y- this->height()/2, this->width(), this->height());
 };
 
+void MiniTexture::show_stroke_image()
+{
+	this->set_image(this->m_for_stroke_image_);
+	m_shown_mode_ = 2;// 0->origin. 1->mesh;2-> mask stroke;
+};
+
 void MiniTexture::mouseDoubleClickEvent(QMouseEvent * event)
 {
-	if (this->m_shown_mode_ != 1)
+	
+	if (m_shown_mode_ == 1)
 	{
-		return;
-	}
 
-	if (event ->button() == Qt::LeftButton)
-	{
-		QPoint p = event->pos();
-		QRgb rgb = this->m_mask_image_.pixel(p);
-
-		if (rgb == qRgb(0, 0, 0))
+		this->reset_window_for_stroke();
+		if (event->button() == Qt::LeftButton)
 		{
-			return;
-		}
+			QPoint p = event->pos();
+			QRgb rgb = this->m_mask_image_.pixel(p);
 
-		std::cout << qRed(rgb) << " " << qGreen(rgb) << " " << qBlue(rgb) << "\n";
-		QImage im(this->m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
-		m_mask_ = cv::Mat(im.width(), im.height(), CV_32FC1, 1);
-		for (int i = 0; i < im.width(); i++)
-		{
-			for (int j = 0; j < im.height(); j++)
+			if (rgb == qRgb(0, 0, 0))
 			{
-				im.setPixel(i, j, qRgb(0, 0, 0));
-				m_mask_.at<float>(i, j) = 0;
-				if (rgb == this->m_mask_image_.pixel(i, j))
+				return;
+			}
+			std::cout << qRed(rgb) << " " << qGreen(rgb) << " " << qBlue(rgb) << "\n";
+			m_for_stroke_image_ = QImage(this->m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
+			m_mask_ = cv::Mat(m_for_stroke_image_.width(), m_for_stroke_image_.height(), CV_32FC1, 1);
+			m_mask_tmp_ = cv::Mat(m_for_stroke_image_.width(), m_for_stroke_image_.height(), CV_32FC1, 1);
+			for (int i = 0; i < m_for_stroke_image_.width(); i++)
+			{
+				for (int j = 0; j < m_for_stroke_image_.height(); j++)
 				{
-					im.setPixel(i, j, qRgb(255, 0, 0));
-					m_mask_.at<float>(i, j) = 1;
+					m_for_stroke_image_.setPixel(i, j, qRgb(0, 0, 0));
+					m_mask_.at<float>(i, j) = 0;
+					m_mask_tmp_.at<float>(i, j) = 0;
+					if (rgb == this->m_mask_image_.pixel(i, j))
+					{
+						m_for_stroke_image_.setPixel(i, j, this->m_mesh_image_.pixel(i, j));
+						m_mask_.at<float>(i, j) = 1;
+						m_mask_tmp_.at<float>(i, j) = 1;
+						//this->update_window_for_stroke(i,j);
+					}
 				}
 			}
+			this->show_stroke_image();
+			m_mask_.setTo(cv::Scalar(0));
 		}
-		emit mask_selected();
-
+		else if (event->button() == Qt::RightButton)
+		{
+			this->show_origin_image();
+			m_mask_.setTo(cv::Scalar(0));
+			m_mask_tmp_.setTo(cv::Scalar(0));
+		}
 	}
-	else if (event->button() == Qt::RightButton)
+
+	else if (m_shown_mode_ == 0 && event->button() == Qt::LeftButton)
 	{
-		//this->hide();
+		if (!this->m_mesh_image_.isNull())
+		{
+			this->show_mesh_image();
+			m_mask_.setTo(cv::Scalar(0));
+			m_mask_tmp_.setTo(cv::Scalar(0));
+		}
+
 	}
 
+
+	else if (m_shown_mode_ == 2 )
+	{
+		if (event->button() == Qt::LeftButton)
+		{
+			cv::Mat m_dis = this->get_mask();
+			IplImage iplImg = IplImage(m_dis);
+
+			cvShowImage("mask", &iplImg);
+
+			if (QMessageBox::question(this, "Submit??", "Are you sure use these regions you selected?") == QMessageBox::Yes)
+			{
+				emit mask_selected();
+			}
+		}
+		else if (event->button() == Qt::RightButton)
+		{
+			this->show_mesh_image();
+			m_mask_.setTo(cv::Scalar(0));
+			m_mask_tmp_.setTo(cv::Scalar(0));
+		}
+	}
+
+	else
+	{
+		QLabel::mouseDoubleClickEvent(event);
+	}
 	
 };
 
 void MiniTexture::mouseMoveEvent(QMouseEvent * event)
 {
 
-	QLabel::mouseMoveEvent(event);
-	if (this->m_shown_mode_ != 1)
+	if (m_shown_mode_ == 1 && this->m_right_button_down_)
 	{
-		return;
-	}
+		QPoint p = event->pos();
 
-	QPoint p = event->pos();
-	QRgb rgb = this->m_mask_image_.pixel(p);
-
-	if (rgb == qRgb(m_r_previous_, m_g_previous_, m_b_previous_))
-	{
-		return;
-	}
-
-
-
-
-	if (rgb == qRgb(0, 0, 0))
-	{
-		this->set_image(this->m_mesh_image_);
-		return;
-	}
-
-	float origin_weight = 0.9;
-	float mask_weight = 1.0 - origin_weight;
-	QImage img(m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
-	for (int i = 0; i < img.width(); i++)
-	{
-		for (int j = 0; j < img.height(); j++)
+		if (p.x() < 0 || p.x() >= this->width() || p.y() < 0 || p.y() >= this->height())
 		{
-			img.setPixel(i, j, qRgb(0, 0, 0));
-			if (rgb == this->m_mask_image_.pixel(i, j))
+			return;
+		}
+
+		QRgb rgb = this->m_mask_image_.pixel(p);
+
+		if (rgb == qRgb(m_r_previous_, m_g_previous_, m_b_previous_))
+		{
+			return;
+		}
+
+		if (rgb == qRgb(0, 0, 0))
+		{
+			this->set_image(this->m_mesh_image_);
+			return;
+		}
+
+		float origin_weight = 0.8;
+		float mask_weight = 1.0 - origin_weight;
+		QImage img(m_mask_image_.width(), this->m_mask_image_.height(), QImage::Format_RGB32);
+		for (int i = 0; i < img.width(); i++)
+		{
+			for (int j = 0; j < img.height(); j++)
 			{
-				QRgb rgb_tmp = this->m_mesh_image_.pixel(i, j);
-				int r = qRed(rgb_tmp)* origin_weight + 0 * mask_weight;
-				int g = qGreen(rgb_tmp)* origin_weight + 255 * mask_weight;
-				int b = qBlue(rgb_tmp)* origin_weight + 255 * mask_weight;
-				img.setPixel(i, j, qRgb(r, g, b));
+				//img.setPixel(i, j, qRgb(0, 0, 0));
+
+				if (rgb == this->m_mask_image_.pixel(i, j))
+				{
+					QRgb rgb_tmp = this->m_mesh_image_.pixel(i, j);
+					int r = qRed(rgb_tmp)* origin_weight + 255 * mask_weight;
+					int g = qGreen(rgb_tmp)* origin_weight + 0 * mask_weight;
+					int b = qBlue(rgb_tmp)* origin_weight + 0 * mask_weight;
+					img.setPixel(i, j, qRgb(r, g, b));
+				}
+				else
+				{
+					QRgb rgb_tmp = this->m_mesh_image_.pixel(i, j);
+					img.setPixel(i, j, rgb_tmp);
+				}
 			}
 		}
+
+		this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+		m_r_previous_ = qRed(rgb);
+		m_g_previous_ = qGreen(rgb);
+		m_b_previous_ = qBlue(rgb);
 	}
+	if (m_shown_mode_ == 2 && (this->m_left_button_down_||this->m_right_button_down_))
+	{
+		this->m_stroke_points_.push_back(event->pos());
+		this->update();
 
-	this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
-
-	m_r_previous_ = qRed(rgb);
-	m_g_previous_ = qGreen(rgb);
-	m_b_previous_ = qBlue(rgb);
-
-
-	
-
+	}
+	else
+	{
+		QLabel::mouseMoveEvent(event);
+	}
+		
 };
 
 void MiniTexture::mousePressEvent(QMouseEvent * event)
 {
-	if (this->m_shown_mode_ != 1)
-	{
-		return;
-	}
 	QLabel::mousePressEvent(event);
+	if (event->button() == Qt::LeftButton)
+	{
+		this->m_left_button_down_ = true;
+	}
+
+	if (event->button() == Qt::RightButton)
+	{
+		this->m_right_button_down_ = true;
+	}
+
 // 	if (event->button() == Qt::RightButton)
 // 	{
 // 
@@ -361,6 +441,67 @@ void MiniTexture::mouseReleaseEvent(QMouseEvent *event)
 		m_g_previous_ = -1;
 		m_b_previous_ = -1;
 		this->show_mesh_image();
+		this->m_left_button_down_ = false;
+		this->m_right_button_down_ = false;
+	}
+	else if (this->m_shown_mode_ == 2)
+	{
+		
+		if (this->m_stroke_points_.size() < 3)
+		{
+			return;
+		}
+		bool changed = false;
+		if (event->button() == Qt::LeftButton && this->m_left_button_down_)
+		{
+			for (int i = 0; i < this->m_mask_.cols; i++)
+			{
+				for (int j = 0; j < this->m_mask_.rows; j++)
+				{
+					if (this->m_mask_tmp_.at<float>(i,j) > 0)
+					{
+						QPoint p(i, j);
+						if (Viewer_Selector::is_point_in_polygon(p, this->m_stroke_points_))
+						{
+							this->m_mask_.at<float>(i, j) = 1;
+							changed = true;
+						}
+					}
+					
+				}
+			}
+		}
+		else if (event->button() == Qt::RightButton && this->m_right_button_down_)
+		{
+			for (int i = 0; i < this->m_mask_.cols; i++)
+			{
+				for (int j = 0; j < this->m_mask_.rows; j++)
+				{
+					if (this->m_mask_tmp_.at<float>(i, j) > 0)
+					{
+						QPoint p(i, j);
+						if (Viewer_Selector::is_point_in_polygon(p, this->m_stroke_points_))
+						{
+							this->m_mask_.at<float>(i, j) = 0;
+							changed = true;
+						}
+					}
+
+				}
+			}
+		}
+		this->m_stroke_points_.clear();
+		
+		this->m_left_button_down_ = false;
+		this->m_right_button_down_ = false;
+
+
+		if (changed)
+		{
+			QImage im = MiniTexture::merge_image(this->m_for_stroke_image_, this->m_mask_, qRgb(255,0, 0));
+			this->set_image(im);
+		}
+		this->update();
 	}
 	
 };
@@ -389,7 +530,78 @@ void MiniTexture::set_mask(cv::Mat& m)
 {
 	this->m_mask_ = m;
 };
-const cv::Mat& MiniTexture::get_mask()
+cv::Mat MiniTexture::get_mask()
 {
-	return this->m_mask_;
+	cv::Mat dis;
+	cv::transpose(this->m_mask_, dis);
+	return dis;
+};
+
+void MiniTexture::reset_window_for_stroke()
+{
+	m_x_min_for_mask_ = INT_MAX;
+	m_y_min_for_mask_ = INT_MAX;
+	m_x_max_for_mask_ = INT_MIN;
+	m_y_max_for_mask_ = INT_MIN;
+};
+void MiniTexture::update_window_for_stroke(int x, int y)
+{
+	if (x > m_x_max_for_mask_)
+	{
+		m_x_max_for_mask_ = x;
+	}
+	if (x < m_x_min_for_mask_)
+	{
+		m_x_min_for_mask_ = x;
+	}
+	if (y > m_y_max_for_mask_)
+	{
+		m_y_max_for_mask_ = y;
+	}
+	if (y < m_y_min_for_mask_)
+	{
+		m_y_min_for_mask_ = y;
+	}
+};
+void MiniTexture::paintEvent(QPaintEvent * event)
+{
+	QLabel::paintEvent(event);
+	if (this->m_shown_mode_ == 2)
+	{
+		QPainter painter(this);
+		QRgb color = qRgb(255, 0, 0);
+		painter.setPen(color);
+		if (m_stroke_points_.size() <3)
+		{
+			return;
+		}
+		for (int i = 0; i < m_stroke_points_.size(); i++)
+		{
+			int x = m_stroke_points_[i].x(); int y = m_stroke_points_[i].y();
+			int x1 = m_stroke_points_[(i + 1) % m_stroke_points_.size()].x(); int y1 = m_stroke_points_[(i + 1) % m_stroke_points_.size()].y();
+			painter.drawLine(x, y, x1, y1);
+		}
+	}	
+};
+QImage MiniTexture::merge_image(const QImage& im, const cv::Mat& mask, QRgb rgb)
+{
+	QImage image_return = im;
+	float origin_weight = 0.8;
+	float mask_weight = 1.0 - origin_weight;
+
+	for (int i = 0; i < im.width(); i++)
+	{
+		for (int j = 0; j < im.height(); j++)
+		{
+			if (mask.at<float>(i,j) > 0)
+			{
+				QRgb rgb_tmp = image_return.pixel(i, j);
+				int r = qRed(rgb_tmp)* origin_weight + qRed(rgb) * mask_weight;
+				int g = qGreen(rgb_tmp)* origin_weight + qGreen(rgb) * mask_weight;
+				int b = qBlue(rgb_tmp)* origin_weight + qBlue(rgb) * mask_weight;
+				image_return.setPixel(i, j, qRgb(r, g, b));
+			}
+		}
+	}
+	return image_return;
 };

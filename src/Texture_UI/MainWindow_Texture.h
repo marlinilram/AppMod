@@ -43,6 +43,7 @@ private slots:
 
 	void selec_area(bool);
 	void clear_select();
+	void operationModeChanged(QAction* act);
 //	QMainWindow* new_viewer_for_result_model(std::string file_path);
 private:
 	void set_up_ui_texture();

@@ -166,11 +166,38 @@ void MainWindow_Texture::connect_singal()
     connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
 	connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
 
+
+
+
+	QActionGroup* toolActionGroup = new QActionGroup(this);
+
+	toolActionGroup->addAction(actionSceneManipulation);
+	actionSceneManipulation->setIcon(QIcon("icons/scene_manipulation.png"));
+
+	toolActionGroup->addAction(actionArea_Select);
+	actionArea_Select->setIcon(QIcon("icons/select_points.png"));
+
+	toolActionGroup->addAction(actionArea_Select_Only_Visible);
+	actionArea_Select_Only_Visible->setIcon(QIcon("icons/select_points_visible.png"));
+	connect(toolActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(operationModeChanged(QAction*)));
 	
-	connect(actionArea_Select, SIGNAL(toggled(bool)), this, SLOT(selec_area(bool)));
 	connect(actionClear_Select, SIGNAL(triggered()), this, SLOT(clear_select()));
 };
-
+void MainWindow_Texture::operationModeChanged(QAction* act)
+{
+	if (act == actionSceneManipulation)
+	{
+		this->m_viewer_->set_edit_mode(-1);
+	}
+	else if (act == actionArea_Select_Only_Visible)
+	{
+		this->m_viewer_->set_edit_mode(0);
+	}
+	else if (act == actionArea_Select)
+	{
+		this->m_viewer_->set_edit_mode(1);
+	}
+};
 void MainWindow_Texture::load_obj()
 {
 	QString filter;
@@ -381,6 +408,10 @@ void MainWindow_Texture::mask_d0_select()
 	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
 	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
+
+// 	this->m_viewer_for_result_.push_back(this->new_viewer_for_result_model(s));
+// 	this->m_viewer_for_result_.back()->setWindowTitle("after d0...");
+// 	this->m_viewer_for_result_.back()->show();
 
 };
 void MainWindow_Texture::run_d0_synthesis()
