@@ -14,7 +14,7 @@ void ShapeSymmetry::setShape(std::shared_ptr<Shape> _shape, std::string ext_info
 
   if (!this->loadSymmetryInfo(file_path))
   {
-    this->setSymmetryPlane(1, 0, 0, 0);
+    this->setSymmetryPlane(0, 1, 0, 0);
     this->writeSymmetryPlane();
   }
 

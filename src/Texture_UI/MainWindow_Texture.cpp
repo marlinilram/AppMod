@@ -382,6 +382,10 @@ void MainWindow_Texture::mask_d0_select()
 	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
 
+// 	this->m_viewer_for_result_.push_back(this->new_viewer_for_result_model(s));
+// 	this->m_viewer_for_result_.back()->setWindowTitle("after d0...");
+// 	this->m_viewer_for_result_.back()->show();
+
 };
 void MainWindow_Texture::run_d0_synthesis()
 {

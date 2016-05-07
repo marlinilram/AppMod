@@ -12,6 +12,7 @@
 #include <QGLViewer/manipulatedFrame.h>
 #include "viewer_selector.h"
 #include "global.h"
+#include "viewer_selector.h"
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {
@@ -55,7 +56,6 @@ void TrackballViewer::set_mode(int e)
 // 		this->setStateFileName(this->m_camera_info_file_);
 // 		this->saveStateToFile();
 // 		this->setStateFileName(file);
-
 // 		GLOBAL::m_scence_center_ = this->sceneCenter();
 // 		GLOBAL::m_scene_radius_ = this->sceneRadius();
 // 		GLOBAL::m_zClippingCoefficient_ = camera()->zClippingCoefficient();

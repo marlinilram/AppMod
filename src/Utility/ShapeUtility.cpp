@@ -1568,31 +1568,13 @@ namespace ShapeUtility
 
     obj_shape.mesh.positions.resize(3 * poly_mesh->n_vertices(), 0);
     obj_shape.mesh.indices.resize(3 * poly_mesh->n_faces(), 0);
+    obj_shape.mesh.uv_indices.resize(3 * poly_mesh->n_faces(), 0);
 
-    try
+    std::vector<Vec2>& he_texcoord = poly_mesh->get_attribute<std::vector<Vec2> >("he:texcoord");
+    for (size_t i = 0; i < he_texcoord.size(); ++i)
     {
-      std::vector<Vec2>& he_texcoord = poly_mesh->get_attribute<std::vector<Vec2> >("he:texcoord");
-      for (size_t i = 0; i < he_texcoord.size(); ++i)
-      {
-        obj_shape.mesh.texcoords.push_back(he_texcoord[i](0));
-        obj_shape.mesh.texcoords.push_back(he_texcoord[i](1));
-      }
-
-      obj_shape.mesh.uv_indices.resize(3 * poly_mesh->n_faces(), 0);
-      PolygonMesh::Halfedge_attribute<int> f_uv_id = poly_mesh->halfedge_attribute<int>("he:uv_id");
-      for (auto fit : poly_mesh->faces())
-      {
-        int n_cnt = 0;
-        for (auto hefc : poly_mesh->halfedges(fit))
-        {
-          obj_shape.mesh.uv_indices[3 * fit.idx() + n_cnt] = f_uv_id[hefc];
-          ++n_cnt;
-        }
-      }
-    }
-    catch (std::exception* e)
-    {
-      e->what();
+      obj_shape.mesh.texcoords.push_back(he_texcoord[i](0));
+      obj_shape.mesh.texcoords.push_back(he_texcoord[i](1));
     }
     for (auto vit : poly_mesh->vertices())
     {
@@ -1601,12 +1583,14 @@ namespace ShapeUtility
       obj_shape.mesh.positions[3 * vit.idx() + 1] = cur_v(1);
       obj_shape.mesh.positions[3 * vit.idx() + 2] = cur_v(2);
     }
+    PolygonMesh::Halfedge_attribute<int> f_uv_id = poly_mesh->halfedge_attribute<int>("he:uv_id");
     for (auto fit : poly_mesh->faces())
     {
       int n_cnt = 0;
       for (auto hefc : poly_mesh->halfedges(fit))
       {
         obj_shape.mesh.indices[3 * fit.idx() + n_cnt] = poly_mesh->to_vertex(hefc).idx();
+        obj_shape.mesh.uv_indices[3 * fit.idx() + n_cnt] = f_uv_id[hefc];
         ++n_cnt;
       }
     }

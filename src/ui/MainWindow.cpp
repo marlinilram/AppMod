@@ -68,8 +68,6 @@ void MainWindow::creat_action_and_connect()
 	toolActionGroup->addAction(actionCamer_fix);
 	actionCamer_fix->setIcon(QIcon("icons/camera_fix.png"));
 	connect(toolActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(operationModeChanged(QAction*)));
-
-
 	connect(actionClear_feature, SIGNAL(triggered()), this, SLOT(clear_drawn_feature()));
 };
 void MainWindow::operationModeChanged(QAction* act)
