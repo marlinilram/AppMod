@@ -49,6 +49,20 @@ void TrackballViewer::setTargetVectorViewer(std::shared_ptr<VectorFieldViewer> v
 void TrackballViewer::set_mode(int e)
 {
 	m_edit_mode_ = e;
+	if (e == 1)
+	{
+// 		QString file = this->stateFileName();
+// 		this->setStateFileName(this->m_camera_info_file_);
+// 		this->saveStateToFile();
+// 		this->setStateFileName(file);
+
+// 		GLOBAL::m_scence_center_ = this->sceneCenter();
+// 		GLOBAL::m_scene_radius_ = this->sceneRadius();
+// 		GLOBAL::m_zClippingCoefficient_ = camera()->zClippingCoefficient();
+// 		GLOBAL::m_FieldOfView_ = camera()->fieldOfView();
+	}
+
+
 };
 void TrackballViewer::clear_drawn_feature()
 {
@@ -696,32 +710,38 @@ void TrackballViewer::syncCamera(int sync_type)
   {
     if (!play_lightball)
 	{
-		GLdouble m[16];
+		if (this->m_edit_mode_ == 1)
 		{
-		camera()->getModelViewMatrix(m);
-		main_canvas_viewer->camera()->setFromModelViewMatrix(m);
-		main_canvas_viewer->setSceneCenter(sceneCenter());
-		main_canvas_viewer->setSceneRadius(sceneRadius());
-		main_canvas_viewer->camera()->setZClippingCoefficient(camera()->zClippingCoefficient());
-		main_canvas_viewer->camera()->setFieldOfView(camera()->fieldOfView());
-		main_canvas_viewer->updateGLOutside();
-		main_canvas_viewer->syncCameraToModel(); 
+
+// 			QString file = main_canvas_viewer->stateFileName();
+// 			main_canvas_viewer->setStateFileName(m_camera_info_file_);
+// 			main_canvas_viewer->restoreStateFromFile();
+// 			main_canvas_viewer->setStateFileName(file);
+			main_canvas_viewer->updateGLOutside();
+			main_canvas_viewer->syncCameraToModel();
+
+		}
+		else
+		{
+			GLdouble m[16];
+			camera()->getModelViewMatrix(m);
+			main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+			qglviewer::Vec c = sceneCenter();
+			main_canvas_viewer->setSceneCenter(c);
+			double r = sceneRadius();
+			main_canvas_viewer->setSceneRadius(r);
+			qreal q = camera()->zClippingCoefficient();
+			main_canvas_viewer->camera()->setZClippingCoefficient(q);
+
+			qreal qf = camera()->fieldOfView();
+			main_canvas_viewer->camera()->setFieldOfView(qf);
+			main_canvas_viewer->updateGLOutside();
+			main_canvas_viewer->syncCameraToModel();
+
 		}
 
+			  int a = 10;
 
-// 		  {
-// 		  QGLViewer gl;
-// 		  gl.setStateFileName(m_camera_info_file_);
-// 		  gl.camera()->getModelViewMatrix(m);
-// 		  main_canvas_viewer->camera()->setFromModelViewMatrix(m);
-// 		  main_canvas_viewer->setSceneCenter(GLOBAL::m_scence_center_);//
-// 		  main_canvas_viewer->setSceneRadius(GLOBAL::m_scene_radius_);//
-// 		  main_canvas_viewer->camera()->setZClippingCoefficient(gl.camera()->zClippingCoefficient());//
-// 		  main_canvas_viewer->camera()->setFieldOfView(gl.camera()->fieldOfView());//
-// 		  }
-	
-	 
-	  
     }
     else
     {
@@ -783,16 +803,20 @@ void TrackballViewer::keyPressEvent(QKeyEvent *e)
 
   else if ((e->key() == Qt::Key_S) && (modifiers == Qt::NoButton))
   {
-	  setStateFileName(this->m_camera_info_file_);
-	  saveStateToFile();
-	  GLOBAL::m_scence_center_ = this->sceneCenter();
-	  GLOBAL::m_scene_radius_ = this->sceneRadius();
+	  QString file = this->stateFileName();
+	  this->setStateFileName("trac_camrea.xml");
+	  this->saveStateToFile();
+	  this->setStateFileName(file);
 	  handled = true;
-	  updateGL();
   }
   else if ((e->key() == Qt::Key_L) && (modifiers == Qt::NoButton))
   {
-	  restoreStateFromFile();
+
+	  QString file = this->stateFileName();
+	  this->setStateFileName("trac_camrea.xml");
+	  this->restoreStateFromFile();
+	  this->setStateFileName(file);
+
 	  handled = true;
 	  updateGL();
   }

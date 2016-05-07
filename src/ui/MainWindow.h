@@ -45,6 +45,9 @@ private slots:
 	void draw_feature(bool);
 	void clear_drawn_feature();
 	void show_texture_window();
+	void operationModeChanged(QAction*);
+private:
+	void creat_action_and_connect();
 private:
 	MainWindow_Texture *m_mainwindow_texture_;
     //Viewer *viewer;

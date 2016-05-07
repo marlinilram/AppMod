@@ -36,6 +36,7 @@ public:
 	void mouseDoubleClickEvent(QMouseEvent * event);
 	void mousePressEvent(QMouseEvent *);
 	void mouseReleaseEvent(QMouseEvent *);
+	void mouseMoveEvent(QMouseEvent *);
 
 	void set_mask(cv::Mat&);
 	const cv::Mat& get_mask();
@@ -54,7 +55,9 @@ private:
 	cv::Mat m_mask_;
 	int m_shown_mode_;// 0->origin. 1->mesh;
 
-	QLabel* m_selection_label_;
+	int m_r_previous_;
+	int m_g_previous_;
+	int m_b_previous_;
 
 signals:
 	void mask_selected();
