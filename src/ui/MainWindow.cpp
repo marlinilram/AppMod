@@ -60,13 +60,13 @@ void MainWindow::creat_action_and_connect()
 	QActionGroup* toolActionGroup = new QActionGroup(this);
 
 	toolActionGroup->addAction(actionSceneManipulation);
-	actionSceneManipulation->setIcon(QIcon("resource/scene_manipulation.png"));
+	actionSceneManipulation->setIcon(QIcon("icons/scene_manipulation.png"));
 
 	toolActionGroup->addAction(actionDraw_feature);
-	actionDraw_feature->setIcon(QIcon("resource/draw_points.png"));
+	actionDraw_feature->setIcon(QIcon("icons/draw_points.png"));
 
 	toolActionGroup->addAction(actionCamer_fix);
-	actionCamer_fix->setIcon(QIcon("resource/camera_fix.png"));
+	actionCamer_fix->setIcon(QIcon("icons/camera_fix.png"));
 	connect(toolActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(operationModeChanged(QAction*)));
 
 
