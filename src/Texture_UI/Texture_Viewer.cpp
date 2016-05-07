@@ -106,6 +106,7 @@ void Texture_Viewer::draw_points_under_mouse()
 	{
 		Colorf c = GLOBAL::color_from_table(255* i / m_boundaries_.size());
 		glColor3fv(c.data());
+		glLineWidth(3);
 		glBegin(GL_LINE_LOOP);
 		for (int j = 0; j < m_boundaries_[i].size(); j++)
 		{
@@ -380,18 +381,12 @@ void Texture_Viewer::mousePressEvent(QMouseEvent* e)
 	else if (e->button() == Qt::RightButton)
 	{
 		m_right_button_down_ = true;
-		m_points_for_delete_.clear();
 	}
 
 }
 void Texture_Viewer::mouseDoubleClickEvent(QMouseEvent * event)
 {
-	if (this->m_edit_mode_ < 0)
-	{
-		QGLViewer::mouseDoubleClickEvent(event);
-		return;
-	}
-
+	QGLViewer::mouseDoubleClickEvent(event);
 };
 
 void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
@@ -407,49 +402,11 @@ void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 		QPoint p = e->pos();
 		this->m_points_for_delete_.push_back(p);
 		this->updateGL();
-// 		qglviewer::Vec v = this->camera()->pointUnderPixel(p, b);
-// 		std::cout << b << " ";
-// 		if (b )
-// 		{
-// 			this->m_points_ubder_mouse_.push_back(v);
-// 			this->updateGL();
-// 		}
-// 		int x = p.x();
-// 		int y = /*this->height() - */p.y();
-// 		if (x < 0 || x >= this->width() || y < 0 || y >=this->height())
-// 		{
-// 			return;
-// 		}
-// 		std::shared_ptr<Model> m = dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel();
-// 		//cv::imwrite("D:/test.jpg", m->getPrimitiveIDImg());
-// 		int f_id = m->getPrimitiveIDImg().at<int>(y, x);
-// 		std::cout << f_id << "\t";
-// 		if (f_id  >= 0)
-// 		{
-// 			LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
-// 			LG::Vec3 v_total(0, 0, 0);
-// 			int num = 0;
-// 			for (auto vfc : poly_mesh->vertices(LG::PolygonMesh::Face(f_id)))
-// 			{
-// 				LG::Vec3 v = poly_mesh->position(vfc);
-// 				v_total = v_total + v;
-// 				num++;
-// 			}
-// 			v_total = v_total / num;
-// 			if (this->m_face_ids_.size() < 1 || this->m_face_ids_.back() != f_id)
-// 			{
-// 				this->m_face_ids_.push_back(f_id);
-// 				this->m_points_ubder_mouse_.push_back(qglviewer::Vec(v_total.x(), v_total.y(), v_total.z()));
-// 				this->updateGL();
-// 			}
-// 
-// 		}
 	}
-	else if (this->m_right_button_down_)
+	else if (this->m_right_button_down_ && dynamic_cast<Texture_Canvas*>(this->get_dispObjects()[0])->getModel())
 	{
 		QPoint p = e->pos();
 		this->m_points_for_delete_.push_back(p);
-		this->m_boundaries_.clear();
 		this->updateGL();
 	}
 }
@@ -472,17 +429,14 @@ void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
 	
 	if (this->m_edit_mode_ < 0)
 	{
-		QGLViewer::mouseReleaseEvent(e); return;
+		QGLViewer::mouseReleaseEvent(e); 
+		return;
 	}
 
-// 	if (e->button() == Qt::LeftButton)
-// 	{
-// 
-// 	}
 	this->m_left_button_down_ = false;
 	this->m_right_button_down_ = false;
 
-	if (e->button() == Qt::RightButton)
+	if (e->button() == Qt::RightButton && (this->m_edit_mode_ == 0 || this->m_edit_mode_ == 1))
 	{
 		this->m_right_button_down_ = false;
 		
@@ -513,12 +467,25 @@ void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
 				continue;
 			}
 
-			
-			if (Viewer_Selector::is_point_in_polygon(p_proc, m_points_for_delete_))
+			if (this->m_edit_mode_ == 0)
 			{
-				this->m_faces_selected_[f_id] = false;
+				int f_i = m->getPrimitiveIDImg().at<int>(p_proc.y(), p_proc.x());
+				if (f_id == f_i)
+				{
+					if (Viewer_Selector::is_point_in_polygon(p_proc, m_points_for_delete_))
+					{
+						this->m_faces_selected_[f_id] = false;
+					}
+				}
 			}
-
+			else if (this->m_edit_mode_ == 1)
+			{
+				if (Viewer_Selector::is_point_in_polygon(p_proc, m_points_for_delete_))
+				{
+					this->m_faces_selected_[f_id] = false;
+				}
+			}
+			
 		}
 
 		std::vector<std::vector<int>> bbb;
@@ -526,8 +493,9 @@ void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
 		this->m_boundaries_ = bbb;
 		m_points_for_delete_.clear();
 		this->updateGL();
+		std::cout << bbb.size() << " bbb.size()";
 	}
-	else if (e->button() == Qt::LeftButton)
+	else if (e->button() == Qt::LeftButton && (this->m_edit_mode_ == 0 || this->m_edit_mode_ == 1))
 	{
 		this->m_left_button_down_ = false;
 
@@ -561,15 +529,23 @@ void Texture_Viewer::mouseReleaseEvent(QMouseEvent* e)
 				continue;
 			}
 
-			int f_i = m->getPrimitiveIDImg().at<int>(p_proc.y(), p_proc.x());
-
-			if (f_id == f_i)
+			if (this->m_edit_mode_ == 0)
+			{
+				int f_i = m->getPrimitiveIDImg().at<int>(p_proc.y(), p_proc.x());
+				if (f_id == f_i)
+				{
+					if (Viewer_Selector::is_point_in_polygon(p_proc, m_points_for_delete_))
+					{
+						this->m_faces_selected_[f_id] = true;
+					}
+				}
+			}
+			else if (this->m_edit_mode_ == 1)
 			{
 				if (Viewer_Selector::is_point_in_polygon(p_proc, m_points_for_delete_))
 				{
 					this->m_faces_selected_[f_id] = true;
 				}
-
 			}
 		}
 		std::vector<std::vector<int>> bbb;

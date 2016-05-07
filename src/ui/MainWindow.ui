@@ -99,8 +99,8 @@
    <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
-   <addaction name="actionSceneManipulation"/>
    <addaction name="separator"/>
+   <addaction name="actionSceneManipulation"/>
    <addaction name="actionDraw_feature"/>
    <addaction name="separator"/>
    <addaction name="actionCamer_fix"/>

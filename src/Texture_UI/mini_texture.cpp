@@ -3,6 +3,7 @@
 #include <QDesktopWidget>
 #include <highgui.h>
 #include <QPainter>
+#include <QMessageBox>
 #include "viewer_selector.h"
 MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	:QLabel(parent, f)
@@ -276,26 +277,33 @@ void MiniTexture::mouseDoubleClickEvent(QMouseEvent * event)
 			m_mask_.setTo(cv::Scalar(0));
 			m_mask_tmp_.setTo(cv::Scalar(0));
 		}
-
-// 		std::cout << "Double click\n";
-// 		cv::Mat m_dis; cv::transpose(m_mask_tmp_, m_dis);
-// 		IplImage iplImg = IplImage(m_dis);
-// 		cvShowImage("m_mask_tmp_", &iplImg);
 	}
+
+	else if (m_shown_mode_ == 0 && event->button() == Qt::LeftButton)
+	{
+		if (!this->m_mesh_image_.isNull())
+		{
+			this->show_mesh_image();
+			m_mask_.setTo(cv::Scalar(0));
+			m_mask_tmp_.setTo(cv::Scalar(0));
+		}
+
+	}
+
+
 	else if (m_shown_mode_ == 2 )
 	{
 		if (event->button() == Qt::LeftButton)
 		{
-			cv::Mat m_dis; cv::transpose(m_mask_, m_dis);
+			cv::Mat m_dis = this->get_mask();
 			IplImage iplImg = IplImage(m_dis);
 
 			cvShowImage("mask", &iplImg);
 
-// 			m_mask_.setTo(cv::Scalar(0));
-// 			m_mask_tmp_.setTo(cv::Scalar(0));
-
-
-			emit mask_selected();
+			if (QMessageBox::question(this, "Submit??", "Are you sure use these regions you selected?") == QMessageBox::Yes)
+			{
+				emit mask_selected();
+			}
 		}
 		else if (event->button() == Qt::RightButton)
 		{

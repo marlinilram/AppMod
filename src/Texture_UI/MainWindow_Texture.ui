@@ -41,8 +41,6 @@
     <property name="title">
      <string>edit</string>
     </property>
-    <addaction name="actionArea_Select"/>
-    <addaction name="actionClear_Select"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -98,6 +96,20 @@
    </attribute>
    <addaction name="actionRun_d0_synthesis"/>
    <addaction name="actionRun_d1_synthesis"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="actionSceneManipulation"/>
+   <addaction name="separator"/>
+   <addaction name="actionArea_Select"/>
+   <addaction name="separator"/>
+   <addaction name="actionArea_Select_Only_Visible"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="actionClear_Select"/>
   </widget>
   <action name="actionSet_Texture_Dir">
    <property name="text">
@@ -129,17 +141,36 @@
     <string>run_d0_synthesis</string>
    </property>
   </action>
-  <action name="actionArea_Select">
+  <action name="actionArea_Select_Only_Visible">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>area_select</string>
+    <string>Area_Select_Only_Visible</string>
    </property>
   </action>
   <action name="actionClear_Select">
    <property name="text">
     <string>clear_select</string>
+   </property>
+  </action>
+  <action name="actionSceneManipulation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>SceneManipulation</string>
+   </property>
+  </action>
+  <action name="actionArea_Select">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Area_Select</string>
    </property>
   </action>
  </widget>
