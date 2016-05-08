@@ -462,4 +462,5 @@ void DispModuleHandler::runDebugAlg()
 {
   alg_handler->debugSymmetry();
   trackball_viewer->setGLActors(alg_handler->getGLActors());
+  synthesis_viewer->setGLActors(alg_handler->getSynGLActors());
 }

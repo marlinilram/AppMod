@@ -58,6 +58,8 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_center", 0.4);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_mult", 5.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:geo_transfer_use_para_map", false);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<cv::Mat>("Synthesis:SrcAppMask");
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke");
 }
 
 #endif

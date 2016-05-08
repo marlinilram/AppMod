@@ -254,4 +254,10 @@ void AlgHandler::debugSymmetry()
     actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
     actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
   }
+
+  //detail_synthesis->doGeometryTransfer(shape_model, synthesis_model);
+  //actors.clear();
+  //detail_synthesis->getDrawableActors(actors);
+  //syn_actors.clear();
+  //detail_synthesis->getDrawableActors(syn_actors, 1);
 }

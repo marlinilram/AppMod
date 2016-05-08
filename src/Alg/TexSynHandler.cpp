@@ -1,5 +1,6 @@
 #include "TexSynHandler.h"
 
+#include "Model.h"
 #include "PolygonMesh.h"
 #include "AppearanceModel.h"
 #include "DetailSynthesis.h"
@@ -23,6 +24,7 @@ void TexSynHandler::setSynthesisModel(std::shared_ptr<Model> model)
   this->syn_app_mod.reset(new AppearanceModel());
   int resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
   this->syn_app_mod->setResolution(resolution);
+  this->syn_app_mod->setBaseMesh(model->getPolygonMesh());
   this->detail_synthesis->setCurResolution(resolution);
   this->detail_synthesis->generateD0Feature(this->syn_app_mod.get(), this->synthesis_model);
   this->detail_synthesis->generateD1Feature(this->syn_app_mod.get(), this->synthesis_model, true);
