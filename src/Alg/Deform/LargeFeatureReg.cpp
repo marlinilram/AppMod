@@ -166,7 +166,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
     cur_transform = LG::GlobalParameterMgr::GetInstance()->get_parameter<Matrix4f>("LFeature:rigidTransform");
   }
   MatrixXf v_with_transform = cur_transform * (MatrixXf(4, mesh->n_vertices()) << 
-                                                Eigen::Map<const MatrixXf>(&feature_model->source_model->getShapeVertexList()[0], 3, mesh->n_vertices()),
+                                                Eigen::Map<const MatrixXf>(&feature_model->source_model->getShapeOriVertexList()[0], 3, mesh->n_vertices()),
                                                 Eigen::RowVectorXf::Ones(mesh->n_vertices())).finished();
   P_init = v_with_transform.block(0, 0, 3, mesh->n_vertices());
 
@@ -281,7 +281,7 @@ void LargeFeatureReg::runRegNonRigid(int method_id)
     new_shape.push_back(v_with_transform(2, i));
   }
   feature_model->source_model->updateShape(new_shape);
-  feature_model->source_model->getPolygonMesh()->update_laplacian_cot();// try update laplacian coefficient
+  //feature_model->source_model->getPolygonMesh()->update_laplacian_cot();// try update laplacian coefficient
 
   std::stringstream log_stream;
   log_stream << "LFReg Log:" << std::endl;

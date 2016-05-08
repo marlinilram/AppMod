@@ -59,6 +59,7 @@ public:
   void setPrimitiveID(cv::Mat& primitive_ID_);
   
   void coordImgToUV(std::vector<CvPoint>& coords);
+  void coordFaceToUV(std::vector<CvPoint>& coords, std::vector<int>& f_ids);
 
 private:
   void writeMaps(cv::FileStorage& fs, std::vector<cv::Mat>& maps, std::string map_name);

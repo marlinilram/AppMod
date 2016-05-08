@@ -17,6 +17,7 @@
 #include <fstream>
 #include "global.h"
 #include "BasicHeader.h"
+
 std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
 {
 	// 0. prepare the sample vertices on the target mesh
@@ -33,7 +34,7 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 	// 1. build the mask for source and target
 	std::vector<cv::Mat> src_feature_map;
 	app_mod_src->getD0Features(src_feature_map);
-	cv::Mat src_mask = GLOBAL::m_mat_source_mask0_;
+  cv::Mat src_mask = LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask").clone();// GLOBAL::m_mat_source_mask0_.clone();
 	/*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
 
 	// 1.1 generate mask from source image
@@ -46,18 +47,11 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 
 
 	std::vector<CvPoint> stroke;
-	for (unsigned int i = 0; i < GLOBAL::m_selected_faces_.size(); i++)
-	{
-		Vector2f uv;
-		ShapeUtility::getFaceUVCenter(tar_model->getPolygonMesh(), GLOBAL::m_selected_faces_[i], uv);
-		CvPoint p = cvPoint(uv.x(), uv.y());
-		stroke.push_back(p);
-	}
-
+  app_mod_tar->coordFaceToUV(stroke, LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke"));
 
 	cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
 	//ImageUtility::generateMultiMask(tar_feature_map[0].clone(), tar_mask);
-	ImageUtility::generateMaskFromStroke(tar_feature_map[0].clone(), stroke,tar_mask);
+	ImageUtility::generateMaskFromStroke(tar_feature_map[0].clone(), stroke, tar_mask);
 
 	std::vector<int> cur_sampled_tar_models;
 	ShapeUtility::vertexFilterFromParaMask(sampled_tar_model, cur_sampled_tar_models, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh(), tar_mask);

@@ -424,13 +424,18 @@ void AppearanceModel::coordImgToUV(std::vector<CvPoint>& coords)
     }
   }
 
-  // convert to UV
+  // convert face id to UV
+  this->coordFaceToUV(coords, records);
+}
+
+void AppearanceModel::coordFaceToUV(std::vector<CvPoint>& coords, std::vector<int>& f_ids)
+{
   coords.clear();
-  coords.resize(k);
-  for (size_t i = 0; i < k; ++i)
+  coords.resize(f_ids.size());
+  for (size_t i = 0; i < f_ids.size(); ++i)
   {
     Vector2f uv;
-    ShapeUtility::getFaceUVCenter(base_mesh.get(), records[i], uv);
+    ShapeUtility::getFaceUVCenter(base_mesh.get(), f_ids[i], uv);
     coords[i].x = int(uv[0] * resolution + 0.5);
     coords[i].y = resolution - (uv[1] * resolution + 0.5);
     if (coords[i].x >= resolution) coords[i].x = resolution - 1;

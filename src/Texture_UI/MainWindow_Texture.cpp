@@ -12,6 +12,8 @@
 #include "TexSynHandler.h"
 #include "global.h"
 #include <QMessageBox>
+#include "ParameterMgr.h"
+
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
@@ -403,9 +405,13 @@ void MainWindow_Texture::mask_d0_select()
 		return;
 	}
  	IplImage iplImg = IplImage(mask);
- 	cvShowImage("mask", &iplImg);
 
 	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
+  GLOBAL::m_mat_source_mask0_ = mask.clone();
+
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask") = mask.clone();
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke") = this->m_viewer_->get_boundaries()[0];
+
 	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
 
