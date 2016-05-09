@@ -424,6 +424,7 @@ void AppearanceModel::coordImgToUV(std::vector<CvPoint>& coords)
     }
   }
 
+
   // convert face id to UV
   this->coordFaceToUV(coords, records);
 }

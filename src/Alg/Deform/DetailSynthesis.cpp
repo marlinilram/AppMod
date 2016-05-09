@@ -2556,7 +2556,6 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
   kevin_vector_field->getDrawableActors(syn_actors);
 
   return;
-
   ShapeUtility::computeNormalizedHeight(src_model);
   ShapeUtility::computeDirectionalOcclusion(src_model);
   ShapeUtility::computeSymmetry(src_model);

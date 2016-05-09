@@ -4,7 +4,8 @@
 #include "BasicViewer.h"
 #include <opencv2/core/core.hpp>
 #include <memory>
-
+#include <QImage>
+class Texture_Mesh_Corres;
 class MainCanvasViewer;
 class VectorFieldViewer;
 class QMouseEvent;
@@ -29,7 +30,15 @@ public:
   bool get_edit_mode();
   bool draw_mesh_points();
   const std::vector<std::vector<int>>& get_boundaries();
+  QImage snapshot_bounding_box();
+//   const std::vector<Texture_Mesh_Corres*>& get_textures_mesh_corres();
+//   void add_textures_mesh_corre(Texture_Mesh_Corres*);
 
+
+  const std::vector<bool>& get_face_selected(){ return this->m_faces_selected_; };
+
+public slots:
+/*	void delete_textures_mesh_corre(Texture_Mesh_Corres*);*/
 protected:
   virtual void draw();
   virtual void init();
@@ -45,6 +54,7 @@ private:
   void mouseReleaseEvent(QMouseEvent *e);
   void mouseDoubleClickEvent(QMouseEvent * event);
   void wheelEvent(QWheelEvent* e);
+  void moveEvent(QMoveEvent * event);
   void keyPressEvent(QKeyEvent *e);
   void draw_points_under_mouse();
   void resizeEvent(QResizeEvent*);
@@ -64,6 +74,7 @@ private:
   std::vector<bool>   m_faces_selected_;
   std::vector<std::vector<int>>   m_boundaries_;;
   std::vector<QPoint> m_points_for_delete_;
+ /* std::vector<Texture_Mesh_Corres*>	m_textures_mesh_corres_;*/
   int k_start_;
   bool m_show_mesh_;
 private:

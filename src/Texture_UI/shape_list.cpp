@@ -62,7 +62,9 @@ void ShapeList::texture_item_clicked(QListWidgetItem* item)
 		return;
 	}
 	mini->hide();
-	mini->show_origin_image();
+	MINITEXTURE_SHOW_MODE m = mini->get_show_mode();
+	mini->show_origin_image_d0();
+	mini->set_show_mode(m);
 	mini->show();
 };
 void ShapeList::set_texture(ShapeItem * item, MiniTexture* texture)

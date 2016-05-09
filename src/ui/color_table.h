@@ -279,7 +279,7 @@ namespace GLOBAL {
 
 	//////////////////////////////////////////////////////////////////////////
 
-	Colorf color_from_table(unsigned int index) {
+	static Colorf color_from_table(unsigned int index) {
 		if ((255 < index) && (index <= 512))
 			index = 512 - index;
 		if ((512 < index) && (index <= 768))
@@ -300,14 +300,14 @@ namespace GLOBAL {
 		return (Colorf(r, g, b, 1.0f));
 	}
 
-	Colorf random_color(float a) {
+	static Colorf random_color(float a) {
 		float r = (rand() % 256) / 255.0f;
 		float g = (rand() % 256) / 255.0f;
 		float b = (rand() % 256) / 255.0f;
 		return Colorf(r, g, b, a);
 	}
 
-	Colorf random_color_from_table() {
+	static Colorf random_color_from_table() {
 		int random_int = rand() / 256;
 		return color_from_table(random_int);
 	}

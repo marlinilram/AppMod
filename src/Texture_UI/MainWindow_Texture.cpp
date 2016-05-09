@@ -13,7 +13,6 @@
 #include "global.h"
 #include <QMessageBox>
 #include "ParameterMgr.h"
-
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
@@ -106,7 +105,9 @@ void MainWindow_Texture::item_double_clicked(QListWidgetItem* it)
 		delete m;
 	}
 	this->m_mini_selected_->hide();
-	connect(this->m_mini_selected_, SIGNAL(mask_selected()), this, SLOT(mask_d0_select()));
+	connect(this->m_mini_selected_, SIGNAL(mask_selected_d0()), this, SLOT(mask_d0_select()));
+	connect(this->m_mini_selected_, SIGNAL(mask_selected_d1()), this, SLOT(mask_d1_select()));
+
 	this->m_mini_selected_ = NULL;
 };
 void MainWindow_Texture::texture_select(MiniTexture* minit)
@@ -116,6 +117,7 @@ void MainWindow_Texture::texture_select(MiniTexture* minit)
 		delete this->m_mini_selected_;
 	}
 	this->m_mini_selected_ = minit;
+	//connect(this->m_mini_selected_, SIGNAL(mask_selected_d0()), this, SLOT(mask_d0_select()));
 };
 
 void MainWindow_Texture::set_up_viewer()
@@ -384,14 +386,7 @@ void MainWindow_Texture::images_update(int from)
 	}
 
 };
-
-void MainWindow_Texture::run_d1_synthesis()
-{
-  this->tex_syn_handler->runD1Synthesis(this->m_shape_list_->getTexturePath(0));
-
-
-};
-void MainWindow_Texture::mask_d0_select()
+void MainWindow_Texture::mask_d1_select()
 {
 	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
 	if (mini == NULL)
@@ -399,25 +394,72 @@ void MainWindow_Texture::mask_d0_select()
 		return;
 	}
 
-	cv::Mat mask = mini->get_mask();
+	cv::Mat mask = mini->get_mask_d1();
 	if (mask.cols < 100)
 	{
 		return;
 	}
- 	IplImage iplImg = IplImage(mask);
+	IplImage iplImg = IplImage(mask);
+	cvShowImage("mask", &iplImg);
 
 	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
-  GLOBAL::m_mat_source_mask0_ = mask.clone();
+	this->tex_syn_handler->runD1Synthesis(this->m_shape_list_->getTexturePath(0));
+};
 
-  LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask") = mask.clone();
-  LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke") = this->m_viewer_->get_boundaries()[0];
+void MainWindow_Texture::run_d1_synthesis()
+{
 
+  MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+  if (mini == NULL)
+  {
+	  return;
+  }
+
+  if (this->m_viewer_->get_boundaries().size() < 1)
+  {
+	  QMessageBox::warning(this, "No target mask", "Please draw target mask first!");
+	  return;
+  }
+  /* MiniTextureThread* minit = new MiniTextureThread(NULL, mini);*/
+  //minit->setParent(this);
+  mini->load_texture();
+  mini->set_mask_d1(cv::Mat(0, 0, CV_32FC1, 1));
+  mini->show_mesh_image_d1();
+  mini->hide();
+  mini->show();
+};
+
+
+//#include "texture_points_corres.h"
+void MainWindow_Texture::mask_d0_select()
+{
+
+	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+
+	//MiniTexture* mini = this->m_mini_selected_;
+	if (mini == NULL)
+	{
+		return;
+	}
+
+	cv::Mat mask = mini->get_mask_d0();
+	if (mask.cols < 100)
+	{
+		return;
+	}
+
+
+	LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask") = mask.clone();
+	LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke") = this->m_viewer_->get_boundaries()[0];
 	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
+// 	Texture_Mesh_Corres* ts = new Texture_Mesh_Corres(this->m_viewer_);
+// 	ts->set_data(this->m_viewer_->get_dispObjects()[0]->getModel()->getPolygonMesh(), this->m_viewer_->get_face_selected(), mini->get_masked_image_D0(), mini->get_file_name(), this->m_viewer_);
+// 	this->m_viewer_->add_textures_mesh_corre(ts);
+// 	ts->show();
 
-// 	this->m_viewer_for_result_.push_back(this->new_viewer_for_result_model(s));
-// 	this->m_viewer_for_result_.back()->setWindowTitle("after d0...");
-// 	this->m_viewer_for_result_.back()->show();
+// 	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
+ 	
 
 };
 void MainWindow_Texture::run_d0_synthesis()
@@ -437,8 +479,8 @@ void MainWindow_Texture::run_d0_synthesis()
    //minit->setParent(this);
 	
 	mini->load_texture();
-	mini->set_mask(cv::Mat(0, 0, CV_32FC1, 1));
-	mini->show_mesh_image();
+	mini->set_mask_d0(cv::Mat(0, 0, CV_32FC1, 1));
+	mini->show_mesh_image_d0();
 	mini->hide();
 	mini->show();
 

@@ -100,7 +100,7 @@ namespace ImageUtility
 
   void generateMaskFromPartsSelect(MiniTexture* mini, cv::Mat& mask_out)
   {
-	  mini->show_mesh_image();
+	  mini->show_mesh_image_d0();
 	  mini->hide();
 	  mini->show();
   };

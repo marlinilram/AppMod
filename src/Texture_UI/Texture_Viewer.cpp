@@ -8,9 +8,11 @@
 #include "../DispModule/Viewer/DispObject.h"
 #include <QGLViewer/manipulatedFrame.h>
 #include "PolygonMesh.h"
+#include <QImageWriter>
 #include <QResizeEvent>
 #include "PolygonMesh_Manipulator.h"
 #include "viewer_selector.h"
+#include "texture_points_corres.h"
 Texture_Viewer::Texture_Viewer(QWidget *widget)
   : BasicViewer(widget)
 {
@@ -31,7 +33,51 @@ Texture_Viewer::~Texture_Viewer()
 	{
 		delete this->get_dispObjects()[i];
 	}
+
+// 	for (unsigned int i = 0; i < this->m_textures_mesh_corres_.size(); i++)
+// 	{
+// 		delete this->m_textures_mesh_corres_[i];
+// 	}
 }
+
+// const std::vector<Texture_Mesh_Corres*>& Texture_Viewer::get_textures_mesh_corres()
+// {
+// 	return this->m_textures_mesh_corres_;
+// };
+// void Texture_Viewer::add_textures_mesh_corre(Texture_Mesh_Corres* t)
+// {
+// 	if (t != NULL)
+// 	{
+// 		bool b = false;
+// 		for (unsigned int i = 0; i < this->m_textures_mesh_corres_.size(); i++)
+// 		{
+// 			if (this->m_textures_mesh_corres_[i] == t)
+// 			{
+// 				b = true;
+// 			}
+// 		}
+// 		if (!b)
+// 		{
+// 			this->m_textures_mesh_corres_.push_back(t);
+// 			connect(t, SIGNAL(delete_coress(Texture_Mesh_Corres*)), this, SLOT(delete_coress(Texture_Mesh_Corres*)));
+// 		}
+// 	}
+// };
+// void Texture_Viewer::delete_textures_mesh_corre(Texture_Mesh_Corres* t)
+// {
+// 	std::vector<Texture_Mesh_Corres*> tmp;
+// 	for (unsigned int i = 0; i < this->m_textures_mesh_corres_.size(); i++)
+// 	{
+// 		if (this->m_textures_mesh_corres_[i] = t)
+// 		{
+// 			tmp.push_back(this->m_textures_mesh_corres_[i]);
+// 		}
+// 	}
+// 	this->m_textures_mesh_corres_ = tmp;
+// 	t->setParent(NULL);
+// 	delete t;
+// };
+
 
 void Texture_Viewer::resizeEvent(QResizeEvent* r)
 {
@@ -75,6 +121,26 @@ void Texture_Viewer::draw_points_under_mouse()
 	{
 		return;
 	}
+
+	this->startScreenCoordinatesSystem();
+	glColor3f(1.0, 1.0, 0);
+	if (this->m_left_button_down_)
+	{
+		glColor3f(0.0, 1.0, 1.);
+	}
+	glLineWidth(3);
+	glBegin(GL_LINE_LOOP);
+	for (unsigned int i = 0; i < this->m_points_for_delete_.size(); i++)
+	{
+		glVertex2i(m_points_for_delete_[i].x(), m_points_for_delete_[i].y());
+	};
+	glEnd();
+	this->stopScreenCoordinatesSystem();
+
+
+
+
+
 	LG::PolygonMesh* poly_mesh = m->getShape()->getPolygonMesh();
 	int num_f = poly_mesh->n_faces();
 
@@ -106,7 +172,7 @@ void Texture_Viewer::draw_points_under_mouse()
 	{
 		Colorf c = GLOBAL::color_from_table(255* i / m_boundaries_.size());
 		glColor3fv(c.data());
-		glLineWidth(3);
+		glLineWidth(5);
 		glBegin(GL_LINE_LOOP);
 		for (int j = 0; j < m_boundaries_[i].size(); j++)
 		{
@@ -126,25 +192,16 @@ void Texture_Viewer::draw_points_under_mouse()
 		glEnd();
 	}
 	
+// 	for (int i = 0; i < m_textures_mesh_corres_.size(); i++)
+// 	{
+// 		m_textures_mesh_corres_[i]->draw_points();
+// 		m_textures_mesh_corres_[i]->draw_line();
+// 	}
+};
 
-
-
-	
-
-	this->startScreenCoordinatesSystem();
-	glColor3f(1.0, 1.0, 0);
-	if (this->m_left_button_down_)
-	{
-		glColor3f(0.0, 1.0, 1.);
-	}
-	glLineWidth(3);
-	glBegin(GL_LINE_LOOP);
-	for (unsigned int i = 0; i < this->m_points_for_delete_.size(); i++)
-	{
-		glVertex2i(m_points_for_delete_[i].x(), m_points_for_delete_[i].y());
-	};
-	glEnd();
-	this->stopScreenCoordinatesSystem();
+void Texture_Viewer::moveEvent(QMoveEvent * event)
+{
+	QGLViewer::moveEvent(event);
 };
 
 void Texture_Viewer::init()
@@ -599,7 +656,13 @@ void Texture_Viewer::keyPressEvent(QKeyEvent *e)
 			handled = true;
 			updateGL();
 		}
+		else if ((e->key() == Qt::Key_T))
+		{
+			handled = true;
+			this->snapshot_bounding_box();
+		}
 
+		
 		if (!handled)
 		{
 			QGLViewer::keyPressEvent(e);
@@ -614,6 +677,56 @@ void Texture_Viewer::set_edit_mode(int b)
 bool Texture_Viewer::get_edit_mode()
 {
 	return this->m_edit_mode_;
+};
+
+QImage Texture_Viewer::snapshot_bounding_box()
+{
+
+	QImage im = this->grabFrameBuffer();
+	int min_x = 9999999;
+	int min_y = min_x;
+	int max_x = 0;
+	int max_y = 0;
+	for (unsigned int i = 0; i < im.width(); i++)
+	{
+		for (unsigned int j = 0; j < im.height(); j++)
+		{
+			QPoint p(i,j);
+			bool b;
+			this->camera()->pointUnderPixel(p, b);
+			if (b)
+			{
+				if (i < min_x)
+				{
+					min_x = i;
+				}
+				if (i > max_x)
+				{
+					max_x = i;
+				}
+				if (j < min_y)
+				{
+					min_y = j;
+				}
+				if (j > max_y)
+				{
+					max_y = j;
+				}
+			}
+		}
+	}
+	QImage im_out(max_x - min_x + 1, max_y - min_y + 1, QImage::Format_RGB32);
+	for (unsigned int i = 0; i < im_out.width(); i++)
+	{
+		for (unsigned int j = 0; j < im_out.height(); j++)
+		{
+			im_out.setPixel(i, j, im.pixel(i+min_x, j+min_y));
+		}
+	}
+	QImageWriter imw;
+	imw.setFileName("D:/snap.png");
+	imw.write(im_out);
+	return im_out;
 };
 
 bool Texture_Viewer::draw_mesh_points()

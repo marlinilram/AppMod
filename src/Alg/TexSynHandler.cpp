@@ -1,5 +1,4 @@
 #include "TexSynHandler.h"
-
 #include "Model.h"
 #include "PolygonMesh.h"
 #include "AppearanceModel.h"

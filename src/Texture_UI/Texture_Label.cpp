@@ -106,9 +106,9 @@ void Texture_Label::mouseDoubleClickEvent(QMouseEvent * event)
 		mini->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 		mini->setParent(NULL);
 		mini->set_file(m_image_file_);
-		mini->show_origin_image();
+		mini->show_origin_image_d0();
 //  		mini->load_texture();
-//  		mini->show_mesh_image();
+//  		mini->show_mesh_image_d0();
 		mini->hide();
 		mini->show();
 		emit cut_selected(mini);
