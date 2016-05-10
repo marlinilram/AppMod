@@ -17,6 +17,8 @@ public:
   void runD1Synthesis(std::string app_mod_file);
   std::string runD0Synthesis(std::string app_mod_file);
 
+
+  std::shared_ptr<AppearanceModel> get_syn_app_mod(){ return this->syn_app_mod; };
 private:
   std::shared_ptr<Model>           synthesis_model;
   std::shared_ptr<AppearanceModel> syn_app_mod;

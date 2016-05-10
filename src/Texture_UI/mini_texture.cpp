@@ -683,7 +683,7 @@ void MiniTexture::double_Click_On_MASK_STROKE_D0(QMouseEvent * event)
 			if (QMessageBox::question(this, "Submit??", "Are you sure use these regions you selected?") == QMessageBox::Yes)
 			{
 				emit mask_selected_d0();
-				this->show_origin_image_d1();
+				//this->show_origin_image_d1();
 			}
 		}
 		else if (event->button() == Qt::RightButton)

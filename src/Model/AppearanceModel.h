@@ -27,6 +27,7 @@ public:
   void exportAppMod(std::string file_name_, std::string file_path_);
 
   void setResolution(int resolution_) { resolution = resolution_; };
+  float getResolution() { return resolution; };
 
   void setPhoto(cv::Mat& photo_);
   void getPhoto(cv::Mat& photo_);

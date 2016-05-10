@@ -41,6 +41,7 @@ private slots:
 	void run_d0_synthesis();
 	void mask_d0_select();
 	void mask_d1_select();
+	void run_d0_synthesis_all();
 
 	void selec_area(bool);
 	void clear_select();

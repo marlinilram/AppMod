@@ -13,6 +13,10 @@
 #include "global.h"
 #include <QMessageBox>
 #include "ParameterMgr.h"
+#include "texture_points_corres.h"
+#include "ShapeUtility.h"
+#include "PolygonMesh.h"
+#include "ParaShape.h"
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
@@ -137,6 +141,7 @@ void MainWindow_Texture::set_up_viewer()
 	
 
 	this->m_viewer_->addDispObj(tc);
+	tc->setsize(this->width(), this->height());
 	this->m_viewer_->show();
 
 
@@ -169,8 +174,8 @@ void MainWindow_Texture::connect_singal()
 	connect(this->verticalScrollBar_Texture, SIGNAL(valueChanged(int)), this, SLOT(images_update(int)));
     connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
 	connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
-
-
+	connect(actionRun_d0_all, SIGNAL(triggered()), this, SLOT(run_d0_synthesis_all()));
+	actionRun_d0_all->setIcon(QIcon("icons/run_d0_all.jpg"));
 
 
 	QActionGroup* toolActionGroup = new QActionGroup(this);
@@ -216,10 +221,9 @@ void MainWindow_Texture::load_obj()
 	model_file_path = model_file_path.substr(0, model_file_path.find_last_of('/'));
 	std::shared_ptr<Model> m ( new Model(model_file_path, model_file_name) );
 
-	this->m_viewer_->get_dispObjects()[0]->setModel(m);
+	static_cast<Texture_Canvas*>(this->m_viewer_->get_dispObjects()[0])->setModel(m);
 	this->m_viewer_->clear_selection();
-	//this->m_viewer_->get_dispObjects()[0]->
-	this->m_viewer_->get_dispObjects()[0]->updateModelBuffer();
+	this->m_viewer_->mark_points_out();
 
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
@@ -428,9 +432,31 @@ void MainWindow_Texture::run_d1_synthesis()
   mini->hide();
   mini->show();
 };
+void MainWindow_Texture::run_d0_synthesis_all()
+{
+	const std::vector<Texture_Mesh_Corres*>& tmsss = this->m_viewer_->get_textures_mesh_corres();
+
+	for (unsigned int i = 0; i < tmsss.size(); i++)
+	{
+		QString file_name = tmsss[i]->file_path();
+		std::string std_file_path = file_name.toStdString().substr(0, file_name.toStdString().find_last_of('/'));
+		cv::Mat mask_source = tmsss[i]->get_mask_source();
+		cv::Mat mask_target = tmsss[i]->get_mask_target();
+		IplImage iplImg = IplImage(mask_source);
+		cvShowImage("mask_source" + i, &iplImg);
+		std::cout << std_file_path << "\n";
+
+		IplImage iplImg1 = IplImage(mask_target);
+		cvShowImage("mask_target" + i, &iplImg1);
+		std::cout << std_file_path << "\n";
 
 
-//#include "texture_points_corres.h"
+		LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask") = mask_source.clone();
+		LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:TarAppMask") = mask_target.clone();
+		std::string s = this->tex_syn_handler->runD0Synthesis(std_file_path);
+	}
+};
+
 void MainWindow_Texture::mask_d0_select()
 {
 
@@ -448,18 +474,26 @@ void MainWindow_Texture::mask_d0_select()
 		return;
 	}
 
+ //	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 
-	LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask") = mask.clone();
-	LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke") = this->m_viewer_->get_boundaries()[0];
-	std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
+	Texture_Mesh_Corres* ts = new Texture_Mesh_Corres(this->m_viewer_);
+	ts->set_data(
+		this->m_viewer_->get_dispObjects()[0]->getModel()->getPolygonMesh(), 
+		this->m_viewer_->get_face_selected(), 
+		mini->get_masked_image_D0(), 
+		mini->get_file_name(), 
+		this->m_viewer_,
+		this->m_viewer_->get_boundaries()[0],
+		mask,
+		tex_syn_handler.get()
+		);
 
-// 	Texture_Mesh_Corres* ts = new Texture_Mesh_Corres(this->m_viewer_);
-// 	ts->set_data(this->m_viewer_->get_dispObjects()[0]->getModel()->getPolygonMesh(), this->m_viewer_->get_face_selected(), mini->get_masked_image_D0(), mini->get_file_name(), this->m_viewer_);
-// 	this->m_viewer_->add_textures_mesh_corre(ts);
-// 	ts->show();
-
+	this->m_viewer_->add_textures_mesh_corre(ts);
+	this->m_viewer_->mark_points();
+	this->m_viewer_->clear_selection();
+	ts->show();
+	
 // 	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
- 	
 
 };
 void MainWindow_Texture::run_d0_synthesis()
@@ -475,22 +509,12 @@ void MainWindow_Texture::run_d0_synthesis()
 		QMessageBox::warning(this, "No target mask", "Please draw target mask first!");
 		return;
 	}
-   /* MiniTextureThread* minit = new MiniTextureThread(NULL, mini);*/
-   //minit->setParent(this);
-	
+
 	mini->load_texture();
 	mini->set_mask_d0(cv::Mat(0, 0, CV_32FC1, 1));
 	mini->show_mesh_image_d0();
 	mini->hide();
 	mini->show();
-
-// 	GLOBAL::wait = true;
-// 	minit->start();
-
-// 	while (GLOBAL::wait)
-// 	{
-// 
-// 	}
 
  //std::string s = this->tex_syn_handler->runD0Synthesis(this->m_shape_list_->getTexturePath(0));
 

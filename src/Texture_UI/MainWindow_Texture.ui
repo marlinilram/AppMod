@@ -95,7 +95,13 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionRun_d0_synthesis"/>
+   <addaction name="actionRun_d0_all"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
    <addaction name="actionRun_d1_synthesis"/>
+   <addaction name="actionRun_d1_all"/>
+   <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
@@ -171,6 +177,16 @@
    </property>
    <property name="text">
     <string>Area_Select</string>
+   </property>
+  </action>
+  <action name="actionRun_d0_all">
+   <property name="text">
+    <string>run_d0_all</string>
+   </property>
+  </action>
+  <action name="actionRun_d1_all">
+   <property name="text">
+    <string>run_d1_all</string>
    </property>
   </action>
  </widget>

@@ -31,14 +31,14 @@ public:
   bool draw_mesh_points();
   const std::vector<std::vector<int>>& get_boundaries();
   QImage snapshot_bounding_box();
-//   const std::vector<Texture_Mesh_Corres*>& get_textures_mesh_corres();
-//   void add_textures_mesh_corre(Texture_Mesh_Corres*);
-
-
+  const std::vector<Texture_Mesh_Corres*>& get_textures_mesh_corres();
+  void add_textures_mesh_corre(Texture_Mesh_Corres*);
   const std::vector<bool>& get_face_selected(){ return this->m_faces_selected_; };
+  void mark_points_out();
+  void mark_points();
 
 public slots:
-/*	void delete_textures_mesh_corre(Texture_Mesh_Corres*);*/
+	void delete_textures_mesh_corre(Texture_Mesh_Corres*);
 protected:
   virtual void draw();
   virtual void init();
@@ -59,6 +59,9 @@ private:
   void draw_points_under_mouse();
   void resizeEvent(QResizeEvent*);
 
+  void releaseEvent_no_text_mesh_corres(QMouseEvent *e);
+  void releaseEvent_with_text_mesh_corres(QMouseEvent *e);
+
 
 private:
 
@@ -72,9 +75,10 @@ private:
 
 
   std::vector<bool>   m_faces_selected_;
+  std::vector<bool>   m_faces_selected_all_;
   std::vector<std::vector<int>>   m_boundaries_;;
   std::vector<QPoint> m_points_for_delete_;
- /* std::vector<Texture_Mesh_Corres*>	m_textures_mesh_corres_;*/
+  std::vector<Texture_Mesh_Corres*>	m_textures_mesh_corres_;
   int k_start_;
   bool m_show_mesh_;
 private:

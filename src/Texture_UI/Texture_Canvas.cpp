@@ -6,7 +6,7 @@
 #include "Shape.h"
 #include <QGLShader>
 #include <QGLBuffer>
-
+#include <iostream>
 
 Texture_Canvas::Texture_Canvas()
 {
@@ -81,8 +81,9 @@ void Texture_Canvas::setFBO()
 	GLenum framebuffer_status;
 	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "set offscreen frame buffer object failed\n";
+		std::cerr << "set offscreen frame buffer object failed\n";
 
+	std::cout << "offscr_fbo*" << offscr_fbo << "     offscr_color*" << offscr_color << "    offscr_depth*" << offscr_depth << "\n" ;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 Bound* Texture_Canvas::getBoundBox()
@@ -97,6 +98,7 @@ void Texture_Canvas::setModel(std::shared_ptr<Model> shared_model)
 		return;
 	}
 	DispObject::setModel(shared_model);
+	this->updateModelBuffer();
 	shared_model->set_dis_obj(this);
 }
 
@@ -110,11 +112,15 @@ void Texture_Canvas::setsize(int w, int h)
 
 void Texture_Canvas::drawPrimitiveID()
 {
+	if (this->getModel() == NULL)
+	{
+		return;
+	}
 	int render_mode_cache = render_mode;
 	render_mode = 3;
 
-  int use_flat_cache = use_flat;
-  use_flat = 0;
+   int use_flat_cache = use_flat;
+   use_flat = 0;
 	float *primitive_buffer = new float[height*width];
 	cv::Mat &z_img = this->getModel()->getZImg();
 	z_img.create(height, width, CV_32FC1);
