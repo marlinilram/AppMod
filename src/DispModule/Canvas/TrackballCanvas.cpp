@@ -75,15 +75,12 @@ void TrackballCanvas::drawPrimitiveID()
 	int use_flat_cache = use_flat;
 	use_flat = 0;
 	float *primitive_buffer = new float[height*width];
-	cv::Mat &z_img = this->getModel()->getZImg();
-	z_img.create(height, width, CV_32FC1);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, offscr_fbo);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	drawModel();
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	glReadPixels(0, 0, width, height, GL_ALPHA, GL_FLOAT, primitive_buffer);
-	glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, (float*)z_img.data);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	render_mode = render_mode_cache;
@@ -91,7 +88,6 @@ void TrackballCanvas::drawPrimitiveID()
 
 	cv::Mat primitive_ID_img(height, width, CV_32FC1, primitive_buffer);
 	cv::flip(primitive_ID_img, primitive_ID_img, 0);
-	cv::flip(z_img, z_img, 0);
 
 	cv::Mat &primitive_ID = this->primitive_ID;
 	primitive_ID.create(height, width, CV_32S);

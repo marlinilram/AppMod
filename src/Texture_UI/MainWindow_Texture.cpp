@@ -406,7 +406,8 @@ void MainWindow_Texture::mask_d1_select()
 	IplImage iplImg = IplImage(mask);
 	cvShowImage("mask", &iplImg);
 
-	GLOBAL::m_selected_faces_ = this->m_viewer_->get_boundaries()[0];
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask") = mask.clone();
+  LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke") = this->m_viewer_->get_boundaries()[0];
 	this->tex_syn_handler->runD1Synthesis(this->m_shape_list_->getTexturePath(0));
 };
 

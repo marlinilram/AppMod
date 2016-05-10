@@ -726,15 +726,19 @@ void TrackballViewer::syncCamera(int sync_type)
 			GLdouble m[16];
 			camera()->getModelViewMatrix(m);
 			main_canvas_viewer->camera()->setFromModelViewMatrix(m);
+      main_canvas_viewer->offScrCamera()->setFromModelViewMatrix(m);
 			qglviewer::Vec c = sceneCenter();
 			main_canvas_viewer->setSceneCenter(c);
+      main_canvas_viewer->offScrCamera()->setSceneCenter(c);
 			double r = sceneRadius();
 			main_canvas_viewer->setSceneRadius(r);
+      main_canvas_viewer->offScrCamera()->setSceneRadius(r);
 			qreal q = camera()->zClippingCoefficient();
 			main_canvas_viewer->camera()->setZClippingCoefficient(q);
-
+      main_canvas_viewer->offScrCamera()->setZClippingCoefficient(q);
 			qreal qf = camera()->fieldOfView();
 			main_canvas_viewer->camera()->setFieldOfView(qf);
+      main_canvas_viewer->offScrCamera()->setFieldOfView(qf);
 			main_canvas_viewer->updateGLOutside();
 			main_canvas_viewer->syncCameraToModel();
 

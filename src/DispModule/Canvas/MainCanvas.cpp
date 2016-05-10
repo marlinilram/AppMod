@@ -29,8 +29,8 @@ MainCanvas::~MainCanvas()
 
 bool MainCanvas::display()
 {
-  updateVisibleEdge();
-  drawPrimitiveImg();
+  //updateVisibleEdge(); // 5/10/2016 no need to draw here
+  //drawPrimitiveImg();
 
   if (use_flat)
   {

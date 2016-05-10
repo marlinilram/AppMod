@@ -455,6 +455,8 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
 
 void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, std::deque<bool>& tar_curve_mark, CURVES& n_src_curves, CURVES& n_tar_curves)
 {
+    std::clock_t begin = std::clock();
+
   std::map<int, int>& vis_global_mapper = feature_model->getVisibleGlobalMapper(); 
   std::vector<double> paras(3, 0);
   paras[1] = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("SField:a");
@@ -562,6 +564,11 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:crsp_type") == 0)
   {
     crsp_map_out = crsp_map;
+    if (LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("DebugOutput:ShowRefineCrspTime"))
+    {
+      std::clock_t end = std::clock();
+      std::cout << "Refine Crsp Elapsed time: " << double(end - begin) / CLOCKS_PER_SEC << "\n";
+    }
     return;
   }
 
@@ -668,6 +675,11 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   }
   if (LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("SField:crsp_type") == 2)
   {
+    if (LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("DebugOutput:ShowRefineCrspTime"))
+    {
+      std::clock_t end = std::clock();
+      std::cout << "Refine Crsp Elapsed time: " << double(end - begin) / CLOCKS_PER_SEC << "\n";
+    }
     return;
   }
   std::map<CurvePt, CrspCurvePt> t2s_map;
@@ -787,6 +799,12 @@ void LargeFeatureCrsp::refineCrsp(std::map<CurvePt, CrspCurvePt>& crsp_map_out, 
   {
     crsp_map_out[CurvePt(test_path[i])] = CrspCurvePt(test_tar[i], 10);
   }*/
+
+  if (LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("DebugOutput:ShowRefineCrspTime"))
+  {
+    std::clock_t end = std::clock();
+    std::cout << "Refine Crsp Elapsed time: " << double(end - begin) / CLOCKS_PER_SEC << "\n";
+  }
 }
 
 

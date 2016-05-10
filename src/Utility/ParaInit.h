@@ -61,6 +61,8 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<cv::Mat>("Synthesis:SrcAppMask");
   LG::GlobalParameterMgr::GetInstance()->add_parameter<cv::Mat>("Synthesis:TarAppMask");
   LG::GlobalParameterMgr::GetInstance()->add_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke");
+
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("DebugOutput:ShowRefineCrspTime", true);
 }
 
 #endif

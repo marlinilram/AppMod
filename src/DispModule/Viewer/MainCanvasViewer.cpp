@@ -31,6 +31,17 @@ void MainCanvasViewer::draw()
     }
     //stopScreenCoordinatesSystem();
 
+    // draw off screen camera
+    // set the off screen glViewport and off screen camera matrix
+    glViewport(0, 0, GLint(offScrCamera()->screenWidth()), GLint(offScrCamera()->screenHeight()));
+    offScrCamera()->loadProjectionMatrix();
+    offScrCamera()->loadModelViewMatrix();
+    dynamic_cast<MainCanvas*>(dispObjects[i])->drawPrimitiveImg();
+    // set back to on screen glViewport and camera matrix
+    glViewport(0, 0, GLint(this->width()), GLint(this->height()));
+    camera()->loadProjectionMatrix();
+    camera()->loadModelViewMatrix();
+
     if (!dispObjects[i]->display())
     {
       std::cerr<<"Error when drawing object " << i << ".\n";
@@ -67,6 +78,14 @@ void MainCanvasViewer::init()
   camera()->fitSphere(qglviewer::Vec(0, 0, 0), 5);
   camera()->setType(qglviewer::Camera::Type::PERSPECTIVE);
   camera()->setFlySpeed(0.5);
+
+  // set offscr_camera
+  offScrCamera()->setSceneCenter(qglviewer::Vec(0, 0, 0));
+  offScrCamera()->setSceneRadius(50);
+  offScrCamera()->fitSphere(qglviewer::Vec(0, 0, 0), 5);
+  offScrCamera()->setType(qglviewer::Camera::Type::PERSPECTIVE);
+  offScrCamera()->setFlySpeed(0.5);
+
   // forbid interaction in this viewer
   clearMouseBindings();
 }
@@ -84,21 +103,27 @@ void MainCanvasViewer::getSnapShot()
       GLfloat modelview[16];
       GLfloat projection[16];
       GLint viewport[4];
-      camera()->getModelViewMatrix(modelview);
-      camera()->getProjectionMatrix(projection);
-      camera()->getViewport(viewport);
+      offScrCamera()->getModelViewMatrix(modelview);
+      offScrCamera()->getProjectionMatrix(projection);
+      offScrCamera()->getViewport(viewport);
       main_canvas->passCameraInfo(modelview, projection, viewport);
-      std::cout << "Field of View: " << camera()->fieldOfView() << "\tzClippingCoefficient: " << camera()->zClippingCoefficient() << "\tsceneRadius: " << camera()->sceneRadius() << std::endl;
+      std::cout << "Field of View: " << offScrCamera()->fieldOfView()
+        << "\tzClippingCoefficient: " << offScrCamera()->zClippingCoefficient()
+        << "\tsceneRadius: " << offScrCamera()->sceneRadius() << std::endl;
 
-      double clipping_range = 2 * camera()->zClippingCoefficient() * camera()->sceneRadius();
+      double clipping_range = 2 * offScrCamera()->zClippingCoefficient() * offScrCamera()->sceneRadius();
       double img_width = width();
       qglviewer::Vec point_1(img_width, 0, 0.5);
       qglviewer::Vec point_2(0, 0, 0.5);
-      point_1 = camera()->unprojectedCoordinatesOf(point_1);
-      point_2 = camera()->unprojectedCoordinatesOf(point_2);
+      point_1 = offScrCamera()->unprojectedCoordinatesOf(point_1);
+      point_2 = offScrCamera()->unprojectedCoordinatesOf(point_2);
       double world_width = (point_1 - point_2).norm();
       double z_scale = clipping_range * img_width / world_width;
+      glViewport(0, 0, GLint(offScrCamera()->screenWidth()), GLint(offScrCamera()->screenHeight()));
+      offScrCamera()->loadProjectionMatrix();
+      offScrCamera()->loadModelViewMatrix();
       main_canvas->drawInfo(z_scale);
+      glViewport(0, 0, GLint(this->width()), GLint(this->height()));
       std::cout << "z_scale: " << z_scale << std::endl;
     }
   }
@@ -118,10 +143,15 @@ void MainCanvasViewer::setBackgroundImage(QString fname)
     return;
   }
 
-  this->setMinimumHeight(img.height());
-  this->setMinimumWidth(img.width());
-  this->setMaximumHeight(img.height());
-  this->setMaximumWidth(img.width());
+  int fixed_height = 800;
+  int fixed_width = 800 * float(img.width()) / float(img.height());
+
+  this->setMinimumHeight(fixed_height);
+  this->setMinimumWidth(fixed_width);
+  this->setMaximumHeight(fixed_height);
+  this->setMaximumWidth(fixed_width);
+
+  offscr_camera.setScreenWidthAndHeight(img.width(), img.height());
 
   for (size_t i = 0; i < dispObjects.size(); ++i)
   {
@@ -223,9 +253,9 @@ void MainCanvasViewer::syncCameraToModel()
       GLfloat modelview[16];
       GLfloat projection[16];
       GLint viewport[4];
-      camera()->getModelViewMatrix(modelview);
-      camera()->getProjectionMatrix(projection);
-      camera()->getViewport(viewport);
+      offScrCamera()->getModelViewMatrix(modelview);
+      offScrCamera()->getProjectionMatrix(projection);
+      offScrCamera()->getViewport(viewport);
       main_canvas->passCameraInfo(modelview, projection, viewport);
     }
   }
