@@ -38,8 +38,6 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 	/*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
 
 	// 1.1 generate mask from source image
-	cv::Mat src_photo;
-	app_mod_src->getPhoto(src_photo);
 	// convert image stroke to para shape stroke
 
 	std::vector<cv::Mat> tar_feature_map;
@@ -270,10 +268,16 @@ void DetailSynthesis::synthesisD1(AppearanceModel* app_mod_src, AppearanceModel*
   }
 
   // 1. build the mask for source and target
-  cv::Mat src_mask(src_feature_map[0].rows, src_feature_map[0].cols, CV_32FC1, 1);
-  ImageUtility::generateMultiMask(src_detail_map[0].clone(), src_mask);
+  // 1.1 generate mask from source image
+  cv::Mat src_mask = LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask").clone();// GLOBAL::m_mat_source_mask0_.clone();
+  // convert image stroke to para shape stroke
+
+  std::vector<CvPoint> stroke;
+  app_mod_tar->coordFaceToUV(stroke, LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke"));
+
   cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
-  ImageUtility::generateMultiMask(feature_map_backup.clone(), tar_mask);
+  //ImageUtility::generateMultiMask(tar_feature_map[0].clone(), tar_mask);
+  ImageUtility::generateMaskFromStroke(tar_feature_map[0].clone(), stroke, tar_mask);
 
   // 2. make the masked source and target feature map
   // 2.1 masked source

@@ -34,6 +34,8 @@ public:
   void updateCanvasRenderMode();
   void setSynthesisReflectance();
 
+  inline qglviewer::Camera* offScrCamera() { return &offscr_camera; };
+
 
 private:
   void mouseReleaseEvent(QMouseEvent *e);
@@ -47,6 +49,8 @@ private:
   bool show_wireframe;
 
   MainViewer::INTERACTIONMODE interaction_mode;
+
+  qglviewer::Camera offscr_camera;
 
 protected:
   virtual void draw();
