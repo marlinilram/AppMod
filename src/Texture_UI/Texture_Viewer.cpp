@@ -1,4 +1,3 @@
-
 #include "Texture_Viewer.h"
 #include "Texture_Canvas.h"
 #include "Bound.h"
