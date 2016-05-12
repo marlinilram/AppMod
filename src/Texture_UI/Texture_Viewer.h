@@ -37,10 +37,12 @@ public:
   void mark_points_out();
   void mark_points();
   void set_texture_now(MiniTexture* m);
+  std::vector<int> face_selected();
 public slots:
 	void delete_textures_mesh_corre(Texture_Mesh_Corres*);
 	void select_all_unselected();
 	void Show_line(bool);
+	void show_mini_texture(bool);
 protected:
   virtual void draw();
   virtual void init();

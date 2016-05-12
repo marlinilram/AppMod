@@ -22,11 +22,10 @@ public:
 	~Texture_Mesh_Corres();
 public:
 	void set_data(LG::PolygonMesh* mesh, 
-		const std::vector<bool>& m_face_selected, 
+		const std::vector<int>& m_face_selected, 
 		const QImage& image, 
 		const QString& file_dir, 
 		QGLViewer*, 
-		const std::vector<int>&,
 		const cv::Mat& mask,
 		TexSynHandler*
 		);
@@ -74,7 +73,6 @@ private:
 	LG::PolygonMesh* m_mesh_;
 	LG::Vec3	 m_mesh_center_;
 	std::vector<int>	m_face_ids_in_mesh_;
-	std::vector<int>	m_face_boundaries_in_mesh_;
 	std::vector<LG::Vec3>	m_face_centers_;
 	cv::Mat	   m_mask_source_;
 	cv::Mat	   m_mask_target_;

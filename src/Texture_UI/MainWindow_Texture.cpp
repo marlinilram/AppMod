@@ -19,11 +19,11 @@
 MainWindow_Texture::MainWindow_Texture(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags)
 {
-	this->m_num_layer_texture_ = 2;
+	this->m_num_layer_texture_ = 5;
 	this->m_num_each_layer_texture_ = 1;
 	this->m_start_num_texture_ = 0;
 
-	this->m_num_layer_objs_ = 2;
+	this->m_num_layer_objs_ = 5;
 	this->m_num_each_layer_objs_ = 1;
 	this->m_start_num_objs_ = 0;
 
@@ -197,7 +197,7 @@ void MainWindow_Texture::connect_singal()
 
 	connect(actionSelect_all_unselected, SIGNAL(triggered()), this->m_viewer_, SLOT(select_all_unselected()));
 	connect(actionShow_line, SIGNAL(toggled(bool)), this->m_viewer_, SLOT(Show_line(bool)));
-	
+	connect(actionShow_mini_texture, SIGNAL(toggled(bool)), this->m_viewer_, SLOT(show_mini_texture(bool)));
 };
 
 
@@ -609,7 +609,9 @@ void MainWindow_Texture::mask_d0_select()
 		return;
 	}
 
-	if (this->m_viewer_->get_boundaries().size() < 1)
+	std::vector<int> face_selected = this->m_viewer_->face_selected();
+
+	if (face_selected.size() < 1)
 	{
 		QMessageBox::warning(this, "No target mask", "Please draw target mask first!");
 		return;
@@ -629,11 +631,10 @@ void MainWindow_Texture::mask_d0_select()
 	Texture_Mesh_Corres* ts = new Texture_Mesh_Corres(this->m_viewer_);
 	ts->set_data(
 		this->m_viewer_->get_dispObjects()[0]->getModel()->getPolygonMesh(), 
-		this->m_viewer_->get_face_selected(), 
+		face_selected,
 		mini->get_masked_image_D0(), 
 		mini->get_file_name(), 
 		this->m_viewer_,
-		this->m_viewer_->get_boundaries()[0],
 		mask,
 		tex_syn_handler.get()
 		);

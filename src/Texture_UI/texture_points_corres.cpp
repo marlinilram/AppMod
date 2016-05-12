@@ -89,11 +89,10 @@ void Texture_Mesh_Corres::delete_this()
 
 void Texture_Mesh_Corres::set_data(
 	LG::PolygonMesh* mesh, 
-	const std::vector<bool>& faces_selected, 
+	const std::vector<int>& faces_selected, 
 	const QImage& image, 
 	const QString& file_dir, 
 	QGLViewer* m,
-	const std::vector<int>&	ids,
 	const cv::Mat& mask,
 	TexSynHandler* tex_syn_handler
 	)
@@ -105,20 +104,14 @@ void Texture_Mesh_Corres::set_data(
 	this->m_mesh_ = mesh;
 
 	this->m_face_ids_in_mesh_.clear();
-	for (unsigned int i = 0; i < faces_selected.size(); i++)
-	{
-		if (faces_selected[i])
-		{
-			this->m_face_ids_in_mesh_.push_back(i);
-		}
-	}
+	this->m_face_ids_in_mesh_ = faces_selected;
+	
 	this->m_image_file_ = file_dir;
 	this->compute_faces_centers();
 	this->compute_mesh_center();
 	this->set_image(image);
 	this->m_viewer_ = m;
 	this->m_color_ = GLOBAL::random_color(1);
-	this->m_face_boundaries_in_mesh_ = ids;
 	this->m_mask_source_ = mask.clone();
 
 
@@ -377,35 +370,6 @@ void Texture_Mesh_Corres::draw_points()
 	for (int f_id = 0; f_id < m_face_centers_.size(); f_id++)
 	{
 	 	glVertex3f(m_face_centers_[f_id].x(), m_face_centers_[f_id].y(), m_face_centers_[f_id].z());
-	}
-	glEnd();
-
-
-	Colorf c(1.0, 0, 0);
-	glColor3fv(c.data());
-	glLineWidth(5);
-	glBegin(GL_LINE_LOOP);
-
-	for (int j = 0; j < m_face_boundaries_in_mesh_.size(); j++)
-	{
-
-		int num = 0;
-		LG::Vec3 v_total(0, 0, 0);
-		int f_id = m_face_boundaries_in_mesh_[j];
-		LG::PolygonMesh::Face f(f_id);
-		
-
-
-		for (auto vfc : this->m_mesh_->vertices(LG::PolygonMesh::Face(f_id)))
-		{
-			LG::Vec3 p = this->m_mesh_->position(vfc);
-			v_total = v_total + p;
-			num++;
-		}
-		LG::Vec3 n = this->m_mesh_->compute_face_normal(LG::PolygonMesh::Face(f_id));
-		v_total = v_total / num;
-		glNormal3f(n.x(), n.y(), n.z());
-		glVertex3f(v_total.x(), v_total.y(), v_total.z());
 	}
 	glEnd();
 

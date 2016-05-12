@@ -217,7 +217,18 @@ void Texture_Viewer::draw_points_under_mouse()
 		
 	}
 };
-
+std::vector<int> Texture_Viewer::face_selected()
+{
+	std::vector<int> return_ids;
+	for (unsigned int i = 0; i < m_faces_selected_.size(); i++)
+	{
+		if (m_faces_selected_[i])
+		{
+			return_ids.push_back(i);
+		}
+	}
+	return return_ids;
+};
 void Texture_Viewer::moveEvent(QMoveEvent * event)
 {
 	QGLViewer::moveEvent(event);
@@ -487,6 +498,14 @@ void Texture_Viewer::select_all_unselected()
 	m_faces_selected_ = m_faces_selected_tmp;
 	this->updateGL();
 };
+void Texture_Viewer::show_mini_texture(bool b)
+{
+	if (this->m_texture_now_)
+	{
+		m_texture_now_->setVisible(b);
+	}
+};
+
 void Texture_Viewer::Show_line(bool b)
 {
 	m_show_line_ = b;
