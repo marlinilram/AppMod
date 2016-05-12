@@ -5,8 +5,73 @@
 #include "ImageUtility.h"
 #include "ShapeUtility.h"
 #include "tiny_obj_loader.h"
-
+#include "ParaShape.h"
 using namespace LG;
+
+
+
+
+void AppearanceModel::get_mask_from_origin_image_to_uv(const cv::Mat& mask_origin_image, cv::Mat& mask_uv)
+{
+	std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+	tar_para_shape->initWithExtPolygonMesh(this->getBaseMesh());
+
+	std::set<int> selected_faces;
+	for (int i = 0; i < mask_origin_image.cols; i++)
+	{
+		for (int j = 0; j < mask_origin_image.rows; j++)
+		{
+			if (mask_origin_image.at<float>(j, i) > 0)
+			{
+				int f_id = this->getPrimitiveID().at<int>(j, i);
+				if (f_id < 0)
+				{
+					continue;
+				}
+				selected_faces.insert(f_id);
+			}
+		}
+	}
+	std::set<int>::iterator it; //定义前向迭代器 
+	int num_id = 0;
+	std::vector<int> selected_face_ids(selected_faces.size());
+	for (it = selected_faces.begin(); it != selected_faces.end(); it++)
+	{
+		selected_face_ids[num_id++] = *it;
+	}
+
+	std::sort(selected_face_ids.begin(), selected_face_ids.end());
+
+	int wh_uv = this->getResolution();
+	mask_uv =cv::Mat(wh_uv, wh_uv, CV_32FC1, 1);
+	mask_uv.setTo(cv::Scalar(0));
+	for (int i = 0; i < wh_uv; i++)
+	{
+		for (int j = 0; j < wh_uv; j++)
+		{
+
+			std::vector<float> uv_coor;
+			uv_coor.push_back(1.0*i / wh_uv);
+			uv_coor.push_back(1.0*j / wh_uv);
+
+			std::vector<float> bary_coord;
+			int f_id;
+			std::vector<int> v_ids;
+			bool b = ShapeUtility::findClosestUVFace(uv_coor, tar_para_shape.get(), bary_coord, f_id, v_ids);
+			if (b)
+			{
+
+				if (std::find(selected_face_ids.begin(), selected_face_ids.end(), f_id) != selected_face_ids.end())
+				{
+					mask_uv.at<float>(j, i) = 1;
+				}
+
+			}
+
+		}
+	}
+};
+
 
 void AppearanceModel::importAppMod(std::string file_name_, std::string file_path_)
 {
@@ -402,6 +467,22 @@ void AppearanceModel::getPhoto(cv::Mat& photo_)
 {
   photo_ = photo.clone();
 }
+bool AppearanceModel::coordImgToUV(const CvPoint& coord_in, CvPoint& coord_out)
+{
+	int f_id = primitive_ID.at<int>(coord_in.y, coord_in.x);
+	if (f_id < 0) return false;
+
+	Vector2f uv;
+	ShapeUtility::getFaceUVCenter(base_mesh.get(), f_id, uv);
+	coord_out.x = int(uv[0] * resolution + 0.5);
+	coord_out.y = resolution - (uv[1] * resolution + 0.5);
+	if (coord_out.x >= resolution) coord_out.x = resolution - 1;
+	if (coord_out.y >= resolution) coord_out.y = resolution - 1;
+	if (coord_out.y < 0) coord_out.y = 0;
+
+	return true;
+};
+
 
 void AppearanceModel::coordImgToUV(std::vector<CvPoint>& coords)
 {

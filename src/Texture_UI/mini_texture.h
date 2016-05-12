@@ -10,7 +10,7 @@
 #include <QPaintDevice>
 class AppearanceModel;
 class QPainter;
-
+class MainWindow_Texture;
 enum MINITEXTURE_SHOW_MODE
 {
 	ORIGIN_FOR_D0 = 0,
@@ -49,9 +49,13 @@ public:
 	bool load_texture_d1();
 	MINITEXTURE_SHOW_MODE get_show_mode();
 	void set_show_mode(MINITEXTURE_SHOW_MODE);
-
 	const QImage& get_masked_image_D0(){ return this->m_masked_image_d0_; };
+	const QImage& get_origin_image_D0(){ return this->m_origin_image_d0_; };
+	const QImage& get_mesh_image_D0(){ return this->m_mesh_image_d0_; };
+
+	void clone(MiniTexture&);
 public:
+	void set_new_image(const QImage&);
 	void set_image(const QImage&);
 	void reset_window_for_stroke();
 	void update_window_for_stroke(int x, int y);
@@ -89,7 +93,7 @@ public:
 	void move_On_Origin_D1(QMouseEvent * event);
 	void move_On_PARA_MESH_D1(QMouseEvent * event);
 	void move_On_MASK_STROKE_D1(QMouseEvent * event);
-
+	void set_mainwindow(MainWindow_Texture*);
 private:
 	void mouseDoubleClickEvent(QMouseEvent * event);
 	void mousePressEvent(QMouseEvent *);
@@ -110,7 +114,7 @@ private:
 	QImage  m_masked_image_d0_;
 	cv::Mat m_mask_d0_;
 	cv::Mat m_mask_tmp_d0_;
-
+	MainWindow_Texture* m_mainWindow_;
 
 	QImage  m_origin_image_d1_;
 	QImage  m_mesh_image_d1_;
@@ -133,7 +137,10 @@ private:
 	int  m_x_max_for_mask_;
 	int  m_y_max_for_mask_;
 	std::vector<QPoint> m_stroke_points_;
+	float m_image_scale_;
 
+	int m_width_ = 500;
+	int m_height_ = 500;
 signals:
 	void mask_selected_d0();
 	void mask_selected_d1();

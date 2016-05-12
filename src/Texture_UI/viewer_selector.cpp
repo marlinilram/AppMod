@@ -51,7 +51,7 @@ bool Viewer_Selector::delete_points_in_polygon(std::vector<qglviewer::Vec>& poin
 	};
 	return true;
 };
-bool Viewer_Selector::is_point_in_polygon(const QPoint& P, const std::vector<QPoint>& polygon)
+bool Viewer_Selector::is_point_in_polygon(const QPoint& P, const std::vector<QPoint>& polygon, float scale)
 {
 	bool bIsInside = false;
 
@@ -62,8 +62,8 @@ bool Viewer_Selector::is_point_in_polygon(const QPoint& P, const std::vector<QPo
 
 	for (; i < N; j = i, ++i)
 	{
-		const QPoint& U0 = polygon[i];
-		const QPoint& U1 = polygon[j];  // current edge
+		const QPoint& U0 = polygon[i] * scale;
+		const QPoint& U1 = polygon[j] * scale;  // current edge
 
 		if (((U0.y() <= P.y()) && (P.y() < U1.y())) ||  // U1 is above the ray, U0 is on or below the ray
 			((U1.y() <= P.y()) && (P.y() < U0.y())))    // U0 is above the ray, U1 is on or below the ray

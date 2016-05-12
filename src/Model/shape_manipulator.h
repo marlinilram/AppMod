@@ -19,6 +19,12 @@ public:
 	int	release(QMouseEvent *e);
 	bool wheel(QWheelEvent *e, Vector3_f& v_line, float& angle, Point3f& center_scale, float& scale, int& scale_rotate);
 	void draw();
+
+	bool translate(Vector3_f v_t);
+	bool rotate(const Vector3_f& vline, const float& angle);
+	bool scale(const float& scale);
+	Point3f get_center(){ return this->center_; };
+
 private:
 	Shape* m_shape_;
 
@@ -28,6 +34,7 @@ private:
 
 	Point3f center_;
 	Point3f	center_previous_;
+	float	radius_;
 	bool  left_button_down_;
 	bool  right_button_down_;
 	float m_beishu_;

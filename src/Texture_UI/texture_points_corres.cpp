@@ -28,12 +28,36 @@ Texture_Mesh_Corres::Texture_Mesh_Corres(QWidget * parent, Qt::WindowFlags f)
 	QAction*	m_delete_action_ = NULL;
 	QMenu*	   m_menu_ = NULL;
 
-	
+	this->m_show_mode_ = -1;
+	this->resize(this->m_width_icon_, this->m_height_icon_);
+
+	m_label_full_image_ = NULL;
+	m_focus_on_ = false;
+	m_viewer_ = NULL;
 };
+
 Texture_Mesh_Corres::~Texture_Mesh_Corres()
 {
 	
 };
+
+
+
+void Texture_Mesh_Corres::timerEvent(QTimerEvent* e)
+{
+	if (this->timer_id == e->timerId())
+	{
+		int num_mode = this->m_show_mode_ + 1;
+		if (num_mode > 2)
+		{
+			num_mode = 0;
+		}
+		this->set_show_mode(num_mode);
+		this->m_show_mode_ = num_mode;
+	}
+	QLabel::timerEvent(e);
+};
+
 
 void Texture_Mesh_Corres::creat_menu()
 {
@@ -43,29 +67,16 @@ void Texture_Mesh_Corres::creat_menu()
 	connect(delete_action, SIGNAL(triggered()), this, SLOT(delete_this()));
 };
 
-void Texture_Mesh_Corres::set_file(QString s)
-{
-	this->m_image_file_ = s;
-	this->m_image_ = QImage(s); 
-	this->set_image(this->m_image_);
-};
-
 void Texture_Mesh_Corres::set_image(const QImage& img)
 {
-	this->m_image_ = img;
-	this->resize(this->m_width_icon_, this->m_height_icon_);
 	this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
 	m_new_image_ = true;
-	//int timer_id = this->startTimer(100);
 };
 void Texture_Mesh_Corres::dropEvent(QDropEvent * event)
 {
 	QLabel::dropEvent(event);
 };
-void Texture_Mesh_Corres::timerEvent(QTimerEvent *e)
-{
-	QLabel::timerEvent(e);
-};
+
 void Texture_Mesh_Corres::paintEvent(QPaintEvent * event)
 {
 	QLabel::paintEvent(event);
@@ -77,11 +88,10 @@ void Texture_Mesh_Corres::delete_this()
 
 void Texture_Mesh_Corres::set_data(
 	LG::PolygonMesh* mesh, 
-	const std::vector<bool>& faces_selected, 
+	const std::vector<int>& faces_selected, 
 	const QImage& image, 
 	const QString& file_dir, 
 	QGLViewer* m,
-	const std::vector<int>&	ids,
 	const cv::Mat& mask,
 	TexSynHandler* tex_syn_handler
 	)
@@ -93,20 +103,14 @@ void Texture_Mesh_Corres::set_data(
 	this->m_mesh_ = mesh;
 
 	this->m_face_ids_in_mesh_.clear();
-	for (unsigned int i = 0; i < faces_selected.size(); i++)
-	{
-		if (faces_selected[i])
-		{
-			this->m_face_ids_in_mesh_.push_back(i);
-		}
-	}
+	this->m_face_ids_in_mesh_ = faces_selected;
+	
 	this->m_image_file_ = file_dir;
 	this->compute_faces_centers();
 	this->compute_mesh_center();
 	this->set_image(image);
 	this->m_viewer_ = m;
 	this->m_color_ = GLOBAL::random_color(1);
-	this->m_face_boundaries_in_mesh_ = ids;
 	this->m_mask_source_ = mask.clone();
 
 
@@ -155,7 +159,7 @@ void Texture_Mesh_Corres::set_data(
 
 			std::vector<float> uv_coor;
 			uv_coor.push_back(1.0*i / resolution);
-			uv_coor.push_back(1.0* (resolution - j - 1) / resolution);
+			uv_coor.push_back(1.0*(h - j -1) / resolution);
 
 			std::vector<float> bary_coord;
 			int f_id;
@@ -186,6 +190,52 @@ void Texture_Mesh_Corres::set_data(
 
 	this->creat_menu();
 };
+
+
+void Texture_Mesh_Corres::show_origin_image()
+{
+	this->set_image(this->m_origin_image_);
+	this->m_show_mode_ = 0;
+};
+void Texture_Mesh_Corres::show_mesh_image()
+{
+	this->set_image(this->m_mesh_image_);
+	this->m_show_mode_ = 1;
+};
+void Texture_Mesh_Corres::show_masked_image()
+{
+	this->set_image(this->m_masked_image_);
+	this->m_show_mode_ = 2;
+};
+void Texture_Mesh_Corres::set_show_mode(int m)
+{
+	if (m == 0)
+	{
+		show_origin_image();
+	}
+	else if (m == 1)
+	{
+		show_mesh_image();
+	}
+	else if (m == 2)
+	{
+		show_masked_image();
+	}
+};
+
+void Texture_Mesh_Corres::set_origin_image(const QImage& m)
+{
+	this->m_origin_image_ = m;
+};
+void Texture_Mesh_Corres::set_mesh_image(const QImage& m)
+{
+	this->m_mesh_image_ = m;
+};
+void Texture_Mesh_Corres::set_masked_image(const QImage& m)
+{
+	this->m_masked_image_ = m;
+};
+
 QString Texture_Mesh_Corres::file_path()
 {
 	return this->m_image_file_;
@@ -238,15 +288,47 @@ void Texture_Mesh_Corres::mousePressEvent(QMouseEvent * e)
 	{
 		m_p_previous_ = e->globalPos();
 		m_left_button_ = true;
+		m_focus_on_ = true;
+		if (this->m_viewer_)
+		{
+			this->m_viewer_->updateGL();
+		}
+
 		return;
 	}
-	this->resize(this->m_image_.width(), this->m_image_.height());
-	this->setPixmap(QPixmap::fromImage(this->m_image_).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+
+	if (m_label_full_image_ == NULL)
+	{
+		m_label_full_image_ = new QLabel(NULL);
+		m_label_full_image_->setWindowFlags(Qt::SubWindow);
+		QRect clientRect = QApplication::desktop()->screenGeometry();
+		QPoint center = clientRect.center();
+
+		int num_width = 600;
+		int num_height = 600;
+
+		float scale1 = this->m_origin_image_.width() / num_width;
+		float scale2 = this->m_origin_image_.height() / num_height;
+
+		float scale = scale1 > scale2?scale1:scale2;
+		num_width = this->m_origin_image_.width() / scale;
+		num_height = this->m_origin_image_.height() / scale;
+
+		m_label_full_image_->resize(num_width, num_height);
+		m_label_full_image_->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+		m_label_full_image_->setPixmap(QPixmap::fromImage(this->m_origin_image_).scaled(m_label_full_image_->width(), m_label_full_image_->height(), Qt::KeepAspectRatio));
+		m_label_full_image_->setGeometry(center.x() - m_label_full_image_->width() / 2, center.y() - m_label_full_image_->height() / 2, m_label_full_image_->width(), m_label_full_image_->height());
+	}
+
+
+	m_label_full_image_->show();
+	//this->timer_id = this->startTimer(1000);
 };
 void Texture_Mesh_Corres::mouseReleaseEvent(QMouseEvent * e)
 {
 	if (e->button() == Qt::LeftButton)
 	{
+		m_focus_on_ = false;
 		m_left_button_ = false;
 		QRect r(0, 0, this->width(), this->height());
 
@@ -254,11 +336,21 @@ void Texture_Mesh_Corres::mouseReleaseEvent(QMouseEvent * e)
 		{
 			this->m_menu_->exec(e->globalPos());
 		}
+		if (this->m_viewer_)
+		{
+			this->m_viewer_->updateGL();
+		}
+		
 		return;
 	}
-
-	this->resize(this->m_width_icon_, this->m_height_icon_);
-	this->setPixmap(QPixmap::fromImage(this->m_image_).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+	if (m_label_full_image_ != NULL)
+	{
+		m_label_full_image_->hide();
+	}
+	
+// 	this->resize(this->m_width_icon_, this->m_height_icon_);
+// 	this->setPixmap(QPixmap::fromImage(this->m_origin_image_).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+	//killTimer(this->timer_id);
 };
 void Texture_Mesh_Corres::draw_points()
 {
@@ -266,35 +358,17 @@ void Texture_Mesh_Corres::draw_points()
 	{
 		return;
 	}
-
-	glColor3fv(this->m_color_.data());
+	if (m_focus_on_)
+	{
+		glColor3f(1.0, 1.0, 0);
+	}
+	else
+		glColor3fv(this->m_color_.data());
 	glPointSize(4);
 	glBegin(GL_POINTS);
 	for (int f_id = 0; f_id < m_face_centers_.size(); f_id++)
 	{
 	 	glVertex3f(m_face_centers_[f_id].x(), m_face_centers_[f_id].y(), m_face_centers_[f_id].z());
-	}
-	glEnd();
-
-
-	Colorf c(1.0, 0, 0);
-	glColor3fv(c.data());
-	glLineWidth(5);
-	glBegin(GL_LINE_LOOP);
-	for (int j = 0; j < m_face_boundaries_in_mesh_.size(); j++)
-	{
-
-		int num = 0;
-		LG::Vec3 v_total(0, 0, 0);
-		int f_id = m_face_boundaries_in_mesh_[j];
-		for (auto vfc : this->m_mesh_->vertices(LG::PolygonMesh::Face(f_id)))
-		{
-			LG::Vec3 p = this->m_mesh_->position(vfc);
-			v_total = v_total + p;
-			num++;
-		}
-		v_total = v_total / num;
-		glVertex3f(v_total.x(), v_total.y(), v_total.z());
 	}
 	glEnd();
 

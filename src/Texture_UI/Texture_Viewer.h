@@ -10,7 +10,7 @@ class MainCanvasViewer;
 class VectorFieldViewer;
 class QMouseEvent;
 class QKeyEvent;
-class QResizeEvent;
+class MiniTexture;
 class Texture_Viewer : public BasicViewer
 {
 	Q_OBJECT
@@ -36,9 +36,13 @@ public:
   const std::vector<bool>& get_face_selected(){ return this->m_faces_selected_; };
   void mark_points_out();
   void mark_points();
-
+  void set_texture_now(MiniTexture* m);
+  std::vector<int> face_selected();
 public slots:
 	void delete_textures_mesh_corre(Texture_Mesh_Corres*);
+	void select_all_unselected();
+	void Show_line(bool);
+	void show_mini_texture(bool);
 protected:
   virtual void draw();
   virtual void init();
@@ -81,6 +85,8 @@ private:
   std::vector<Texture_Mesh_Corres*>	m_textures_mesh_corres_;
   int k_start_;
   bool m_show_mesh_;
+  MiniTexture* m_texture_now_;
+  bool m_show_line_;
 private:
 
 };

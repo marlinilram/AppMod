@@ -1,13 +1,18 @@
-#include "mini_texture.h"
+﻿#include "mini_texture.h"
 #include <QApplication>
 #include <QDesktopWidget>
 #include <highgui.h>
 #include <QPainter>
+#include "AppearanceModel.h"
 #include <QMessageBox>
+#include "ParaShape.h"
+#include "ShapeUtility.h"
+#include "MainWindow_Texture.h"
 #include "viewer_selector.h"
 MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	:QLabel(parent, f)
 {
+	this->setWindowFlags(Qt::SubWindow);
 
 	this->m_image_file_.clear();
 	this->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
@@ -20,8 +25,13 @@ MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 
 	this->m_left_button_down_ = false;
 	this->m_right_button_down_ = false;
-
+	m_image_scale_ = 1;
 	reset_window_for_stroke();
+	m_mainWindow_ = NULL;
+	int m_width_ = 512;
+	int m_height_ = 512;
+	
+	
 };
 MiniTexture::~MiniTexture()
 {
@@ -29,7 +39,10 @@ MiniTexture::~MiniTexture()
 };
 
 
-
+void MiniTexture::set_mainwindow(MainWindow_Texture* w)
+{
+	this->m_mainWindow_ = w;
+};
 
 QString MiniTexture::get_file_name()
 {
@@ -40,6 +53,15 @@ void MiniTexture::set_file(QString s)
 {
 	this->m_image_file_ = s;
 	this->m_origin_image_d0_ = QImage(s);
+	this->m_origin_image_d1_ = m_origin_image_d0_;
+
+	m_mask_tmp_d0_ = cv::Mat(m_origin_image_d0_.height(), m_origin_image_d0_.width(), CV_32FC1, 1);
+	m_mask_tmp_d0_.setTo(cv::Scalar(0));
+
+	m_mask_tmp_d1_ = cv::Mat(m_origin_image_d1_.height(), m_origin_image_d1_.width(), CV_32FC1, 1);
+	m_mask_tmp_d1_.setTo(cv::Scalar(0));
+
+	this->set_new_image(m_origin_image_d0_);
 	
 };
 void MiniTexture::clear()
@@ -52,6 +74,20 @@ void MiniTexture::clear()
 void MiniTexture::set_image(const QImage& img)
 {
 	this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+};
+
+void MiniTexture::set_new_image(const QImage& img)
+{
+	this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+
+	float scale1 = 1.0 * img.width() / this->m_width_;
+	float scale2 = 1.0 * img.height() / this->m_height_;
+
+	m_image_scale_ = scale1 > scale2 ? scale1 : scale2;
+
+	int width = 1.0 * img.width() / m_image_scale_;
+	int height = 1.0 * img.height() / m_image_scale_;
+	this->setGeometry(this->geometry().x(), this->geometry().y(), width, height);
 };
 
 bool MiniTexture::load_texture_d0()
@@ -289,6 +325,9 @@ void MiniTexture::show_origin_image_d0()
 	this->set_image(this->m_origin_image_d0_);
 	m_shown_mode_ = MINITEXTURE_SHOW_MODE::ORIGIN_FOR_D0;
 	this->setWindowTitle("Mask for D0.........");
+	m_mask_tmp_d0_.setTo(cv::Scalar(0));
+	
+	
 };
 void MiniTexture::show_mesh_image_d0()
 {
@@ -308,6 +347,7 @@ void MiniTexture::show_origin_image_d1()
 	this->set_image(this->m_origin_image_d0_);
 	m_shown_mode_ = MINITEXTURE_SHOW_MODE::ORIGIN_FOR_D1;
 	this->setWindowTitle("Mask for D1.........");
+	m_mask_tmp_d1_.setTo(cv::Scalar(0));
 };
 void MiniTexture::show_mesh_image_d1()
 {
@@ -525,8 +565,8 @@ void MiniTexture::set_mask_d0(cv::Mat& m)
 };
 cv::Mat MiniTexture::get_mask_d0()
 {
-	cv::Mat dis;
-	cv::transpose(this->m_mask_d0_, dis);
+	cv::Mat dis = m_mask_d0_.clone();
+	//cv::transpose(this->m_mask_d0_, dis);
 	return dis;
 };
 
@@ -572,7 +612,8 @@ void MiniTexture::update_window_for_stroke(int x, int y)
 void MiniTexture::paintEvent(QPaintEvent * event)
 {
 	QLabel::paintEvent(event);
-	if (this->m_shown_mode_ == MINITEXTURE_SHOW_MODE::MASK_STROKE_D0 || this->m_shown_mode_ == MINITEXTURE_SHOW_MODE::MASK_STROKE_D1)
+	/*if (this->m_shown_mode_ == MINITEXTURE_SHOW_MODE::MASK_STROKE_D0 || this->m_shown_mode_ == MINITEXTURE_SHOW_MODE::MASK_STROKE_D1)*/
+	if (this->m_shown_mode_ == MINITEXTURE_SHOW_MODE::ORIGIN_FOR_D0 || this->m_shown_mode_ == MINITEXTURE_SHOW_MODE::ORIGIN_FOR_D1)
 	{
 		QPainter painter(this);
 		QRgb color = qRgb(255, 0, 0);
@@ -599,7 +640,7 @@ QImage MiniTexture::merge_image(const QImage& im, const cv::Mat& mask, QRgb rgb)
 	{
 		for (int j = 0; j < im.height(); j++)
 		{
-			if (mask.at<float>(i,j) > 0)
+			if (mask.at<float>(j,i) > 0)
 			{
 				QRgb rgb_tmp = image_return.pixel(i, j);
 				int r = qRed(rgb_tmp)* origin_weight + qRed(rgb) * mask_weight;
@@ -619,9 +660,42 @@ void MiniTexture::double_Click_On_Origin_D0(QMouseEvent * event)
 	{
 		if (!this->m_mesh_image_d0_.isNull())
 		{
-			this->show_mesh_image_d0();
+			//this->show_mesh_image_d0();
 			m_mask_d0_.setTo(cv::Scalar(0));
 			m_mask_tmp_d0_.setTo(cv::Scalar(0));
+		}
+
+		if (event->button() == Qt::LeftButton)
+		{
+			this->m_mask_d0_ = this->m_mask_tmp_d0_.clone();
+
+// 			cv::Mat m_dis = this->get_mask_d0().clone();
+// 			double scale = this->m_image_scale_; //设置缩放倍数
+// 			cv::Size dsize(m_dis.cols / scale, m_dis.rows / scale);
+// 			cv::Mat image2(dsize, CV_32FC1);
+// 			cv::resize(m_dis, image2, dsize);
+// 			IplImage iplImg = IplImage(image2);
+// 			cvShowImage("mask_origin", &iplImg);
+
+
+
+// 			QString file_path = this->m_image_file_;
+// 			std::string std_file_path = file_path.toStdString().substr(0, file_path.toStdString().find_last_of('/'));
+// 			std::shared_ptr<AppearanceModel> src_app_mod(new AppearanceModel());
+// 			src_app_mod->importAppMod("app_model.xml", std_file_path);
+// 
+// 
+// 			cv::Mat m_mask_UV;
+// 			src_app_mod->get_mask_from_origin_image_to_uv(m_mask_d0_, m_mask_UV);
+// 			
+// 			IplImage iplImg_uv = IplImage(m_mask_UV);
+// 			cvShowImage("mask_uv", &iplImg_uv);
+
+			if (QMessageBox::question(this, "Submit??", "Are you sure use these regions you selected?") == QMessageBox::Yes)
+			{
+				//this->show_mesh_image_d0();
+				emit mask_selected_d0();
+			}
 		}
 
 	}
@@ -702,7 +776,7 @@ void MiniTexture::double_Click_On_Origin_D1(QMouseEvent * event)
 	{
 		if (!this->m_mesh_image_d1_.isNull())
 		{
-			this->show_mesh_image_d1();
+			//this->show_mesh_image_d1();
 			m_mask_d1_.setTo(cv::Scalar(0));
 			m_mask_tmp_d1_.setTo(cv::Scalar(0));
 		}
@@ -861,6 +935,80 @@ void MiniTexture::press_On_MASK_STROKE_D1(QMouseEvent * event)
 void MiniTexture::release_On_Origin_D0(QMouseEvent * event)
 {
 	QLabel::mouseReleaseEvent(event);
+	if (this->m_stroke_points_.size() < 3)
+	{
+		return;
+	}
+	bool changed = false;
+	if (event->button() == Qt::LeftButton && this->m_left_button_down_)
+	{
+// 		int num_width = this->m_mask_tmp_d0_.cols;
+// 		int num_height = this->m_mask_tmp_d0_.rows;
+		int num_width = this->width();
+		int num_height = this->height();
+		for (float i = 0; i < num_width; i++)
+		{
+			for (float j = 0; j < num_height; j++)
+			{
+				{
+					QPoint p(i, j);
+					
+					if (Viewer_Selector::is_point_in_polygon(p, this->m_stroke_points_, 1))
+					{
+
+						for (int k = i*m_image_scale_; k < (i+1)* m_image_scale_; k++)
+						{
+							for (int l = j*m_image_scale_; l < (j + 1) * m_image_scale_; l++)
+							{
+								this->m_mask_tmp_d0_.at<float>(l, k) = 1;
+								changed = true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	else if (event->button() == Qt::RightButton && this->m_right_button_down_)
+	{
+		// 		int num_width = this->m_mask_tmp_d0_.cols;
+		// 		int num_height = this->m_mask_tmp_d0_.rows;
+		int num_width = this->width();
+		int num_height = this->height();
+
+		for (int i = 0; i < num_width; i++)
+		{
+			for (int j = 0; j < num_height; j++)
+			{
+				//if (this->m_mask_tmp_d0_.at<float>(i, j) > 0)
+				{
+					QPoint p(i, j);
+					if (Viewer_Selector::is_point_in_polygon(p, this->m_stroke_points_, 1))
+					{
+						for (int k = i*m_image_scale_; k < (i + 1)* m_image_scale_; k++)
+						{
+							for (int l = j*m_image_scale_; l < (j + 1) * m_image_scale_; l++)
+							{
+								this->m_mask_tmp_d0_.at<float>(l, k) = 0;
+							}
+						}
+						changed = true;
+					}
+				}
+
+			}
+		}
+	}
+	this->m_stroke_points_.clear();
+	this->m_left_button_down_ = false;
+	this->m_right_button_down_ = false;
+	if (changed)
+	{
+		m_masked_image_d0_ = MiniTexture::merge_image(this->m_origin_image_d0_, this->m_mask_tmp_d0_, qRgb(255, 0, 0));
+		this->set_image(m_masked_image_d0_);
+
+	}
+	this->update();
 };
 void MiniTexture::release_On_PARA_MESH_D0(QMouseEvent * event)
 {
@@ -931,6 +1079,57 @@ void MiniTexture::release_On_MASK_STROKE_D0(QMouseEvent * event)
 void MiniTexture::release_On_Origin_D1(QMouseEvent * event)
 {
 	QLabel::mouseReleaseEvent(event);
+	if (this->m_stroke_points_.size() < 3)
+	{
+		return;
+	}
+	bool changed = false;
+	if (event->button() == Qt::LeftButton && this->m_left_button_down_)
+	{
+		for (int i = 0; i < this->m_mask_tmp_d1_.cols; i++)
+		{
+			for (int j = 0; j < this->m_mask_tmp_d1_.rows; j++)
+			{
+				//if (this->m_mask_tmp_d1_.at<float>(i, j) > 0)
+				{
+					QPoint p(i, j);
+					if (Viewer_Selector::is_point_in_polygon(p, this->m_stroke_points_, m_image_scale_))
+					{
+						this->m_mask_tmp_d1_.at<float>(i, j) = 1;
+						changed = true;
+					}
+				}
+			}
+		}
+	}
+	else if (event->button() == Qt::RightButton && this->m_right_button_down_)
+	{
+		for (int i = 0; i < this->m_mask_tmp_d1_.cols; i++)
+		{
+			for (int j = 0; j < this->m_mask_tmp_d1_.rows; j++)
+			{
+				//if (this->m_mask_tmp_d1_.at<float>(i, j) > 0)
+				{
+					QPoint p(i, j);
+					if (Viewer_Selector::is_point_in_polygon(p, this->m_stroke_points_, m_image_scale_))
+					{
+						this->m_mask_tmp_d1_.at<float>(i, j) = 0;
+						changed = true;
+					}
+				}
+
+			}
+		}
+	}
+	this->m_stroke_points_.clear();
+	this->m_left_button_down_ = false;
+	this->m_right_button_down_ = false;
+	if (changed)
+	{
+		QImage im = MiniTexture::merge_image(this->m_origin_image_d1_, this->m_mask_tmp_d1_, qRgb(255, 0, 0));
+		this->set_image(im);
+	}
+	this->update();
 };
 void MiniTexture::release_On_PARA_MESH_D1(QMouseEvent * event)
 {
@@ -1000,7 +1199,8 @@ void MiniTexture::release_On_MASK_STROKE_D1(QMouseEvent * event)
 
 void MiniTexture::move_On_Origin_D0(QMouseEvent * event)
 {
-	QLabel::mouseMoveEvent(event);
+	//QLabel::mouseMoveEvent(event);
+	this->move_On_MASK_STROKE_D0(event);
 };
 void MiniTexture::move_On_PARA_MESH_D0(QMouseEvent * event)
 {
@@ -1136,4 +1336,22 @@ void MiniTexture::move_On_MASK_STROKE_D1(QMouseEvent * event)
 		this->m_stroke_points_.push_back(event->pos());
 		this->update();
 	}
+};
+
+void MiniTexture::clone(MiniTexture& m)
+{
+	m.m_image_file_ = this->m_image_file_;
+	m.m_origin_image_d0_ = m_origin_image_d0_;
+	m.m_mesh_image_d0_ = this->m_mesh_image_d0_;
+	m.m_mask_image_d0_ = this->m_mask_image_d0_;
+	m.m_for_stroke_image_d0_ = this->m_for_stroke_image_d0_;
+	m.m_masked_image_d0_ = this->m_masked_image_d0_;
+	m.m_mask_d0_ = this->m_mask_d0_;
+	m.m_mask_tmp_d0_ = this->m_mask_tmp_d0_;
+	m.m_origin_image_d1_ = this->m_origin_image_d1_;
+	m.m_mesh_image_d1_ = this->m_mesh_image_d1_;
+	m.m_mask_image_d1_ = this->m_mask_image_d1_;
+	m.m_for_stroke_image_d1_ = this->m_for_stroke_image_d1_;
+	m.m_mask_d1_ = this->m_mask_d1_;
+	m.m_mask_tmp_d1_ = this->m_mask_tmp_d1_;
 };

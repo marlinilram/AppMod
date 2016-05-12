@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "canvas_miniview.h"
+#include <QResizeEvent>
 class QListWidgetItem;
 class Texture_Label;
 class QHBoxLayout;
@@ -24,16 +26,27 @@ public:
 	MainWindow_Texture(QWidget * parent = 0, Qt::WindowFlags flags = 0);
 	~MainWindow_Texture();
 
+
+	
+
 private:
 	void connect_singal();
 	void set_up_viewer();
 	void shape_list_prepare();
+	void resizeEvent(QResizeEvent * event);
+public:
+	void load_obj(QString);
 private slots:
 	void show_data_base();
-	void set_dir();
+	void set_texture_dir();
+	void set_objs_dir();
+
 	void images_update(int from);
+	void objs_update(int from);
+
 	void set_data_dock();
 	void load_obj();
+	
 	void texture_select(MiniTexture*);
 	void item_double_clicked(QListWidgetItem *);
    
@@ -46,16 +59,28 @@ private slots:
 	void selec_area(bool);
 	void clear_select();
 	void operationModeChanged(QAction* act);
-//	QMainWindow* new_viewer_for_result_model(std::string file_path);
+	void selected_obj(QPoint, QString);
 private:
 	void set_up_ui_texture();
-	int m_num_layer_;
-	int m_num_each_layer_;
-	std::vector<Texture_Label*> m_image_labels_;
-	std::vector<QHBoxLayout*> m_horizontal_layouts_;
+	void set_up_ui_objs();
+	int m_num_layer_texture_;
+	int m_num_each_layer_texture_;
 
-	std::vector<QString>		m_files_;
-	int m_start_num_;
+	int m_num_layer_objs_;
+	int m_num_each_layer_objs_;
+
+
+	std::vector<Texture_Label*> m_image_labels_;
+	std::vector<Canvas_Miniview*> m_miniviewers_;
+	std::vector<QHBoxLayout*> m_horizontal_layouts_textures_;
+	std::vector<QHBoxLayout*> m_horizontal_layouts_objs_;
+
+	std::vector<QString>		m_texture_files_;
+	std::vector<QString>		m_objs_files_;
+
+	int m_start_num_texture_;
+	int m_start_num_objs_;
+
 	Dialog_Database* m_dlg_;
 	Texture_Viewer*	 m_viewer_;
 	ShapeList* m_shape_list_;
@@ -63,7 +88,6 @@ private:
 	MiniTexture* m_mini_selected_;
 
    std::shared_ptr<TexSynHandler> tex_syn_handler;
-   std::vector<QMainWindow*> m_viewer_for_result_;
 
 };
 

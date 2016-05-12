@@ -35,6 +35,8 @@ public:
   void setFBO();
   void drawPrimitiveID();
   void setsize(int, int);
+
+
 private:
 
   std::unique_ptr<QGLShaderProgram> basic_shader;
@@ -54,6 +56,7 @@ private:
   GLuint offscr_depth;
   GLuint offscr_fbo;
   int width, height;
+  int width_tmp, height_tmp;
 private:
 	Texture_Canvas(const Texture_Canvas&);
 	void operator = (const Texture_Canvas&);

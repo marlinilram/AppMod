@@ -59,8 +59,9 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_mult", 5.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:geo_transfer_use_para_map", false);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<cv::Mat>("Synthesis:SrcAppMask");
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<cv::Mat>("Synthesis:SrcAppOriginImageMask");
   LG::GlobalParameterMgr::GetInstance()->add_parameter<cv::Mat>("Synthesis:TarAppMask");
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke");
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("ShapeManipulator:Axis", true);
 
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("DebugOutput:ShowRefineCrspTime", true);
 }

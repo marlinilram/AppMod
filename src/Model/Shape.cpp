@@ -1058,6 +1058,8 @@ bool Shape::translate(Vector3_f v_t)
 	LG::Vec3 vv_t(v_t.x(), v_t.y(), v_t.z());
 	PolygonMesh_Manipulator::translate(this->getPolygonMesh(), vv_t);
 	this->computeBounds();
+	this->compute_mainipulator();
+	this->m_sm_->translate(v_t);
 	return true;
 };
 bool Shape::rotate(const Point3f& p_on_line, const Vector3_f& vline, const float& angle)
@@ -1070,15 +1072,13 @@ bool Shape::rotate(const Point3f& p_on_line, const Vector3_f& vline, const float
 };
 bool Shape::scale(const Point3f& standard, const float& scale)
 {
-	CvPoint3D32f c = this->getBoundbox()->centroid;
-	LG::Vec3 center(c.x, c.y, c.z);
+	LG::Vec3 center(standard.x(), standard.y(), standard.z());
 	PolygonMesh_Manipulator::scale(this->getPolygonMesh(), center, scale);
 	return true;
 };
 bool Shape::scale_along_line(const Point3f& standard, Vector3_f v_line, const float& scale)
 {
-	CvPoint3D32f c = this->getBoundbox()->centroid;
-	LG::Vec3 center(c.x, c.y, c.z);
+	LG::Vec3 center(standard.x(), standard.y(), standard.z());
 	LG::Vec3 axis(v_line.x(), v_line.y(), v_line.z());
 	PolygonMesh_Manipulator::scale_along_axis(this->getPolygonMesh(), center, scale, axis);
 	return true;

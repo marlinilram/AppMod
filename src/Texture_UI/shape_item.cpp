@@ -26,7 +26,6 @@ void ShapeItem::set_shape(Render_Shape* s)
 
 void ShapeItem::set_texture(MiniTexture* m)
 {
-	
 	this->m_mini_texture_ = m;
 };
 MiniTexture* ShapeItem::get_texture()

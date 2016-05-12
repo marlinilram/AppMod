@@ -2,7 +2,7 @@
 #define _COLOR_TABLE_H_
 
 #include "color.h"
-
+#include "geometry_types.h"
 namespace GLOBAL {
 
 #define  NUM_LIMITED_COLOR  6
@@ -311,7 +311,12 @@ namespace GLOBAL {
 		int random_int = rand() / 256;
 		return color_from_table(random_int);
 	}
-
+	static float normalize(Vector3_f& v) {
+		float len = std::sqrt(v.squared_length());
+		if (len != 0.0f)
+			v = v / len;
+		return len;
+	}
 }
 
 #endif

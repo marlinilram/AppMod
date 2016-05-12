@@ -109,6 +109,10 @@
    <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="actionSet_Axis_XYZ"/>
   </widget>
   <action name="action_Load_Model">
    <property name="icon">
@@ -279,6 +283,14 @@
    </property>
    <property name="text">
     <string>Reset Model</string>
+   </property>
+  </action>
+  <action name="actionSet_Axis_XYZ">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Set_Axis_XYZ</string>
    </property>
   </action>
  </widget>

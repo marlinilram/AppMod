@@ -13,6 +13,8 @@
 #include "PolygonMesh_Manipulator.h"
 #include "viewer_selector.h"
 #include "texture_points_corres.h"
+#include "mini_texture.h"
+
 
 Texture_Viewer::Texture_Viewer(QWidget *widget)
   : BasicViewer(widget)
@@ -25,6 +27,8 @@ Texture_Viewer::Texture_Viewer(QWidget *widget)
   this->m_right_button_down_ = false;
   m_edit_mode_ = -1;
   m_show_mesh_ = true;
+  m_texture_now_ = NULL;
+  m_show_line_ = false;
 }
 
 Texture_Viewer::~Texture_Viewer()
@@ -39,6 +43,11 @@ Texture_Viewer::~Texture_Viewer()
 		delete this->m_textures_mesh_corres_[i];
 	}
 }
+
+void Texture_Viewer::set_texture_now(MiniTexture* m)
+{
+	m_texture_now_ = m;
+};
 
 const std::vector<Texture_Mesh_Corres*>& Texture_Viewer::get_textures_mesh_corres()
 {
@@ -201,10 +210,25 @@ void Texture_Viewer::draw_points_under_mouse()
 	for (int i = 0; i < m_textures_mesh_corres_.size(); i++)
 	{
 		m_textures_mesh_corres_[i]->draw_points();
-		m_textures_mesh_corres_[i]->draw_line();
+		if (m_show_line_)
+		{
+			m_textures_mesh_corres_[i]->draw_line();
+		}
+		
 	}
 };
-
+std::vector<int> Texture_Viewer::face_selected()
+{
+	std::vector<int> return_ids;
+	for (unsigned int i = 0; i < m_faces_selected_.size(); i++)
+	{
+		if (m_faces_selected_[i])
+		{
+			return_ids.push_back(i);
+		}
+	}
+	return return_ids;
+};
 void Texture_Viewer::moveEvent(QMoveEvent * event)
 {
 	QGLViewer::moveEvent(event);
@@ -432,7 +456,15 @@ void Texture_Viewer::drawCornerAxis()
 
 void Texture_Viewer::mousePressEvent(QMouseEvent* e)
 {	
-	if (this->m_edit_mode_ < 0)
+	if (this->m_texture_now_)
+	{
+		if (m_texture_now_->geometry().contains(e->pos()))
+		{
+			return;
+		}
+	}
+
+	if (this->m_edit_mode_ < 0 )
 	{
 		QGLViewer::mousePressEvent(e);
 		return;
@@ -451,6 +483,33 @@ void Texture_Viewer::mouseDoubleClickEvent(QMouseEvent * event)
 {
 	QGLViewer::mouseDoubleClickEvent(event);
 };
+
+void Texture_Viewer::select_all_unselected()
+{
+	std::vector<bool> m_faces_selected_tmp(m_faces_selected_.size(), false);
+	for (unsigned int i = 0; i < m_faces_selected_.size(); i++)
+	{
+		if (!m_faces_selected_[i] && !m_faces_selected_all_[i])
+		{
+			m_faces_selected_tmp[i] = true;
+			//std::cout << i << " ";
+		}
+	}
+	m_faces_selected_ = m_faces_selected_tmp;
+	this->updateGL();
+};
+void Texture_Viewer::show_mini_texture(bool b)
+{
+	if (this->m_texture_now_)
+	{
+		m_texture_now_->setVisible(b);
+	}
+};
+
+void Texture_Viewer::Show_line(bool b)
+{
+	m_show_line_ = b;
+}; 
 
 void Texture_Viewer::mouseMoveEvent(QMouseEvent *e)
 {

@@ -65,14 +65,13 @@ public:
 //////////////////////////////////////////////////////////////////////////
 
 
+
+
+
 struct Vertices_VBO
 {
 	int num_points_;
 	int num_faces_;
-// 	int* indices_;
-// 	float* postions_;
-// 	float* colors_;
-// 	float* normals_;
 	GLuint tagOfIndices_;
 	GLuint tagOfPositions_;
 	GLuint tagOfNormals_;
