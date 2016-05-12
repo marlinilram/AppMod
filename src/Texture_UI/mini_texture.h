@@ -10,7 +10,7 @@
 #include <QPaintDevice>
 class AppearanceModel;
 class QPainter;
-class MainWindow_Texture;
+
 enum MINITEXTURE_SHOW_MODE
 {
 	ORIGIN_FOR_D0 = 0,
@@ -93,7 +93,6 @@ public:
 	void move_On_Origin_D1(QMouseEvent * event);
 	void move_On_PARA_MESH_D1(QMouseEvent * event);
 	void move_On_MASK_STROKE_D1(QMouseEvent * event);
-	void set_mainwindow(MainWindow_Texture*);
 private:
 	void mouseDoubleClickEvent(QMouseEvent * event);
 	void mousePressEvent(QMouseEvent *);
@@ -114,7 +113,6 @@ private:
 	QImage  m_masked_image_d0_;
 	cv::Mat m_mask_d0_;
 	cv::Mat m_mask_tmp_d0_;
-	MainWindow_Texture* m_mainWindow_;
 
 	QImage  m_origin_image_d1_;
 	QImage  m_mesh_image_d1_;

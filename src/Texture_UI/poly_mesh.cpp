@@ -1,5 +1,4 @@
 #include "poly_mesh.h"
-#include <gl/glut.h>
 #include <algorithm>
 PolyMesh::PolyMesh(const std::string& name)
 : wireframe_color_(0, 0, 1, 1)

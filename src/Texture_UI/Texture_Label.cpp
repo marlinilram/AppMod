@@ -2,14 +2,13 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include "mini_texture.h"
-#include "MainWindow_Texture.h"
+
 Texture_Label::Texture_Label(QWidget * parent, Qt::WindowFlags f)
 	:QLabel(parent, f)
 {
 	m_full_image_label_ = NULL;
 	m_with_image_ = false;
 	m_new_image_ = false;
-	m_mainWindow_ = NULL;
 	//this->setScaledContents(true);
 	this->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	this->setStyleSheet("border: 1px groove gray;");
@@ -89,20 +88,13 @@ void Texture_Label::mousePressEvent(QMouseEvent * event)
 		this->setStyleSheet("border: 5px groove green;");
 	}
 };
-void Texture_Label::set_mainwindow(MainWindow_Texture* w)
-{
-	this->m_mainWindow_ = w;
-};
-MainWindow_Texture* Texture_Label::get_mainwindow()
-{
-	return this->m_mainWindow_;
-};
+
+
 void Texture_Label::mouseDoubleClickEvent(QMouseEvent * event)
 {
 	if (event->button() == Qt::LeftButton && !this->m_image_file_.isEmpty())
 	{
 		MiniTexture* mini = new MiniTexture(NULL);
-		mini->set_mainwindow(this->get_mainwindow());
 		mini->setPixmap(QPixmap::fromImage(this->m_image_));
 // 		int wid = this->m_image_.width();
 // 		int hei = this->m_image_.height();

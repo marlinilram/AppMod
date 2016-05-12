@@ -42,6 +42,7 @@ private slots:
     void deleteLastLine_Target();
     void showToolBox();
     void loadSynthesisTarget();
+    void resetShapeModel();
 	void draw_feature(bool);
 	void clear_drawn_feature();
 	void show_texture_window();

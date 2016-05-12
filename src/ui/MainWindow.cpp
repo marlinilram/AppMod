@@ -25,6 +25,7 @@ MainWindow::MainWindow()
   connect(action_Delete_Last_Line_Of_Source, SIGNAL(triggered()), this, SLOT(deleteLastLine_Source()));
   connect(action_Delete_Last_Line_Of_Target, SIGNAL(triggered()), this, SLOT(deleteLastLine_Target()));
   connect(action_Load_Synthesis_Target, SIGNAL(triggered()), this, SLOT(loadSynthesisTarget()));
+  connect(action_Reset_Model, SIGNAL(triggered()), this, SLOT(resetShapeModel()));
 
 
 
@@ -477,4 +478,9 @@ void MainWindow::showToolBox()
   {
     parameter_dock->hide();
   }
+}
+
+void MainWindow::resetShapeModel()
+{
+  disp_modules->resetShapeModel();
 }

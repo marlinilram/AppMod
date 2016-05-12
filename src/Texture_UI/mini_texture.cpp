@@ -7,7 +7,6 @@
 #include <QMessageBox>
 #include "ParaShape.h"
 #include "ShapeUtility.h"
-#include "MainWindow_Texture.h"
 #include "viewer_selector.h"
 MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	:QLabel(parent, f)
@@ -27,7 +26,7 @@ MiniTexture::MiniTexture(QWidget * parent, Qt::WindowFlags f)
 	this->m_right_button_down_ = false;
 	m_image_scale_ = 1;
 	reset_window_for_stroke();
-	m_mainWindow_ = NULL;
+
 	int m_width_ = 512;
 	int m_height_ = 512;
 	
@@ -39,10 +38,6 @@ MiniTexture::~MiniTexture()
 };
 
 
-void MiniTexture::set_mainwindow(MainWindow_Texture* w)
-{
-	this->m_mainWindow_ = w;
-};
 
 QString MiniTexture::get_file_name()
 {

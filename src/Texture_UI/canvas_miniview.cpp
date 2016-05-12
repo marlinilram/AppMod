@@ -1,7 +1,7 @@
+#include "Texture_Viewer.h"
+#include "MainWindow_Texture.h"
 #include "canvas_miniview.h"
 #include "../qglviewer/vec.h"
-#include "MainWindow_Texture.h"
-#include "Texture_Viewer.h"
 #include "QGLViewer/camera.h"
 #include <QMouseEvent>
 #include "QGLViewer/manipulatedCameraFrame.h"

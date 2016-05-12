@@ -1,14 +1,12 @@
 #ifndef MainWindow_Texture_H
 #define MainWindow_Texture_H
 
-#include <glew-1.11.0/include/GL/glew.h>
 #include <QMainWindow>
 #include "ui_MainWindow_Texture.h"
 #include "Dialog_Database.h"
 #include <memory>
 #include <vector>
 #include <string>
-#include "canvas_miniview.h"
 #include <QResizeEvent>
 class QListWidgetItem;
 class Texture_Label;
@@ -17,6 +15,7 @@ class Texture_Viewer;
 class MiniTexture;
 class ShapeList;
 class TexSynHandler;
+class Canvas_Miniview;
 
 class MainWindow_Texture : public QMainWindow, public Ui::MainWindow_Texture
 {
@@ -87,7 +86,7 @@ private:
 
 	MiniTexture* m_mini_selected_;
 
-   std::shared_ptr<TexSynHandler> tex_syn_handler;
+ std::shared_ptr<TexSynHandler> tex_syn_handler;
 
 };
 

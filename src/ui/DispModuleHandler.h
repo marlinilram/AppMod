@@ -64,6 +64,7 @@ public:
   void updateSField(int type);
   void useExtFeatureLine();
   void runDebugAlg();
+  void resetShapeModel();
 
 public slots:
   void updateGeometryInteractive();

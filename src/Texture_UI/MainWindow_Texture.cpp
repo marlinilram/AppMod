@@ -1,10 +1,12 @@
+#include "Texture_Viewer.h"
+#include "Texture_Canvas.h"
+
 #include "MainWindow_Texture.h"
+#include "canvas_miniview.h"
 #include "Texture_Label.h"
 #include <QtWidgets/QHBoxLayout>
 #include <QFileDialog>
 #include <QDir>
-#include "Texture_Viewer.h"
-#include "Texture_Canvas.h"
 #include "mini_texture.h"
 #include "shape_item.h"
 #include "shape_list.h"

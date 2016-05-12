@@ -1,6 +1,7 @@
 #ifndef CANVAS_MINIVIEW_H
 #define CANVAS_MINIVIEW_H
 
+#include <glew-1.11.0/include/GL/glew.h>
 #include "QGLViewer/qglviewer.h"
 #include "poly_mesh.h"
 #include <QLabel>

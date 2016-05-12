@@ -1,8 +1,8 @@
+#include "Texture_Viewer.h"
 #include "texture_points_corres.h"
 #include <QApplication>
 #include <QDesktopWidget>
 #include "PolygonMesh.h"
-#include <QGLViewer/qglviewer.h>
 #include "color_table.h"
 #include <QMouseEvent>
 #include <QAction>
@@ -11,7 +11,6 @@
 #include "ShapeUtility.h"
 #include "ParaShape.h"
 #include "TexSynHandler.h"
-#include "Texture_Viewer.h"
 #include<opencv2/highgui/highgui.hpp>
 Texture_Mesh_Corres::Texture_Mesh_Corres(QWidget * parent, Qt::WindowFlags f)
 	:QLabel(parent, f)
@@ -169,7 +168,7 @@ void Texture_Mesh_Corres::set_data(
 			if (b)
 			{
 				//mask_d0_all.at<float>(i, j) = 1;
-				if (std::find(select_faces.begin(), select_faces.end(), f_id) != select_faces.end())
+        if (std::find(select_faces.begin(), select_faces.end(), tar_para_shape->face_set[f_id]) != select_faces.end())
 				{
 					m_mask_target_.at<float>(j, i) = 1;
 				}
