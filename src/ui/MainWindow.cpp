@@ -71,7 +71,15 @@ void MainWindow::creat_action_and_connect()
 
 
 	connect(actionClear_feature, SIGNAL(triggered()), this, SLOT(clear_drawn_feature()));
+	connect(actionSet_Axis_XYZ, SIGNAL(toggled(bool)), this, SLOT(set_Axis_XYZ(bool)));
+	actionSet_Axis_XYZ->setIcon(QIcon("icons/axis_XYZ.png"));
 };
+void MainWindow::set_Axis_XYZ(bool b)
+{
+	LG::GlobalParameterMgr::GetInstance()->get_parameter<bool>("ShapeManipulator:Axis") = b;
+	this->disp_modules->trackball_viewer->updateGL();
+}
+
 void MainWindow::operationModeChanged(QAction* act)
 {
 	if (act == actionSceneManipulation)

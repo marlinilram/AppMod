@@ -13,6 +13,10 @@ Texture_Canvas::Texture_Canvas()
   render_mode = 3;
   use_flat = 1;
   has_data_ = false;
+
+  width_tmp = -1;
+  height_tmp = -1;
+
 }
 
 Texture_Canvas::~Texture_Canvas()
@@ -97,18 +101,38 @@ void Texture_Canvas::setModel(std::shared_ptr<Model> shared_model)
 	{
 		return;
 	}
+	std::shared_ptr<Model> m = this->getModel();
+
+	if (m.get() == shared_model.get())
+	{
+		return;
+	}
 	DispObject::setModel(shared_model);
+	if (m!=NULL)
+	{
+		delete m.get();
+	}
+
 	this->updateModelBuffer();
 	shared_model->set_dis_obj(this);
+	this->setFBO();
 }
 
 void Texture_Canvas::setsize(int w, int h)
 {
 	this->width = w;
 	this->height = h;
-  std::cout << "reset frame buffer" << std::endl;
-	this->setFBO();
-};
+
+	if (width_tmp != w || height_tmp != h)
+	{ 
+		width_tmp = w;
+		height_tmp = h;
+		if (this->getModel()!=NULL)
+		{
+			this->setFBO();
+		}
+	}
+}
 
 void Texture_Canvas::drawPrimitiveID()
 {

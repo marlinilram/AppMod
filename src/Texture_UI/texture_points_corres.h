@@ -38,8 +38,18 @@ public:
 
 	void draw_line();
 	void draw_points();
+
+	void set_origin_image(const QImage& m);
+	void set_mesh_image(const QImage& m);
+	void set_masked_image(const QImage& m);
+
+	void show_origin_image();
+	void show_mesh_image();
+	void show_masked_image();
+	void set_show_mode(int m);
+
+
 private:
-	void set_file(QString);
 	void set_image(const QImage&);
 	void compute_mesh_center();
 	void compute_faces_centers();
@@ -51,11 +61,15 @@ private:
 	void mouseMoveEvent(QMouseEvent *);
 	void timerEvent(QTimerEvent *);
 	void dropEvent(QDropEvent * event);
-
 	void creat_menu();
+
 	QString m_image_file_;
-	QImage  m_image_;
+	QImage  m_origin_image_;
+	QImage  m_mesh_image_;
+	QImage	m_masked_image_;
 	bool	m_new_image_;
+	int timer_id;
+
 private:
 	LG::PolygonMesh* m_mesh_;
 	LG::Vec3	 m_mesh_center_;
@@ -75,7 +89,10 @@ private:
 	QPoint m_p_previous_;
 	QMenu*	   m_menu_;
 	
+	int m_show_mode_;//0->origin, 1->mesh image, 2->masked image
 
+	QLabel*	 m_label_full_image_;
+	bool	 m_focus_on_;
 private slots:
 	void delete_this();
 signals :

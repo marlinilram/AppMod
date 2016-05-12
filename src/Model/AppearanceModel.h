@@ -26,6 +26,10 @@ public:
   void importAppMod(std::string file_name_, std::string file_path_);
   void exportAppMod(std::string file_name_, std::string file_path_);
 
+
+  void get_mask_from_origin_image_to_uv(const cv::Mat& mask_origin_image, cv::Mat& mask_uv);
+
+
   void setResolution(int resolution_) { resolution = resolution_; };
   float getResolution() { return resolution; };
 
@@ -58,8 +62,10 @@ public:
   void setCameraInfo(Matrix4f& modelview, Matrix4f& projection, Vector4i& viewport);
   void setZImg(cv::Mat& z_img_);
   void setPrimitiveID(cv::Mat& primitive_ID_);
-  
+  const cv::Mat& getPrimitiveID(){ return this->primitive_ID; };
+
   void coordImgToUV(std::vector<CvPoint>& coords);
+  bool coordImgToUV(const CvPoint& coord_in, CvPoint& coord_out);
   void coordFaceToUV(std::vector<CvPoint>& coords, std::vector<int>& f_ids);
 
 private:

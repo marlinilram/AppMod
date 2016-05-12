@@ -30,14 +30,14 @@ private slots:
     void resetScreen();
     void updateGeometry();
     void refreshScreen();
-	  void exportOBJ();
+	 void exportOBJ();
     void setOptParatoModel();
     void runAll();
     void renderTexture();
     void setVectorField();
-	  void clearSelectedPoints();
-	  void computeCameraPose();
-	  void loadPoints();
+	void clearSelectedPoints();
+	void computeCameraPose();
+	void loadPoints();
     void deleteLastLine_Source();
     void deleteLastLine_Target();
     void showToolBox();
@@ -46,6 +46,7 @@ private slots:
 	void clear_drawn_feature();
 	void show_texture_window();
 	void operationModeChanged(QAction*);
+	void set_Axis_XYZ(bool);
 private:
 	void creat_action_and_connect();
 private:

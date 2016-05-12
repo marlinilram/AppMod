@@ -11,8 +11,6 @@
 #include "ParameterMgr.h"
 #include <QGLViewer/manipulatedFrame.h>
 #include "viewer_selector.h"
-#include "global.h"
-#include "viewer_selector.h"
 TrackballViewer::TrackballViewer(QWidget *widget)
   : BasicViewer(widget), sync_camera(false)
 {

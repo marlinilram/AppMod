@@ -7,6 +7,7 @@
 #include <QWidget>
 #include <QMouseEvent>
 class MiniTexture;
+class MainWindow_Texture;
 class Texture_Label : public QLabel
 {
   Q_OBJECT
@@ -22,12 +23,18 @@ public:
 	void mousePressEvent(QMouseEvent * event);
 	void mouseReleaseEvent(QMouseEvent * event);
 	void mouseDoubleClickEvent(QMouseEvent * event);
+
+	void set_mainwindow(MainWindow_Texture*);
+	MainWindow_Texture* get_mainwindow();
 private:
 	void set_image(const QImage&);
 public slots:
 	void clear();
 	void select_cut(MiniTexture*);
 private:
+
+	MainWindow_Texture* m_mainWindow_;
+
 	QString m_image_file_;
 	QImage  m_image_;
 	QLabel* m_full_image_label_;
