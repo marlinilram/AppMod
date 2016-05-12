@@ -261,3 +261,15 @@ void AlgHandler::debugSymmetry()
   //syn_actors.clear();
   //detail_synthesis->getDrawableActors(syn_actors, 1);
 }
+
+void AlgHandler::resetShapeModel()
+{
+  if (!shape_model)
+  {
+    return;
+  }
+
+  VertexList ori_v_list = shape_model->getShapeOriVertexList();
+  shape_model->updateShape(ori_v_list);
+  std::cout << "reset model." << std::endl;
+}

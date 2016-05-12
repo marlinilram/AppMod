@@ -12,7 +12,7 @@
 #include <QResizeEvent>
 #include "PolygonMesh_Manipulator.h"
 #include "viewer_selector.h"
-//#include "texture_points_corres.h"
+#include "texture_points_corres.h"
 
 Texture_Viewer::Texture_Viewer(QWidget *widget)
   : BasicViewer(widget)

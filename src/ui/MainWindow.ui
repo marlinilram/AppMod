@@ -91,6 +91,7 @@
    <addaction name="action_Snap_Shot"/>
    <addaction name="action_Fix_Camera"/>
    <addaction name="action_Reset_Screen"/>
+   <addaction name="action_Reset_Model"/>
    <addaction name="action_Export_OBJ"/>
    <addaction name="action_Render"/>
    <addaction name="action_Update_Geometry"/>
@@ -269,6 +270,15 @@
    </property>
    <property name="text">
     <string>camer_fix</string>
+   </property>
+  </action>
+  <action name="action_Reset_Model">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/load_points.png</normaloff>icons/load_points.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reset Model</string>
    </property>
   </action>
  </widget>

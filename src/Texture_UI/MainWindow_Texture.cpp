@@ -443,13 +443,13 @@ void MainWindow_Texture::run_d0_synthesis_all()
 		std::string std_file_path = file_name.toStdString().substr(0, file_name.toStdString().find_last_of('/'));
 		cv::Mat mask_source = tmsss[i]->get_mask_source();
 		cv::Mat mask_target = tmsss[i]->get_mask_target();
-		IplImage iplImg = IplImage(mask_source);
-		cvShowImage("mask_source" + i, &iplImg);
-		std::cout << std_file_path << "\n";
+		//IplImage iplImg = IplImage(mask_source);
+		//cvShowImage("mask_source" + i, &iplImg);
+		//std::cout << std_file_path << "\n";
 
-		IplImage iplImg1 = IplImage(mask_target);
-		cvShowImage("mask_target" + i, &iplImg1);
-		std::cout << std_file_path << "\n";
+		//IplImage iplImg1 = IplImage(mask_target);
+		//cvShowImage("mask_target" + i, &iplImg1);
+		//std::cout << std_file_path << "\n";
 
 
 		LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask") = mask_source.clone();

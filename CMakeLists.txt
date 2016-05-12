@@ -81,7 +81,8 @@ SET( DispModuleHandler_MOC_HDRS src/ui/DispModuleHandler.h
 				src/Texture_UI/shape_list.h
                                 src/Texture_UI/Texture_Canvas.h
 				src/Texture_UI/Texture_Viewer.h
-				src/DispModule/Viewer/VectorFieldViewer.h )
+				src/DispModule/Viewer/VectorFieldViewer.h
+				src/Texture_UI/texture_points_corres.h )
 						 
 add_definitions(-DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)

@@ -39,15 +39,15 @@ DispModuleHandler::DispModuleHandler(QWidget* parent)
   QDockWidget* src_vector_dock = new QDockWidget(parent);
   QDockWidget* tar_vector_dock = new QDockWidget(parent);
 
-  trackball_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
-  synthesis_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
-  src_vector_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
-  tar_vector_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+  trackball_dock->setAllowedAreas(Qt::RightDockWidgetArea);
+  synthesis_dock->setAllowedAreas(Qt::RightDockWidgetArea);
+  src_vector_dock->setAllowedAreas(Qt::RightDockWidgetArea);
+  tar_vector_dock->setAllowedAreas(Qt::RightDockWidgetArea);
 
-  main_window->addDockWidget(Qt::BottomDockWidgetArea, trackball_dock);
-  main_window->addDockWidget(Qt::BottomDockWidgetArea, synthesis_dock);
-  main_window->addDockWidget(Qt::BottomDockWidgetArea, src_vector_dock);
-  main_window->addDockWidget(Qt::BottomDockWidgetArea, tar_vector_dock);
+  main_window->addDockWidget(Qt::RightDockWidgetArea, trackball_dock);
+  main_window->addDockWidget(Qt::RightDockWidgetArea, synthesis_dock);
+  main_window->addDockWidget(Qt::RightDockWidgetArea, src_vector_dock);
+  main_window->addDockWidget(Qt::RightDockWidgetArea, tar_vector_dock);
 
 
   main_canvas_viewer.reset(new MainCanvasViewer(main_canvas_dock));
@@ -396,7 +396,7 @@ void DispModuleHandler::runLFRegNonRigid()
   source_vector_viewer->updateSourceField(2);
   source_vector_viewer->updateGLOutside();
   target_vector_viewer->updateGLOutside();
-  std::cout << "bug test.\n";
+  //std::cout << "bug test.\n";
   /*trackball_viewer->setGLActors(alg_handler->getGLActors());
   updateCanvas();*/
 }
@@ -463,4 +463,14 @@ void DispModuleHandler::runDebugAlg()
   alg_handler->debugSymmetry();
   trackball_viewer->setGLActors(alg_handler->getGLActors());
   synthesis_viewer->setGLActors(alg_handler->getSynGLActors());
+}
+
+
+void DispModuleHandler::resetShapeModel()
+{
+  alg_handler->resetShapeModel();
+  updateCanvas();
+  source_vector_viewer->updateSourceField(2);
+  source_vector_viewer->updateGLOutside();
+  target_vector_viewer->updateGLOutside();
 }

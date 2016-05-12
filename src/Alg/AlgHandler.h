@@ -43,6 +43,7 @@ public:
   void loadDetailMap();
 
   void debugSymmetry();
+  void resetShapeModel();
 
 private:
   std::shared_ptr<ProjOptimize> proj_optimize;
