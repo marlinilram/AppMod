@@ -221,13 +221,13 @@ void MainWindow_Texture::operationModeChanged(QAction* act)
 void MainWindow_Texture::load_obj(QString fileName_tmp)
 {
 
- 	QString filter;
- 	filter = "obj file (*.obj)";
- 	QString sssss = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), fileName_tmp, filter);
-	if (sssss.isEmpty())
-	{
-		return;
-	}
+//  	QString filter;
+//  	filter = "obj file (*.obj)";
+//  	QString sssss = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), fileName_tmp, filter);
+// 	if (sssss.isEmpty())
+// 	{
+// 		return;
+// 	}
 // 	if (QMessageBox::question(this, "Open new Obj", "Open a new OBJ file?") == QMessageBox::No)
 // 	{
 // 		return;
@@ -251,6 +251,8 @@ void MainWindow_Texture::load_obj(QString fileName_tmp)
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
 	this->m_viewer_->resetCamera();
+
+  this->m_viewer_->setGLActors(this->tex_syn_handler->getGLActors());
 };
 
 void MainWindow_Texture::load_obj()

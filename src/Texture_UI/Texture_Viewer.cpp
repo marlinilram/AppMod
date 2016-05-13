@@ -1,5 +1,6 @@
 #include "Texture_Viewer.h"
 #include "Texture_Canvas.h"
+#include "GLActor.h"
 #include "Bound.h"
 #include <QKeyEvent>
 #include "../Model/Model.h"
@@ -28,6 +29,8 @@ Texture_Viewer::Texture_Viewer(QWidget *widget)
   m_show_mesh_ = true;
   m_texture_now_ = NULL;
   m_show_line_ = false;
+
+  draw_actors = false;
 }
 
 Texture_Viewer::~Texture_Viewer()
@@ -122,6 +125,14 @@ void Texture_Viewer::draw()
 	{
 		dispObjects[i]->set_viewer(this);
 	}
+  }
+
+  if (draw_actors)
+  {
+    for (decltype(actors.size()) i = 0; i < actors.size(); ++i)
+    {
+      actors[i].draw();
+    }
   }
 
   this->draw_points_under_mouse();
@@ -973,6 +984,12 @@ bool Texture_Viewer::draw_mesh_points()
 	glEnd();
 	return true;
 };
+
+void Texture_Viewer::setGLActors(std::vector<GLActor>& actors)
+{
+  this->actors = actors;
+  // don't show the line only show points
+}
 
 
 

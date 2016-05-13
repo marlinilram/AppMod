@@ -1,4 +1,5 @@
 #include "TexSynHandler.h"
+#include "GLActor.h"
 #include "Model.h"
 #include "PolygonMesh.h"
 #include "AppearanceModel.h"
@@ -27,6 +28,9 @@ void TexSynHandler::setSynthesisModel(std::shared_ptr<Model> model)
   this->detail_synthesis->setCurResolution(resolution);
   this->detail_synthesis->generateD0Feature(this->syn_app_mod.get(), this->synthesis_model);
   this->detail_synthesis->generateD1Feature(this->syn_app_mod.get(), this->synthesis_model, true);
+
+  actors.clear();
+  this->detail_synthesis->getDrawableActors(actors);
 }
 
 void TexSynHandler::runD1Synthesis(std::string app_mod_file)

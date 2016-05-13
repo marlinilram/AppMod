@@ -11,6 +11,8 @@ class VectorFieldViewer;
 class QMouseEvent;
 class QKeyEvent;
 class MiniTexture;
+class GLActor;
+
 class Texture_Viewer : public BasicViewer
 {
 	Q_OBJECT
@@ -38,6 +40,9 @@ public:
   void mark_points();
   void set_texture_now(MiniTexture* m);
   std::vector<int> face_selected();
+
+  void setGLActors(std::vector<GLActor>& actors);
+
 public slots:
 	void delete_textures_mesh_corre(Texture_Mesh_Corres*);
 	void select_all_unselected();
@@ -77,6 +82,8 @@ private:
   bool m_right_button_down_;
   int  m_edit_mode_;
 
+  std::vector<GLActor> actors;
+  bool draw_actors;
 
   std::vector<bool>   m_faces_selected_;
   std::vector<bool>   m_faces_selected_all_;
