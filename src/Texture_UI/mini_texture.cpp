@@ -664,27 +664,24 @@ void MiniTexture::double_Click_On_Origin_D0(QMouseEvent * event)
 		{
 			this->m_mask_d0_ = this->m_mask_tmp_d0_.clone();
 
-// 			cv::Mat m_dis = this->get_mask_d0().clone();
-// 			double scale = this->m_image_scale_; //设置缩放倍数
-// 			cv::Size dsize(m_dis.cols / scale, m_dis.rows / scale);
-// 			cv::Mat image2(dsize, CV_32FC1);
-// 			cv::resize(m_dis, image2, dsize);
-// 			IplImage iplImg = IplImage(image2);
-// 			cvShowImage("mask_origin", &iplImg);
+ 			//cv::Mat m_dis = this->get_mask_d0().clone();
+ 			//double scale = this->m_image_scale_; //设置缩放倍数
+ 			//cv::Size dsize(m_dis.cols / scale, m_dis.rows / scale);
+ 			//cv::Mat image2(dsize, CV_32FC1);
+ 			//cv::resize(m_dis, image2, dsize);
+ 			//IplImage iplImg = IplImage(image2);
+ 			//cvShowImage("mask_origin", &iplImg);
 
-
-
-// 			QString file_path = this->m_image_file_;
-// 			std::string std_file_path = file_path.toStdString().substr(0, file_path.toStdString().find_last_of('/'));
-// 			std::shared_ptr<AppearanceModel> src_app_mod(new AppearanceModel());
-// 			src_app_mod->importAppMod("app_model.xml", std_file_path);
-// 
-// 
-// 			cv::Mat m_mask_UV;
-// 			src_app_mod->get_mask_from_origin_image_to_uv(m_mask_d0_, m_mask_UV);
-// 			
-// 			IplImage iplImg_uv = IplImage(m_mask_UV);
-// 			cvShowImage("mask_uv", &iplImg_uv);
+ 			//QString file_path = this->m_image_file_;
+ 			//std::string std_file_path = file_path.toStdString().substr(0, file_path.toStdString().find_last_of('/'));
+ 			//std::shared_ptr<AppearanceModel> src_app_mod(new AppearanceModel());
+ 			//src_app_mod->importAppMod("app_model.xml", std_file_path);
+ 
+ 			//cv::Mat m_mask_UV;
+ 			//src_app_mod->get_mask_from_origin_image_to_uv(m_mask_d0_, m_mask_UV);
+ 			//
+ 			//IplImage iplImg_uv = IplImage(m_mask_UV);
+ 			//cvShowImage("mask_uv", &iplImg_uv);
 
 			if (QMessageBox::question(this, "Submit??", "Are you sure use these regions you selected?") == QMessageBox::Yes)
 			{
