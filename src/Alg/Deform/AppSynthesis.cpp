@@ -6,6 +6,8 @@
 
 #include "Shape.h"
 #include "ParaShape.h"
+#include "Ray.h"
+#include "Bound.h"
 
 #include "SynthesisTool.h"
 #include "AppearanceModel.h"
@@ -16,6 +18,8 @@
 #include "YMLHandler.h"
 #include <fstream>
 #include "BasicHeader.h"
+
+using namespace LG;
 
 std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model)
 {
@@ -33,10 +37,10 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 	// 1. build the mask for source and target
 	std::vector<cv::Mat> src_feature_map;
 	app_mod_src->getD0Features(src_feature_map);
-   // cv::Mat src_mask = LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask").clone();// GLOBAL::m_mat_source_mask0_.clone();
+   // cv::Mat src_mask = GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppMask").clone();// GLOBAL::m_mat_source_mask0_.clone();
 	cv::Mat src_mask;
 	app_mod_src->get_mask_from_origin_image_to_uv(
-		LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppOriginImageMask").clone(),
+		GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppOriginImageMask").clone(),
 		src_mask
 		);
 	/*ImageUtility::generateMultiMask(src_feature_map[0].clone(), src_mask);*/
@@ -51,12 +55,12 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 
 
 // 	std::vector<CvPoint> stroke;
-//     app_mod_tar->coordFaceToUV(stroke, LG::GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke"));
+//     app_mod_tar->coordFaceToUV(stroke, GlobalParameterMgr::GetInstance()->get_parameter<std::vector<int> >("Synthesis:TarAppMaskStroke"));
 // 
 // 	cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
 // 	ImageUtility::generateMaskFromStroke(tar_feature_map[0].clone(), stroke, tar_mask);
 
-	cv::Mat tar_mask = LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:TarAppMask").clone();
+	cv::Mat tar_mask = GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:TarAppMask").clone();
 
 	std::vector<int> cur_sampled_tar_models;
 	ShapeUtility::vertexFilterFromParaMask(sampled_tar_model, cur_sampled_tar_models, tar_para_shape->vertex_set, tar_para_shape->cut_shape->getPolygonMesh(), tar_mask);
@@ -72,12 +76,12 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 	// 3. correspondences from NNF
 	// 3.1 run patch match
 	syn_tool.reset(new SynthesisTool);
-	syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
-	syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
-	syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
-	syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
-	syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
-	syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+	syn_tool->levels = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+	syn_tool->patch_size = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+	syn_tool->max_iter = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+	syn_tool->best_random_size = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+	syn_tool->lamd_occ = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+	syn_tool->bias_rate = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
 	syn_tool->setExportPath(tar_model->getOutputPath());
 	syn_tool->doNNFOptimization(masked_src_feature_map, masked_tar_feature_map);
 
@@ -89,10 +93,10 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 	ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
 
 	STLVectorf new_v_list;
-	double transform_scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
+  double transform_scale = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
 	ShapeUtility::prepareLocalTransform(app_mod_src->getBaseMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, transform_scale);
 
-	LG::PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
+	PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
 	std::string obj_path = geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
 
 	ShapeUtility::computeLocalTransform(&old_tar_mesh, tar_model->getPolygonMesh());
@@ -149,12 +153,12 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 //     // 3. correspondences from NNF
 //     // 3.1 run patch match
 //     syn_tool.reset(new SynthesisTool);
-//     syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
-//     syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
-//     syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
-//     syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
-//     syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
-//     syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+//     syn_tool->levels = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+//     syn_tool->patch_size = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+//     syn_tool->max_iter = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+//     syn_tool->best_random_size = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+//     syn_tool->lamd_occ = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+//     syn_tool->bias_rate = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
 //     syn_tool->setExportPath(tar_model->getOutputPath());
 //     syn_tool->doNNFOptimization(masked_src_feature_map, masked_tar_feature_map);
 //   
@@ -166,10 +170,10 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 //     ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
 //   
 //     STLVectorf new_v_list;
-//     double transform_scale = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
+//     double transform_scale = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
 //     ShapeUtility::prepareLocalTransform(app_mod_src->getBaseMesh(), tar_model->getPolygonMesh(), src_v_ids, sampled_tar_model, new_v_list, transform_scale);
 //   
-//     LG::PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
+//     PolygonMesh old_tar_mesh = (*tar_model->getPolygonMesh()); // copy the old one
 //     std::string obj_path = geometry_transfer->transferDeformation(tar_model, sampled_tar_model, new_v_list);
 //   
 //     ShapeUtility::computeLocalTransform(&old_tar_mesh, tar_model->getPolygonMesh());
@@ -186,7 +190,7 @@ void DetailSynthesis::debugSynthesisD0(std::string app_mod_path, std::shared_ptr
 
   // init target appearance model for the D0 features
   std::shared_ptr<AppearanceModel> tar_app_mod(new AppearanceModel());
-  resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
+  resolution = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
   tar_app_mod->setResolution(resolution);
   this->generateD0Feature(tar_app_mod.get(), tar_model);
 
@@ -275,10 +279,17 @@ void DetailSynthesis::synthesisD1(AppearanceModel* app_mod_src, AppearanceModel*
   }
 
   // 1. build the mask for source and target
-  cv::Mat src_mask(src_feature_map[0].rows, src_feature_map[0].cols, CV_32FC1, 1);
-  ImageUtility::generateMultiMask(src_detail_map[0].clone(), src_mask);
-  cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
-  ImageUtility::generateMultiMask(feature_map_backup.clone(), tar_mask);
+  //cv::Mat src_mask(src_feature_map[0].rows, src_feature_map[0].cols, CV_32FC1, 1);
+  //ImageUtility::generateMultiMask(src_detail_map[0].clone(), src_mask);
+  //cv::Mat tar_mask(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1, 1);
+  //ImageUtility::generateMultiMask(feature_map_backup.clone(), tar_mask);
+  cv::Mat src_mask;
+  app_mod_src->get_mask_from_origin_image_to_uv(
+    GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppOriginImageMask").clone(),
+    src_mask
+    );
+  cv::Mat tar_mask = GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:TarAppMask").clone();
+
 
   // 2. make the masked source and target feature map
   // 2.1 masked source
@@ -294,14 +305,14 @@ void DetailSynthesis::synthesisD1(AppearanceModel* app_mod_src, AppearanceModel*
   syn_tool.reset(new SynthesisTool);
   syn_tool->setExportPath(tar_model->getOutputPath());
   syn_tool->lamd_gradient = 0.1;
-  syn_tool->levels = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
-  syn_tool->patch_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
-  syn_tool->max_iter = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
-  syn_tool->best_random_size = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
-  syn_tool->lamd_occ = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
-  syn_tool->bias_rate = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
-  syn_tool->beta_func_center = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_center");
-  syn_tool->beta_func_mult = LG::GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult");
+  syn_tool->levels = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:pry_levels");
+  syn_tool->patch_size = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:patch_size");
+  syn_tool->max_iter = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:max_iter");
+  syn_tool->best_random_size = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:rand_size");
+  syn_tool->lamd_occ = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:occ");
+  syn_tool->bias_rate = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:bias_rate");
+  syn_tool->beta_func_center = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_center");
+  syn_tool->beta_func_mult = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:beta_mult");
 
   std::ofstream paraOutput(tar_model->getOutputPath() + "/synpara.txt");
   if (paraOutput)
@@ -357,7 +368,7 @@ void DetailSynthesis::debugSynthesisD1(std::string app_mod_path, std::shared_ptr
   // init target appearance model for the D0 features
   std::cout << std::endl << "Generate Target D1 Features" << std::endl;
   std::shared_ptr<AppearanceModel> tar_app_mod(new AppearanceModel());
-  resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
+  resolution = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
   tar_app_mod->setResolution(resolution);
   this->generateD1Feature(tar_app_mod.get(), tar_model, true);
 
@@ -383,4 +394,287 @@ void DetailSynthesis::runSynthesisD1(std::string app_mod_path, AppearanceModel* 
 
   // run synthesis
   this->synthesisD1(src_app_mod.get(), app_mod_tar, tar_model);
+}
+
+std::string DetailSynthesis::applyD1Displacement(std::shared_ptr<Model> tar_model, cv::Mat& mask)
+{
+  cv::FileStorage fs2(tar_model->getOutputPath() + "/new_d2_displacement.yml", cv::FileStorage::READ);
+  cv::Mat disp_map;
+  fs2["new_d2_displacement"] >> disp_map;
+
+  // test if mask and displacement have same resolution
+  int m_resolution = std::min(mask.rows, mask.cols);
+  int d_resolution = std::min(disp_map.rows, disp_map.cols);
+  if (m_resolution != d_resolution)
+  {
+    std::cout << "mask and displacmenet map don't have same resolution!" << std::endl;
+    return "";
+  }
+  {
+    // centerize
+    float value = 0;
+    int value_cnt = 0;
+    for (int i = 0; i < disp_map.rows; i++)
+    {
+      for (int j = 0; j < disp_map.cols; j++)
+      {
+        if (mask.at<float>(i, j) > 0.5)
+        {
+          value += disp_map.at<float>(i, j);
+          ++value_cnt;
+        }
+      }
+    }
+    value = value / value_cnt;
+    std::cout << "value: " << value << std::endl;
+    for (int i = 0; i < disp_map.rows; i++)
+    {
+      for (int j = 0; j < disp_map.cols; j++)
+      {
+        disp_map.at<float>(i, j) = disp_map.at<float>(i, j) - value;
+      }
+    }
+  }
+
+  int n_ring = GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:n_ring");
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtPolygonMesh(tar_model->getPolygonMesh()); // target model provide smooth normal
+
+  std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+  PolygonMesh subdiv_target;
+  ShapeUtility::loadPolyMesh(&subdiv_target, tar_model->getDataPath() + "/subdiv_" + tar_model->getFileName());
+  tar_para_shape->initWithExtPolygonMesh(&subdiv_target);
+
+  std::set<int> crest_lines_points;
+  for (size_t i = 0; i < tar_model->getShapeCrestLine().size(); i++)
+  {
+    for (size_t j = 0; j < tar_model->getShapeCrestLine()[i].size(); j++)
+    {
+      crest_lines_points.insert(tar_model->getShapeCrestLine()[i][j]);
+    }
+  }
+
+  double scale = GlobalParameterMgr::GetInstance()->get_parameter<double>("Synthesis:scale");
+
+  PolygonMesh* tar_mesh = &subdiv_target;
+  PolygonMesh* src_mesh = tar_model->getPolygonMesh();
+
+  std::vector<bool> visited_tag(tar_mesh->n_vertices(), false);
+
+  PolygonMesh new_tar_mesh = subdiv_target;
+  std::vector<int> displaced_vertex;
+  std::vector<float> displaced_positions;
+
+  // for debug
+  float min = std::numeric_limits<float>::max();
+  float max = std::numeric_limits<float>::min();
+  std::vector<Vec3> cache_normal;
+
+  const STLVectori& vertex_set = tar_para_shape->vertex_set;
+  std::shared_ptr<Shape> cut_shape = tar_para_shape->cut_shape;
+
+  for (int i = 0; i < vertex_set.size(); i++)
+  {
+    if (visited_tag[vertex_set[i]]) continue;
+    visited_tag[vertex_set[i]] = true;
+
+    std::set<int> test_boundary_vertices;
+    ShapeUtility::nRingVertices(cut_shape->getPolygonMesh(), i, test_boundary_vertices, n_ring);
+    bool is_para_boundary = false;
+    for (auto i_bound : test_boundary_vertices)
+    {
+      if (cut_shape->getPolygonMesh()->is_boundary(PolygonMesh::Vertex(i_bound)))
+      {
+        is_para_boundary = true;
+        break;
+      }
+    }
+    if (is_para_boundary) continue;
+
+    float U, V;
+    U = (cut_shape->getUVCoord())[2 * i + 0];
+    V = (cut_shape->getUVCoord())[2 * i + 1];
+    std::vector<float> pt(2, 0);
+    pt[0] = U; pt[1] = V;
+    int face_id;
+    std::vector<int> id;
+    std::vector<float> lambda;
+
+    bool in_uv_mesh = ShapeUtility::findClosestUVFace(pt, src_para_shape.get(), lambda, face_id, id);
+    int closest_v_id = ShapeUtility::closestVertex(src_para_shape->cut_shape->getPolygonMesh(), id, cut_shape->getPolygonMesh(), i);
+    //bool in_crest_line = crest_lines_points.find(src_para_shape->vertex_set[closest_v_id]) == crest_lines_points.end() ? false : true;
+    std::set<int> near_vertices;
+    ShapeUtility::nRingVertices(src_mesh, src_para_shape->vertex_set[closest_v_id], near_vertices, 0); // near_vertices stores the vertex id in source mesh not para shape
+    bool in_crest_line = false;
+    for (auto i_near : near_vertices)
+    {
+      if (crest_lines_points.find(i_near) != crest_lines_points.end())
+      {
+        in_crest_line = true;
+        break;
+      }
+    }
+    //bool in_crest_line = false; // test if using outlier filter can allow not use feature line detect now
+
+    Vec3 normal_check(0, 0, 0);
+    if (in_uv_mesh && !in_crest_line)
+    {
+      // use face normal here
+      //normal_check = src_mesh->face_attribute<Vec3>("f:normal")[PolygonMesh::Face(src_para_shape->face_set[face_id])];
+      // use source mesh normal
+      normal_check = lambda[0] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[0]])]
+        + lambda[1] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[1]])]
+        + lambda[2] * src_mesh->vertex_attribute<Vec3>("v:normal")[PolygonMesh::Vertex(src_para_shape->vertex_set[id[2]])];
+      normal_check.normalize();
+      if (_isnan(normal_check[0])) std::cout << "nan in normal computing!!!" << std::endl;
+      /*ShapeUtility::getAverageNormalAroundVertex(tar_mesh, vertex_set[i], normal_check, 2);*/
+    }
+    else
+    {
+      // use the target average normal around this vertex
+      ShapeUtility::getAverageNormalAroundVertex(tar_mesh, vertex_set[i], normal_check, 2);
+    }
+
+    // get vertex position and its displacement
+    Vec3 pt_check = tar_mesh->position(PolygonMesh::Vertex(vertex_set[i]));
+    int img_x, img_y;
+    img_x = std::max(0, std::min(int(U * (float)resolution), resolution - 1));
+    img_y = std::max(0, std::min(int(V * (float)resolution), resolution - 1));
+    float cur_disp = 0;
+    if (mask.at<float>(resolution - img_y - 1, img_x) > 0.5)
+    {
+      cur_disp = disp_map.at<float>(resolution - img_y - 1, img_x);
+      //bool outlier = cur_disp < -1 ? true : (cur_disp > 1 ? true : false);
+      bool outlier = false; // outlier has been put outside of the uv_mask now, determined by z-score
+      if (in_uv_mesh && !in_crest_line && !outlier)
+      {
+        pt_check = pt_check + scale * cur_disp * normal_check;
+      }
+      else if (in_crest_line && in_uv_mesh)
+      {
+        pt_check = pt_check + scale * cur_disp * normal_check;
+      }
+
+      new_tar_mesh.position(PolygonMesh::Vertex(vertex_set[i])) = pt_check;
+
+      if (in_uv_mesh && !in_crest_line && !outlier)
+      {
+        displaced_vertex.push_back(vertex_set[i]);
+        displaced_positions.push_back(pt_check[0]);
+        displaced_positions.push_back(pt_check[1]);
+        displaced_positions.push_back(pt_check[2]);
+
+        if (cur_disp > max) max = cur_disp;
+        if (cur_disp < min) min = cur_disp;
+        cache_normal.push_back(normal_check);
+      }
+    }
+  }
+
+  std::cout << "min: " << min << "\tmax: " << max << std::endl;
+  //std::ofstream fdebug(tar_model->getOutputPath() + "/displace_info.txt");
+  //if (fdebug)
+  //{
+  //  for (size_t i = 0; i < displaced_vertex.size(); ++i)
+  //  {
+  //    fdebug << displaced_vertex[i] << " " << displaced_positions[3 * i + 0] << " " << displaced_positions[3 * i + 1] << " " << displaced_positions[3 * i + 2] << " " << cache_normal[i].transpose() << std::endl;
+  //  }
+  //  fdebug.close();
+  //}
+
+  std::shared_ptr<GeometryTransfer> geometry_transfer(new GeometryTransfer);
+  geometry_transfer->transferDeformation(tar_mesh, displaced_vertex, displaced_positions, 10.0f, false);
+
+  char time_postfix[50];
+  time_t current_time = time(NULL);
+  strftime(time_postfix, sizeof(time_postfix), "_%Y%m%d-%H%M%S", localtime(&current_time));
+  std::string file_time_postfix = time_postfix;
+  std::string output_name = tar_model->getOutputPath() + "/by_deform_detail_synthesis" + file_time_postfix + ".obj";
+  ShapeUtility::savePolyMesh(&new_tar_mesh, tar_model->getOutputPath() + "/detail_synthesis" + file_time_postfix + ".obj");
+  ShapeUtility::savePolyMesh(tar_mesh, output_name);
+  return output_name;
+}
+
+void DetailSynthesis::generateD1FromAligned(std::shared_ptr<Model> tar_model)
+{
+  PolygonMesh height_mesh;
+  if (!read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj"))
+  {
+    std::cout << "cannot load height_mesh.obj" << std::endl;
+    cv::FileStorage fs2(tar_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
+    cv::Mat final_height_mat;
+    fs2["final_height"] >> final_height_mat;
+    PolygonMesh new_mesh;
+    ShapeUtility::heightToMesh(final_height_mat, new_mesh, tar_model);
+    ShapeUtility::savePolyMesh(&new_mesh, tar_model->getDataPath() + "/height_mesh.obj", false);
+
+    return;
+  }
+
+
+  std::shared_ptr<Ray> ray_instance(new Ray);
+  ShapeUtility::initBSPTreeRayFromPolyMesh(ray_instance.get(), &height_mesh);
+
+  std::shared_ptr<ParaShape> src_para_shape(new ParaShape);
+  src_para_shape->initWithExtShape(tar_model);
+  std::set<int> visible_faces;
+  ShapeUtility::visibleFacesInModel(tar_model, visible_faces);
+  PolygonMesh* mesh = tar_model->getPolygonMesh();
+  PolygonMesh::Vertex_attribute<Vec3> v_normals = mesh->vertex_attribute<Vec3>("v:normal");
+  float perc = 0;
+
+  std::cout << "bound radius: " << tar_model->getBoundBox()->getRadius() << std::endl;
+  std::vector<float> dis;
+
+  for (auto vit : mesh->vertices())
+  {
+    Vector3f pos = mesh->position(vit);
+    Vector3f dir = v_normals[vit];
+    dir.normalize();
+
+    Vector3f end = pos + tar_model->getBoundBox()->getRadius() * dir;
+    Vector3f neg_end = pos - tar_model->getBoundBox()->getRadius() * dir;
+    float epslon = 1e-5;
+    Eigen::Vector3d intersect_point, neg_intersect_point;
+    bool is_intersected, is_neg_intersected;
+    is_intersected = ray_instance->intersectModel((pos + epslon * dir).cast<double>(), end.cast<double>(), intersect_point.data());
+    is_neg_intersected = ray_instance->intersectModel((pos - epslon * dir).cast<double>(), neg_end.cast<double>(), neg_intersect_point.data());
+    if (is_intersected == false && is_neg_intersected == false)
+    {
+      // if no intersection, we don't store this point and make it and outlier
+    }
+    else
+    {
+      float distance = (intersect_point.cast<float>() - pos).norm();;
+      float neg_distance = (neg_intersect_point.cast<float>() - pos).norm();;
+      float actual_distance = distance > neg_distance ? -neg_distance : distance;
+      if (fabs(actual_distance) < (tar_model->getBoundBox()->getRadius() * 0.03))
+      {
+        mesh->position(vit) = pos + actual_distance * dir;
+        dis.push_back(actual_distance);
+      }
+    }
+
+    float cur_perc = (float)vit.idx() / mesh->n_vertices();
+    if (cur_perc - perc >= 0.05)
+    {
+      perc = cur_perc;
+      std::cout << perc << "...";
+    }
+  }
+
+  ShapeUtility::savePolyMesh(mesh, tar_model->getOutputPath() + "/D1FromAligned.obj");
+
+  VertexList old_v_list = tar_model->getShapeOriVertexList();
+  tar_model->updateShape(old_v_list);
+
+  std::ofstream f_debug(tar_model->getOutputPath() + "/dis.txt");
+  if (f_debug)
+  {
+    for (auto i : dis)
+    {
+      f_debug << i << std::endl;
+    }
+    f_debug.close();
+  }
 }

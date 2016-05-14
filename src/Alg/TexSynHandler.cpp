@@ -52,3 +52,13 @@ std::string TexSynHandler::runD0Synthesis(std::string app_mod_file)
 
  return this->detail_synthesis->runSynthesisD0(app_mod_file, syn_app_mod.get(), synthesis_model);
 }
+
+std::string TexSynHandler::applyD1Displacement(cv::Mat& mask)
+{
+  if (!synthesis_model || !syn_app_mod)
+  {
+    std::cout << "target data has not been initialized yet." << std::endl;
+  }
+
+  return this->detail_synthesis->applyD1Displacement(synthesis_model, mask);
+}

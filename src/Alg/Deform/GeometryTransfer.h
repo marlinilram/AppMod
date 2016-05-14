@@ -5,6 +5,10 @@
 #include <vector>
 
 class Model;
+namespace LG
+{
+class PolygonMesh;
+}
 
 class GeometryTransfer
 {
@@ -14,6 +18,7 @@ public:
 
   void prepareSampleVertex(std::shared_ptr<Model> tar_model, std::vector<int>& v_ids);
   std::string transferDeformation(std::shared_ptr<Model> tar_model, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move = 5.0, bool use_arap = true);
+  void transferDeformation(LG::PolygonMesh* tar_mesh, const std::vector<int>& v_ids, const std::vector<float>& v_list, float lamd_move = 5.0, bool use_arap = true);
 
   void debugDeformation(std::shared_ptr<Model> tar_model);
 
