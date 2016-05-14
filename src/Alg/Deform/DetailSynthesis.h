@@ -96,6 +96,7 @@ public:
 
   // generate d1 from aligned for debug
   void generateD1FromAligned(std::shared_ptr<Model> tar_model); // tar_model is subdivided aligned mesh with height_mesh in the same folder
+  void generateVectorField(std::shared_ptr<Model> model);
 
 
 private:

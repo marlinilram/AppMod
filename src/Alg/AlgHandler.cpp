@@ -258,18 +258,20 @@ void AlgHandler::debugSymmetry()
   //  actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
   //}
 
-  //detail_synthesis->doGeometryTransfer(shape_model, synthesis_model);
-  //actors.clear();
-  //detail_synthesis->getDrawableActors(actors);
-  //syn_actors.clear();
-  //detail_synthesis->getDrawableActors(syn_actors, 1);
+  // debug feature line direction
+
+
+  // debug vector field
+  detail_synthesis->generateVectorField(shape_model);
+  actors.clear();
+  detail_synthesis->getDrawableActors(actors);
 
   // debug curvature
 /*  ShapeUtility::computeCurvature(shape_model);
   VtkUtility::getCurvature(shape_model->getPolygonMesh());*/
 
   // debug D1 from Aligned
-  detail_synthesis->generateD1FromAligned(shape_model);
+  //detail_synthesis->generateD1FromAligned(shape_model);
 }
 
 void AlgHandler::resetShapeModel()

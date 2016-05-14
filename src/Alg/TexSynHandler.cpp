@@ -23,6 +23,7 @@ void TexSynHandler::setSynthesisModel(std::shared_ptr<Model> model)
   // prepare the appearance model for synthesis model
   this->syn_app_mod.reset(new AppearanceModel());
   int resolution = LG::GlobalParameterMgr::GetInstance()->get_parameter<int>("Synthesis:resolution");
+  std::cout << "Target AppMod resolution initialized as: " << resolution << std::endl;
   this->syn_app_mod->setResolution(resolution);
   this->syn_app_mod->setBaseMesh(model->getPolygonMesh());
   this->detail_synthesis->setCurResolution(resolution);

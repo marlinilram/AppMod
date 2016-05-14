@@ -3366,3 +3366,13 @@ void DetailSynthesis::generateD1Detail(AppearanceModel* app_mod, std::shared_ptr
 
   app_mod->setD1Details(src_para_shape->detail_map);
 }
+
+void DetailSynthesis::generateVectorField(std::shared_ptr<Model> model)
+{
+  kevin_vector_field.reset(new KevinVectorField);
+  kevin_vector_field->init(model);
+  kevin_vector_field->compute_s_hvf(); // compute tangent vector
+
+  actors.clear();
+  kevin_vector_field->getDrawableActors(actors);
+}
