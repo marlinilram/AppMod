@@ -137,12 +137,13 @@
    <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
    <addaction name="actionSceneManipulation"/>
-   <addaction name="separator"/>
    <addaction name="actionArea_Select"/>
-   <addaction name="separator"/>
    <addaction name="actionArea_Select_Only_Visible"/>
    <addaction name="separator"/>
+   <addaction name="actionSelect_parts"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
@@ -247,6 +248,14 @@
    </property>
    <property name="text">
     <string>show_mini_texture</string>
+   </property>
+  </action>
+  <action name="actionSelect_parts">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>select_parts</string>
    </property>
   </action>
  </widget>

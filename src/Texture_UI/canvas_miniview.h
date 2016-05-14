@@ -19,8 +19,15 @@ public:
 public:
 	void fitScreen();
 	void load_obj(QString obj_File);
+	void set_mesh(PolyMesh*);
 	void clear();
 	void set_mainwindow(MainWindow_Texture*);
+
+	void set_file_name(const QString&);
+	const QString& get_file_name();
+
+	static bool do_read(std::istream& input, PolyMesh* mesh);
+	static bool do_read(const std::string& file_name, PolyMesh* mesh);
 private:
 	virtual void draw();
 	virtual void init();
@@ -29,10 +36,7 @@ private:
 	virtual void mouseReleaseEvent(QMouseEvent *e);
 	virtual void mousePressEvent(QMouseEvent *e);
 	virtual void mouseMoveEvent(QMouseEvent *e);
-
 	
-	static bool do_read(std::istream& input, PolyMesh* mesh);
-	static bool do_read(const std::string& file_name, PolyMesh* mesh);
 private:
 
 	QLabel* m_label_dragging_;

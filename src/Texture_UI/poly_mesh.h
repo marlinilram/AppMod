@@ -6,6 +6,7 @@
 #include "color.h"
 #include "Facet_Group.h"
 #include "geometry_types.h"
+#include <string>
 class PolyMesh 
 {
 public:
@@ -35,6 +36,11 @@ public:
 
 	void compute_bbox();
 	const Bbox3f& bbox();
+	void set_file_name(const std::string&);
+	const std::string& get_file_name();
+
+	bool get_need_to_be_deleted();
+	void set_need_to_be_deleted(bool b);
 private:
 	void add_facet(Facet* f) { faces_.push_back(f); }
 	std::vector<Facet*>  faces_;
@@ -43,6 +49,8 @@ private:
 	std::vector<Vertex*>	 vertices_;
 	Bbox3f					bbox_;
 	bool					bbx_computed_;
+	std::string				m_file_name_;
+	bool					m_need_to_be_deleted_;
 };
 
 

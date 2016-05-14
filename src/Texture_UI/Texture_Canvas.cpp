@@ -108,10 +108,10 @@ void Texture_Canvas::setModel(std::shared_ptr<Model> shared_model)
 		return;
 	}
 	DispObject::setModel(shared_model);
-	if (m!=NULL)
-	{
-		delete m.get();
-	}
+// 	if (m!=NULL)
+// 	{
+// 		delete m.get();
+// 	}
 
 	this->updateModelBuffer();
 	shared_model->set_dis_obj(this);

@@ -4,6 +4,7 @@ PolyMesh::PolyMesh(const std::string& name)
 : wireframe_color_(0, 0, 1, 1)
 {
 	bbx_computed_ = false;
+	this->m_need_to_be_deleted_ = true;
 }
 
 PolyMesh::~PolyMesh(void) {
@@ -49,11 +50,28 @@ void PolyMesh::set_color_by_normal()
 	for (unsigned int i = 0; i < faces_.size(); ++i) {
 		Facet* f = faces_[i];
 		const Vector3_f& n = f->normal();
-		int r = int(std::min(std::max(128.0 * (n.x() + 1.0), 0.0), 255.99));
-		int g = int(std::min(std::max(128.0 * (n.y() + 1.0), 0.0), 255.99));
+		int r = int(std::min(std::max(128.0 * (n.y() + 1.0), 0.0), 255.99));
+		int g = int(std::min(std::max(128.0 * (n.x() + 1.0), 0.0), 255.99));
 		int b = int(std::min(std::max(128.0 * (n.z() + 1.0), 0.0), 255.99));
 		f->set_color(Colorf(r / 256.0f, g / 256.0f, b / 256.0f));
 	}
+};
+
+void PolyMesh::set_file_name(const std::string& s)
+{
+	this->m_file_name_ = s;
+};
+const std::string& PolyMesh::get_file_name()
+{
+	return this->m_file_name_;
+};
+bool PolyMesh::get_need_to_be_deleted()
+{
+	return this->m_need_to_be_deleted_;
+};
+void PolyMesh::set_need_to_be_deleted(bool b)
+{
+	this->m_need_to_be_deleted_ = b;
 };
 
 Vertex* PolyMesh::add_vertex(const Point3f& p)

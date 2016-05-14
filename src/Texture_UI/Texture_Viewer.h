@@ -11,6 +11,7 @@ class VectorFieldViewer;
 class QMouseEvent;
 class QKeyEvent;
 class MiniTexture;
+class TexSynHandler;
 class Texture_Viewer : public BasicViewer
 {
 	Q_OBJECT
@@ -33,11 +34,16 @@ public:
   QImage snapshot_bounding_box();
   const std::vector<Texture_Mesh_Corres*>& get_textures_mesh_corres();
   void add_textures_mesh_corre(Texture_Mesh_Corres*);
+  void arrange_textures_meshs_pos();
   const std::vector<bool>& get_face_selected(){ return this->m_faces_selected_; };
   void mark_points_out();
   void mark_points();
   void set_texture_now(MiniTexture* m);
   std::vector<int> face_selected();
+  void select_part_from_face(int f);
+  void set_tex_syn_handler(std::shared_ptr<TexSynHandler>);
+
+  void clear_texture_mesh_corres();
 public slots:
 	void delete_textures_mesh_corre(Texture_Mesh_Corres*);
 	void select_all_unselected();
@@ -75,7 +81,7 @@ private:
 
   bool m_left_button_down_;
   bool m_right_button_down_;
-  int  m_edit_mode_;
+  int  m_edit_mode_;//-1->normal,0->visible,1->all in polygonm, 2->part
 
 
   std::vector<bool>   m_faces_selected_;
@@ -87,6 +93,7 @@ private:
   bool m_show_mesh_;
   MiniTexture* m_texture_now_;
   bool m_show_line_;
+  std::shared_ptr<TexSynHandler> tex_syn_handler;
 private:
 
 };
