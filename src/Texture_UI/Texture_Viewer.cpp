@@ -529,6 +529,7 @@ void Texture_Viewer::mouseDoubleClickEvent(QMouseEvent * event)
 			if (f_i >= 0)
 			{
 				this->select_part_from_face(f_i);
+        this->updateGL();
 			}
 		}
 	}
