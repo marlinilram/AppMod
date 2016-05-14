@@ -16,7 +16,7 @@ class MiniTexture;
 class ShapeList;
 class TexSynHandler;
 class Canvas_Miniview;
-
+class PolyMesh;
 class MainWindow_Texture : public QMainWindow, public Ui::MainWindow_Texture
 {
     Q_OBJECT
@@ -35,13 +35,16 @@ private:
 	void resizeEvent(QResizeEvent * event);
 public:
 	void load_obj(QString);
+	void clear_meshes();
 private slots:
 	void show_data_base();
 	void set_texture_dir();
 	void set_objs_dir();
+	void set_objs_dir_load_all_meshes();
 
 	void images_update(int from);
 	void objs_update(int from);
+	void objs_update_loaded_mesh(int);
 
 	void set_data_dock();
 	void load_obj();
@@ -87,8 +90,9 @@ private:
 	ShapeList* m_shape_list_;
 
 	MiniTexture* m_mini_selected_;
+	std::shared_ptr<TexSynHandler> tex_syn_handler;
 
- std::shared_ptr<TexSynHandler> tex_syn_handler;
+	std::vector<PolyMesh*> m_meshes_loaded_;
 
 };
 

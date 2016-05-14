@@ -2,9 +2,10 @@
 #include "MainWindow.h"
 #include <QtWidgets/QApplication>
 #include "MainWindow_Texture.h"
+#include <time.h>
 int main(int argc, char **argv)
 {
-	srand(NULL);
+	srand(time(NULL));
   QApplication a(argc, argv);
 
   MainWindow *window = new MainWindow();

@@ -19,7 +19,7 @@ Texture_Mesh_Corres::Texture_Mesh_Corres(QWidget * parent, Qt::WindowFlags f)
 	m_new_image_ = false;
 	m_mesh_ = NULL;
 	this->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-	this->setStyleSheet("border: 1px groove gray;");
+	
 	this->setWindowFlags(Qt::SubWindow);
 
 	this->m_width_icon_ = 100;
@@ -70,6 +70,7 @@ void Texture_Mesh_Corres::creat_menu()
 void Texture_Mesh_Corres::set_image(const QImage& img)
 {
 	this->setPixmap(QPixmap::fromImage(img).scaled(this->width(), this->height(), Qt::KeepAspectRatio));
+	//this->setStyleSheet("border: 1px groove gray; background-color: rgb(255, 255, 255);");
 	m_new_image_ = true;
 };
 void Texture_Mesh_Corres::dropEvent(QDropEvent * event)
@@ -178,6 +179,11 @@ void Texture_Mesh_Corres::set_data(
 		}
 	}
 
+
+// 	IplImage iplImg = IplImage(m_mask_target_);
+// 	cvShowImage("mask_faces_selected_mesh", &iplImg);
+
+
 // 	IplImage iplImg = IplImage(mask_d0);
 // 	cvShowImage("mask_faces_selected", &iplImg);
 
@@ -185,11 +191,335 @@ void Texture_Mesh_Corres::set_data(
 // 	cvShowImage("mask_faces_all", &iplImg2);
 
 
-	this->setStyleSheet("border-width: 3px;border-style: solid; border-color: rgb(" + QString::number(255 * m_color_.r()) + "," + QString::number(255 * m_color_.g())
-		+ "," + QString::number(255 * m_color_.b()) + ")");
+	this->setStyleSheet("background-color: rgb(255, 255, 255); border-width: 5px;border-style: solid; border-color: rgb(" + QString::number(255 * m_color_.r()) + "," + QString::number(255 * m_color_.g())
+		+ "," + QString::number(255 * m_color_.b()) + ")"
+		);
 
 	this->creat_menu();
 };
+
+void Texture_Mesh_Corres::generate_mask_region(TexSynHandler* tex_syn_handler, int f_id, cv::Mat& mask, std::vector<int>& faces_region)
+{
+	Texture_Mesh_Corres::generate_mask_region(tex_syn_handler, f_id, mask);
+
+	std::shared_ptr<AppearanceModel> am = tex_syn_handler->get_syn_app_mod();
+	LG::PolygonMesh pl;
+	am->getBaseMesh(&pl);
+	float resolution = am->getResolution();
+
+	faces_region.clear();
+	for (int f_id = 0; f_id < pl.faces_size(); f_id++)
+	{
+		Vector2f uv_coord;
+		ShapeUtility::getFaceUVCenter(&pl, f_id, uv_coord);
+		float resolution = am->getResolution();
+		Vector2f coord_out;
+		coord_out.x() = int(uv_coord[0] * resolution + 0.5);
+		coord_out.y() = resolution - (uv_coord[1] * resolution + 0.5);
+
+		if (mask.at<float>(coord_out.y(), coord_out.x()) > 0)
+		{
+			faces_region.push_back(f_id);
+		}
+	}
+
+};
+
+void Texture_Mesh_Corres::generate_mask_region(TexSynHandler* tex_syn_handler, int f_id, cv::Mat& mask)
+{
+	if (f_id > 0)
+	{
+
+		std::cout << "f_id" << f_id << "\n";
+		std::shared_ptr<AppearanceModel> am = tex_syn_handler->get_syn_app_mod();
+		LG::PolygonMesh pl;
+		am->getBaseMesh(&pl);
+		Vector2f uv_coord;
+		ShapeUtility::getFaceUVCenter(&pl, f_id, uv_coord);
+		float resolution = am->getResolution();
+
+		Vector2f coord_out;
+		coord_out.x() = int(uv_coord[0] * resolution + 0.5);
+		coord_out.y() = resolution - (uv_coord[1] * resolution + 0.5);
+
+		Texture_Mesh_Corres::generate_mask_region(tex_syn_handler, QPoint(coord_out.x(), coord_out.y()), mask);
+
+		std::cout << "uv_coord " << coord_out.x() << "**" << coord_out.y() << "\n";
+// 
+// 		IplImage iplImg = IplImage(mask);
+// 		cvShowImage("mask_faces_selected", &iplImg);
+	}
+};
+void Texture_Mesh_Corres::generate_mask_region(TexSynHandler* tex_syn_handler, QPoint p_selected, cv::Mat& mask)
+{
+	cv::Mat mask_tmp;
+	Texture_Mesh_Corres::generate_mask(tex_syn_handler, mask_tmp);
+	mask = cv::Mat(mask_tmp.rows, mask_tmp.cols, CV_32FC1, 1);
+	mask.setTo(cv::Scalar(0));
+	int w = mask_tmp.cols;
+	int h = mask_tmp.rows;
+
+
+
+	if (mask_tmp.at<float>(p_selected.y(), p_selected.x()) < 0)
+	{
+		return;
+	}
+
+	if (p_selected.x() < 0 || p_selected.x() >= w || p_selected.y() < 0 || p_selected.y() >= h)
+	{
+		return;
+	}
+
+
+
+
+	std::vector<std::vector<bool>> checked(w, std::vector<bool>(h, false));
+	
+	if (mask_tmp.at<float>(p_selected.y(), p_selected.x()) > 0)
+	{
+		std::vector<int> ws;
+		ws.push_back(p_selected.x());
+		std::vector<int> hs;
+		hs.push_back(p_selected.y());
+
+		checked[ws[0]][hs[0]] = true;
+
+
+		for (unsigned int k = 0; k < ws.size(); k++)
+		{
+			int x = ws[k];
+			int y = hs[k];
+
+			if (mask_tmp.at<float>(y, x)<= 0)
+			{
+				checked[x][y] = true;
+				continue;
+			}
+			mask.at<float>(y, x) = 1;
+			checked[x][y] = true;
+
+
+			if (x - 1 >= 0 && y - 1 >= 0 && !checked[x - 1][y - 1])
+			{
+				ws.push_back(x - 1);
+				hs.push_back(y - 1);
+				checked[x - 1][y - 1] = true;
+			}
+			if (y - 1 >= 0 && !checked[x][y - 1])
+			{
+				ws.push_back(x);
+				hs.push_back(y - 1);
+				checked[x][y - 1] = true;
+			}
+			if (x + 1 < w && y - 1 >= 0 && !checked[x + 1][y - 1])
+			{
+				ws.push_back(x + 1);
+				hs.push_back(y - 1);
+				checked[x + 1][y - 1] = true;
+			}
+			if (x - 1 >= 0 && !checked[x - 1][y])
+			{
+				ws.push_back(x - 1);
+				hs.push_back(y);
+				checked[x - 1][y] = true;
+			}
+			if (x + 1 < w && !checked[x + 1][y])
+			{
+				ws.push_back(x + 1);
+				hs.push_back(y);
+				checked[x + 1][y] = true;
+			}
+			if (x - 1 >= 0 && y + 1 < h && !checked[x - 1][y + 1])
+			{
+				ws.push_back(x - 1);
+				hs.push_back(y + 1);
+				checked[x - 1][y + 1] = true;
+			}
+			if (y + 1 < h && !checked[x][y + 1])
+			{
+				ws.push_back(x);
+				hs.push_back(y + 1);
+				checked[x][y + 1] = true;
+			}
+			if (x + 1 < w && y + 1 < h && !checked[x + 1][y + 1])
+			{
+				ws.push_back(x + 1);
+				hs.push_back(y + 1);
+				checked[x + 1][y + 1] = true;
+			}
+
+		}
+	}
+};
+void Texture_Mesh_Corres::generate_mask(TexSynHandler* tex_syn_handler, cv::Mat& mask)
+{
+	std::shared_ptr<AppearanceModel> am = tex_syn_handler->get_syn_app_mod();
+	
+
+	LG::PolygonMesh pl;
+	am->getBaseMesh(&pl);
+	float resolution = am->getResolution();
+
+	int w = resolution;
+	int h = resolution;
+
+
+	std::cout << "w" << w << " h" << h << "\n";
+	mask = cv::Mat(w, h, CV_32FC1, 1);;
+
+	mask.setTo(cv::Scalar(0));
+
+
+
+
+
+
+	std::shared_ptr<ParaShape> tar_para_shape(new ParaShape);
+	tar_para_shape->initWithExtPolygonMesh(&pl);
+
+	for (int i = 0; i < w; i++)
+	{
+		for (int j = 0; j < h; j++)
+		{
+
+			std::vector<float> uv_coor;
+			uv_coor.push_back(1.0*i / resolution);
+			uv_coor.push_back(1.0*(h - j - 1) / resolution);
+
+			std::vector<float> bary_coord;
+			int f_id;
+			std::vector<int> v_ids;
+			bool b = ShapeUtility::findClosestUVFace(uv_coor, tar_para_shape.get(), bary_coord, f_id, v_ids);
+			if (b)
+			{
+					mask.at<float>(j, i) = 1;
+			}
+
+		}
+	}
+
+// 	IplImage iplImg = IplImage(mask);
+// 	cvShowImage("mask_all_mesh", &iplImg);
+
+
+	/*mask = QImage(w, h, QImage::Format_RGB32);
+	for (int i = 0; i < im.width(); i++)
+	{
+		for (int j = 0; j < im.height(); j++)
+		{
+			mask.setPixel(i, j, qRgb(0, 0, 0));
+		}
+	}
+
+
+
+	std::vector<std::vector<bool>> checked(w, std::vector<bool>(h, false));
+	int num_texture = 0;
+	QRgb c = qRgb(rand() % 256, rand() % 256, rand() % 256);
+	for (int i = 0; i < im.width(); i++)
+	{
+		for (int j = 0; j < im.height(); j++)
+		{
+			if (checked[i][j])
+			{
+				continue;;
+			}
+			if (im.pixel(i, j) != qRgb(0, 0, 0))
+			{
+				std::vector<int> ws;
+				ws.push_back(i);
+				std::vector<int> hs;
+				hs.push_back(j);
+				c = qRgb(rand() % 256, rand() % 256, rand() % 256);
+				num_texture++;
+				for (unsigned int k = 0; k < ws.size(); k++)
+				{
+					int x = ws[k];
+					int y = hs[k];
+
+					if (im.pixel(x, y) == qRgb(0, 0, 0))
+					{
+						checked[x][y] = true;
+						continue;
+					}
+					mask.setPixel(x, y, c);
+					checked[x][y] = true;
+
+
+					if (x - 1 >= 0 && y - 1 >= 0 && !checked[x - 1][y - 1])
+					{
+						ws.push_back(x - 1);
+						hs.push_back(y - 1);
+						checked[x - 1][y - 1] = true;
+					}
+					if (y - 1 >= 0 && !checked[x][y - 1])
+					{
+						ws.push_back(x);
+						hs.push_back(y - 1);
+						checked[x][y - 1] = true;
+					}
+					if (x + 1 < w && y - 1 >= 0 && !checked[x + 1][y - 1])
+					{
+						ws.push_back(x + 1);
+						hs.push_back(y - 1);
+						checked[x + 1][y - 1] = true;
+					}
+					if (x - 1 >= 0 && !checked[x - 1][y])
+					{
+						ws.push_back(x - 1);
+						hs.push_back(y);
+						checked[x - 1][y] = true;
+					}
+					if (x + 1 < w && !checked[x + 1][y])
+					{
+						ws.push_back(x + 1);
+						hs.push_back(y);
+						checked[x + 1][y] = true;
+					}
+					if (x - 1 >= 0 && y + 1 < h && !checked[x - 1][y + 1])
+					{
+						ws.push_back(x - 1);
+						hs.push_back(y + 1);
+						checked[x - 1][y + 1] = true;
+					}
+					if (y + 1 < h && !checked[x][y + 1])
+					{
+						ws.push_back(x);
+						hs.push_back(y + 1);
+						checked[x][y + 1] = true;
+					}
+					if (x + 1 < w && y + 1 < h && !checked[x + 1][y + 1])
+					{
+						ws.push_back(x + 1);
+						hs.push_back(y + 1);
+						checked[x + 1][y + 1] = true;
+					}
+
+				}
+				int a = 0;
+			}
+			else
+			{
+				checked[i][j] = true;
+			}
+		}
+	}*/
+
+	/*std::cout << "num_texture :" << num_texture << "\n";*/
+
+};
+
+
+
+
+
+
+
+
+
+
+
 
 
 void Texture_Mesh_Corres::show_origin_image()
@@ -307,12 +637,12 @@ void Texture_Mesh_Corres::mousePressEvent(QMouseEvent * e)
 		int num_width = 600;
 		int num_height = 600;
 
-		float scale1 = this->m_origin_image_.width() / num_width;
-		float scale2 = this->m_origin_image_.height() / num_height;
+		float scale1 = 1.0 * this->m_origin_image_.width() / num_width;
+		float scale2 = 1.0 * this->m_origin_image_.height() / num_height;
 
 		float scale = scale1 > scale2?scale1:scale2;
-		num_width = this->m_origin_image_.width() / scale;
-		num_height = this->m_origin_image_.height() / scale;
+		num_width = 1.0 * this->m_origin_image_.width() / scale;
+		num_height = 1.0 * this->m_origin_image_.height() / scale;
 
 		m_label_full_image_->resize(num_width, num_height);
 		m_label_full_image_->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);

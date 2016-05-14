@@ -38,8 +38,11 @@ void Canvas_Miniview::clear()
 	}
 	if (this->m_mesh_)
 	{
-		delete this->m_mesh_;
-		m_mesh_ = NULL;
+		if (this->m_mesh_->get_need_to_be_deleted())
+		{
+			delete this->m_mesh_;
+			m_mesh_ = NULL;
+		}
 	}
 };
 void Canvas_Miniview::init()
@@ -163,8 +166,8 @@ void Canvas_Miniview::fitScreen()
 	qglviewer::Vec vmin(box.xmin(), box.ymin(), box.zmin());
 	qglviewer::Vec vmax(box.xmax(), box.ymax(), box.zmax());
 
-	vmin = center + (vmin - center) * 0.7;
-	vmax = center + (vmax - center) * 0.7;
+	vmin = center + (vmin - center) ;
+	vmax = center + (vmax - center) ;
 
 	setSceneBoundingBox(vmin, vmax);
 	camera()->lookAt(sceneCenter());
@@ -201,18 +204,36 @@ bool Canvas_Miniview::do_read(const std::string& file_name, PolyMesh* mesh)
 	return true;
 };
 
+void Canvas_Miniview::set_mesh(PolyMesh* mesh)
+{
+	this->m_mesh_ = mesh;
+	mesh->set_color_by_normal();
+	this->fitScreen();
+	this->m_file_name_ = QString::fromStdString(mesh->get_file_name());
+	
+};
+
+
+
 void Canvas_Miniview::load_obj(QString obj_File)
 {
-	if (this->m_mesh_)
-	{
-		delete this->m_mesh_;
-	}
-	this->m_mesh_ = new PolyMesh;
-	Canvas_Miniview::do_read(obj_File.toStdString(), m_mesh_);
-	m_mesh_->set_color_by_normal();
-	this->fitScreen();
-	this->m_file_name_ = obj_File;
+	
+	PolyMesh* mesh = new PolyMesh;
+	Canvas_Miniview::do_read(obj_File.toStdString(), mesh);
+	mesh->set_file_name(obj_File.toStdString());
+	this->set_mesh(mesh);
 };
+
+void Canvas_Miniview::set_file_name(const QString& s)
+{
+	this->m_file_name_ = s;
+};
+const QString& Canvas_Miniview::get_file_name()
+{
+	return this->m_file_name_;
+};
+
+
 bool Canvas_Miniview::do_read(std::istream& input, PolyMesh* mesh)
 {
 	// Vertex index starts by 1 in obj format.
@@ -258,5 +279,6 @@ bool Canvas_Miniview::do_read(std::istream& input, PolyMesh* mesh)
 			mesh->add_facet(indices);
 		}
 	}
+	
 	return true;
 }

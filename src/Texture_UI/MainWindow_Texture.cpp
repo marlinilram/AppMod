@@ -9,7 +9,7 @@
 #include <QDir>
 #include "mini_texture.h"
 #include "shape_item.h"
-#include "shape_list.h"
+#include "shape_list.h" 
 #include "DispModuleHandler.h"
 #include "TexSynHandler.h"
 #include <QMessageBox>
@@ -67,6 +67,8 @@ MainWindow_Texture::~MainWindow_Texture()
 		this->m_miniviewers_[i]->setParent(NULL);
 		delete this->m_miniviewers_[i];
 	}
+
+	this->clear_meshes();
 }
 
 void MainWindow_Texture::selec_area( bool b)
@@ -161,21 +163,23 @@ void MainWindow_Texture::set_up_viewer()
 	this->m_viewer_->addDispObj(tc);
 	tc->setsize(this->width(), this->height());
 	this->m_viewer_->show();
-
-
-
 };
 void MainWindow_Texture::connect_singal()
 {
 	connect(actionSet_Texture_Dir, SIGNAL(triggered()), this, SLOT(set_texture_dir()));
-	connect(actionSet_obj_dir, SIGNAL(triggered()), this, SLOT(set_objs_dir()));
+	
 	
 	connect(actionShow_data_base, SIGNAL(triggered()), this, SLOT(show_data_base()));
 	connect(actionData_dock, SIGNAL(triggered()), this, SLOT(set_data_dock()));
 	connect(actionLoad_Obj, SIGNAL(triggered()), this, SLOT(load_obj()));
 
 	connect(this->verticalScrollBar_Texture, SIGNAL(valueChanged(int)), this, SLOT(images_update(int)));
-	connect(this->verticalScrollBar_Objs, SIGNAL(valueChanged(int)), this, SLOT(objs_update(int)));
+
+ 	connect(this->verticalScrollBar_Objs, SIGNAL(valueChanged(int)), this, SLOT(objs_update(int)));
+ 	connect(actionSet_obj_dir, SIGNAL(triggered()), this, SLOT(set_objs_dir()));
+
+// 	connect(this->verticalScrollBar_Objs, SIGNAL(valueChanged(int)), this, SLOT(objs_update_loaded_mesh(int)));
+// 	connect(actionSet_obj_dir, SIGNAL(triggered()), this, SLOT(set_objs_dir_load_all_meshes()));
 	
     connect(actionRun_d1_synthesis, SIGNAL(triggered()), this, SLOT(run_d1_synthesis()));
 	connect(actionRun_d0_synthesis, SIGNAL(triggered()), this, SLOT(run_d0_synthesis()));
@@ -193,6 +197,10 @@ void MainWindow_Texture::connect_singal()
 
 	toolActionGroup->addAction(actionArea_Select_Only_Visible);
 	actionArea_Select_Only_Visible->setIcon(QIcon("icons/select_points_visible.png"));
+
+	toolActionGroup->addAction(actionSelect_parts);
+	//actionArea_Select_Only_Visible->setIcon(QIcon("icons/select_points_visible.png"));
+
 	connect(toolActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(operationModeChanged(QAction*)));
 	
 	connect(actionClear_Select, SIGNAL(triggered()), this, SLOT(clear_select()));
@@ -217,7 +225,22 @@ void MainWindow_Texture::operationModeChanged(QAction* act)
 	{
 		this->m_viewer_->set_edit_mode(1);
 	}
+	else if (act ==  actionSelect_parts)
+	{
+		this->m_viewer_->set_edit_mode(2);
+		this->m_viewer_->set_tex_syn_handler(this->tex_syn_handler);
+	}
+
 };
+void MainWindow_Texture::clear_meshes()
+{
+	for (unsigned int i = 0; i < this->m_meshes_loaded_.size();i++)
+	{
+		delete  this->m_meshes_loaded_[i];
+	}
+	this->m_meshes_loaded_.clear();
+};
+
 void MainWindow_Texture::load_obj(QString fileName_tmp)
 {
 
@@ -247,7 +270,7 @@ void MainWindow_Texture::load_obj(QString fileName_tmp)
 	static_cast<Texture_Canvas*>(this->m_viewer_->get_dispObjects()[0])->setModel(m);
 	this->m_viewer_->clear_selection();
 	this->m_viewer_->mark_points_out();
-
+	this->m_viewer_->clear_texture_mesh_corres();
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
 	this->m_viewer_->resetCamera();
@@ -321,12 +344,20 @@ void MainWindow_Texture::set_data_dock()
 		this->m_num_layer_texture_ = h;
 		this->m_num_each_layer_texture_ = w;
 
+		this->m_num_layer_objs_ = h;
+		this->m_num_each_layer_objs_ = w;
+
 		this->m_start_num_texture_ = 0;
+		this->m_start_num_objs_ = 0;
+
 		QRect r = this->verticalLayout_Texture_Brow->geometry();
 		this->verticalLayout_Texture_Brow->setGeometry(QRect(0, 0, this->dockWidget_Texture_Brow->width(), this->dockWidget_Texture_Brow->height()));
 		QRect rr = this->verticalLayout_Texture_Brow->geometry();
 		this->set_up_ui_texture();
+		this->set_up_ui_objs();
 		this->images_update(this->m_start_num_texture_);
+		this->objs_update(this->m_start_num_objs_);
+		//this->objs_update_loaded_mesh(this->m_start_num_objs_);
 	}
 }
 void MainWindow_Texture::set_up_ui_objs()
@@ -416,6 +447,53 @@ void MainWindow_Texture::show_data_base()
 	this->dockWidget_Texture_Brow->show();
 	this->dockWidget_Shape_Texture->show();
 }
+
+void MainWindow_Texture::set_objs_dir_load_all_meshes()
+{
+	QString file_folder = QFileDialog::getExistingDirectory(this, "set directory", ".");
+	if (file_folder.isEmpty())
+	{
+		return;
+	}
+	this->clear_meshes();
+	this->m_meshes_loaded_.clear();
+	this->m_objs_files_.clear();
+	QDir d(file_folder);
+	QStringList ds = d.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::Name);
+
+	for (unsigned int i = 0; i < ds.size(); i++)
+	{
+		QString dir_sub_s = file_folder + "/" + ds[i];
+		QDir  dir_sub(dir_sub_s);
+
+		QStringList filter;
+		filter.push_back("*.obj");
+		QStringList files = dir_sub.entryList(filter, QDir::Files, QDir::Name);
+		if (files.size() > 0)
+		{
+			QString file_obj = (file_folder + "/" + ds[i] + "/" + files[0]);
+			PolyMesh*  mesh = new PolyMesh();
+			Canvas_Miniview::do_read(file_obj.toStdString(), mesh);
+			mesh->set_file_name(file_obj.toStdString());
+			mesh->set_need_to_be_deleted(false);
+
+			this->m_meshes_loaded_.push_back(mesh);
+			this->m_objs_files_.push_back(file_obj);
+		}
+	};
+	int max_num = this->m_objs_files_.size() - m_num_layer_objs_ * m_num_each_layer_objs_;
+	if (max_num < 0)
+	{
+		max_num = 0;
+	}
+	this->verticalScrollBar_Objs->setMaximum(max_num);
+	this->verticalScrollBar_Objs->setSingleStep(m_num_layer_objs_ * m_num_each_layer_objs_);
+	this->verticalScrollBar_Objs->setPageStep(m_num_layer_objs_ * m_num_each_layer_objs_);
+	this->verticalScrollBar_Objs->setValue(0);
+	this->m_start_num_objs_ = 0;
+	this->objs_update(this->m_start_num_objs_);
+};
+
 void MainWindow_Texture::set_objs_dir()
 {
 	QString file_folder = QFileDialog::getExistingDirectory(this, "set directory", ".");
@@ -490,6 +568,28 @@ void MainWindow_Texture::set_texture_dir()
 	this->m_start_num_texture_ = 0;
 	this->images_update(this->m_start_num_texture_);
 };
+void MainWindow_Texture::objs_update_loaded_mesh(int from)
+{
+	for (unsigned int i = 0; i < this->m_miniviewers_.size(); i++)
+	{
+		this->m_miniviewers_[i]->clear();
+	}
+
+	int index_from = 0;
+	for (unsigned int i = from; (i < this->m_objs_files_.size()) && (i < from + m_num_layer_objs_ * m_num_each_layer_objs_); i++)
+	{
+		this->m_miniviewers_[i - from]->set_mesh(this->m_meshes_loaded_[i]);
+		this->m_miniviewers_[i - from]->setEnabled(true);
+		index_from++;
+	}
+
+	for (unsigned int i = index_from; i < this->m_miniviewers_.size(); i++)
+	{
+		this->m_miniviewers_[i - from]->setEnabled(false);
+	}
+};
+
+
 void MainWindow_Texture::objs_update(int from)
 {
 	for (unsigned int i = 0; i < this->m_miniviewers_.size(); i++)
@@ -616,14 +716,23 @@ void MainWindow_Texture::run_d0_synthesis_all()
 	}
 
 
-// 	 QString meshlab = "\"C:/Program Files (x86)/VCG/MeshLab/meshlab.exe\" " ;
-// 	 meshlab = meshlab + "\"" + QString::fromStdString(ssss) + "\"";
+// 	QString meshlab = "C:&& cd C:/Program Files (x86)/VCG/MeshLab/&& start meshlab.exe  ";
+// 	meshlab = meshlab + "\"" + QString::fromStdString(ssss) + "\" &";
+// 
+// 	   std::cout << meshlab.toStdString() << "\n";
+// 	   system(meshlab.toStdString().data());
 
-	QString meshlab = "C:&& cd C:/Program Files/VCG/MeshLab/&& start meshlab.exe  ";
-	meshlab = meshlab + "\"" + QString::fromStdString(ssss) + "\" &";
 
-	   std::cout << meshlab.toStdString() << "\n";
-	   system(meshlab.toStdString().data());
+	QGLFormat format = QGLFormat::defaultFormat();
+	format.setSampleBuffers(true);
+	format.setSamples(8);
+	Canvas_Miniview* m = new Canvas_Miniview(format,NULL,NULL);
+	m->setGeometry(this->geometry().center().x() - 400, this->geometry().center().y() - 400, this->geometry().center().x() + 400, this->geometry().center().y() + 400);
+	
+	m->load_obj(QString::fromStdString(ssss));
+	m->hide();
+	m->show();
+
 };
 
 void MainWindow_Texture::mask_d0_select()

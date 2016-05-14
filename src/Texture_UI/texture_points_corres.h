@@ -46,8 +46,10 @@ public:
 	void show_mesh_image();
 	void show_masked_image();
 	void set_show_mode(int m);
-
-
+	static void generate_mask(TexSynHandler*, cv::Mat& mask);
+	static void generate_mask_region(TexSynHandler*, QPoint p_selected,cv::Mat& mask);
+	static void generate_mask_region(TexSynHandler*, int f_id, cv::Mat& mask);
+	static void generate_mask_region(TexSynHandler*, int f_id, cv::Mat& mask, std::vector<int>& faces_region);
 private:
 	void set_image(const QImage&);
 	void compute_mesh_center();
@@ -61,6 +63,8 @@ private:
 	void timerEvent(QTimerEvent *);
 	void dropEvent(QDropEvent * event);
 	void creat_menu();
+
+	
 
 	QString m_image_file_;
 	QImage  m_origin_image_;
