@@ -92,6 +92,10 @@ public:
   void runSynthesisD1(std::string app_mod_path, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
   std::string synthesisD0(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
   void synthesisD1(AppearanceModel* app_mod_src, AppearanceModel* app_mod_tar, std::shared_ptr<Model> tar_model);
+  std::string applyD1Displacement(std::shared_ptr<Model> tar_model, cv::Mat& mask);
+
+  // generate d1 from aligned for debug
+  void generateD1FromAligned(std::shared_ptr<Model> tar_model); // tar_model is subdivided aligned mesh with height_mesh in the same folder
 
 
 private:

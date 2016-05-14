@@ -62,6 +62,8 @@ private slots:
 	void clear_select();
 	void operationModeChanged(QAction* act);
 	void selected_obj(QPoint, QString);
+
+  std::string apply_d1_displacement();
 private:
 	void set_up_ui_texture();
 	void set_up_ui_objs();

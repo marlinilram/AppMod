@@ -244,13 +244,13 @@ void MainWindow_Texture::clear_meshes()
 void MainWindow_Texture::load_obj(QString fileName_tmp)
 {
 
- 	QString filter;
- 	filter = "obj file (*.obj)";
- 	QString sssss = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), fileName_tmp, filter);
-	if (sssss.isEmpty())
-	{
-		return;
-	}
+//  	QString filter;
+//  	filter = "obj file (*.obj)";
+//  	QString sssss = QFileDialog::getOpenFileName(this, QString(tr("Open Obj File")), fileName_tmp, filter);
+// 	if (sssss.isEmpty())
+// 	{
+// 		return;
+// 	}
 // 	if (QMessageBox::question(this, "Open new Obj", "Open a new OBJ file?") == QMessageBox::No)
 // 	{
 // 		return;
@@ -274,6 +274,8 @@ void MainWindow_Texture::load_obj(QString fileName_tmp)
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
 	this->m_viewer_->resetCamera();
+
+  this->m_viewer_->setGLActors(this->tex_syn_handler->getGLActors());
 };
 
 void MainWindow_Texture::load_obj()
@@ -631,44 +633,68 @@ void MainWindow_Texture::images_update(int from)
 };
 void MainWindow_Texture::mask_d1_select()
 {
-	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
-	if (mini == NULL)
-	{
-		return;
-	}
-
-	cv::Mat mask = mini->get_mask_d1();
-	if (mask.cols < 100)
-	{
-		return;
-	}
-	IplImage iplImg = IplImage(mask);
-	cvShowImage("mask", &iplImg);
-
-	this->tex_syn_handler->runD1Synthesis(this->m_shape_list_->getTexturePath(0));
+// 	MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+// 	if (mini == NULL)
+// 	{
+// 		return;
+// 	}
+// 
+// 	cv::Mat mask = mini->get_mask_d1();
+// 	if (mask.cols < 100)
+// 	{
+// 		return;
+// 	}
+// 	IplImage iplImg = IplImage(mask);
+// 	cvShowImage("mask", &iplImg);
+// 
+// 	this->tex_syn_handler->runD1Synthesis(this->m_shape_list_->getTexturePath(0));
 };
 
 void MainWindow_Texture::run_d1_synthesis()
 {
 
-  MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
-  if (mini == NULL)
+//   MiniTexture* mini = this->m_shape_list_->get_mini_texture(0);
+//   if (mini == NULL)
+//   {
+// 	  return;
+//   }
+// 
+//   if (this->m_viewer_->get_boundaries().size() < 1)
+//   {
+// 	  QMessageBox::warning(this, "No target mask", "Please draw target mask first!");
+// 	  return;
+//   }
+//   /* MiniTextureThread* minit = new MiniTextureThread(NULL, mini);*/
+//   //minit->setParent(this);
+//   mini->load_texture();
+//   mini->set_mask_d1(cv::Mat(0, 0, CV_32FC1, 1));
+//   mini->show_mesh_image_d1();
+//   mini->hide();
+//   mini->show();
+
+  const std::vector<Texture_Mesh_Corres*>& tmsss = this->m_viewer_->get_textures_mesh_corres();
+/*  std::string ssss;*/
+  for (unsigned int i = 0; i < tmsss.size(); i++)
   {
-	  return;
+    QString file_name = tmsss[i]->file_path();
+    std::string std_file_path = file_name.toStdString().substr(0, file_name.toStdString().find_last_of('/'));
+    cv::Mat mask_origin_source = tmsss[i]->get_mask_source();
+    cv::Mat mask_target = tmsss[i]->get_mask_target();
+
+
+    LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:SrcAppOriginImageMask") = mask_origin_source.clone();
+    LG::GlobalParameterMgr::GetInstance()->get_parameter<cv::Mat>("Synthesis:TarAppMask") = mask_target.clone();
+     this->tex_syn_handler->runD1Synthesis(std_file_path);
   }
 
-  if (this->m_viewer_->get_boundaries().size() < 1)
-  {
-	  QMessageBox::warning(this, "No target mask", "Please draw target mask first!");
-	  return;
-  }
-  /* MiniTextureThread* minit = new MiniTextureThread(NULL, mini);*/
-  //minit->setParent(this);
-  mini->load_texture();
-  mini->set_mask_d1(cv::Mat(0, 0, CV_32FC1, 1));
-  mini->show_mesh_image_d1();
-  mini->hide();
-  mini->show();
+  std::string ssss = this->apply_d1_displacement();
+
+  QString meshlab = "C:&& cd C:/Program Files/VCG/MeshLab/&& start meshlab.exe  ";
+  meshlab = meshlab + "\"" + QString::fromStdString(ssss) + "\" &";
+
+  std::cout << meshlab.toStdString() << "\n";
+  system(meshlab.toStdString().data());
+
 };
 void MainWindow_Texture::run_d0_synthesis_all()
 {
@@ -781,4 +807,35 @@ void MainWindow_Texture::run_d0_synthesis()
 // 	mini->hide();
 // 	mini->show();
 
+}
+
+std::string MainWindow_Texture::apply_d1_displacement()
+{
+  // merge all tmasss together
+  const std::vector<Texture_Mesh_Corres*>& tmsss = this->m_viewer_->get_textures_mesh_corres();
+  if (tmsss.empty())
+  {
+    std::cout << "No mask for target!" << std::endl;
+    return "";
+  }
+  cv::Mat mask_target = tmsss[0]->get_mask_target().clone();
+  for (int i = 0; i < mask_target.rows; ++i)
+  {
+    for (int j = 0; j < mask_target.cols; ++j)
+    {
+      float sum = mask_target.at<float>(i, j);
+      for (size_t k = 1; k < tmsss.size(); ++k)
+      {
+        sum += tmsss[k]->get_mask_target().at<float>(i, j);
+      }
+      if (sum > 0.5)
+      {
+        mask_target.at<float>(i, j) = 1.0;
+      }
+    }
+  }
+
+  /*cv::imshow("mask together", mask_target);*/
+
+  return this->tex_syn_handler->applyD1Displacement(mask_target);
 }

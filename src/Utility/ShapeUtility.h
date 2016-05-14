@@ -71,8 +71,8 @@ namespace ShapeUtility
 
   void computeSolidAngleCurvature(std::shared_ptr<Model> model);
   void computeCurvature(std::shared_ptr<Model> model);
-  void computeMeanCurvature(std::shared_ptr<Model> model);
-  void computeGaussianCurvature(std::shared_ptr<Model> model);
+  void computeMeanCurvature(LG::PolygonMesh* poly_mesh);
+  void computeGaussianCurvature(LG::PolygonMesh* poly_mesh);
   void computeHalfedgeAngle(LG::PolygonMesh* poly_mesh);
 
   void computeLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh);
@@ -80,7 +80,7 @@ namespace ShapeUtility
   void applyLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh);
   void prepareLocalTransform(LG::PolygonMesh* src_mesh, LG::PolygonMesh* tar_mesh, const std::vector<STLVectori>& src_v_ids, const STLVectori& v_ids, STLVectorf& new_v_list, float scale = 1.0);
 
-  void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName);
+  void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName, bool has_uv = true);
   bool loadPolyMesh(LG::PolygonMesh* poly_mesh, std::string fName);
 
   int findLeftTopUVVertex(LG::PolygonMesh* poly_mesh, std::set<int>& f_ids);

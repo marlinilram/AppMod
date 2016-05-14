@@ -15,6 +15,8 @@
 
 #include "obj_writer.h"
 
+#include "VtkUtility.h"
+
 using namespace LG;
 
 namespace ShapeUtility
@@ -1263,14 +1265,15 @@ namespace ShapeUtility
 
   void computeCurvature(std::shared_ptr<Model> model)
   {
-    computeHalfedgeAngle(model->getPolygonMesh());
-    computeMeanCurvature(model);
-    computeGaussianCurvature(model);
+    //computeHalfedgeAngle(model->getPolygonMesh());
+    //computeMeanCurvature(model->getPolygonMesh());
+    //computeGaussianCurvature(model->getPolygonMesh());
+    VtkUtility::getCurvature(model->getPolygonMesh());
   }
 
-  void computeMeanCurvature(std::shared_ptr<Model> model)
+  void computeMeanCurvature(LG::PolygonMesh* poly_mesh)
   {
-    PolygonMesh* poly_mesh = model->getPolygonMesh();
+    //PolygonMesh* poly_mesh = model->getPolygonMesh();
     PolygonMesh::Halfedge_attribute<Scalar> halfedge_angle = poly_mesh->halfedge_attribute<Scalar>("he:halfedge_angle");
     PolygonMesh::Vertex_attribute<Scalar> mean_curvature = poly_mesh->vertex_attribute<Scalar>("v:mean_curvature");
 
@@ -1300,6 +1303,16 @@ namespace ShapeUtility
       if (mean_curvature[vit] < min_curv) min_curv = mean_curvature[vit];
     }
 
+    std::ofstream outFile("mean curvature");
+    if (outFile.is_open())
+    {
+      for (auto i : poly_mesh->vertices())
+      {
+        outFile << mean_curvature[i] << std::endl;
+      }
+      outFile.close();
+    }
+
     for (auto vit : poly_mesh->vertices())
     {
       mean_curvature[vit] = (mean_curvature[vit] - min_curv) / (max_curv - min_curv);
@@ -1308,11 +1321,11 @@ namespace ShapeUtility
     std::cout << "max mean curvature: " << max_curv << "\tmin mean curvature: " << min_curv << std::endl;
   }
 
-  void computeGaussianCurvature(std::shared_ptr<Model> model)
+  void computeGaussianCurvature(LG::PolygonMesh* poly_mesh)
   {
-    PolygonMesh* poly_mesh = model->getPolygonMesh();
+    //PolygonMesh* poly_mesh = model->getPolygonMesh();
     PolygonMesh::Halfedge_attribute<Scalar> halfedge_angle = poly_mesh->halfedge_attribute<Scalar>("he:halfedge_angle");
-    PolygonMesh::Vertex_attribute<Scalar> gaussian_curvature = poly_mesh->vertex_attribute<Scalar>("v:gaussian_curvature");
+    PolygonMesh::Vertex_attribute<Scalar> gaussian_curvature = poly_mesh->vertex_attribute<Scalar>("c");
 
     Scalar min_curv = std::numeric_limits<Scalar>::max();
     Scalar max_curv = std::numeric_limits<Scalar>::min();
@@ -1331,6 +1344,16 @@ namespace ShapeUtility
 
       if (gaussian_curvature[vit] > max_curv) max_curv = gaussian_curvature[vit];
       if (gaussian_curvature[vit] < min_curv) min_curv = gaussian_curvature[vit];
+    }
+
+    std::ofstream outFile("gaussian curvature");
+    if (outFile.is_open())
+    {
+      for (auto i : poly_mesh->vertices())
+      {
+        outFile << gaussian_curvature[i] << std::endl;
+      }
+      outFile.close();
     }
 
     for (auto vit : poly_mesh->vertices())
@@ -1559,7 +1582,7 @@ namespace ShapeUtility
     }
   }
 
-  void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName)
+  void savePolyMesh(LG::PolygonMesh* poly_mesh, std::string fName, bool has_uv)
   {
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -1569,7 +1592,7 @@ namespace ShapeUtility
     obj_shape.mesh.positions.resize(3 * poly_mesh->n_vertices(), 0);
     obj_shape.mesh.indices.resize(3 * poly_mesh->n_faces(), 0);
 
-    try
+    if (has_uv)
     {
       std::vector<Vec2>& he_texcoord = poly_mesh->get_attribute<std::vector<Vec2> >("he:texcoord");
       for (size_t i = 0; i < he_texcoord.size(); ++i)
@@ -1589,10 +1612,6 @@ namespace ShapeUtility
           ++n_cnt;
         }
       }
-    }
-    catch (std::exception* e)
-    {
-      e->what();
     }
     for (auto vit : poly_mesh->vertices())
     {

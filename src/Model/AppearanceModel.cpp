@@ -52,7 +52,7 @@ void AppearanceModel::get_mask_from_origin_image_to_uv(const cv::Mat& mask_origi
 
 			std::vector<float> uv_coor;
 			uv_coor.push_back(1.0*i / wh_uv);
-			uv_coor.push_back(1.0*j / wh_uv);
+      uv_coor.push_back(1.0*(wh_uv - j - 1) / wh_uv);
 
 			std::vector<float> bary_coord;
 			int f_id;

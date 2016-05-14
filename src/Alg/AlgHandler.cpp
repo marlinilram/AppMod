@@ -10,6 +10,9 @@
 
 #include "ParameterMgr.h"
 
+#include "ShapeUtility.h"
+#include "VtkUtility.h"
+
 AlgHandler::AlgHandler()
 {
   feature_model = nullptr;
@@ -232,34 +235,41 @@ void AlgHandler::debugSymmetry()
     return;
   }
 
-  VertexList v_list = shape_model->getShapeVertexList();
-  std::set<STLPairii> sym_pairs;
-  shape_model->getSymPairs(sym_pairs);
+  //VertexList v_list = shape_model->getShapeVertexList();
+  //std::set<STLPairii> sym_pairs;
+  //shape_model->getSymPairs(sym_pairs);
 
-  actors.clear();
-  actors.push_back(GLActor(ML_POINT, 3.0f));
-  actors.push_back(GLActor(ML_LINE, 1.0f));
+  //actors.clear();
+  //actors.push_back(GLActor(ML_POINT, 3.0f));
+  //actors.push_back(GLActor(ML_LINE, 1.0f));
 
-  for (auto i : sym_pairs)
-  {
-    Vector3f start, end;
-    start[0] = v_list[3 * i.first + 0];
-    start[1] = v_list[3 * i.first + 1];
-    start[2] = v_list[3 * i.first + 2];
-    end[0] = v_list[3 * i.second + 0];
-    end[1] = v_list[3 * i.second + 1];
-    end[2] = v_list[3 * i.second + 2];
-    actors[0].addElement(start[0], start[1], start[2], 1, 0, 0);
-    actors[0].addElement(end[0], end[1], end[2], 1, 0, 0);
-    actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
-    actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
-  }
+  //for (auto i : sym_pairs)
+  //{
+  //  Vector3f start, end;
+  //  start[0] = v_list[3 * i.first + 0];
+  //  start[1] = v_list[3 * i.first + 1];
+  //  start[2] = v_list[3 * i.first + 2];
+  //  end[0] = v_list[3 * i.second + 0];
+  //  end[1] = v_list[3 * i.second + 1];
+  //  end[2] = v_list[3 * i.second + 2];
+  //  actors[0].addElement(start[0], start[1], start[2], 1, 0, 0);
+  //  actors[0].addElement(end[0], end[1], end[2], 1, 0, 0);
+  //  actors[1].addElement(start[0], start[1], start[2], 0, 0, 0);
+  //  actors[1].addElement(end[0], end[1], end[2], 0, 0, 0);
+  //}
 
   //detail_synthesis->doGeometryTransfer(shape_model, synthesis_model);
   //actors.clear();
   //detail_synthesis->getDrawableActors(actors);
   //syn_actors.clear();
   //detail_synthesis->getDrawableActors(syn_actors, 1);
+
+  // debug curvature
+/*  ShapeUtility::computeCurvature(shape_model);
+  VtkUtility::getCurvature(shape_model->getPolygonMesh());*/
+
+  // debug D1 from Aligned
+  detail_synthesis->generateD1FromAligned(shape_model);
 }
 
 void AlgHandler::resetShapeModel()

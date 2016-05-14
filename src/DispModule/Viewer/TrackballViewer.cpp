@@ -806,7 +806,13 @@ void TrackballViewer::keyPressEvent(QKeyEvent *e)
   else if ((e->key() == Qt::Key_S) && (modifiers == Qt::NoButton))
   {
 	  QString file = this->stateFileName();
-	  this->setStateFileName("trac_camrea.xml");
+    QString prefix("");
+    if (!dispObjects.empty())
+    {
+      TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[0]);
+      prefix = QString::fromStdString(trackball_canvas->getFilePath()) + "/";
+    }
+    this->setStateFileName(prefix + "trac_camrea.xml");
 	  this->saveStateToFile();
 	  this->setStateFileName(file);
 	  handled = true;
@@ -815,7 +821,13 @@ void TrackballViewer::keyPressEvent(QKeyEvent *e)
   {
 
 	  QString file = this->stateFileName();
-	  this->setStateFileName("trac_camrea.xml");
+    QString prefix("");
+    if (!dispObjects.empty())
+    {
+      TrackballCanvas* trackball_canvas = dynamic_cast<TrackballCanvas*>(dispObjects[0]);
+      prefix = QString::fromStdString(trackball_canvas->getFilePath()) + "/";
+    }
+	  this->setStateFileName(prefix + "trac_camrea.xml");
 	  this->restoreStateFromFile();
 	  this->setStateFileName(file);
 

@@ -12,6 +12,8 @@ class QMouseEvent;
 class QKeyEvent;
 class MiniTexture;
 class TexSynHandler;
+class GLActor;
+
 class Texture_Viewer : public BasicViewer
 {
 	Q_OBJECT
@@ -44,6 +46,9 @@ public:
   void set_tex_syn_handler(std::shared_ptr<TexSynHandler>);
 
   void clear_texture_mesh_corres();
+
+  void setGLActors(std::vector<GLActor>& actors);
+
 public slots:
 	void delete_textures_mesh_corre(Texture_Mesh_Corres*);
 	void select_all_unselected();
@@ -83,6 +88,8 @@ private:
   bool m_right_button_down_;
   int  m_edit_mode_;//-1->normal,0->visible,1->all in polygonm, 2->part
 
+  std::vector<GLActor> actors;
+  bool draw_actors;
 
   std::vector<bool>   m_faces_selected_;
   std::vector<bool>   m_faces_selected_all_;

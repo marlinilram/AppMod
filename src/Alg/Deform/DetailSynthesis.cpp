@@ -884,11 +884,11 @@ void DetailSynthesis::computeDisplacementMap(LG::PolygonMesh* height_mesh, std::
         // what if use average normal here ?
         Vector3f end = pos + tar_model->getBoundBox()->getRadius() * dir;
         Vector3f neg_end = pos - tar_model->getBoundBox()->getRadius() * dir;
-        Vector3f epslon(1e-5, 1e-5, 1e-5);
+        float epslon(1e-5);
         Eigen::Vector3d intersect_point, neg_intersect_point;
         bool is_intersected, is_neg_intersected;
-        is_intersected = ray_instance->intersectModel((pos + epslon).cast<double>(), end.cast<double>(), intersect_point.data());
-        is_neg_intersected = ray_instance->intersectModel((pos - epslon).cast<double>(), neg_end.cast<double>(), neg_intersect_point.data());
+        is_intersected = ray_instance->intersectModel((pos + epslon * dir).cast<double>(), end.cast<double>(), intersect_point.data());
+        is_neg_intersected = ray_instance->intersectModel((pos - epslon * dir).cast<double>(), neg_end.cast<double>(), neg_intersect_point.data());
         if(is_intersected == false && is_neg_intersected == false)
         {
           displacement_map.at<float>(resolution - y - 1,x) = -100;
@@ -3327,11 +3327,15 @@ void DetailSynthesis::generateD1Detail(AppearanceModel* app_mod, std::shared_ptr
   if (!read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj"))
   {
     cv::FileStorage fs2(src_model->getDataPath() + "/final_height.xml", cv::FileStorage::READ);
-    cv::Mat final_height_mat;
+    //cv::FileStorage fs3(src_model->getDataPath() + "/smoothed_output_height.xml", cv::FileStorage::READ);
+    cv::Mat final_height_mat, smoothed_height_mat;
     fs2["final_height"] >> final_height_mat;
-    PolygonMesh new_mesh;
+    //fs3["smoothed_output_height"] >> smoothed_height_mat;
+    PolygonMesh new_mesh, smoothed_new_mesh;
     ShapeUtility::heightToMesh(final_height_mat, new_mesh, src_model);
-    ShapeUtility::savePolyMesh(&new_mesh, tar_model->getDataPath() + "/height_mesh.obj");
+    //ShapeUtility::heightToMesh(smoothed_height_mat, smoothed_new_mesh, src_model);
+    ShapeUtility::savePolyMesh(&new_mesh, tar_model->getDataPath() + "/height_mesh.obj", false);
+    //ShapeUtility::savePolyMesh(&smoothed_new_mesh, tar_model->getDataPath() + "/smoothed_height_mesh.obj", false);
     std::cout << "plese cut height mesh!!!" << std::endl;
     system("pause");
     if (!read_poly(height_mesh, tar_model->getDataPath() + "/height_mesh.obj"))
