@@ -1475,7 +1475,7 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
       if ((unsigned)(j - jchange) < (unsigned)nnf_width)
       {
         Point2D left_nnf = nnf[i * nnf_width + j - jchange]; // get the 
-        if ((unsigned)(left_nnf.first + jchange) < unsigned(nnf_width))
+        if ((unsigned)(left_nnf.first + jchange) < unsigned(src_nnf_width))
         {
           left_nnf.first = left_nnf.first + jchange;
           if(this->validPatchWithMask(left_nnf, src_patch_mask[level], src_nnf_height, src_nnf_width))
@@ -1486,7 +1486,7 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
       if ((unsigned)(i - ichange) < (unsigned)nnf_height)
       {
         Point2D up_nnf = nnf[(i - ichange) * nnf_width + j];
-        if ((unsigned)(up_nnf.second + ichange) < unsigned(nnf_height))
+        if ((unsigned)(up_nnf.second + ichange) < unsigned(src_nnf_height))
         {
           up_nnf.second = (up_nnf.second + ichange);
           if(this->validPatchWithMask(up_nnf, src_patch_mask[level], src_nnf_height, src_nnf_width))
@@ -1989,6 +1989,12 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
   int nnf_height = (height - this->patch_size + 1);
   int nnf_width  = (width - this->patch_size + 1);
 
+  int src_height = gpsrc_f[0][level].rows;
+  int src_width = gpsrc_f[0][level].cols;
+  int src_nnf_height = (src_height - this->patch_size + 1);
+  int src_nnf_width = (src_width - this->patch_size + 1);
+
+
   int istart = 0, iend = nnf_height, ichange = 1;
   int jstart = 0, jend = nnf_width, jchange = 1;
   if (iter % 2 == 1)
@@ -2011,7 +2017,7 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
       if (tar_patch_mask[level][offset] == 1) continue;
 
       // random search
-      this->getRandomPosition(level, rand_pos, best_random_size, nnf_height, nnf_width);
+      this->getRandomPosition(level, rand_pos, best_random_size, src_nnf_height, src_nnf_width);
       Point2D best_rand;
       double d_best_rand = this->bestPatchInSet(gpsrc_f, gptar_f, ref_cnt, level, Point2D(j, i), rand_pos, best_rand);
 
@@ -2021,10 +2027,10 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
       if ((unsigned)(j - jchange) < (unsigned)nnf_width)
       {
         Point2D left_nnf = nnf[i * nnf_width + j - jchange];
-        if ((unsigned)(left_nnf.first + jchange) < unsigned(nnf_width))
+        if ((unsigned)(left_nnf.first + jchange) < unsigned(src_nnf_width))
         {
           left_nnf.first = left_nnf.first + jchange;
-          if(this->validPatchWithMask(left_nnf, src_patch_mask[level], nnf_height, nnf_width))
+          if(this->validPatchWithMask(left_nnf, src_patch_mask[level], src_nnf_height, src_nnf_width))
             rand_pos.push_back(left_nnf);
         }
       }
@@ -2032,10 +2038,10 @@ double SynthesisTool::updateNNF(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
       if ((unsigned)(i - ichange) < (unsigned)nnf_height)
       {
         Point2D up_nnf = nnf[(i - ichange) * nnf_width + j];
-        if ((unsigned)(up_nnf.second + ichange) < unsigned(nnf_height))
+        if ((unsigned)(up_nnf.second + ichange) < unsigned(src_nnf_height))
         {
           up_nnf.second = (up_nnf.second + ichange);
-          if(this->validPatchWithMask(up_nnf, src_patch_mask[level], nnf_height, nnf_width))
+          if(this->validPatchWithMask(up_nnf, src_patch_mask[level], src_nnf_height, src_nnf_width))
             rand_pos.push_back(up_nnf);
         }
       }
