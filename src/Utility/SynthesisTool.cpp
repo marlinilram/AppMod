@@ -76,7 +76,7 @@ void SynthesisTool::init(std::vector<cv::Mat>& src_feature, std::vector<cv::Mat>
   for (size_t i = 0; i < src_detail.size(); ++i)
   {
     gpsrc_detail[i].push_back(src_detail[i].clone());
-    gptar_detail[i].push_back(cv::Mat::zeros(src_detail[i].rows, src_detail[i].cols, CV_32FC1));
+    gptar_detail[i].push_back(cv::Mat::zeros(tar_feature[0].rows, tar_feature[0].cols, CV_32FC1));
   }
   for(size_t i = 0; i < gptar_feature.size(); i ++)
   {
@@ -1081,6 +1081,9 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
     int width = gptar_detail[0].at(l).cols;
     int height = gptar_detail[0].at(l).rows;
 
+    int src_width = gpsrc_detail[0].at(l).cols;
+    int src_height = gpsrc_detail[0].at(l).rows;
+
 
     this->exportSrcFeature(gpsrc_feature, l);
     this->exportTarFeature(gptar_feature, l);
@@ -1103,7 +1106,7 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
         //  tar_detail_gradient.push_back(grad_y);
         //}
 
-        std::vector<float> ref_cnt(width * height, 0.0);
+        std::vector<float> ref_cnt(src_width * src_height, 0.0);
         //if (i_iter % 2 == 0)
         {
           double cur_energy = 0;
@@ -1116,7 +1119,7 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
           //this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
         //}
         this->voteImage(gpsrc_detail, gptar_detail, nnf, l);
-        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportNNF(nnf, gpsrc_feature, gptar_feature, l, i_iter);
         this->exportTarDetail(gptar_detail, l, i_iter);
       }
     }
@@ -1145,7 +1148,6 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
           }
         }
       }
-
       std::vector<Point2D> nnf_new;
       this->initializeNNFFromLastLevel(gpsrc_detail[0], gptar_detail[0], nnf, l, nnf_new, is_doComplete);
       nnf.swap(nnf_new);
@@ -1162,7 +1164,7 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
         //  tar_detail_gradient.push_back(grad_y);
         //}
 
-        std::vector<float> ref_cnt(width * height, 0.0);
+        std::vector<float> ref_cnt(src_width * src_height, 0.0);
         //if (i_iter % 2 == 0)
         {
           double cur_energy = 0;
@@ -1175,7 +1177,7 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
         //  this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
         //}
         this->voteImage(gpsrc_detail, gptar_detail, nnf, l);
-        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportNNF(nnf, gpsrc_feature, gptar_feature, l, i_iter);
         this->exportTarDetail(gptar_detail, l, i_iter);
       }
     }
@@ -1273,7 +1275,7 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gpsrc_d, ImagePyram
       patch.second = src_scale * (patch.second);
       patch.first = (patch.first >= src_nnf_width) ? (src_nnf_width - 1) : patch.first;
       patch.second = (patch.second >= src_nnf_height) ? (src_nnf_height - 1) : patch.second;
-      if(src_patch_mask[level][patch.second * nnf_width + patch.first] == 0) // in the mask
+      if(src_patch_mask[level][patch.second * src_nnf_width + patch.first] == 0) // in the mask
         nnf_new[i * nnf_width + j] = patch;
       else
       { // not in the mask, search the nearest one in the mask
@@ -1945,13 +1947,13 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
           cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 1);
           std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
         }
-        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportNNF(nnf, gpsrc_feature, gptar_feature, l, i_iter);
       }
     }
     else
     {
       std::vector<Point2D> nnf_new;
-      this->initializeNNFFromLastLevel(gptar_feature[0], nnf, l, nnf_new);
+      this->initializeNNFFromLastLevel(gpsrc_feature[0], gptar_feature[0], nnf, l, nnf_new);
       nnf.swap(nnf_new);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
@@ -1963,7 +1965,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
           cur_energy = this->updateNNF(gpsrc_feature, gptar_feature, nnf, ref_cnt, l, 1);
           std::cout << "Level: " << l << " Iter: " << i_iter << " Energy: " << cur_energy << std::endl;
         }
-        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportNNF(nnf, gpsrc_feature, gptar_feature, l, i_iter);
       }
     }
 

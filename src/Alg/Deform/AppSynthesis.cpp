@@ -274,7 +274,7 @@ void DetailSynthesis::synthesisD1(AppearanceModel* app_mod_src, AppearanceModel*
     target_detail_map.clear();
     for (size_t i = 0; i < src_detail_map.size(); ++i)
     {
-      target_detail_map.push_back(cv::Mat::zeros(src_detail_map[0].rows, src_detail_map[0].cols, CV_32FC1));
+      target_detail_map.push_back(cv::Mat::zeros(tar_feature_map[0].rows, tar_feature_map[0].cols, CV_32FC1));
     }
   }
 
