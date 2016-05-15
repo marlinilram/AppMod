@@ -85,7 +85,7 @@ void SynthesisTool::doFilling(std::vector<cv::Mat>& src_feature, std::vector<cv:
       std::vector<int> pixel_mask;
       std::vector<int> patch_mask;
       this->buildMask(gpsrc_detail[0][l], pixel_mask, patch_mask, l);
-      this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
+      this->initializeNNFFromLastLevel(gpsrc_detail[0], gptar_detail[0], nnf, l, nnf_new);
       this->initializeFillingUpTarDetail(gpsrc_detail, gptar_detail, pixel_mask, l);
       nnf.swap(nnf_new);
       for (int i_iter = 0; i_iter < 5; ++i_iter)
@@ -600,14 +600,14 @@ void SynthesisTool::doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::
           this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
         }
         this->voteFillingImage(gpsrc_detail, gptar_detail, nnf, pixel_masks[l], l);
-        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportNNF(nnf, gpsrc_feature, gptar_feature, l, i_iter);
         this->exportTarDetail(gptar_detail, l, i_iter);
       }
     }
     else
     {
       std::vector<Point2D> nnf_new;
-      this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new);
+      this->initializeNNFFromLastLevel(gpsrc_detail[0], gptar_detail[0], nnf, l, nnf_new);
       this->initializeFillingUpTarDetail(gptar_detail_bk, gptar_detail, pixel_masks[l], l);
       nnf.swap(nnf_new);
       for (int i_iter = 0; i_iter < 5; ++i_iter)
@@ -622,7 +622,7 @@ void SynthesisTool::doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::
           this->updateNNFReverse(gpsrc_feature, gptar_feature, gpsrc_detail, gptar_detail, nnf, ref_cnt, l);
         }
         this->voteFillingImage(gpsrc_detail, gptar_detail, nnf, pixel_masks[l], l);
-        this->exportNNF(nnf, gptar_feature, l, i_iter);
+        this->exportNNF(nnf, gpsrc_feature, gptar_feature, l, i_iter);
         this->exportTarDetail(gptar_detail, l, i_iter);
       }
     }
@@ -695,12 +695,14 @@ void SynthesisTool::exportTarDetail(ImagePyramidVec& gptar, int level, int iter)
   if (gptar.size() == 4) this->exportDisplacement(gptar[3][level], "tar_displacement_level_" + std::to_string(level) + "_iter_" + std::to_string(iter) + ".png");
 }
 
-void SynthesisTool::exportNNF(NNF& nnf, ImagePyramidVec& gptar, int level, int iter)
+void SynthesisTool::exportNNF(NNF& nnf, ImagePyramidVec& gpsrc, ImagePyramidVec& gptar, int level, int iter)
 {
   int height = gptar[0][level].rows;
   int width  = gptar[0][level].cols;
   int nnf_height = (height - this->patch_size + 1);
   int nnf_width  = (width - this->patch_size + 1);
+  int src_height = gpsrc[0][level].rows;
+  int src_width = gpsrc[0][level].cols;
 
   cv::Mat nnf_img(nnf_height, nnf_width, CV_32FC3);
   for (int i = 0; i < nnf_height; ++i)
@@ -709,7 +711,7 @@ void SynthesisTool::exportNNF(NNF& nnf, ImagePyramidVec& gptar, int level, int i
     {
       float x = nnf[i * nnf_width + j].first;
       float y = nnf[i * nnf_width + j].second;
-      nnf_img.at<cv::Vec3f>(i, j) = cv::Vec3f(0.0f, y / height, x / width);
+      nnf_img.at<cv::Vec3f>(i, j) = cv::Vec3f(0.0f, y / src_height, x / src_width);
     }
   }
 
