@@ -1930,6 +1930,9 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
     int width = gptar_feature[0].at(l).cols;
     int height = gptar_feature[0].at(l).rows;
 
+    int src_width = gpsrc_feature[0].at(l).cols;
+    int src_height = gpsrc_feature[0].at(l).rows;
+
 
     this->exportSrcFeature(gpsrc_feature, l);
     this->exportTarFeature(gptar_feature, l);
@@ -1939,7 +1942,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
       this->initializeNNF(gptar_feature[0], nnf, l);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
-        std::vector<float> ref_cnt(width * height, 0.0);
+        std::vector<float> ref_cnt(src_width * src_height, 0.0);
         //if (i_iter % 2 == 0)
         {
           double cur_energy = 0;
@@ -1957,7 +1960,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
       nnf.swap(nnf_new);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
-        std::vector<float> ref_cnt(width * height, 0.0);
+        std::vector<float> ref_cnt(src_width * src_height, 0.0);
         //if (i_iter % 2 == 0)
         {
           double cur_energy = 0;

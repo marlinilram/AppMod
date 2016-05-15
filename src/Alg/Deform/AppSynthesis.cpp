@@ -87,7 +87,7 @@ std::string DetailSynthesis::synthesisD0(AppearanceModel* app_mod_src, Appearanc
 
 	// 3.2 find correspondences from NNF
 	std::vector<STLVectori> cur_src_crsp;
-	this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, cur_sampled_tar_models, cur_src_crsp);
+  this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, app_mod_src->getResolution(), cur_sampled_tar_models, cur_src_crsp);
 
 	// 3.3 merge the current correspondences to sampled vertex set
 	ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
