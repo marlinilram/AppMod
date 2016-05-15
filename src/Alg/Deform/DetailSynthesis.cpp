@@ -1880,7 +1880,7 @@ void DetailSynthesis::mergeSynthesis(ParaShape* para_shape, std::shared_ptr<Mode
   }
 }
 
-void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model)
+void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model, bool use_mask)
 {
   cv::FileStorage fs(src_model->getDataPath() + "/reflectance.xml", cv::FileStorage::READ); // normalized reflectance
   cv::Mat detail_reflectance_mat;
@@ -1905,7 +1905,10 @@ void DetailSynthesis::loadDetailMap(std::shared_ptr<Model> src_model)
   masked_detail_image.push_back(temp_detail_image[2]);
 
   cv::Mat mask_mat(converted_detail_mat.rows, converted_detail_mat.cols, CV_32FC1, 1);
-  ImageUtility::generateMultiMask(converted_detail_mat, mask_mat);
+  if (use_mask)
+  {
+    ImageUtility::generateMultiMask(converted_detail_mat, mask_mat);
+  }
 
   for (int i = 0; i < mask_mat.rows; i++)
   {
@@ -3131,7 +3134,7 @@ void DetailSynthesis::generateD0Detail(AppearanceModel* app_mod, std::shared_ptr
   PolygonMesh old_src_mesh = (*src_model->getPolygonMesh()); // copy the old one
   VertexList old_src_vertex_list = src_model->getShapeVertexList();
   NormalTransfer normal_transfer;
-  normal_transfer.prepareNewNormal(src_model, "final_normal");
+  normal_transfer.prepareNewNormal(src_model, "final_normal", false);
   ShapeUtility::computeLocalTransform(&old_src_mesh, src_model->getPolygonMesh());
   ShapeUtility::exportVisForLocalTransform(src_model->getPolygonMesh(), src_model->getOutputPath());
   src_model->updateShape(old_src_vertex_list);// go back to old one
@@ -3149,7 +3152,7 @@ void DetailSynthesis::generateD1Feature(AppearanceModel* app_mod, std::shared_pt
   {
     NormalTransfer normal_transfer;
     std::string normal_file_name = "final_normal";
-    normal_transfer.prepareNewNormal(src_model, normal_file_name);
+    normal_transfer.prepareNewNormal(src_model, normal_file_name, false);
   }
 
   ShapeUtility::computeNormalizedHeight(src_model);

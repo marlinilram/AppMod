@@ -75,7 +75,7 @@ public:
   void doGeometryComplete(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
 
   void prepareParaPatches(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, std::vector<int>& tar_sampled_v_ids, std::vector<int>& src_v_ids);
-  void loadDetailMap(std::shared_ptr<Model> src_model);
+  void loadDetailMap(std::shared_ptr<Model> src_model, bool use_mask = true);
 
   // generate Appearance Model
   void generateAppearanceModel(std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model);
