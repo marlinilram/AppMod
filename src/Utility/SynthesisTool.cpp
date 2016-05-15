@@ -1040,6 +1040,17 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
     std::vector<int> target_patch_mask_l;
     std::vector<int> target_pixel_mask_l;
     this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l, l, is_doComplete);
+    for (size_t k = 1; k < gptar_feature.size(); ++k)
+    {
+      std::vector<int> tmp_target_patch_mask_l;
+      std::vector<int> tmp_target_pixel_mask_l;
+      this->buildMask(gptar_feature[k].at(l), tmp_target_pixel_mask_l, tmp_target_patch_mask_l, l, is_doComplete);
+      for (size_t i = 0; i < tmp_target_patch_mask_l.size(); ++i)
+      {
+        if (tmp_target_patch_mask_l[i] == 0) target_patch_mask_l[i] = 0;
+        if (tmp_target_pixel_mask_l[i] == 0) target_pixel_mask_l[i] = 0;
+      }
+    }
     tar_pixel_mask.push_back(target_pixel_mask_l);
     tar_patch_mask.push_back(target_patch_mask_l);
   }
@@ -1072,7 +1083,26 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
   //    break;
   //  }
   //}
-  for (int l = levels - 1; l >= 0; --l)                      
+
+  // test if the source mask in this level is empty
+  int start_level = levels - 1;
+  for (int l = levels - 1; l >= 0; --l)
+  {
+    // search the first non zero level
+    int mask_accu = 0;
+    for (auto accu : src_patch_mask[l])
+    {
+      mask_accu += (1 - accu);
+    }
+    if (mask_accu != 0)
+    {
+      start_level = l;
+      std::cout << "start from level: " << l << std::endl;
+      break;
+    }
+  }
+
+  for (int l = start_level; l >= 0; --l)
   {
     double duration;
     clock_t start, end;
@@ -1089,7 +1119,8 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
     this->exportTarFeature(gptar_feature, l);
     this->exportSrcDetail(gpsrc_detail, l, 0);
 
-    if(l == levels - 1)
+
+    if (l == start_level)
     {
       this->initializeNNF(gptar_detail[0], nnf, l, is_doComplete);
       this->initializeTarDetail(gptar_detail, l, is_doComplete);
@@ -1193,11 +1224,12 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
 void SynthesisTool::initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level, bool is_doComplete)
 {
   // first check if the level is the coarsest level
-  if (level != (gptar_d.size() - 1))
-  {
-    std::cout << "Level of initialization error." << std::endl;
-    return;
-  }
+  // don't check because the first level might not have valid patch
+  //if (level != (gptar_d.size() - 1))
+  //{
+  //  std::cout << "Level of initialization error." << std::endl;
+  //  return;
+  //}
 
   // allocate for nnf, based on the patch size and the image size
   int height = gptar_d[level].rows;
@@ -1306,11 +1338,11 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gpsrc_d, ImagePyram
 void SynthesisTool::initializeTarDetail(ImagePyramidVec& gptar_d, int level, bool is_doComplete)
 {
   // first check if the level is the coarsest level
-  if (level != (gptar_d[0].size() - 1))
-  {
-    std::cout << "Level of initialization error." << std::endl;
-    return;
-  }
+  //if (level != (gptar_d[0].size() - 1))
+  //{
+  //  std::cout << "Level of initialization error." << std::endl;
+  //  return;
+  //}
 
   // iterate the cv::Mat
   int ddim = gptar_d.size();

@@ -28,7 +28,7 @@ NormalTransfer::~NormalTransfer()
 
 }
 
-void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string normal_file_name)
+void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string normal_file_name, bool use_mask)
 {
   // build new normal list for deformation
   // for all visible faces in the image, we set a new normal
@@ -46,7 +46,10 @@ void NormalTransfer::prepareNewNormal(std::shared_ptr<Model> model, std::string 
   cv::imshow("normal_img", photo_normal);
 
   cv::Mat normal_mask(photo_normal.rows, photo_normal.cols, CV_32FC1, 1.0);
-  ImageUtility::generateMultiMask(photo_normal.clone(), normal_mask);
+  if (use_mask)
+  {
+    ImageUtility::generateMultiMask(photo_normal.clone(), normal_mask);
+  }
 
   // the origin of coordinate system of normal image
   // is top left corner

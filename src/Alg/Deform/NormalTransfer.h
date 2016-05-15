@@ -20,7 +20,7 @@ public:
   NormalTransfer();
   ~NormalTransfer();
 
-  void prepareNewNormal(std::shared_ptr<Model> model, std::string normal_file_name);
+  void prepareNewNormal(std::shared_ptr<Model> model, std::string normal_file_name, bool use_mask = true);
   void getDrawableActors(std::vector<GLActor>& actors);
   void visibleFaceInNormalMap(std::shared_ptr<Model> model, std::string normal_file_name, std::set<int>& face_in_normal);
   void visibleVertexInNormalMap(std::shared_ptr<Model> model, std::string normal_file_name, STLVectori& vertex_in_normal);
