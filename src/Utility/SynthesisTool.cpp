@@ -1700,16 +1700,27 @@ double SynthesisTool::distPatch(ImagePyramidVec& gpsrc_f, ImagePyramidVec& gptar
     for (int j = 0; j < this->patch_size; ++j)
     {
       // for each feature dimension
-      for (int k = 0; k < fdim; ++k)
+      if (i == this->patch_size / 2 && j == this->patch_size / 2)  // use only center pixel
       {
-		// TODO: experiment here probably only use the center pixel for feature comparision
-		// in case of resolution mismatch
-        d_f += pow(gpsrc_f[k][level].at<float>(srcPatch.second + i, srcPatch.first + j) - gptar_f[k][level].at<float>(tarPatch.second + i, tarPatch.first + j), 2);
+        for (int k = 0; k < fdim; ++k)
+        {
+          // TODO: experiment here probably only use the center pixel for feature comparision
+          // in case of resolution mismatch
+          d_f += pow(gpsrc_f[k][level].at<float>(srcPatch.second + i, srcPatch.first + j) - gptar_f[k][level].at<float>(tarPatch.second + i, tarPatch.first + j), 2);
+        }
       }
+
       // for each detail dimension
       for (int k = 0; k < ddim; ++k)
       {
-        d_d += pow(gpsrc_d[k][level].at<float>(srcPatch.second + i, srcPatch.first + j) - gptar_d[k][level].at<float>(tarPatch.second + i, tarPatch.first + j), 2);
+        if (k == 3)
+        {
+          d_d += 3 * pow(gpsrc_d[k][level].at<float>(srcPatch.second + i, srcPatch.first + j) - gptar_d[k][level].at<float>(tarPatch.second + i, tarPatch.first + j), 2);
+        }
+        else
+        {
+          d_d += pow(gpsrc_d[k][level].at<float>(srcPatch.second + i, srcPatch.first + j) - gptar_d[k][level].at<float>(tarPatch.second + i, tarPatch.first + j), 2);
+        }
       }
 
       d_occ += ref_cnt[(srcPatch.second + i) * gpsrc_d[0][level].cols + srcPatch.first + j];

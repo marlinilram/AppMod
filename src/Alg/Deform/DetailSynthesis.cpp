@@ -2462,7 +2462,7 @@ void DetailSynthesis::applyNewDisp(std::shared_ptr<Model> src_model, std::shared
     {
       for (int j = 0; j < d2_displacement_mat.cols; j++)
       {
-        if (mask.at<float>(i, j) > 0.5)
+        if (mask.at<float>(i, j) > 0.5 && d2_displacement_mat.at<float>(i, j) > 0)
         {
           value += d2_displacement_mat.at<float>(i, j);
           ++value_cnt;
