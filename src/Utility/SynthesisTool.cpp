@@ -1147,7 +1147,7 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
       }
 
       std::vector<Point2D> nnf_new;
-      this->initializeNNFFromLastLevel(gptar_detail[0], nnf, l, nnf_new, is_doComplete);
+      this->initializeNNFFromLastLevel(gpsrc_detail[0], gptar_detail[0], nnf, l, nnf_new, is_doComplete);
       nnf.swap(nnf_new);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
@@ -1269,14 +1269,14 @@ void SynthesisTool::initializeNNFFromLastLevel(ImagePyramid& gpsrc_d, ImagePyram
       i_last = (i_last >= last_nnf_height) ? (last_nnf_height - 1) : i_last;
       j_last = (j_last >= last_nnf_width) ? (last_nnf_width - 1) : j_last;
       Point2D patch = nnf_last[i_last * last_nnf_width + j_last]; // source patch in last level
-      patch.first = scale * (patch.first);
-      patch.second = scale * (patch.second);
-      patch.first = (patch.first >= nnf_width) ? (nnf_width - 1) : patch.first;
-      patch.second = (patch.second >= nnf_height) ? (nnf_height - 1) : patch.second;
-      if(src_patch_mask[level][patch.second * nnf_width + patch.first] == 0)
+      patch.first = src_scale * (patch.first);
+      patch.second = src_scale * (patch.second);
+      patch.first = (patch.first >= src_nnf_width) ? (src_nnf_width - 1) : patch.first;
+      patch.second = (patch.second >= src_nnf_height) ? (src_nnf_height - 1) : patch.second;
+      if(src_patch_mask[level][patch.second * nnf_width + patch.first] == 0) // in the mask
         nnf_new[i * nnf_width + j] = patch;
       else
-      {
+      { // not in the mask, search the nearest one in the mask
         std::vector<float> query(2, 0);
         query[0] = patch.first;
         query[1] = patch.second;
