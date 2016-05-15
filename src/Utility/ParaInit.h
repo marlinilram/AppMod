@@ -45,17 +45,17 @@ void InitGlobalParameter()
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("ShapCrest:source_curves_show_color", false);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("FeatureGuided:target_curves_threshhold", 0.5);
 
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:scale", 1.0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:scale", 0.07);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:is_wait", true);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:n_ring", 1);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:resolution", 512);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:n_ring", 0);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:resolution", 1024);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:pry_levels", 5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:patch_size", 10);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:max_iter", 5);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<int>("Synthesis:rand_size", 5);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:occ", 0.001);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:occ", 0.0002);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:bias_rate", 0.1);
-  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_center", 0.4);
+  LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_center", 0.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<double>("Synthesis:beta_mult", 5.0);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<bool>("Synthesis:geo_transfer_use_para_map", false);
   LG::GlobalParameterMgr::GetInstance()->add_parameter<cv::Mat>("Synthesis:SrcAppMask");
