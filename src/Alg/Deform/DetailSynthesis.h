@@ -106,7 +106,7 @@ private:
   void computeDisplacementMap(LG::PolygonMesh* height_mesh, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map);
   void computeDisplacementMap(cv::Mat& final_height, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model, cv::Mat& uv_mask, cv::Mat& displacement_map);
 
-  void prepareLocalTransformCrsp(ParaShapePtr src_para, ParaShapePtr tar_para, SynToolPtr syn_tool, const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids);
+  void prepareLocalTransformCrsp(ParaShapePtr src_para, ParaShapePtr tar_para, SynToolPtr syn_tool, int src_resolution, const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids);
 
 private:
   std::shared_ptr<MeshParameterization> mesh_para;

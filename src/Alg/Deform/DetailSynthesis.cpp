@@ -2706,7 +2706,7 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
       // 3.2 find correspondences from NNF
       std::vector<STLVectori> cur_src_crsp;
-      this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, cur_sampled_tar_models, cur_src_crsp);
+      this->prepareLocalTransformCrsp(src_para_shape, tar_para_shape, syn_tool, resolution, cur_sampled_tar_models, cur_src_crsp);
 
       // 3.3 merge the current correspondences to sampled vertex set
       ShapeUtility::mergeSubVector(sampled_tar_model, src_v_ids, cur_sampled_tar_models, cur_src_crsp);
@@ -2842,9 +2842,8 @@ void DetailSynthesis::doGeometryTransfer(std::shared_ptr<Model> src_model, std::
 
 
 void DetailSynthesis::prepareLocalTransformCrsp(
-
   ParaShapePtr src_para, ParaShapePtr tar_para,
-  SynToolPtr syn_tool,
+  SynToolPtr syn_tool, int src_resolution,
   const std::vector<int>& tar_sampled, std::vector<STLVectori>& src_v_ids)
 {
   src_v_ids.clear();
@@ -2873,10 +2872,10 @@ void DetailSynthesis::prepareLocalTransformCrsp(
       for (size_t j = 0; j < src_uvs.size(); ++j)
       {
         std::pair<int, int> src_uv = src_uvs[j];
-        src_uv.second = resolution - src_uv.second - 1;
+        src_uv.second = src_resolution - src_uv.second - 1;
         std::vector<float> pt(2, 0);
-        pt[0] = float(src_uv.first) / resolution;
-        pt[1] = float(src_uv.second) / resolution;
+        pt[0] = float(src_uv.first) / src_resolution;
+        pt[1] = float(src_uv.second) / src_resolution;
         int src_v_id = 0;
         src_para->kdTree_UV->nearestPt(pt, src_v_id);
         //auto iter = src_v_id_mult.find(src_para->vertex_set[src_v_id]);
