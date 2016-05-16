@@ -449,13 +449,29 @@ void AppearanceModel::readCameraInfo(cv::FileStorage& fs)
   m_inv_modelview_projection = (m_projection*m_modelview).inverse();
 }
 
-void AppearanceModel::getD1Reflectance(cv::Mat& reflectance)
+void AppearanceModel::getD1Reflectance(cv::Mat& reflectance, bool diliate)
 {
-  std::vector<cv::Mat> temp_reflectance;
-  temp_reflectance.push_back(d1_detail_maps[2].clone());
-  temp_reflectance.push_back(d1_detail_maps[1].clone());
-  temp_reflectance.push_back(d1_detail_maps[0].clone());
-  cv::merge(temp_reflectance, reflectance);
+  if (diliate)
+  {
+    std::vector<cv::Mat> temp_reflectance;
+    temp_reflectance.push_back(d1_detail_maps[2].clone());
+    temp_reflectance.push_back(d1_detail_maps[1].clone());
+    temp_reflectance.push_back(d1_detail_maps[0].clone());
+    // dilate the detail map in case of black
+    for (int i = 0; i < 3; ++i)
+    {
+      ShapeUtility::dilateImage(temp_reflectance[i], 5);
+    }
+    cv::merge(temp_reflectance, reflectance);
+  }
+  else
+  {
+    std::vector<cv::Mat> temp_reflectance;
+    temp_reflectance.push_back(d1_detail_maps[2].clone());
+    temp_reflectance.push_back(d1_detail_maps[1].clone());
+    temp_reflectance.push_back(d1_detail_maps[0].clone());
+    cv::merge(temp_reflectance, reflectance);
+  }
 }
 
 void AppearanceModel::setPhoto(cv::Mat& photo_)

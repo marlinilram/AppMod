@@ -337,6 +337,14 @@ void DetailSynthesis::synthesisD1(AppearanceModel* app_mod_src, AppearanceModel*
   cur_result_detail.push_back(syn_tool->getTargetDetail()[1][0].clone()); // g
   cur_result_detail.push_back(syn_tool->getTargetDetail()[2][0].clone()); // r
   cur_result_detail.push_back(syn_tool->getTargetDetail()[3][0].clone()); // disp
+
+  for (int i = 0; i < tar_mask.rows; ++i)
+    for (int j = 0; j < tar_mask.cols; ++j)
+      if (tar_mask.at<float>(i, j) <= 0.5) tar_mask.at<float>(i, j) = -1;
+  ShapeUtility::dilateImage(tar_mask, 3);
+  for (int i = 0; i < tar_mask.rows; ++i)
+    for (int j = 0; j < tar_mask.cols; ++j)
+      if (tar_mask.at<float>(i, j) <= -0.5) tar_mask.at<float>(i, j) = 0;
   ImageUtility::mergeMatVecFromMask(cur_result_detail, target_detail_map, tar_mask);
 
   std::vector<cv::Mat> result_detail;

@@ -270,7 +270,7 @@ void MainWindow_Texture::load_obj(QString fileName_tmp)
 	static_cast<Texture_Canvas*>(this->m_viewer_->get_dispObjects()[0])->setModel(m);
 	this->m_viewer_->clear_selection();
 	this->m_viewer_->mark_points_out();
-	this->m_viewer_->clear_texture_mesh_corres();
+	//this->m_viewer_->clear_texture_mesh_corres();
 	this->tex_syn_handler->setSynthesisModel(m);
 	this->shape_list_prepare();
 	this->m_viewer_->resetCamera();
