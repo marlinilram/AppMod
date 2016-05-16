@@ -121,11 +121,11 @@ void Texture_Mesh_Corres::set_data(
 
 
 	std::shared_ptr<AppearanceModel> am = tex_syn_handler->get_syn_app_mod();
-	std::vector<cv::Mat> tar_feature_map;
-	am->getD0Features(tar_feature_map);
+// 	std::vector<cv::Mat> tar_feature_map;
+// 	am->getD0Features(tar_feature_map);
 
-	int w = tar_feature_map[0].cols;
-	int h = tar_feature_map[0].rows;
+  int w = am->getResolution();
+  int h = am->getResolution();
 	m_mask_target_ = cv::Mat(w, h, CV_32FC1, 1);;
 	//cv::Mat mask_d0_all = cv::Mat(w, h, CV_32FC1, 1);;
 	for (int i = 0; i < w; i++)

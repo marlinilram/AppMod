@@ -3279,7 +3279,7 @@ void DetailSynthesis::generateD1Feature(AppearanceModel* app_mod, std::shared_pt
 void DetailSynthesis::generateD1Detail(AppearanceModel* app_mod, std::shared_ptr<Model> src_model, std::shared_ptr<Model> tar_model)
 {
   // load user decide masked detail map
-  this->loadDetailMap(src_model);
+  this->loadDetailMap(src_model, false);
 
   // prepare uv mask from computeDetailMap
   std::shared_ptr<ParaShape> src_para_shape(new ParaShape);

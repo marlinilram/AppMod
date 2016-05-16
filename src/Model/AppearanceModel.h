@@ -45,7 +45,7 @@ public:
   void getD0Details(std::vector<cv::Mat>& detail_maps);
   void getD1Features(std::vector<cv::Mat>& feature_maps);
   void getD1Details(std::vector<cv::Mat>& detail_maps);
-  void getD1Reflectance(cv::Mat& reflectance);
+  void getD1Reflectance(cv::Mat& reflectance, bool diliate = false);
 
   void setBaseMesh(LG::PolygonMesh* mesh);
   void getBaseMesh(LG::PolygonMesh* mesh);

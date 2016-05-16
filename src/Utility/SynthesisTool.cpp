@@ -1039,11 +1039,13 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
 
     std::vector<int> target_patch_mask_l;
     std::vector<int> target_pixel_mask_l;
+    ShapeUtility::dilateImage(gptar_feature[0].at(l), 3);
     this->buildMask(gptar_feature[0].at(l), target_pixel_mask_l, target_patch_mask_l, l, is_doComplete);
     for (size_t k = 1; k < gptar_feature.size(); ++k)
     {
       std::vector<int> tmp_target_patch_mask_l;
       std::vector<int> tmp_target_pixel_mask_l;
+      ShapeUtility::dilateImage(gptar_feature[k].at(l), 3);
       this->buildMask(gptar_feature[k].at(l), tmp_target_pixel_mask_l, tmp_target_patch_mask_l, l, is_doComplete);
       for (size_t i = 0; i < tmp_target_patch_mask_l.size(); ++i)
       {
@@ -1937,6 +1939,23 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
   this->exportSrcMask();
   this->exportTarMask();
   std::cout << "Init mask finished.\n";
+
+  int start_level = levels - 1;
+  for (int l = levels - 1; l >= 0; --l)
+  {
+    // search the first non zero level
+    int mask_accu = 0;
+    for (auto accu : src_patch_mask[l])
+    {
+      mask_accu += (1 - accu);
+    }
+    if (mask_accu != 0)
+    {
+      start_level = l;
+      std::cout << "start from level: " << l << std::endl;
+      break;
+    }
+  }
   
   std::vector<Point2D> nnf; // Point2D stores the nearest patch offset according to current pos
   //int new_levels = 0;
@@ -1953,7 +1972,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
   //  }
   //}
   //std::cout << "Levels now: " << levels << std::endl;
-  for (int l = levels - 1; l >= 0; --l)                      
+  for (int l = start_level; l >= 0; --l)
   {
     double duration;
     clock_t start, end;
@@ -1969,7 +1988,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
     this->exportSrcFeature(gpsrc_feature, l);
     this->exportTarFeature(gptar_feature, l);
 
-    if(l == levels - 1)
+    if (l == start_level)
     {
       this->initializeNNF(gptar_feature[0], nnf, l);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
