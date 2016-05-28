@@ -1124,7 +1124,7 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
 
     if (l == start_level)
     {
-      this->initializeNNF(gptar_detail[0], nnf, l, is_doComplete);
+      this->initializeNNF(gpsrc_detail[0], gptar_detail[0], nnf, l, is_doComplete);
       this->initializeTarDetail(gptar_detail, l, is_doComplete);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
@@ -1223,7 +1223,7 @@ void SynthesisTool::doSynthesisNew(bool is_doComplete)
   std::cout << "All levels is finished !" << " The total running time is :" << totalTime << " seconds." << std::endl;
 }
 
-void SynthesisTool::initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level, bool is_doComplete)
+void SynthesisTool::initializeNNF(ImagePyramid& gpsrc_d, ImagePyramid& gptar_d, NNF& nnf, int level, bool is_doComplete /*= false*/)
 {
   // first check if the level is the coarsest level
   // don't check because the first level might not have valid patch
@@ -1238,10 +1238,12 @@ void SynthesisTool::initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level, bo
   int width  = gptar_d[level].cols;
   int nnf_height = (height - this->patch_size + 1);
   int nnf_width  = (width - this->patch_size + 1);
+  int src_nnf_height = (gpsrc_d[level].rows - this->patch_size + 1);
+  int src_nnf_width = (gpsrc_d[level].cols - this->patch_size + 1);
   nnf.clear();
 
   // initialize the nnf with random position
-  this->getRandomPosition(level, nnf, nnf_height * nnf_width, nnf_height, nnf_width);
+  this->getRandomPosition(level, nnf, nnf_height * nnf_width, src_nnf_height, src_nnf_width);
 
   if (is_doComplete)
   {
@@ -1990,7 +1992,7 @@ void SynthesisTool::doNNFOptimization(std::vector<cv::Mat>& src_feature, std::ve
 
     if (l == start_level)
     {
-      this->initializeNNF(gptar_feature[0], nnf, l);
+      this->initializeNNF(gpsrc_feature[0], gptar_feature[0], nnf, l);
       for (int i_iter = 0; i_iter < max_iter; ++i_iter)
       {
         std::vector<float> ref_cnt(src_width * src_height, 0.0);

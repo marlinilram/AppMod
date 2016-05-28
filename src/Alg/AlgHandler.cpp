@@ -12,6 +12,7 @@
 
 #include "ShapeUtility.h"
 #include "VtkUtility.h"
+#include <fstream>
 
 AlgHandler::AlgHandler()
 {
@@ -230,10 +231,10 @@ void AlgHandler::loadDetailMap()
 
 void AlgHandler::debugSymmetry()
 {
-  if (!shape_model)
-  {
-    return;
-  }
+  //if (!shape_model)
+  //{
+  //  return;
+  //}
 
   //VertexList v_list = shape_model->getShapeVertexList();
   //std::set<STLPairii> sym_pairs;
@@ -262,9 +263,9 @@ void AlgHandler::debugSymmetry()
 
 
   // debug vector field
-  detail_synthesis->generateVectorField(shape_model);
-  actors.clear();
-  detail_synthesis->getDrawableActors(actors);
+  //detail_synthesis->generateVectorField(shape_model);
+  //actors.clear();
+  //detail_synthesis->getDrawableActors(actors);
 
   // debug curvature
 /*  ShapeUtility::computeCurvature(shape_model);
@@ -272,6 +273,25 @@ void AlgHandler::debugSymmetry()
 
   // debug D1 from Aligned
   //detail_synthesis->generateD1FromAligned(shape_model);
+
+  // debug cut mesh
+  std::vector<std::vector<int> > components;
+  VtkUtility::cutMesh(synthesis_model->getPolygonMesh(), components);
+  std::ofstream f_debug(synthesis_model->getOutputPath() + "/components.txt");
+  if (f_debug)
+  {
+    f_debug << components.size() << std::endl;
+    for (size_t i = 0; i < components.size(); i++)
+    {
+      f_debug << components[i].size() << std::endl;
+      for (size_t j = 0; j < components[i].size(); j++)
+      {
+        f_debug << components[i][j] << " ";
+      }
+      f_debug << std::endl;
+    }
+    f_debug.close();
+  }
 }
 
 void AlgHandler::resetShapeModel()

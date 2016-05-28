@@ -491,16 +491,16 @@ void ShapeCrest::buildCandidatesFromExt()
     {
       std::vector<int> line;
       (*it)["line"] >> line;
-      VertexList tmp_line;
-      for (auto i : line)
-      {
-        Vector3f pos = shape->getPolygonMesh()->position(PolygonMesh::Vertex(i));
-        tmp_line.push_back(pos[0]);
-        tmp_line.push_back(pos[1]);
-        tmp_line.push_back(pos[2]);
-      }
-      this->loadFeatureLine(tmp_line);
-      //crest_lines.push_back(line);
+      //VertexList tmp_line;
+      //for (auto i : line)
+      //{
+      //  Vector3f pos = shape->getPolygonMesh()->position(PolygonMesh::Vertex(i));
+      //  tmp_line.push_back(pos[0]);
+      //  tmp_line.push_back(pos[1]);
+      //  tmp_line.push_back(pos[2]);
+      //}
+      //this->loadFeatureLine(tmp_line);
+      crest_lines.push_back(line); //above code leads to crash in alignment...
     }
 
     regenerate = false;

@@ -230,7 +230,10 @@ void MainWindow::updateGeometry()
     //    viewer->getModel(coarse_model);
     //    this->refreshScreen();
     //}
-  disp_modules->updateGeometry();
+  //disp_modules->updateGeometry();
+
+  // for rigid align
+  disp_modules->runLFRegNonRigid();
 }
 
 void MainWindow::refreshScreen()
@@ -290,6 +293,9 @@ void MainWindow::renderTexture()
     //std::string file_time_postfix = time_postfix;
 
     //viewer->saveSnapshot(QString((coarse_model->getOutputPath()+"/ren_img" + file_time_postfix + ".png").c_str()));
+
+  // for non rigid
+  disp_modules->runLFRegRigid();
 }
 
 void MainWindow::setVectorField()

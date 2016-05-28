@@ -586,7 +586,7 @@ void SynthesisTool::doSynthesisWithMask(std::vector<cv::Mat>& src_feature, std::
 
     if(l == levels - 1)
     {
-      this->initializeNNF(gptar_detail[0], nnf, l);
+      this->initializeNNF(gpsrc_detail[0], gptar_detail[0], nnf, l);
       this->initializeFillingTarDetail(gptar_detail, pixel_masks[l], l);
       for (int i_iter = 0; i_iter < 5; ++i_iter)
       {
