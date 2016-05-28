@@ -1,6 +1,6 @@
 #include "VtkUtility.h"
 
-#include "PolygonMesh.h"
+#include <set>
 
 #include <vtkActor.h>
 #include <vtkCellArray.h>
@@ -190,5 +190,100 @@ namespace VtkUtility
 
   }
 
+
+
+  STLVectori getConnectedComponent(PolygonMesh* mesh, PolygonMesh::Face face)
+  {
+    STLVectori f_set;
+    PolygonMesh::Face_attribute<int> f_visited = mesh->get_face_attribute<int>("face:visited");
+    if (f_visited[face] == 1)
+    {
+      // visited return empty
+      return f_set;
+    }
+
+    f_set.push_back(face.idx());
+    f_visited[face] = 1;
+
+    for (auto hfc : mesh->halfedges(face))
+    {
+      if (!mesh->is_boundary(mesh->opposite_halfedge(hfc)))
+      {
+        PolygonMesh::Face n_face = mesh->face(mesh->opposite_halfedge(hfc));
+        STLVectori return_f_set = getConnectedComponent(mesh, n_face);
+        f_set.insert(f_set.end(), return_f_set.begin(), return_f_set.end());
+      }
+    }
+  }
+
+  void cutMesh(LG::PolygonMesh* mesh, std::vector<STLVectori>& components)
+  {
+    PolygonMesh::Halfedge_attribute<int> f_uv_id = mesh->halfedge_attribute<int>("he:uv_id");
+    std::vector<Vec2>& f_uv_coord = mesh->get_attribute<std::vector<Vec2> >("he:texcoord");
+    int n_faces = mesh->n_faces();
+    VertexList v_list(3 * f_uv_coord.size(), 0);
+    FaceList f_list(3 * n_faces, 0);
+    STLVectorf uv_list(2 * f_uv_coord.size(), 0);
+    STLVectori vertex_set;
+    vertex_set.resize(f_uv_coord.size(), 0);
+    std::set<int> cut_faces; // face id in original model
+    STLVectori face_set; // face id mapping from new id to old id
+    //PolygonMesh::Halfedge_attribute<Vec2> f_uv_coord = poly_mesh->halfedge_attribute<Vec2>("he:face_uv");
+    for (int i = 0; i < n_faces; ++i)
+    {
+      int n_face_pt = 0;
+      for (auto hefc : mesh->halfedges(PolygonMesh::Face(i)))
+      {
+        int cur_uv_id = f_uv_id[hefc];
+
+        v_list[3 * cur_uv_id + 0] = f_uv_coord[cur_uv_id][0];
+        v_list[3 * cur_uv_id + 1] = f_uv_coord[cur_uv_id][1];
+        v_list[3 * cur_uv_id + 2] = 0.0;
+        uv_list[2 * cur_uv_id + 0] = f_uv_coord[cur_uv_id][0];
+        uv_list[2 * cur_uv_id + 1] = f_uv_coord[cur_uv_id][1];
+        f_list[3 * i + n_face_pt] = cur_uv_id;
+        vertex_set[cur_uv_id] = mesh->to_vertex(hefc).idx();
+
+        ++n_face_pt;
+      }
+      cut_faces.insert(i);
+      face_set.push_back(i);
+    }
+    
+    // initilized UV mesh
+    PolygonMesh uv_mesh;
+    for (size_t i = 0; i < v_list.size() / 3; ++i)
+    {
+      uv_mesh.add_vertex(Vec3(v_list[3 * i + 0], v_list[3 * i + 1], v_list[3 * i + 2]));
+    }
+    std::vector<PolygonMesh::Vertex> vertices;
+    for (size_t i = 0; i < f_list.size() / 3; ++i)
+    {
+      vertices.clear();
+      vertices.push_back(PolygonMesh::Vertex(f_list[3 * i + 0]));
+      vertices.push_back(PolygonMesh::Vertex(f_list[3 * i + 1]));
+      vertices.push_back(PolygonMesh::Vertex(f_list[3 * i + 2]));
+      uv_mesh.add_face(vertices);
+    }
+
+
+    PolygonMesh::Face_attribute<int> f_visited = uv_mesh.add_face_attribute<int>("face:visited", 0);
+    for (auto fit : uv_mesh.faces())
+    {
+      if (f_visited[fit] == 0)
+      {
+        // get connect component
+        STLVectori component = getConnectedComponent(&uv_mesh, fit);
+
+        // export this component
+        STLVectori real_component;
+        for (auto i : component)
+        {
+          real_component.push_back(face_set[i]);
+        }
+        components.push_back(real_component);
+      }
+    }
+  }
 
 }

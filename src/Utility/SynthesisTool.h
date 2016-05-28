@@ -86,7 +86,7 @@ private:
 
   // patch match based method
   void getRandomPosition(int l, std::vector<Point2D>& random_set, int n_set, int max_height, int max_width, int min_height = 0, int min_width = 0);
-  void initializeNNF(ImagePyramid& gptar_d, NNF& nnf, int level, bool is_doComplete = false);
+  void initializeNNF(ImagePyramid& gpsrc_d, ImagePyramid& gptar_d, NNF& nnf, int level, bool is_doComplete = false);
   void initializeNNFFromLastLevel(ImagePyramid& gpsrc_d, ImagePyramid& gptar_d, NNF& nnf_last, int level, NNF& nnf_new, bool is_doComplete = false);
   void initializeTarDetail(ImagePyramidVec& gptar_d, int level, bool is_doComplete = false);
   void voteImage(ImagePyramidVec& gpsrc_d, ImagePyramidVec& gptar_d, NNF& nnf, int level);
