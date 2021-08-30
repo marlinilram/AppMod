@@ -5,4 +5,4 @@ Out of date source code of TOG paper **_Appearance Modeling via Proxy-to-Image A
 
 [ACM Transactions on Graphics (TOG) TOG, Volume 37 Issue 1, January 2018, Article No. 10](https://dl.acm.org/citation.cfm?doid=3151031.3158353)
 
-[Project Page](http://vcc.szu.edu.cn/research/2018/AppMod)
+[Project Page](http://vcc.szu.edu.cn/research/2018/AppMod.html)
